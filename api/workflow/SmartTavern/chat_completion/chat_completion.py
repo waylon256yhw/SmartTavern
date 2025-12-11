@@ -119,7 +119,7 @@ def process_messages_view(
 @core.register_api(
     path="smarttavern/chat_completion/chat_with_config",
     name="使用当前对话配置进行AI调用（自定义messages）",
-    description="使用当前对话的LLM配置，但使用自定义的messages数组进行AI调用。适用于需要完全控制消息内容的场景。",
+    description="使用当前对话的LLM配置，但使用自定义的messages数组进行AI调用。支持可选的预设/世界书/正则处理。",
     input_schema={
         "type": "object",
         "properties": {
@@ -135,7 +135,14 @@ def process_messages_view(
                     "required": ["role", "content"]
                 }
             },
-            "stream": {"type": "boolean", "default": False}
+            "stream": {"type": "boolean", "default": False},
+            "custom_params": {"type": "object"},
+            "apply_preset": {"type": "boolean", "default": True},
+            "apply_world_book": {"type": "boolean", "default": True},
+            "apply_regex": {"type": "boolean", "default": True},
+            "save_result": {"type": "boolean", "default": False},
+            "view": {"type": "string", "enum": ["user_view", "assistant_view"], "default": "assistant_view"},
+            "variables": {"type": "object"}
         },
         "required": ["conversation_file", "messages"],
         "additionalProperties": False,
@@ -160,35 +167,50 @@ def chat_with_config(
     messages: List[Dict[str, str]],
     stream: bool = None,
     custom_params: Dict[str, Any] = None,
+    apply_preset: bool = True,
+    apply_world_book: bool = True,
+    apply_regex: bool = True,
+    save_result: bool = False,
+    view: str = "assistant_view",
+    variables: Dict[str, Any] = None,
 ) -> Any:
     """
     使用当前对话配置进行AI调用
-    
-    从对话的settings.json读取llm_config，使用该配置调用AI，但使用自定义的messages数组。
-    不会保存响应到对话文件，仅返回AI响应。
-    
+
+    从对话的settings.json读取llm_config和资产配置，支持可选的消息处理流程。
+
     参数：
-    - conversation_file: 对话文件路径（用于读取llm_config）
+    - conversation_file: 对话文件路径（用于读取llm_config和资产）
     - messages: 自定义的消息数组 [{"role": "user", "content": "..."}]
     - stream: 可选，是否流式返回。如果不提供则使用配置文件的值
     - custom_params: 可选，自定义参数，会覆盖配置文件中的 custom_params
-    
+    - apply_preset: 是否应用预设（默认 True）
+    - apply_world_book: 是否应用世界书（默认 True）
+    - apply_regex: 是否应用正则规则（默认 True）
+    - save_result: 是否保存结果到消息树（默认 False）
+    - view: 视图类型 "user_view" | "assistant_view"（默认 "assistant_view"）
+    - variables: 变量字典（可选，默认从 variables.json 读取）
+
     返回：
     - 非流式：JSON对象包含content, usage等
     - 流式：SSE事件流
     """
-    # 如果 stream 参数未提供（None），则需要从配置文件读取
-    # 这里先用 False 作为默认值，实际值在实现层从配置文件读取
     use_stream = stream if stream is not None else False
-    
+
     if not use_stream:
         return _chat_with_config_non_streaming(
             conversation_file=conversation_file,
             messages=messages,
             stream_override=stream,
             custom_params_override=custom_params,
+            apply_preset=apply_preset,
+            apply_world_book=apply_world_book,
+            apply_regex=apply_regex,
+            save_result=save_result,
+            view=view,
+            variables=variables,
         )
-    
+
     # 流式SSE
     try:
         from fastapi.responses import StreamingResponse
@@ -197,12 +219,12 @@ def chat_with_config(
             "success": False,
             "error": f"SSE不可用（依赖fastapi未就绪）: {str(e)}"
         }
-    
+
     import json
-    
+
     def _sse_line(obj: Dict[str, Any]) -> str:
         return "data: " + json.dumps(obj, ensure_ascii=False) + "\n\n"
-    
+
     def _make_sse_generator():
         try:
             for event in _chat_with_config_streaming(
@@ -210,12 +232,18 @@ def chat_with_config(
                 messages=messages,
                 stream_override=stream,
                 custom_params_override=custom_params,
+                apply_preset=apply_preset,
+                apply_world_book=apply_world_book,
+                apply_regex=apply_regex,
+                save_result=save_result,
+                view=view,
+                variables=variables,
             ):
                 yield _sse_line(event)
         except Exception as e:
             yield _sse_line({"type": "error", "message": str(e)})
             yield _sse_line({"type": "end"})
-    
+
     return StreamingResponse(
         _make_sse_generator(),
         media_type="text/event-stream",

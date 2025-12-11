@@ -804,16 +804,28 @@ def chat_with_config_non_streaming(
     messages: List[Dict[str, str]],
     stream_override: Optional[bool] = None,
     custom_params_override: Optional[Dict[str, Any]] = None,
+    apply_preset: bool = True,
+    apply_world_book: bool = True,
+    apply_regex: bool = True,
+    save_result: bool = False,
+    view: str = "assistant_view",
+    variables: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     使用当前对话配置进行AI调用（自定义messages，非流式）
-    
+
     参数：
-    - conversation_file: 对话文件路径（用于读取llm_config）
-    - messages: 自定义的消息数组
+    - conversation_file: 对话文件路径（用于读取llm_config和资产）
+    - messages: 自定义的消息数组（作为 history）
     - stream_override: 可选，如果提供则覆盖配置文件的 stream 值
     - custom_params_override: 可选，如果提供则覆盖配置文件的 custom_params
-    
+    - apply_preset: 是否应用预设（默认 True）
+    - apply_world_book: 是否应用世界书（默认 True）
+    - apply_regex: 是否应用正则规则（默认 True）
+    - save_result: 是否保存结果到消息树（默认 False）
+    - view: 视图类型 "user_view" | "assistant_view"（默认 "assistant_view"）
+    - variables: 变量字典（可选，默认从 variables.json 读取）
+
     返回：
       {
         "success": bool,
@@ -826,9 +838,13 @@ def chat_with_config_non_streaming(
       }
     """
     start_time = time.time()
-    
+
     try:
-        # 步骤1：从 settings.json 读取 llm_config
+        # 验证 view 参数
+        if view not in ("user_view", "assistant_view"):
+            raise ValueError(f"Invalid view: {view}, must be 'user_view' or 'assistant_view'")
+
+        # 步骤1：从 settings.json 读取配置
         settings_result = core.call_api(
             "smarttavern/chat_branches/settings",
             {"action": "get", "file": conversation_file},
@@ -837,25 +853,158 @@ def chat_with_config_non_streaming(
         )
         if not settings_result or "settings" not in settings_result:
             raise ValueError("Failed to get settings from conversation")
-        
-        llm_config_file = settings_result["settings"].get("llm_config")
+        settings = settings_result["settings"]
+
+        llm_config_file = settings.get("llm_config")
         if not llm_config_file:
             raise ValueError("No llm_config found in conversation settings")
-        
+
         # 步骤2：读取LLM配置
         llm_config = _safe_read_json(llm_config_file)
-        
-        # 步骤3：调用LLM API
-        # 如果前端没有提供 stream_override，则使用配置文件的值（但对于非流式函数，强制为 False）
+
+        # 步骤3：可选的消息处理流程
+        needs_processing = apply_preset or apply_world_book or apply_regex
+        processed_messages = messages
+        final_variables = variables or {}
+
+        if needs_processing:
+            root = _repo_root()
+
+            # 加载资产（如果需要 preset 或 world_book）
+            preset = None
+            character = None
+            normalized_preset = None
+            normalized_character = None
+            normalized_world_book = []
+            rules = []
+
+            if apply_preset:
+                preset_file = settings.get("preset")
+                if not preset_file:
+                    raise ValueError("No preset found in settings")
+                preset_path = (root / Path(preset_file)).resolve()
+                with preset_path.open("r", encoding="utf-8") as f:
+                    preset = json.load(f)
+
+                character_file = settings.get("character")
+                if not character_file:
+                    raise ValueError("No character found in settings")
+                character_path = (root / Path(character_file)).resolve()
+                with character_path.open("r", encoding="utf-8") as f:
+                    character = json.load(f)
+
+            # 加载世界书
+            world_books: Dict[str, Any] = {}
+            if apply_world_book:
+                world_books_list = settings.get("world_books", [])
+                for i, wb_file in enumerate(world_books_list or []):
+                    if wb_file:
+                        wb_path = (root / Path(wb_file)).resolve()
+                        with wb_path.open("r", encoding="utf-8") as f:
+                            wb_data = json.load(f)
+                            world_books[f"wb_{i}"] = wb_data
+
+            # 加载正则规则
+            regex_files: Dict[str, Any] = {}
+            if apply_regex:
+                regex_files_list = settings.get("regex_rules", [])
+                for i, regex_file in enumerate(regex_files_list or []):
+                    if regex_file:
+                        regex_path = (root / Path(regex_file)).resolve()
+                        with regex_path.open("r", encoding="utf-8") as f:
+                            regex_data = json.load(f)
+                            regex_files[f"regex_{i}"] = regex_data
+
+            # 资产归一化
+            if apply_preset or apply_world_book or apply_regex:
+                normalize_result = core.call_api(
+                    "smarttavern/assets_normalizer/normalize",
+                    {
+                        "preset": preset,
+                        "world_books": world_books,
+                        "character": character,
+                        "regex_files": regex_files
+                    },
+                    method="POST",
+                    namespace="modules"
+                )
+                if not normalize_result or "merged_regex" not in normalize_result:
+                    raise ValueError("Failed to normalize assets")
+                merged_regex = normalize_result.get("merged_regex", {})
+                rules = merged_regex.get("regex_rules", []) or []
+                normalized_preset = normalize_result.get("preset", preset)
+                normalized_character = normalize_result.get("character", character)
+                normalized_world_book = normalize_result.get("world_book", [])
+
+            # RAW 装配（如果应用 preset 或 world_book）
+            if apply_preset or apply_world_book:
+                persona_doc = None
+                persona_file = settings.get("persona")
+                if persona_file:
+                    persona_path = (root / Path(persona_file)).resolve()
+                    with persona_path.open("r", encoding="utf-8") as f:
+                        persona_doc = json.load(f)
+
+                raw_result = core.call_api(
+                    "smarttavern/prompt_raw/assemble_full",
+                    {
+                        "presets": normalized_preset,
+                        "world_books": normalized_world_book,
+                        "history": messages,  # 前端传入的 messages 作为 history
+                        "character": normalized_character,
+                        "persona": persona_doc
+                    },
+                    method="POST",
+                    namespace="workflow"
+                )
+                if raw_result and "messages" in raw_result:
+                    processed_messages = raw_result["messages"]
+
+            # 后处理（如果应用 regex）- 即使 rules 为空也要调用，用于视图转换和宏展开
+            if apply_regex:
+                if variables is None:
+                    variables_result = core.call_api(
+                        "smarttavern/chat_branches/variables",
+                        {"action": "get", "file": conversation_file},
+                        method="POST",
+                        namespace="modules"
+                    )
+                    if variables_result and "variables" in variables_result:
+                        final_variables = variables_result["variables"]
+
+                postprocess_result = core.call_api(
+                    "smarttavern/prompt_postprocess/apply",
+                    {
+                        "messages": processed_messages,
+                        "regex_rules": rules,
+                        "view": view,
+                        "variables": final_variables
+                    },
+                    method="POST",
+                    namespace="workflow"
+                )
+                if postprocess_result:
+                    processed_messages = postprocess_result.get("message", processed_messages)
+                    variables_data = postprocess_result.get("variables", {})
+                    final_variables = variables_data.get("final", final_variables)
+
+        # 提取纯 role/content 用于 LLM 调用
+        llm_messages = []
+        for m in processed_messages:
+            llm_messages.append({
+                "role": m.get("role"),
+                "content": m.get("content")
+            })
+
+        # 步骤4：调用LLM API
         llm_params = {
             "provider": llm_config.get("provider"),
             "api_key": llm_config.get("api_key"),
             "base_url": llm_config.get("base_url"),
-            "messages": messages,
-            "stream": False,  # 非流式函数始终为 False
+            "messages": llm_messages,
+            "stream": False,
         }
-        
-        # 只添加配置文件中存在的参数
+
         if "model" in llm_config and llm_config["model"]:
             llm_params["model"] = llm_config["model"]
         if "max_tokens" in llm_config and llm_config["max_tokens"] is not None:
@@ -874,39 +1023,70 @@ def chat_with_config_non_streaming(
             llm_params["connect_timeout"] = llm_config["connect_timeout"]
         if "enable_logging" in llm_config:
             llm_params["enable_logging"] = llm_config["enable_logging"]
-        # 处理 custom_params：优先使用前端提供的，否则使用配置文件的
         if custom_params_override is not None:
             llm_params["custom_params"] = custom_params_override
         elif "custom_params" in llm_config and llm_config["custom_params"]:
             llm_params["custom_params"] = llm_config["custom_params"]
-        
         if "safety_settings" in llm_config and llm_config["safety_settings"]:
             llm_params["safety_settings"] = llm_config["safety_settings"]
-        
+
         llm_response = core.call_api(
             "llm_api/chat",
             llm_params,
             method="POST",
             namespace="modules"
         )
-        
+
         if not llm_response.get("success"):
             return {
                 "success": False,
                 "error": llm_response.get("error", "LLM API call failed"),
                 "response_time": time.time() - start_time
             }
-        
-        # 返回响应（不保存到对话文件）
+
+        ai_content = llm_response.get("content", "")
+
+        # 步骤5：可选保存结果
+        if save_result:
+            append_result = core.call_api(
+                "smarttavern/chat_branches/append_message",
+                {
+                    "file": conversation_file,
+                    "role": "assistant",
+                    "content": ai_content
+                },
+                method="POST",
+                namespace="modules"
+            )
+            if not append_result or not append_result.get("success"):
+                return {
+                    "success": False,
+                    "error": "Failed to save result to message tree",
+                    "response_time": time.time() - start_time
+                }
+
+            # 保存更新后的 variables
+            if final_variables:
+                core.call_api(
+                    "smarttavern/chat_branches/variables",
+                    {
+                        "action": "set",
+                        "file": conversation_file,
+                        "data": final_variables
+                    },
+                    method="POST",
+                    namespace="modules"
+                )
+
         return {
             "success": True,
-            "content": llm_response.get("content", ""),
+            "content": ai_content,
             "usage": llm_response.get("usage"),
             "response_time": time.time() - start_time,
             "model_used": llm_response.get("model_used"),
             "finish_reason": llm_response.get("finish_reason")
         }
-        
+
     except Exception as e:
         return {
             "success": False,
@@ -920,16 +1100,28 @@ def chat_with_config_streaming(
     messages: List[Dict[str, str]],
     stream_override: Optional[bool] = None,
     custom_params_override: Optional[Dict[str, Any]] = None,
+    apply_preset: bool = True,
+    apply_world_book: bool = True,
+    apply_regex: bool = True,
+    save_result: bool = False,
+    view: str = "assistant_view",
+    variables: Optional[Dict[str, Any]] = None,
 ) -> Iterator[Dict[str, Any]]:
     """
     使用当前对话配置进行AI调用（自定义messages，流式）
-    
+
     参数：
-    - conversation_file: 对话文件路径（用于读取llm_config）
-    - messages: 自定义的消息数组
+    - conversation_file: 对话文件路径（用于读取llm_config和资产）
+    - messages: 自定义的消息数组（作为 history）
     - stream_override: 可选，如果提供则覆盖配置文件的 stream 值（流式函数忽略此参数）
     - custom_params_override: 可选，如果提供则覆盖配置文件的 custom_params
-    
+    - apply_preset: 是否应用预设（默认 True）
+    - apply_world_book: 是否应用世界书（默认 True）
+    - apply_regex: 是否应用正则规则（默认 True）
+    - save_result: 是否保存结果到消息树（默认 False）
+    - view: 视图类型 "user_view" | "assistant_view"（默认 "assistant_view"）
+    - variables: 变量字典（可选，默认从 variables.json 读取）
+
     生成器yield：
       {"type": "chunk", "content": str}
       {"type": "finish", "finish_reason": str}
@@ -938,7 +1130,13 @@ def chat_with_config_streaming(
       {"type": "end"}
     """
     try:
-        # 步骤1：从 settings.json 读取 llm_config
+        # 验证 view 参数
+        if view not in ("user_view", "assistant_view"):
+            yield {"type": "error", "message": f"Invalid view: {view}, must be 'user_view' or 'assistant_view'"}
+            yield {"type": "end"}
+            return
+
+        # 步骤1：从 settings.json 读取配置
         settings_result = core.call_api(
             "smarttavern/chat_branches/settings",
             {"action": "get", "file": conversation_file},
@@ -949,27 +1147,162 @@ def chat_with_config_streaming(
             yield {"type": "error", "message": "Failed to get settings from conversation"}
             yield {"type": "end"}
             return
-        
-        llm_config_file = settings_result["settings"].get("llm_config")
+        settings = settings_result["settings"]
+
+        llm_config_file = settings.get("llm_config")
         if not llm_config_file:
             yield {"type": "error", "message": "No llm_config found in conversation settings"}
             yield {"type": "end"}
             return
-        
+
         # 步骤2：读取LLM配置
         llm_config = _safe_read_json(llm_config_file)
-        
-        # 步骤3：调用LLM API（流式）
+
+        # 步骤3：可选的消息处理流程
+        needs_processing = apply_preset or apply_world_book or apply_regex
+        processed_messages = messages
+        final_variables = variables or {}
+
+        if needs_processing:
+            root = _repo_root()
+
+            preset = None
+            character = None
+            normalized_preset = None
+            normalized_character = None
+            normalized_world_book = []
+            rules = []
+
+            if apply_preset:
+                preset_file = settings.get("preset")
+                if not preset_file:
+                    yield {"type": "error", "message": "No preset found in settings"}
+                    yield {"type": "end"}
+                    return
+                preset_path = (root / Path(preset_file)).resolve()
+                with preset_path.open("r", encoding="utf-8") as f:
+                    preset = json.load(f)
+
+                character_file = settings.get("character")
+                if not character_file:
+                    yield {"type": "error", "message": "No character found in settings"}
+                    yield {"type": "end"}
+                    return
+                character_path = (root / Path(character_file)).resolve()
+                with character_path.open("r", encoding="utf-8") as f:
+                    character = json.load(f)
+
+            world_books: Dict[str, Any] = {}
+            if apply_world_book:
+                world_books_list = settings.get("world_books", [])
+                for i, wb_file in enumerate(world_books_list or []):
+                    if wb_file:
+                        wb_path = (root / Path(wb_file)).resolve()
+                        with wb_path.open("r", encoding="utf-8") as f:
+                            wb_data = json.load(f)
+                            world_books[f"wb_{i}"] = wb_data
+
+            regex_files: Dict[str, Any] = {}
+            if apply_regex:
+                regex_files_list = settings.get("regex_rules", [])
+                for i, regex_file in enumerate(regex_files_list or []):
+                    if regex_file:
+                        regex_path = (root / Path(regex_file)).resolve()
+                        with regex_path.open("r", encoding="utf-8") as f:
+                            regex_data = json.load(f)
+                            regex_files[f"regex_{i}"] = regex_data
+
+            if apply_preset or apply_world_book or apply_regex:
+                normalize_result = core.call_api(
+                    "smarttavern/assets_normalizer/normalize",
+                    {
+                        "preset": preset,
+                        "world_books": world_books,
+                        "character": character,
+                        "regex_files": regex_files
+                    },
+                    method="POST",
+                    namespace="modules"
+                )
+                if not normalize_result or "merged_regex" not in normalize_result:
+                    yield {"type": "error", "message": "Failed to normalize assets"}
+                    yield {"type": "end"}
+                    return
+                merged_regex = normalize_result.get("merged_regex", {})
+                rules = merged_regex.get("regex_rules", []) or []
+                normalized_preset = normalize_result.get("preset", preset)
+                normalized_character = normalize_result.get("character", character)
+                normalized_world_book = normalize_result.get("world_book", [])
+
+            if apply_preset or apply_world_book:
+                persona_doc = None
+                persona_file = settings.get("persona")
+                if persona_file:
+                    persona_path = (root / Path(persona_file)).resolve()
+                    with persona_path.open("r", encoding="utf-8") as f:
+                        persona_doc = json.load(f)
+
+                raw_result = core.call_api(
+                    "smarttavern/prompt_raw/assemble_full",
+                    {
+                        "presets": normalized_preset,
+                        "world_books": normalized_world_book,
+                        "history": messages,
+                        "character": normalized_character,
+                        "persona": persona_doc
+                    },
+                    method="POST",
+                    namespace="workflow"
+                )
+                if raw_result and "messages" in raw_result:
+                    processed_messages = raw_result["messages"]
+
+            # 后处理（如果应用 regex）- 即使 rules 为空也要调用，用于视图转换和宏展开
+            if apply_regex:
+                if variables is None:
+                    variables_result = core.call_api(
+                        "smarttavern/chat_branches/variables",
+                        {"action": "get", "file": conversation_file},
+                        method="POST",
+                        namespace="modules"
+                    )
+                    if variables_result and "variables" in variables_result:
+                        final_variables = variables_result["variables"]
+
+                postprocess_result = core.call_api(
+                    "smarttavern/prompt_postprocess/apply",
+                    {
+                        "messages": processed_messages,
+                        "regex_rules": rules,
+                        "view": view,
+                        "variables": final_variables
+                    },
+                    method="POST",
+                    namespace="workflow"
+                )
+                if postprocess_result:
+                    processed_messages = postprocess_result.get("message", processed_messages)
+                    variables_data = postprocess_result.get("variables", {})
+                    final_variables = variables_data.get("final", final_variables)
+
+        # 提取纯 role/content 用于 LLM 调用
+        llm_messages = []
+        for m in processed_messages:
+            llm_messages.append({
+                "role": m.get("role"),
+                "content": m.get("content")
+            })
+
+        # 步骤4：调用LLM API（流式）
         from api.modules.llm_api.impl import stream_chat_chunks
-        
+
         stream_params = {
             "provider": llm_config.get("provider"),
             "api_key": llm_config.get("api_key"),
             "base_url": llm_config.get("base_url"),
-            "messages": messages,
+            "messages": llm_messages,
         }
-        
-        # 只添加配置文件中存在的参数
+
         if "model" in llm_config and llm_config["model"]:
             stream_params["model"] = llm_config["model"]
         if "max_tokens" in llm_config and llm_config["max_tokens"] is not None:
@@ -988,38 +1321,68 @@ def chat_with_config_streaming(
             stream_params["connect_timeout"] = llm_config["connect_timeout"]
         if "enable_logging" in llm_config:
             stream_params["enable_logging"] = llm_config["enable_logging"]
-        # 处理 custom_params：优先使用前端提供的，否则使用配置文件的
         if custom_params_override is not None:
             stream_params["custom_params"] = custom_params_override
         elif "custom_params" in llm_config and llm_config["custom_params"]:
             stream_params["custom_params"] = llm_config["custom_params"]
-        
         if "safety_settings" in llm_config and llm_config["safety_settings"]:
             stream_params["safety_settings"] = llm_config["safety_settings"]
-        
+
         chunk_iter = stream_chat_chunks(**stream_params)
-        
-        # 流式返回（不保存到对话文件）
+
+        # 流式返回，收集完整内容用于可选保存
+        full_content = []
+        stream_error = False
+
         for chunk in chunk_iter:
-            # 检查是否是错误
             if chunk.finish_reason == "error":
                 error_msg = chunk.content or "未知错误"
                 yield {"type": "error", "message": error_msg}
                 yield {"type": "finish", "finish_reason": "error"}
                 yield {"type": "end"}
+                stream_error = True
                 return
-            
+
             if chunk.content:
+                full_content.append(chunk.content)
                 yield {"type": "chunk", "content": chunk.content}
-            
+
             if chunk.finish_reason:
                 yield {"type": "finish", "finish_reason": chunk.finish_reason}
-            
+
             if chunk.usage:
                 yield {"type": "usage", "usage": chunk.usage}
-        
+
+        # 步骤5：可选保存结果（流式结束后）
+        if save_result and not stream_error:
+            ai_content = "".join(full_content)
+            append_result = core.call_api(
+                "smarttavern/chat_branches/append_message",
+                {
+                    "file": conversation_file,
+                    "role": "assistant",
+                    "content": ai_content
+                },
+                method="POST",
+                namespace="modules"
+            )
+            if not append_result or not append_result.get("success"):
+                yield {"type": "error", "message": "Failed to save result to message tree"}
+
+            if final_variables:
+                core.call_api(
+                    "smarttavern/chat_branches/variables",
+                    {
+                        "action": "set",
+                        "file": conversation_file,
+                        "data": final_variables
+                    },
+                    method="POST",
+                    namespace="modules"
+                )
+
         yield {"type": "end"}
-        
+
     except Exception as e:
         yield {"type": "error", "message": str(e)}
         yield {"type": "end"}

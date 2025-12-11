@@ -69,6 +69,12 @@ interface ChatCompletionWithConfigParams {
   messages: ChatMessage[]
   stream?: boolean
   custom_params?: Record<string, any>
+  apply_preset?: boolean
+  apply_world_book?: boolean
+  apply_regex?: boolean
+  save_result?: boolean
+  view?: 'user_view' | 'assistant_view'
+  variables?: Record<string, any>
 }
 
 /**
@@ -292,30 +298,39 @@ export async function chatCompletion({
 
 /**
  * 使用当前对话配置进行聊天补全
- * 
+ *
  * @param params - 参数对象
  * @param params.messages - 消息数组 [{role: 'user', content: '...'}]
  * @param params.stream - 可选，是否流式返回。不提供则使用配置文件的值
  * @param params.custom_params - 可选，自定义参数对象，会覆盖配置文件的 custom_params
+ * @param params.apply_preset - 可选，是否应用预设（默认 true）
+ * @param params.apply_world_book - 可选，是否应用世界书（默认 true）
+ * @param params.apply_regex - 可选，是否应用正则规则（默认 true）
+ * @param params.save_result - 可选，是否保存结果到消息树（默认 false）
+ * @param params.view - 可选，视图类型（默认 'assistant_view'）
+ * @param params.variables - 可选，变量字典
  *
  * @returns 非流式返回：{success, content, usage, ...}
  * @returns 流式返回：CustomEventSource对象
- * 
+ *
  * @throws Error 如果没有加载对话或没有 LLM 配置
- * 
+ *
  * @example
- * // 非流式调用
+ * // 非流式调用（应用完整处理流程）
  * const result = await chatCompletionWithCurrentConfig({
  *   messages: [
  *     { role: 'system', content: 'You are a helpful assistant.' },
  *     { role: 'user', content: 'Hello!' }
  *   ]
  * })
- * 
- * // 流式调用
+ *
+ * // 流式调用（跳过处理）
  * const eventSource = await chatCompletionWithCurrentConfig({
  *   messages: [{ role: 'user', content: 'Hello!' }],
- *   stream: true
+ *   stream: true,
+ *   apply_preset: false,
+ *   apply_world_book: false,
+ *   apply_regex: false
  * })
  * eventSource.addEventListener('message', (e) => {
  *   const data = JSON.parse(e.data)
@@ -326,7 +341,13 @@ export async function chatCompletion({
 export async function chatCompletionWithCurrentConfig({
   messages,
   stream,
-  custom_params
+  custom_params,
+  apply_preset,
+  apply_world_book,
+  apply_regex,
+  save_result,
+  view,
+  variables
 }: ChatCompletionWithConfigParams): Promise<ChatCompletionResult | CustomEventSource> {
   // 参数验证
   validateMessages(messages)
@@ -344,10 +365,16 @@ export async function chatCompletionWithCurrentConfig({
     conversation_file: conversationFile,
     messages
   }
-  
+
   // 添加可选参数（只有明确提供时才添加）
   if (stream !== undefined) params.stream = stream
   if (custom_params !== undefined) params.custom_params = custom_params
+  if (apply_preset !== undefined) params.apply_preset = apply_preset
+  if (apply_world_book !== undefined) params.apply_world_book = apply_world_book
+  if (apply_regex !== undefined) params.apply_regex = apply_regex
+  if (save_result !== undefined) params.save_result = save_result
+  if (view !== undefined) params.view = view
+  if (variables !== undefined) params.variables = variables
 
   // 判断是否流式（优先使用参数，否则默认 false）
   const useStream = stream !== undefined ? stream : false
