@@ -107,13 +107,13 @@ export function initCatalogBridge(bus: EventBus): void {
       CatalogChannel.loadingStates.value.characters = true
       CatalogChannel.errorStates.value.characters = null
 
-      // 释放旧的 blob URLs
-      _revokeBlobUrls('characters')
-
       const res = await DataCatalog.listCharacters()
       const items = DataCatalog.mapToCards(res?.items || [], 'characters')
       const withIcons = await __enrichWithDataIcons(items, 'characters')
       const enriched = await __enrichCharactersWithAvatars(withIcons, 'characters')
+
+      // 释放旧的 blob URLs（成功获取新数据后再释放）
+      _revokeBlobUrls('characters')
 
       CatalogChannel.characters.value = enriched
       CatalogChannel.loadingStates.value.characters = false
@@ -145,13 +145,13 @@ export function initCatalogBridge(bus: EventBus): void {
       CatalogChannel.loadingStates.value.personas = true
       CatalogChannel.errorStates.value.personas = null
 
-      // 释放旧的 blob URLs
-      _revokeBlobUrls('personas')
-
       const res = await DataCatalog.listPersonas()
       const items = DataCatalog.mapToCards(res?.items || [], 'personas')
       const withIcons = await __enrichWithDataIcons(items, 'personas')
       const enriched = await __enrichPersonasWithAvatars(withIcons, 'personas')
+
+      // 释放旧的 blob URLs（成功获取新数据后再释放）
+      _revokeBlobUrls('personas')
 
       CatalogChannel.personas.value = enriched
       CatalogChannel.loadingStates.value.personas = false
@@ -183,12 +183,12 @@ export function initCatalogBridge(bus: EventBus): void {
       CatalogChannel.loadingStates.value.presets = true
       CatalogChannel.errorStates.value.presets = null
 
-      // 释放旧的 blob URLs
-      _revokeBlobUrls('presets')
-
       const res = await DataCatalog.listPresets()
       const items = DataCatalog.mapToCards(res?.items || [], 'presets')
       const enriched = await __enrichWithDataIcons(items, 'presets')
+
+      // 释放旧的 blob URLs（成功获取新数据后再释放）
+      _revokeBlobUrls('presets')
 
       CatalogChannel.presets.value = enriched
       CatalogChannel.loadingStates.value.presets = false
@@ -220,12 +220,12 @@ export function initCatalogBridge(bus: EventBus): void {
       CatalogChannel.loadingStates.value.worldbooks = true
       CatalogChannel.errorStates.value.worldbooks = null
 
-      // 释放旧的 blob URLs
-      _revokeBlobUrls('worldbooks')
-
       const res = await DataCatalog.listWorldBooks()
       const items = DataCatalog.mapToCards(res?.items || [], 'world_books')
       const enriched = await __enrichWithDataIcons(items, 'worldbooks')
+
+      // 释放旧的 blob URLs（成功获取新数据后再释放）
+      _revokeBlobUrls('worldbooks')
 
       CatalogChannel.worldbooks.value = enriched
       CatalogChannel.loadingStates.value.worldbooks = false
@@ -257,12 +257,12 @@ export function initCatalogBridge(bus: EventBus): void {
       CatalogChannel.loadingStates.value.regex = true
       CatalogChannel.errorStates.value.regex = null
 
-      // 释放旧的 blob URLs
-      _revokeBlobUrls('regex')
-
       const res = await DataCatalog.listRegexRules()
       const items = DataCatalog.mapToCards(res?.items || [], 'regex_rules')
       const enriched = await __enrichWithDataIcons(items, 'regex')
+
+      // 释放旧的 blob URLs（成功获取新数据后再释放）
+      _revokeBlobUrls('regex')
 
       CatalogChannel.regexRules.value = enriched
       CatalogChannel.loadingStates.value.regex = false
@@ -294,12 +294,12 @@ export function initCatalogBridge(bus: EventBus): void {
       CatalogChannel.loadingStates.value.llmconfigs = true
       CatalogChannel.errorStates.value.llmconfigs = null
 
-      // 释放旧的 blob URLs
-      _revokeBlobUrls('llmconfigs')
-
       const res = await DataCatalog.listLLMConfigs()
       const items = DataCatalog.mapToCards(res?.items || [], 'llm_configs')
       const enriched = await __enrichWithDataIcons(items, 'llmconfigs')
+
+      // 释放旧的 blob URLs（成功获取新数据后再释放）
+      _revokeBlobUrls('llmconfigs')
 
       CatalogChannel.llmConfigs.value = enriched
       CatalogChannel.loadingStates.value.llmconfigs = false

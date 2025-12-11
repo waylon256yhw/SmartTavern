@@ -104,8 +104,8 @@ export function useNewGame({ setView, refreshIcons, onConversationCreated }: Use
         llm_config: payload.llm_config || null,
       })
 
-      if (res?.conversation_file) {
-        onConversationCreated?.(res.conversation_file)
+      if (res?.file) {
+        onConversationCreated?.(res.file)
       }
 
       const t = payload?.type

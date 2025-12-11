@@ -81,7 +81,7 @@ interface CreateConversationParams {
 // 创建对话响应
 interface CreateConversationResponse {
   success: boolean;
-  conversation_file?: string;
+  file?: string;
   settings_file?: string;
   variables_file?: string;
   [key: string]: any;
@@ -506,15 +506,14 @@ const ChatBranches = {
     });
   },
 
-  // 保存对话（实际上后端每次操作都自动保存，此方法用于显式确认）
-  // 通过重新读取并写入来触发保存确认
+  // 保存对话（后端每次操作都自动保存，此方法用于显式确认）
+  // 使用 settings API 验证对话存在，兼容 threaded/sandbox 模式
   async saveConversation(file: string, _doc?: any): Promise<{ success: boolean }> {
     if (!file) {
       throw new Error('[ChatBranches] saveConversation: file is required');
     }
-    // 后端架构：每次操作自动保存，这里只需验证文件存在
-    // 通过获取最新消息来确认文件有效
-    await this.getLatestMessageByFile(file, { useCache: false });
+    // 使用 settings API 验证对话存在（比 getLatestMessage 更通用，sandbox 也支持）
+    await this.settings({ action: 'get', file });
     return { success: true };
   },
 
@@ -523,9 +522,13 @@ const ChatBranches = {
     if (!file) {
       throw new Error('[ChatBranches] deleteConversation: file is required');
     }
-    // 从 conversation.json 路径推导出目录路径
+    // 从对话文件路径推导出目录路径（取父目录）
     // file 格式: backend_projects/SmartTavern/data/conversations/{name}/conversation.json
-    const folderPath = file.replace(/\/conversation\.json$/, '');
+    //        或: backend_projects/SmartTavern/data/conversations/{name}/settings.json
+    //        或: backend_projects/SmartTavern/data/conversations/{name}/variables.json
+    const normalized = file.replace(/\\/g, '/');
+    const lastSlash = normalized.lastIndexOf('/');
+    const folderPath = lastSlash > 0 ? normalized.slice(0, lastSlash) : normalized;
     return postJSON<{ success: boolean }>('smarttavern/data_catalog/delete_data_folder', {
       folder_path: folderPath
     });
