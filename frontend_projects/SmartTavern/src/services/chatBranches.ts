@@ -505,6 +505,31 @@ const ChatBranches = {
       user_node_id
     });
   },
+
+  // 保存对话（实际上后端每次操作都自动保存，此方法用于显式确认）
+  // 通过重新读取并写入来触发保存确认
+  async saveConversation(file: string, _doc?: any): Promise<{ success: boolean }> {
+    if (!file) {
+      throw new Error('[ChatBranches] saveConversation: file is required');
+    }
+    // 后端架构：每次操作自动保存，这里只需验证文件存在
+    // 通过获取最新消息来确认文件有效
+    await this.getLatestMessageByFile(file, { useCache: false });
+    return { success: true };
+  },
+
+  // 删除对话（删除整个对话目录）
+  async deleteConversation(file: string): Promise<{ success: boolean }> {
+    if (!file) {
+      throw new Error('[ChatBranches] deleteConversation: file is required');
+    }
+    // 从 conversation.json 路径推导出目录路径
+    // file 格式: backend_projects/SmartTavern/data/conversations/{name}/conversation.json
+    const folderPath = file.replace(/\/conversation\.json$/, '');
+    return postJSON<{ success: boolean }>('smarttavern/data_catalog/delete_data_folder', {
+      folder_path: folderPath
+    });
+  },
 };
 
 export default ChatBranches;
