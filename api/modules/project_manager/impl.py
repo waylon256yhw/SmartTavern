@@ -22,10 +22,17 @@ from typing import Dict, List, Optional, Any
 from pathlib import Path
 from datetime import datetime
 from dataclasses import dataclass, field
+import re
 import core
 
 # 配置日志
 logger = logging.getLogger(__name__)
+
+# 端口常量
+_PORT_MIN = 1024
+_PORT_MAX = 65535
+_DEFAULT_FRONTEND_PORT = 3000
+_DEFAULT_BACKEND_PORT = 8050
 
 def _detect_project_role(project_dir: Path) -> Optional[str]:
     """读取项目标记，区分前端/后端。仅读取 modularflow_config.py 中的 PROJECT_ROLE"""
@@ -55,19 +62,31 @@ def _read_ws_port_from_config(project_dir: Path) -> Optional[int]:
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)  # type: ignore
         ws_port = getattr(mod, "WEBSOCKET_PORT", None)
-        if isinstance(ws_port, int) and (1024 <= ws_port <= 65535):
+        if isinstance(ws_port, int) and (_PORT_MIN <= ws_port <= _PORT_MAX):
             return ws_port
         # 若为字符串数字，尝试转换
         if isinstance(ws_port, str):
             try:
                 n = int(ws_port.strip())
-                if 1024 <= n <= 65535:
+                if _PORT_MIN <= n <= _PORT_MAX:
                     return n
             except Exception:
                 pass
         return None
     except Exception:
         return None
+
+
+def _read_upload(obj, default_name="upload.bin"):
+    """读取上传对象内容，返回 (bytes, filename)"""
+    if hasattr(obj, 'file'):
+        return obj.file.read(), getattr(obj, 'filename', None) or default_name
+    elif hasattr(obj, 'name') and hasattr(obj, 'read'):
+        return obj.read(), getattr(obj, 'name', None) or default_name
+    elif isinstance(obj, (bytes, bytearray)):
+        return obj, default_name
+    else:
+        raise ValueError("无效的上传对象")
 
 
 @dataclass
@@ -189,7 +208,7 @@ class ProjectManager:
                     pass
 
             # 后端端口不再进行动态分配：保持配置中的端口（可能冲突，但不自动调整）
-            preferred_backend_port = backend_port_from_config or 8050
+            preferred_backend_port = backend_port_from_config or _DEFAULT_BACKEND_PORT
             backend_port = preferred_backend_port
 
             status_obj = ProjectStatus(
@@ -228,7 +247,7 @@ class ProjectManager:
                 config_script_path = str(modularflow_config)
             
             # 分配端口 - 优先使用配置文件中的端口
-            frontend_port = self._allocate_port(runtime_config.get("port", 3000), project_name)
+            frontend_port = self._allocate_port(runtime_config.get("port", _DEFAULT_FRONTEND_PORT), project_name)
             
             # 从API配置中获取后端端口
             api_endpoint = api_config.get("api_endpoint", "")
@@ -243,8 +262,8 @@ class ProjectManager:
                     pass
             
             # 后端端口不再进行动态分配：保持配置中的端口（可能冲突，但不自动调整）
-            # 如果配置中没有端口信息，使用默认值8050
-            preferred_backend_port = backend_port_from_config or 8050
+            # 如果配置中没有端口信息，使用默认值
+            preferred_backend_port = backend_port_from_config or _DEFAULT_BACKEND_PORT
             backend_port = preferred_backend_port
             
             # 构建状态对象后，立即探测端口以“实时”确定运行状态（而不是默认False）
@@ -287,7 +306,7 @@ class ProjectManager:
         # 如果找不到可用端口，使用随机端口
         import random
         for _ in range(10):
-            port = random.randint(10000, 65535)
+            port = random.randint(10000, _PORT_MAX)
             if port not in self.port_registry:
                 self.port_registry[port] = project_identifier
                 logger.warning(f"⚠️ 无法找到合适端口，为 {project_identifier} 分配随机端口 {port}")
@@ -982,104 +1001,138 @@ def get_managed_projects():
 
     return projects_list
 
-def import_project(project_archive):
-    """导入项目（强化校验：必须包含 modularflow_config.py），失败时清理解压内容"""
-    manager = get_project_manager()
-    temp_dir = None
+def _find_project_dir_in(extract_path):
+    """在解压目录中查找包含 modularflow_config.py 的项目目录"""
+    for item in Path(extract_path).iterdir():
+        if item.is_dir() and (item / "modularflow_config.py").exists():
+            return item
+    return None
 
+
+def _extract_project_from_zip(file_content, filename):
+    """解压 zip 并查找含 modularflow_config.py 的项目目录，返回 (temp_dir, project_dir)。
+    失败时自行清理 temp_dir 后重新抛出异常。"""
+    temp_dir = tempfile.mkdtemp(prefix="project_import_")
     try:
-        # 获取上传的文件（二进制或框架上传对象）
-        if hasattr(project_archive, 'file'):
-            # FastAPI 风格 UploadFile
-            file_content = project_archive.file.read()
-            filename = getattr(project_archive, 'filename', None) or "project_archive.zip"
-        elif hasattr(project_archive, 'name') and hasattr(project_archive, 'read'):
-            # Flask 风格 FileStorage
-            file_content = project_archive.read()
-            filename = getattr(project_archive, 'name', None) or "project_archive.zip"
-        else:
-            # 直接传递二进制内容
-            file_content = project_archive
-            filename = "project_archive.zip"
-        
-        # 创建临时目录
-        temp_dir = tempfile.mkdtemp(prefix="project_import_")
         archive_path = os.path.join(temp_dir, filename)
-        
-        # 保存压缩包
+
         with open(archive_path, 'wb') as f:
             f.write(file_content)
-        
-        # 解压压缩包到临时目录
+
         extract_path = os.path.join(temp_dir, "extracted")
         os.makedirs(extract_path, exist_ok=True)
         with zipfile.ZipFile(archive_path, 'r') as zip_ref:
             zip_ref.extractall(extract_path)
-        
-        # 检查解压内容
-        extracted_items = list(Path(extract_path).iterdir())
-        if not extracted_items:
-            # 清理并报错
-            shutil.rmtree(extract_path, ignore_errors=True)
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            return {"success": False, "error": "压缩包为空，已取消解压并清理临时文件"}
-        
-        # 选择项目目录：要求该目录下存在 modularflow_config.py
-        project_dir = None
-        for item in extracted_items:
-            if item.is_dir():
-                if (item / "modularflow_config.py").exists():
-                    project_dir = item
-                    break
-        
-        if not project_dir:
-            # 未发现符合规范的前端项目目录
-            shutil.rmtree(extract_path, ignore_errors=True)
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            return {"success": False, "error": "导入失败：未在解压后的前端项目根目录找到 modularflow_config.py，已取消导入并清理临时文件"}
-        
-        project_name = project_dir.name
 
-        # 校验项目角色标记，避免导入到错误的目录
-        role = _detect_project_role(Path(project_dir))
-        if role and role != "frontend":
-            shutil.rmtree(extract_path, ignore_errors=True)
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            return {"success": False, "error": f"导入失败：该压缩包标记为后端项目（PROJECT_ROLE={role}），请选择“后端项目”导入或使用后端导入接口"}
-        
-        # 复制项目到 frontend_projects 目录
-        framework_root = Path(__file__).parent.parent.parent.parent
-        target_dir = framework_root / "frontend_projects" / project_name
-        
-        # 如已存在目标目录，则直接移除旧目录（不生成备份）
-        if target_dir.exists():
-            shutil.rmtree(str(target_dir), ignore_errors=True)
-            logger.info(f"✓ 已移除已存在的项目目录: {target_dir}")
-        
-        # 拷贝项目
-        shutil.copytree(str(project_dir), str(target_dir))
-        logger.info(f"✓ 已复制项目到: {target_dir}")
-        
-        # 重新发现和加载项目
-        manager._discover_and_load_projects()
-        
-        # 清理临时文件
+        if not any(Path(extract_path).iterdir()):
+            raise ValueError("压缩包为空")
+
+        project_dir = _find_project_dir_in(extract_path)
+        if not project_dir:
+            raise ValueError("未在解压后的项目根目录找到 modularflow_config.py")
+
+        return temp_dir, project_dir
+    except Exception:
         shutil.rmtree(temp_dir, ignore_errors=True)
-        
-        return {
-            "success": True,
-            "project_name": project_name,
-            "message": f"项目 {project_name} 导入成功，已自动发现和注册"
-        }
+        raise
+
+
+def _extract_project_from_image(image):
+    """从 PNG 图片中反嵌入 zip 并解压，返回 (temp_dir, project_dir)。
+    失败时自行清理 temp_dir 后重新抛出异常。"""
+    image_bytes, image_name = _read_upload(image, "input.png")
+    if not image_bytes:
+        raise ValueError("未提供图片数据")
+
+    temp_dir = tempfile.mkdtemp(prefix="import_from_image_")
+    try:
+        img_name = image_name or "input.png"
+        if not img_name.lower().endswith(".png"):
+            img_name = os.path.splitext(img_name)[0] + ".png"
+        image_path = os.path.join(temp_dir, img_name)
+        with open(image_path, "wb") as f:
+            f.write(image_bytes)
+
+        result = core.call_api(
+            "smarttavern/image_binding/extract_files_from_image",
+            {"image_path": image_path, "output_dir": temp_dir},
+            method="POST",
+            namespace="modules"
+        )
+        if not isinstance(result, dict) or not result.get("success"):
+            raise ValueError(f"提取失败: {result if not isinstance(result, dict) else result.get('message')}")
+
+        zip_file_info = None
+        for fi in result.get("files", []):
+            if fi.get("name", "").lower().endswith(".zip"):
+                zip_file_info = fi
+                break
+
+        if not zip_file_info:
+            raise ValueError("图片中未找到项目压缩包(zip)")
+
+        zip_path = zip_file_info.get("path")
+        if not zip_path or not os.path.exists(zip_path):
+            raise ValueError("提取的zip路径无效")
+
+        extract_path = os.path.join(temp_dir, "extracted")
+        os.makedirs(extract_path, exist_ok=True)
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
+            zip_ref.extractall(extract_path)
+
+        project_dir = _find_project_dir_in(extract_path)
+        if not project_dir:
+            raise ValueError("未在解压后的项目根目录找到 modularflow_config.py")
+
+        return temp_dir, project_dir
+    except Exception:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        raise
+
+
+def _install_project(project_dir, target_subdir, expected_role, manager):
+    """校验角色、复制到目标目录、重新发现项目，返回成功字典"""
+    role = _detect_project_role(Path(project_dir))
+    if role and role != expected_role:
+        opposite = "后端" if expected_role == "frontend" else "前端"
+        raise ValueError(f"该压缩包标记为{opposite}项目（PROJECT_ROLE={role}），请使用对应的导入接口")
+
+    project_name = project_dir.name
+    framework_root = Path(__file__).parent.parent.parent.parent
+    target_dir = framework_root / target_subdir / project_name
+
+    if target_dir.exists():
+        shutil.rmtree(str(target_dir), ignore_errors=True)
+        logger.info(f"✓ 已移除已存在的项目目录: {target_dir}")
+
+    shutil.copytree(str(project_dir), str(target_dir))
+    logger.info(f"✓ 已复制项目到: {target_dir}")
+
+    manager._discover_and_load_projects()
+    if target_subdir == "backend_projects":
+        manager._discover_and_load_backend_projects()
+
+    return {
+        "success": True,
+        "project_name": project_name,
+        "message": f"项目 {project_name} 导入成功"
+    }
+
+
+def import_project(project_archive):
+    """导入前端项目（zip，要求含 modularflow_config.py）"""
+    manager = get_project_manager()
+    temp_dir = None
+    try:
+        content, name = _read_upload(project_archive, "project_archive.zip")
+        temp_dir, project_dir = _extract_project_from_zip(content, name)
+        return _install_project(project_dir, "frontend_projects", "frontend", manager)
     except Exception as e:
-        logger.error(f"导入项目失败: {str(e)}")
-        # 失败时尽量清理临时目录
-        try:
-            if temp_dir and os.path.isdir(temp_dir):
-                shutil.rmtree(temp_dir, ignore_errors=True)
-        except Exception:
-            pass
+        logger.error(f"导入项目失败: {e}")
         return {"success": False, "error": str(e)}
+    finally:
+        if temp_dir and os.path.isdir(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
 def delete_project(project_name: str):
     """删除项目"""
@@ -1121,6 +1174,18 @@ def delete_project(project_name: str):
         logger.error(f"删除项目失败: {str(e)}")
         return {"success": False, "error": str(e)}
 
+def _persist_port_to_config(config_path, constant_name, new_value):
+    """正则替换 modularflow_config.py 中的端口常量"""
+    text = Path(config_path).read_text(encoding='utf-8')
+    pattern = rf'^({re.escape(constant_name)}\s*=\s*)\S+(.*)'
+    replacement = rf'\g<1>{new_value}\2'
+    new_text, count = re.subn(pattern, replacement, text, count=1, flags=re.MULTILINE)
+    if count == 0:
+        return False
+    Path(config_path).write_text(new_text, encoding='utf-8')
+    return True
+
+
 def update_project_ports(project_name: str, ports: dict):
     """更新项目端口配置"""
     manager = get_project_manager()
@@ -1136,11 +1201,11 @@ def update_project_ports(project_name: str, ports: dict):
         frontend_port = ports.get('frontend_dev')
         backend_port = ports.get('api_gateway')
         
-        if frontend_port and (frontend_port < 1024 or frontend_port > 65535):
-            return {"success": False, "error": "前端端口必须在1024-65535范围内"}
-        
-        if backend_port and (backend_port < 1024 or backend_port > 65535):
-            return {"success": False, "error": "后端端口必须在1024-65535范围内"}
+        if frontend_port and not (_PORT_MIN <= frontend_port <= _PORT_MAX):
+            return {"success": False, "error": f"前端端口必须在{_PORT_MIN}-{_PORT_MAX}范围内"}
+
+        if backend_port and not (_PORT_MIN <= backend_port <= _PORT_MAX):
+            return {"success": False, "error": f"后端端口必须在{_PORT_MIN}-{_PORT_MAX}范围内"}
         
         # 检查端口冲突
         if frontend_port and frontend_port in manager.port_registry:
@@ -1168,15 +1233,17 @@ def update_project_ports(project_name: str, ports: dict):
             status.backend_port = backend_port
             manager.port_registry[backend_port] = f"{project_name}_backend"
         
-        # 如果项目有配置脚本，尝试更新配置脚本中的端口
+        # 持久化端口到 modularflow_config.py
         if status.config_script_path:
             try:
-                # 这里可以添加更新配置脚本的逻辑
-                # 目前只是记录日志
-                logger.info(f"项目 {project_name} 的配置脚本路径: {status.config_script_path}")
-                logger.info("配置脚本端口更新功能待实现")
+                cfg = status.config_script_path
+                if frontend_port:
+                    _persist_port_to_config(cfg, "FRONTEND_PORT", frontend_port)
+                if backend_port:
+                    _persist_port_to_config(cfg, "BACKEND_PORT", backend_port)
+                    _persist_port_to_config(cfg, "WEBSOCKET_PORT", backend_port)
             except Exception as e:
-                logger.warning(f"更新配置脚本失败: {e}")
+                logger.warning(f"持久化端口到配置脚本失败: {e}")
         
         return {
             "success": True,
@@ -1310,19 +1377,8 @@ def embed_zip_into_image(image, archive):
     """将zip压缩包嵌入到PNG图片中，返回嵌入后图片的base64字符串"""
     temp_dir = None
     try:
-        # 读取上传对象或二进制
-        def read_upload(obj):
-            if hasattr(obj, 'file'):
-                return obj.file.read(), getattr(obj, 'filename', None)
-            elif hasattr(obj, 'read'):
-                return obj.read(), getattr(obj, 'name', None)
-            elif isinstance(obj, (bytes, bytearray)):
-                return obj, None
-            else:
-                raise ValueError("无效的上传对象")
-
-        image_bytes, image_name = read_upload(image)
-        archive_bytes, archive_name = read_upload(archive)
+        image_bytes, image_name = _read_upload(image, "input.png")
+        archive_bytes, archive_name = _read_upload(archive, "input.zip")
 
         # 基本校验
         if not image_bytes:
@@ -1383,17 +1439,7 @@ def extract_zip_from_image(image):
     """从PNG图片中提取嵌入的zip文件，返回zip的临时路径与文件清单"""
     temp_dir = None
     try:
-        def read_upload(obj):
-            if hasattr(obj, 'file'):
-                return obj.file.read(), getattr(obj, 'filename', None)
-            elif hasattr(obj, 'read'):
-                return obj.read(), getattr(obj, 'name', None)
-            elif isinstance(obj, (bytes, bytearray)):
-                return obj, None
-            else:
-                raise ValueError("无效的上传对象")
-
-        image_bytes, image_name = read_upload(image)
+        image_bytes, image_name = _read_upload(image, "input.png")
         if not image_bytes:
             return {"success": False, "error": "未提供图片数据"}
 
@@ -1441,317 +1487,44 @@ def extract_zip_from_image(image):
 
 
 def import_project_from_image(image):
-    """从PNG图片反嵌入zip并导入项目（要求项目根含 modularflow_config.py）"""
+    """从 PNG 图片反嵌入 zip 并导入前端项目"""
     manager = get_project_manager()
     temp_dir = None
     try:
-        def read_upload(obj):
-            if hasattr(obj, 'file'):
-                return obj.file.read(), getattr(obj, 'filename', None)
-            elif hasattr(obj, 'read'):
-                return obj.read(), getattr(obj, 'name', None)
-            elif isinstance(obj, (bytes, bytearray)):
-                return obj, None
-            else:
-                raise ValueError("无效的上传对象")
-
-        image_bytes, image_name = read_upload(image)
-        if not image_bytes:
-            return {"success": False, "error": "未提供图片数据"}
-
-        temp_dir = tempfile.mkdtemp(prefix="import_from_image_")
-        img_name = image_name or "input.png"
-        if not img_name.lower().endswith(".png"):
-            img_name = os.path.splitext(img_name)[0] + ".png"
-        image_path = os.path.join(temp_dir, img_name)
-        with open(image_path, "wb") as f:
-            f.write(image_bytes)
-
-        # 通过本地客户端调用模块API进行反嵌入提取
-        result = core.call_api(
-            "smarttavern/image_binding/extract_files_from_image",
-            {"image_path": image_path, "output_dir": temp_dir},
-            method="POST",
-            namespace="modules"
-        )
-        if not isinstance(result, dict) or not result.get("success"):
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            return {"success": False, "error": f"提取失败: {result if not isinstance(result, dict) else result.get('message')}"}
-        extracted = result.get("files", [])
-
-        # 找zip
-        zip_file_info = None
-        for fi in extracted:
-            n = fi.get("name", "")
-            if n.lower().endswith(".zip"):
-                zip_file_info = fi
-                break
-
-        if not zip_file_info:
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            return {"success": False, "error": "图片中未找到项目压缩包(zip)"}
-
-        zip_path = zip_file_info.get("path")
-        if not zip_path or not os.path.exists(zip_path):
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            return {"success": False, "error": "提取的zip路径无效"}
-
-        # 解压zip
-        extract_path = os.path.join(temp_dir, "extracted")
-        os.makedirs(extract_path, exist_ok=True)
-        with zipfile.ZipFile(zip_path, "r") as zip_ref:
-            zip_ref.extractall(extract_path)
-
-        # 选择项目目录（必须含 modularflow_config.py）
-        extracted_items = list(Path(extract_path).iterdir())
-        project_dir = None
-        for item in extracted_items:
-            if item.is_dir() and (item / "modularflow_config.py").exists():
-                project_dir = item
-                break
-
-        if not project_dir:
-            # 清理并报错
-            shutil.rmtree(extract_path, ignore_errors=True)
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            return {"success": False, "error": "导入失败：未在解压后的前端项目根目录找到 modularflow_config.py"}
-
-        project_name = project_dir.name
-
-        # 校验项目角色标记，避免导入到错误的目录
-        role = _detect_project_role(Path(project_dir))
-        if role and role != "frontend":
-            shutil.rmtree(extract_path, ignore_errors=True)
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            return {"success": False, "error": f"导入失败：该压缩包标记为后端项目（PROJECT_ROLE={role}），请选择“后端项目”导入或使用后端导入接口"}
-
-        # 复制到 frontend_projects
-        framework_root = Path(__file__).parent.parent.parent.parent
-        target_dir = framework_root / "frontend_projects" / project_name
-        if target_dir.exists():
-            # 直接移除旧目录（不生成备份）
-            shutil.rmtree(str(target_dir), ignore_errors=True)
-            logger.info(f"✓ 已移除已存在的项目目录: {target_dir}")
-
-        shutil.copytree(str(project_dir), str(target_dir))
-        logger.info(f"✓ 已复制项目到: {target_dir}")
-
-        # 重新发现和加载
-        manager._discover_and_load_projects()
-
-        # 清理
-        shutil.rmtree(temp_dir, ignore_errors=True)
-
-        return {
-            "success": True,
-            "project_name": project_name,
-            "message": f"项目 {project_name} 已通过图片反嵌入并导入"
-        }
+        temp_dir, project_dir = _extract_project_from_image(image)
+        return _install_project(project_dir, "frontend_projects", "frontend", manager)
     except Exception as e:
-        logger.error(f"从图片导入项目失败: {str(e)}")
-        try:
-            if temp_dir and os.path.isdir(temp_dir):
-                shutil.rmtree(temp_dir, ignore_errors=True)
-        except Exception:
-            pass
+        logger.error(f"从图片导入项目失败: {e}")
         return {"success": False, "error": str(e)}
+    finally:
+        if temp_dir and os.path.isdir(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
-# 新增：导入后端项目（zip）
 def import_backend_project(project_archive):
-    """导入后端项目（要求根含 modularflow_config.py），复制到 backend_projects，失败时清理临时文件"""
+    """导入后端项目（zip，要求含 modularflow_config.py）"""
     manager = get_project_manager()
     temp_dir = None
     try:
-        # 获取上传文件内容与文件名
-        if hasattr(project_archive, 'file'):
-            file_content = project_archive.file.read()
-            filename = getattr(project_archive, 'filename', None) or "backend_project.zip"
-        elif hasattr(project_archive, 'name') and hasattr(project_archive, 'read'):
-            file_content = project_archive.read()
-            filename = getattr(project_archive, 'name', None) or "backend_project.zip"
-        else:
-            file_content = project_archive
-            filename = "backend_project.zip"
-
-        # 临时目录与保存
-        temp_dir = tempfile.mkdtemp(prefix="backend_import_")
-        archive_path = os.path.join(temp_dir, filename)
-        with open(archive_path, 'wb') as f:
-            f.write(file_content)
-
-        # 解压
-        extract_path = os.path.join(temp_dir, "extracted")
-        os.makedirs(extract_path, exist_ok=True)
-        with zipfile.ZipFile(archive_path, 'r') as zip_ref:
-            zip_ref.extractall(extract_path)
-
-        # 选择项目目录（要求 modularflow_config.py）
-        extracted_items = list(Path(extract_path).iterdir())
-        project_dir = None
-        for item in extracted_items:
-            if item.is_dir() and (item / "modularflow_config.py").exists():
-                project_dir = item
-                break
-
-        if not project_dir:
-            shutil.rmtree(extract_path, ignore_errors=True)
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            return {"success": False, "error": "导入失败：未在解压后的后端项目根目录找到 modularflow_config.py，已取消导入并清理临时文件"}
-
-        project_name = project_dir.name
-
-        # 校验项目角色标记，避免导入到错误的目录
-        role = _detect_project_role(Path(project_dir))
-        if role and role != "backend":
-            shutil.rmtree(extract_path, ignore_errors=True)
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            return {"success": False, "error": f"导入失败：该压缩包标记为前端项目（PROJECT_ROLE={role}），请选择“前端项目”导入或使用前端导入接口"}
-
-        # 复制到 backend_projects
-        framework_root = Path(__file__).parent.parent.parent.parent
-        target_dir = framework_root / "backend_projects" / project_name
-        if target_dir.exists():
-            shutil.rmtree(str(target_dir), ignore_errors=True)
-            logger.info(f"✓ 已移除已存在的后端项目目录: {target_dir}")
-
-        shutil.copytree(str(project_dir), str(target_dir))
-        logger.info(f"✓ 已复制后端项目到: {target_dir}")
-
-        # 重新发现（前端+后端）
-        try:
-            manager._discover_and_load_projects()
-            manager._discover_and_load_backend_projects()
-        except Exception:
-            pass
-
-        shutil.rmtree(temp_dir, ignore_errors=True)
-        return {
-            "success": True,
-            "project_name": project_name,
-            "message": f"后端项目 {project_name} 导入成功，已复制到 backend_projects"
-        }
+        content, name = _read_upload(project_archive, "backend_project.zip")
+        temp_dir, project_dir = _extract_project_from_zip(content, name)
+        return _install_project(project_dir, "backend_projects", "backend", manager)
     except Exception as e:
-        logger.error(f"导入后端项目失败: {str(e)}")
-        try:
-            if temp_dir and os.path.isdir(temp_dir):
-                shutil.rmtree(temp_dir, ignore_errors=True)
-        except Exception:
-            pass
+        logger.error(f"导入后端项目失败: {e}")
         return {"success": False, "error": str(e)}
+    finally:
+        if temp_dir and os.path.isdir(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
-# 新增：从图片导入后端项目
 def import_backend_project_from_image(image):
-    """从PNG图片反嵌入zip并导入后端项目（要求项目根含 modularflow_config.py），复制到 backend_projects"""
+    """从 PNG 图片反嵌入 zip 并导入后端项目"""
     manager = get_project_manager()
     temp_dir = None
     try:
-        def read_upload(obj):
-            if hasattr(obj, 'file'):
-                return obj.file.read(), getattr(obj, 'filename', None)
-            elif hasattr(obj, 'read'):
-                return obj.read(), getattr(obj, 'name', None)
-            elif isinstance(obj, (bytes, bytearray)):
-                return obj, None
-            else:
-                raise ValueError("无效的上传对象")
-
-        image_bytes, image_name = read_upload(image)
-        if not image_bytes:
-            return {"success": False, "error": "未提供图片数据"}
-
-        temp_dir = tempfile.mkdtemp(prefix="backend_import_from_image_")
-        img_name = image_name or "input.png"
-        if not img_name.lower().endswith(".png"):
-            img_name = os.path.splitext(img_name)[0] + ".png"
-        image_path = os.path.join(temp_dir, img_name)
-        with open(image_path, "wb") as f:
-            f.write(image_bytes)
-
-        # 反嵌入提取
-        result = core.call_api(
-            "smarttavern/image_binding/extract_files_from_image",
-            {"image_path": image_path, "output_dir": temp_dir},
-            method="POST",
-            namespace="modules"
-        )
-        if not isinstance(result, dict) or not result.get("success"):
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            return {"success": False, "error": f"提取失败: {result if not isinstance(result, dict) else result.get('message')}"}
-        extracted = result.get("files", [])
-
-        # 找zip
-        zip_file_info = None
-        for fi in extracted:
-            n = fi.get("name", "")
-            if n.lower().endswith(".zip"):
-                zip_file_info = fi
-                break
-
-        if not zip_file_info:
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            return {"success": False, "error": "图片中未找到项目压缩包(zip)"}
-
-        zip_path = zip_file_info.get("path")
-        if not zip_path or not os.path.exists(zip_path):
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            return {"success": False, "error": "提取的zip路径无效"}
-
-        # 解压zip
-        extract_path = os.path.join(temp_dir, "extracted")
-        os.makedirs(extract_path, exist_ok=True)
-        with zipfile.ZipFile(zip_path, "r") as zip_ref:
-            zip_ref.extractall(extract_path)
-
-        # 选择后端项目目录（必须含 modularflow_config.py）
-        extracted_items = list(Path(extract_path).iterdir())
-        project_dir = None
-        for item in extracted_items:
-            if item.is_dir() and (item / "modularflow_config.py").exists():
-                project_dir = item
-                break
-
-        if not project_dir:
-            shutil.rmtree(extract_path, ignore_errors=True)
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            return {"success": False, "error": "导入失败：未在解压后的后端项目根目录找到 modularflow_config.py"}
-
-        project_name = project_dir.name
-
-        # 校验项目角色标记，避免导入到错误的目录
-        role = _detect_project_role(Path(project_dir))
-        if role and role != "backend":
-            shutil.rmtree(extract_path, ignore_errors=True)
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            return {"success": False, "error": f"导入失败：该压缩包标记为前端项目（PROJECT_ROLE={role}），请选择“前端项目”导入或使用前端导入接口"}
-
-        # 复制到 backend_projects
-        framework_root = Path(__file__).parent.parent.parent.parent
-        target_dir = framework_root / "backend_projects" / project_name
-        if target_dir.exists():
-            shutil.rmtree(str(target_dir), ignore_errors=True)
-            logger.info(f"✓ 已移除已存在的后端项目目录: {target_dir}")
-
-        shutil.copytree(str(project_dir), str(target_dir))
-        logger.info(f"✓ 已复制后端项目到: {target_dir}")
-
-        # 重新发现（前端+后端）
-        try:
-            manager._discover_and_load_projects()
-            manager._discover_and_load_backend_projects()
-        except Exception:
-            pass
-
-        shutil.rmtree(temp_dir, ignore_errors=True)
-        return {
-            "success": True,
-            "project_name": project_name,
-            "message": f"后端项目 {project_name} 已通过图片反嵌入并导入"
-        }
+        temp_dir, project_dir = _extract_project_from_image(image)
+        return _install_project(project_dir, "backend_projects", "backend", manager)
     except Exception as e:
-        logger.error(f"从图片导入后端项目失败: {str(e)}")
-        try:
-            if temp_dir and os.path.isdir(temp_dir):
-                shutil.rmtree(temp_dir, ignore_errors=True)
-        except Exception:
-            pass
+        logger.error(f"从图片导入后端项目失败: {e}")
         return {"success": False, "error": str(e)}
+    finally:
+        if temp_dir and os.path.isdir(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
