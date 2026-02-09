@@ -18,7 +18,7 @@
 | 层 | 技术 |
 |---|---|
 | 后端 | Python 3.10+ / FastAPI / Uvicorn / uv |
-| 前端 | Vue 3 / TypeScript / Vite / Pinia / Tailwind CSS |
+| 前端 | Vue 3 / TypeScript / Vite / Pinia / Tailwind CSS / Bun |
 | 通信 | REST + WebSocket（统一网关） |
 | 图片处理 | Pillow（PNG 元数据嵌入/提取） |
 
@@ -28,32 +28,60 @@
 
 - [uv](https://docs.astral.sh/uv/)（Python 包管理器）
 - Python >= 3.10（uv 会自动管理）
-- Node.js >= 20.19.0（或 >= 22.12.0）
+- [Bun](https://bun.sh/)（前端包管理与构建）
 
-### 安装与启动
+### Docker 部署（推荐）
+
+```bash
+docker compose up -d
+```
+
+多阶段构建自动完成前端（Bun）和后端（Python）的打包，单容器运行在 `http://localhost:8050`。
+
+- 对话数据持久化到 `./backend_projects/SmartTavern/data`
+- LLM 配置通过 `./api-config.json` 挂载（只读）
+
+### 本地开发
 
 ```bash
 # 1. 安装后端依赖（自动创建 .venv）
 uv sync
 
 # 2. 安装前端依赖
-cd frontend_projects/SmartTavern && npm install && cd ../..
+cd frontend_projects/SmartTavern && bun install && cd ../..
 
 # 3. 启动后端 API 网关（默认监听 0.0.0.0:8050）
 uv run smarttavern
 
 # 4. 启动前端开发服务器（另开终端）
-cd frontend_projects/SmartTavern && npm run dev
+cd frontend_projects/SmartTavern && bun run dev
+```
+
+开发模式下前端 Vite 运行在 `http://localhost:5173`，后端 API 文档位于 `http://localhost:8050/docs`。
+
+支持 `--reload` 热重载后端：
+
+```bash
+uv run smarttavern --reload
+```
+
+### 本地生产模式
+
+不使用 Docker 时，`--serve` 会自动构建前端并以单端口提供服务：
+
+```bash
+uv run smarttavern --serve          # 首次自动构建前端
+uv run smarttavern --serve --rebuild  # 强制重新构建
 ```
 
 Windows 用户可直接双击 `Start.bat` 一键启动（需预装 uv）。
-
-启动后访问前端开发服务器地址（Vite 默认 `http://localhost:5173`），API 文档位于 `http://localhost:8050/docs`。
 
 ## 项目结构
 
 ```
 SmartTavern/
+├── Dockerfile                     # 多阶段构建（Bun 前端 + Python 后端）
+├── docker-compose.yml             # 容器编排
 ├── pyproject.toml                 # 项目元数据与依赖（uv/hatchling）
 ├── start_all_apis.py              # 后端统一入口（uv run smarttavern）
 ├── core/                          # 框架核心
