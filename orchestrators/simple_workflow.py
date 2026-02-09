@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Any
 
-from ..core.api_registry import get_registry
+from core.api_registry import get_registry
 
 
 @dataclass
