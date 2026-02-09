@@ -274,7 +274,7 @@ class ProjectManagerBackend:
                 print("✅ API网关: 运行正常")
             else:
                 print("⚠️ API网关: 响应异常")
-        except:
+        except Exception:
             print("❌ API网关: 无法连接")
         
         # 检查前端服务器
@@ -285,7 +285,7 @@ class ProjectManagerBackend:
                 print("✅ 前端: 运行正常")
             else:
                 print("⚠️ 前端: 响应异常")
-        except:
+        except Exception:
             print("❌ 前端: 无法连接")
         
         # 检查项目管理器（通过 SDK 调用）
@@ -418,7 +418,7 @@ class ProjectManagerBackend:
                                                 capture_output=True
                                             )
                                             print(f"✓ 清理端口 {port} 占用进程 PID: {pid}")
-                                        except:
+                                        except Exception:
                                             pass
                     except Exception as e:
                         print(f"⚠️ 清理端口 {port} 时出现问题: {e}")

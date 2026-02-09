@@ -168,7 +168,7 @@ class UnifiedServiceManager:
         elif service_type == "globals":
             self.services.globals_services[name] = service
 
-    def get_service(self, name: str, service_type: str = None) -> Optional[Any]:
+    def get_service(self, name: str, service_type: Optional[str] = None) -> Optional[Any]:
         """按类型与名称获取服务"""
         if service_type == "function" or service_type is None:
             if name in self.services.function_services:
@@ -188,7 +188,7 @@ class UnifiedServiceManager:
 
         return None
 
-    def list_services(self, service_type: str = None) -> Dict[str, List[str]]:
+    def list_services(self, service_type: Optional[str] = None) -> Dict[str, List[str]]:
         """列出所有已注册服务"""
         if service_type:
             if service_type == "function":

@@ -118,15 +118,10 @@ def load_all_api_modules() -> int:
         total += _import_all_under(api_plugins_dir, "api.plugins")
     return total
 
-def create_app():
-    """
-    Uvicorn factory 模式入口。用于 --reload 时满足“以导入字符串传入应用”的要求。
-    返回 FastAPI app 实例。
-    """
-    _enable_inproc_defaults()
+def _bootstrap_gateway(config_file=None):
+    """加载所有 API 模块、插件，创建并配置网关实例。"""
     imported = load_all_api_modules()
     print(f"[INFO] Imported {imported} backend modules under 'api.modules' and 'api.workflow'.")
-    # 选择性注册插件后端 API（按 manifest.json 声明）
     try:
         from core.plugins_backend_loader import load_backend_plugin_apis
         plug_res = load_backend_plugin_apis(manifest_only=True, project="SmartTavern")
@@ -139,7 +134,17 @@ def create_app():
     print(f"[INFO] Registered API functions: {len(reg.list_functions())}")
 
     from core.api_gateway import get_api_gateway
-    gateway = get_api_gateway()
+    gateway = get_api_gateway(config_file=config_file)
+    return gateway
+
+
+def create_app():
+    """
+    Uvicorn factory 模式入口。用于 --reload 时满足"以导入字符串传入应用"的要求。
+    返回 FastAPI app 实例。
+    """
+    _enable_inproc_defaults()
+    gateway = _bootstrap_gateway()
 
     gateway.discover_and_register_functions()
     gateway.setup_websocket()
@@ -183,22 +188,7 @@ def main():
         return
 
     # 非 reload 情况：直接通过网关对象启动（无警告）
-    imported = load_all_api_modules()
-    print(f"[INFO] Imported {imported} backend modules under 'api.modules' and 'api.workflow'.")
-    # 选择性注册插件后端 API（按 manifest.json 声明）
-    try:
-        from core.plugins_backend_loader import load_backend_plugin_apis
-        plug_res = load_backend_plugin_apis(manifest_only=True, project="SmartTavern")
-        print(f"[INFO] Plugin backend loader: manifests={plug_res.manifests_read}, imported={len(plug_res.imported_modules)}, skipped={len(plug_res.skipped_entries)}")
-    except Exception as e:
-        print(f"[WARN] Plugin backend loader failed: {type(e).__name__}: {e}")
-
-    import core
-    reg = core.get_registry()
-    print(f"[INFO] Registered API functions: {len(reg.list_functions())}")
-
-    from core.api_gateway import get_api_gateway
-    gateway = get_api_gateway(config_file=args.config)
+    gateway = _bootstrap_gateway(config_file=args.config)
     gateway.config.host = args.host
     gateway.config.port = args.port
     gateway.config.debug = False

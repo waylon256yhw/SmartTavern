@@ -419,7 +419,7 @@ def _detect_file_type(filename: str, data: bytes) -> str:
     try:
         json.loads(data.decode('utf-8'))
         return 'json'
-    except:
+    except Exception:
         pass
     
     return 'unknown'

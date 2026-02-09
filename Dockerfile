@@ -28,6 +28,6 @@ ENV UV_NO_CACHE=1 PYTHONUNBUFFERED=1
 EXPOSE 8050
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
-    CMD curl -f http://localhost:8050/docs || exit 1
+    CMD curl -f http://localhost:8050/api/health || exit 1
 
 CMD ["uv", "run", "python", "start_all_apis.py", "--host", "0.0.0.0", "--port", "8050", "--serve"]

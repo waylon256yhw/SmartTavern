@@ -303,7 +303,7 @@ class DevServer:
             # 最后尝试强制终止
             try:
                 process.kill()
-            except:
+            except Exception:
                 pass
 
 

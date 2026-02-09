@@ -866,7 +866,7 @@ class LLMAPIManager:
                             error_msg = error_data["error"].get("message", error_msg)
                         else:
                             error_msg = str(error_data["error"])
-                except:
+                except (ValueError, KeyError):
                     pass
 
                 return {
@@ -944,7 +944,7 @@ class LLMAPIManager:
                             error_msg = error_data["error"].get("message", error_msg)
                         else:
                             error_msg = str(error_data["error"])
-                except:
+                except (ValueError, KeyError):
                     pass
 
                 return {
@@ -1006,7 +1006,7 @@ class LLMAPIManager:
                             error_msg = error_data["error"].get("message", error_msg)
                         else:
                             error_msg = str(error_data["error"])
-                except:
+                except (ValueError, KeyError):
                     pass
 
                 return {
@@ -1096,7 +1096,7 @@ def create_manager(
         models=_ensure_models(provider, models),
         enabled=True,
         timeout=int(timeout) if timeout is not None else v.DEFAULT_TIMEOUT,
-        connect_timeout=int(connect_timeout) if timeout is not None else v.DEFAULT_CONNECT_TIMEOUT,
+        connect_timeout=int(connect_timeout) if connect_timeout is not None else v.DEFAULT_CONNECT_TIMEOUT,
         enable_logging=bool(enable_logging),
     )
     return LLMAPIManager(cfg)
@@ -1122,7 +1122,7 @@ def call_chat_non_streaming(
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """
-    非流式调用：返回一次性 JSON（不使用默认参数）
+    非流式调用：返回一次性 JSON。参数 timeout/connect_timeout 未传时使用 create_manager 的内部默认值。
     """
     msgs = _normalize_messages(messages)
     mgr = create_manager(
@@ -1196,7 +1196,7 @@ def stream_chat_chunks(
     **kwargs: Any,
 ) -> Iterator[StreamChunk]:
     """
-    流式调用：返回迭代器（不使用默认参数）
+    流式调用：返回迭代器。参数 timeout/connect_timeout 未传时使用 create_manager 的内部默认值。
     """
     msgs = _normalize_messages(messages)
     mgr = create_manager(

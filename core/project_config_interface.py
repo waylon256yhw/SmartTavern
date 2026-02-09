@@ -205,7 +205,7 @@ class DefaultProjectConfig(ProjectConfigInterface):
                     self.project_type = "vue"
                 else:
                     self.project_type = "nodejs"
-            except:
+            except Exception:
                 self.project_type = "nodejs"
         elif (self.project_path / "index.html").exists():
             self.project_type = "html"

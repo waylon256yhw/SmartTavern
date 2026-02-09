@@ -255,14 +255,13 @@ class ApiClient:
 
             kwargs = dict(payload or {})
             if inspect.iscoroutinefunction(func):
-                # 避免在事件循环线程里阻塞；优先在无循环环境执行
                 try:
-                    loop = asyncio.get_running_loop()
+                    asyncio.get_running_loop()
                 except RuntimeError:
+                    # 无事件循环，可以安全地直接运行
                     return asyncio.run(func(**kwargs))  # type: ignore[misc]
-                # 有循环：提交到当前循环外同步等待（不建议用于热点，尽量只启用 modules 同步 API）
-                fut = asyncio.run_coroutine_threadsafe(func(**kwargs), loop)  # type: ignore[misc]
-                return fut.result()
+                # 已在事件循环线程内，fut.result() 会死锁，回退 HTTP
+                return _Sentinel
             else:
                 return func(**kwargs)
         except Exception:

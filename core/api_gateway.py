@@ -8,8 +8,10 @@ API网关模块（核心层 - core）
 
 import json
 import asyncio
+import inspect
 import logging
 import sys
+import functools
 from typing import Any, Dict, List, Optional, Callable, Union
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -125,6 +127,7 @@ class GatewayConfig:
         websocket_config = data.get("websocket", {})
         static_config = data.get("static_files", {})
         docs_config = api_config.get("documentation", {})
+        security_config = data.get("security", {})
         
         return cls(
             # 服务器配置
@@ -150,6 +153,11 @@ class GatewayConfig:
             static_directory=static_config.get("directory", ""),
             static_url_prefix=static_config.get("url_prefix", "/static"),
             
+            # 安全配置
+            auth_enabled=security_config.get("auth_enabled", False),
+            rate_limit_enabled=security_config.get("rate_limit_enabled", False),
+            rate_limit_per_minute=security_config.get("rate_limit_per_minute", 120),
+
             # 应用配置
             title=data.get("title", "ModularFlow API Gateway"),
             description=data.get("description", "统一API网关 - 集成ModularFlow Framework"),
@@ -248,6 +256,7 @@ class Middleware:
 
     # 简易限流存储（内存）
     _rate_store: Dict[str, Dict[str, Any]] = {}
+    _rate_limit_per_minute: int = 120
 
     @staticmethod
     async def rate_limit_middleware(request: Request, call_next):
@@ -256,12 +265,14 @@ class Middleware:
             client_ip = request.client.host if request.client else "unknown"
             now_minute = datetime.now().strftime("%Y%m%d%H%M")
             key = f"{client_ip}:{now_minute}"
+            # 清理过期 key，避免内存泄漏
+            stale = [k for k in Middleware._rate_store if not k.endswith(f":{now_minute}")]
+            for k in stale:
+                del Middleware._rate_store[k]
             record = Middleware._rate_store.get(key, {"count": 0})
             record["count"] += 1
             Middleware._rate_store[key] = record
-            # 默认限流阈值（如需读取配置，可在此扩展）
-            limit = 120
-            if record["count"] > limit:
+            if record["count"] > Middleware._rate_limit_per_minute:
                 return JSONResponse(status_code=429, content={"error_code": "RATE_LIMITED", "message": "请求过于频繁"})
         except Exception as e:
             logger.warning(f"限流中间件异常: {e}")
@@ -420,6 +431,12 @@ class APIGateway:
         # 基础中间件
         self.router.add_middleware("logging", Middleware.logging_middleware, priority=100)
         self.router.add_middleware("error_handling", Middleware.error_handling_middleware, priority=90)
+        # 安全中间件（按配置启用）
+        if self.config and self.config.auth_enabled:
+            self.router.add_middleware("auth", Middleware.auth_middleware, priority=80)
+        if self.config and self.config.rate_limit_enabled:
+            Middleware._rate_limit_per_minute = self.config.rate_limit_per_minute
+            self.router.add_middleware("rate_limit", Middleware.rate_limit_middleware, priority=70)
         # 注册到 FastAPI 应用
         if self.app:
             for m in self.router.get_middlewares():
@@ -609,12 +626,11 @@ class APIGateway:
                                 })
 
                             # 协程/同步统一调用
-                            import inspect as _ins
-                            if _ins.iscoroutinefunction(fn):
+                            if inspect.iscoroutinefunction(fn):
                                 result = await fn(**(data or {}))
                             else:
                                 loop = asyncio.get_running_loop()
-                                result = await loop.run_in_executor(None, (lambda: fn(**(data or {})) if data else fn()))
+                                result = await loop.run_in_executor(None, functools.partial(fn, **(data or {})))
                             return result
                         except Exception as e:
                             return {"error": str(e)}
@@ -684,8 +700,7 @@ class APIGateway:
                                 await websocket.send_text(json.dumps(error_response))
                             else:
                                 break
-                        except:
-                            # 如果发送错误响应也失败，则断开连接
+                        except Exception:
                             break
                     
             except Exception as e:
@@ -722,7 +737,18 @@ class APIGateway:
                     func = None
                 
                 if func:
-                    result = func(**params) if params else func()
+                    if not isinstance(params, dict):
+                        return {
+                            "type": "function_result",
+                            "function": func_path,
+                            "success": False,
+                            "error": "INVALID_PARAMS",
+                            "message": "params 必须为 dict 类型"
+                        }
+                    if inspect.iscoroutinefunction(func):
+                        result = await func(**params) if params else await func()
+                    else:
+                        result = func(**params) if params else func()
                     return {
                         "type": "function_result",
                         "function": func_path,
@@ -753,7 +779,7 @@ class APIGateway:
         for websocket in self.websocket_connections:
             try:
                 await websocket.send_text(message_text)
-            except:
+            except Exception:
                 disconnected.append(websocket)
         
         # 移除断开的连接

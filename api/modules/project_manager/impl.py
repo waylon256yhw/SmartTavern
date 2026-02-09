@@ -239,7 +239,7 @@ class ProjectManager:
                     parsed = urlparse(api_endpoint)
                     if parsed.port:
                         backend_port_from_config = parsed.port
-                except:
+                except Exception:
                     pass
             
             # 后端端口不再进行动态分配：保持配置中的端口（可能冲突，但不自动调整）
@@ -396,10 +396,9 @@ class ProjectManager:
     def _check_command_availability(self, command: str) -> bool:
         """检查命令是否可用"""
         try:
-            # 提取命令的第一部分
             cmd_name = command.split()[0]
             return shutil.which(cmd_name) is not None
-        except:
+        except Exception:
             return False
     
     def _execute_command_safely(self, command: str, cwd: str = None, project_name: str = "") -> subprocess.Popen:
@@ -804,7 +803,7 @@ class ProjectManager:
             # 最后尝试强制终止
             try:
                 process.kill()
-            except:
+            except Exception:
                 pass
     
     def cleanup(self):
