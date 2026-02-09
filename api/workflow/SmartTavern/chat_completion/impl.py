@@ -957,8 +957,9 @@ def chat_with_config_non_streaming(
                     method="POST",
                     namespace="workflow"
                 )
-                if raw_result and "messages" in raw_result:
-                    processed_messages = raw_result["messages"]
+                if not raw_result or "messages" not in raw_result:
+                    raise ValueError("RAW assembly failed: no messages returned from prompt_raw/assemble_full")
+                processed_messages = raw_result["messages"]
 
             # 后处理（如果应用 regex）- 即使 rules 为空也要调用，用于视图转换和宏展开
             if apply_regex:
@@ -983,10 +984,11 @@ def chat_with_config_non_streaming(
                     method="POST",
                     namespace="workflow"
                 )
-                if postprocess_result:
-                    processed_messages = postprocess_result.get("message", processed_messages)
-                    variables_data = postprocess_result.get("variables", {})
-                    final_variables = variables_data.get("final", final_variables)
+                if not postprocess_result or "message" not in postprocess_result:
+                    raise ValueError("Post-processing failed: no message returned from prompt_postprocess/apply")
+                processed_messages = postprocess_result["message"]
+                variables_data = postprocess_result.get("variables", {})
+                final_variables = variables_data.get("final", final_variables)
 
         # 提取纯 role/content 用于 LLM 调用
         llm_messages = []
@@ -1048,10 +1050,28 @@ def chat_with_config_non_streaming(
 
         # 步骤5：可选保存结果
         if save_result:
+            messages_result = core.call_api(
+                "smarttavern/chat_branches/openai_messages",
+                {"file": conversation_file},
+                method="POST",
+                namespace="modules"
+            )
+            if not messages_result:
+                raise ValueError("Failed to get conversation metadata for save_result")
+
+            active_path = messages_result.get("path", [])
+            if not active_path:
+                raise ValueError("No active_path found in conversation")
+
+            parent_id = active_path[-1]
+            new_node_id = f"n_ass{int(time.time() * 1000)}"
+
             append_result = core.call_api(
                 "smarttavern/chat_branches/append_message",
                 {
                     "file": conversation_file,
+                    "node_id": new_node_id,
+                    "pid": parent_id,
                     "role": "assistant",
                     "content": ai_content
                 },
@@ -1254,8 +1274,11 @@ def chat_with_config_streaming(
                     method="POST",
                     namespace="workflow"
                 )
-                if raw_result and "messages" in raw_result:
-                    processed_messages = raw_result["messages"]
+                if not raw_result or "messages" not in raw_result:
+                    yield {"type": "error", "message": "RAW assembly failed: no messages returned from prompt_raw/assemble_full"}
+                    yield {"type": "end"}
+                    return
+                processed_messages = raw_result["messages"]
 
             # 后处理（如果应用 regex）- 即使 rules 为空也要调用，用于视图转换和宏展开
             if apply_regex:
@@ -1280,10 +1303,13 @@ def chat_with_config_streaming(
                     method="POST",
                     namespace="workflow"
                 )
-                if postprocess_result:
-                    processed_messages = postprocess_result.get("message", processed_messages)
-                    variables_data = postprocess_result.get("variables", {})
-                    final_variables = variables_data.get("final", final_variables)
+                if not postprocess_result or "message" not in postprocess_result:
+                    yield {"type": "error", "message": "Post-processing failed: no message returned from prompt_postprocess/apply"}
+                    yield {"type": "end"}
+                    return
+                processed_messages = postprocess_result["message"]
+                variables_data = postprocess_result.get("variables", {})
+                final_variables = variables_data.get("final", final_variables)
 
         # 提取纯 role/content 用于 LLM 调用
         llm_messages = []
@@ -1356,10 +1382,33 @@ def chat_with_config_streaming(
         # 步骤5：可选保存结果（流式结束后）
         if save_result and not stream_error:
             ai_content = "".join(full_content)
+
+            messages_result = core.call_api(
+                "smarttavern/chat_branches/openai_messages",
+                {"file": conversation_file},
+                method="POST",
+                namespace="modules"
+            )
+            if not messages_result:
+                yield {"type": "error", "message": "Failed to get conversation metadata for save_result"}
+                yield {"type": "end"}
+                return
+
+            active_path = messages_result.get("path", [])
+            if not active_path:
+                yield {"type": "error", "message": "No active_path found in conversation"}
+                yield {"type": "end"}
+                return
+
+            parent_id = active_path[-1]
+            new_node_id = f"n_ass{int(time.time() * 1000)}"
+
             append_result = core.call_api(
                 "smarttavern/chat_branches/append_message",
                 {
                     "file": conversation_file,
+                    "node_id": new_node_id,
+                    "pid": parent_id,
                     "role": "assistant",
                     "content": ai_content
                 },
