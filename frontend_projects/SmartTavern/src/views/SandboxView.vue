@@ -82,9 +82,12 @@ async function loadSandbox() {
   emit('update:loadingMessage', t('app.loading.sandbox'))
   
   try {
-    // 1. 获取当前对话的角色卡文件
+    // 1. 获取当前对话的角色卡文件（可能尚未加载完成）
+    if (!chatSettingsStore.characterFile) {
+      await chatSettingsStore.loadSettings()
+    }
     const characterFile = chatSettingsStore.characterFile
-    
+
     if (!characterFile) {
       throw new Error('未找到角色卡配置')
     }

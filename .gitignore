@@ -1,5 +1,6 @@
 frontend_projects/manosaba_ai/
 backups/
+backend_projects/SmartTavern/data/conversations/
 
 # Local development docs
 DEVELOPMENT_PLAN.md

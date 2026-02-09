@@ -17,12 +17,39 @@ Notes:
 """
 from __future__ import annotations
 import argparse
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 import importlib
 import os
 
 REPO_ROOT = Path(__file__).resolve().parent
+
+FRONTEND_DIR = REPO_ROOT / "frontend_projects" / "SmartTavern"
+FRONTEND_DIST = FRONTEND_DIR / "dist"
+
+
+def _build_frontend() -> None:
+    """Auto-detect bun/npm and build frontend for production."""
+    runner = None
+    for cmd in ("bun", "npm"):
+        if shutil.which(cmd):
+            runner = cmd
+            break
+    if not runner:
+        print("[ERROR] Neither bun nor npm found. Install one to build frontend.")
+        sys.exit(1)
+
+    print(f"[INFO] Building frontend with {runner} ...")
+    subprocess.run([runner, "install"], cwd=str(FRONTEND_DIR), check=True)
+    subprocess.run([runner, "run", "build"], cwd=str(FRONTEND_DIR), check=True)
+
+    if not FRONTEND_DIST.exists():
+        print("[ERROR] Frontend build produced no output.")
+        sys.exit(1)
+    print(f"[INFO] Frontend built -> {FRONTEND_DIST}")
+
 
 def _enable_inproc_defaults() -> None:
     """默认开启 core 进程内直调（所有命名空间）。
@@ -130,7 +157,17 @@ def main():
     parser.add_argument("--background", action="store_true", help="Run in background thread (non-blocking)")
     parser.add_argument("--config", default=None, help="Optional api-config.json path")
     parser.add_argument("--reload", action="store_true", help="Enable uvicorn reload (development)")
+    parser.add_argument("--serve", action="store_true",
+                        help="Build frontend and serve everything on one port (production mode)")
+    parser.add_argument("--rebuild", action="store_true",
+                        help="Force rebuild frontend (use with --serve)")
     args = parser.parse_args()
+
+    if args.serve:
+        if args.rebuild or not FRONTEND_DIST.exists():
+            _build_frontend()
+        else:
+            print(f"[INFO] Frontend dist exists: {FRONTEND_DIST} (add --rebuild to force)")
 
     if args.reload:
         # 使用导入字符串 + factory 模式，避免 uvicorn 的 reload 警告
@@ -165,6 +202,11 @@ def main():
     gateway.config.host = args.host
     gateway.config.port = args.port
     gateway.config.debug = False
+
+    if args.serve:
+        gateway.config.static_files_enabled = True
+        gateway.config.static_directory = str(FRONTEND_DIST)
+        gateway.config.static_url_prefix = "/"
 
     print(f"[INFO] Starting API Gateway on http://{args.host}:{args.port} (background={args.background}) ...")
     gateway.start_server(background=args.background)

@@ -50,7 +50,7 @@ const activeIndex = computed(() => currentTheme.value === 'system' ? 0 : (curren
 const themeLabel = computed(() => currentTheme.value === 'system' ? t('sidebar.theme.system') : (currentTheme.value === 'light' ? t('sidebar.theme.light') : t('sidebar.theme.dark')))
 
 // ============== 后端 API 地址（持久化 + 全局可用） ==============
-const defaultBackend = (import.meta?.env?.VITE_API_BASE) || 'http://localhost:8050'
+const defaultBackend = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050')
 const backendBase = ref('')
 
 function loadBackendBase() {

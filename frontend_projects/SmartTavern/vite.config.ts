@@ -1,31 +1,56 @@
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vite'
+import { resolve } from 'node:path'
+import { defineConfig, build as viteBuild, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
+
+const srcDir = fileURLToPath(new URL('./src', import.meta.url))
+
+function workflowBundlePlugin(): Plugin {
+  return {
+    name: 'workflow-bundle',
+    apply: 'build',
+    async closeBundle() {
+      await viteBuild({
+        configFile: false,
+        logLevel: 'warn',
+        resolve: {
+          alias: { '/src': srcDir },
+        },
+        publicDir: false,
+        build: {
+          emptyOutDir: false,
+          outDir: 'dist/assets/workflows',
+          lib: {
+            entry: resolve(srcDir, 'workflow/workflows/default-thread-orchestrator.js'),
+            formats: ['es'],
+            fileName: () => 'default-thread-orchestrator.js',
+          },
+        },
+      })
+    },
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     vue(),
     vueDevTools(),
+    workflowBundlePlugin(),
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': srcDir,
     },
   },
   build: {
-    // 提高 chunk 大小警告阈值到 1000kb
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        // 手动配置代码分块策略
         manualChunks: {
-          // Vue 核心库
           'vue-vendor': ['vue', 'vue-router'],
-          // Pinia 状态管理
           'pinia-vendor': ['pinia'],
-          // 工作流核心（dataCatalog 和 host 会被多处引用）
           'workflow-core': [
             './src/services/dataCatalog.ts',
             './src/workflow/core/host.ts',

@@ -1,5 +1,5 @@
 /* SmartTavern Frontend API Client — Chat Branches (v1)
- * - 后端基址统一来源：localStorage('st.backend_base') → window.ST_BACKEND_BASE → import.meta.env.VITE_API_BASE → 'http://localhost:8050'
+ * - 后端基址统一来源：localStorage('st.backend_base') → window.ST_BACKEND_BASE → import.meta.env.VITE_API_BASE → '' (同源)
  * - 实际请求使用 `${backend}/api/modules/...`
  */
 
@@ -242,7 +242,7 @@ interface RetryUserMessageResponse {
 
 // ============ Helper Functions ============
 
-const DEFAULT_BACKEND: string = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE) || 'http://localhost:8050';
+const DEFAULT_BACKEND: string = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050');
 
 function _readLS(key: string): string | null {
   try { return (typeof window !== 'undefined') ? localStorage.getItem(key) : null } catch (_) { return null }
@@ -251,7 +251,7 @@ function _readLS(key: string): string | null {
 function getBackendBase(): string {
   const fromLS = _readLS('st.backend_base');
   const fromWin = (typeof window !== 'undefined') ? window.ST_BACKEND_BASE : null;
-  const base = String(fromLS || fromWin || DEFAULT_BACKEND || 'http://localhost:8050');
+  const base = String(fromLS || fromWin || DEFAULT_BACKEND);
   return base.replace(/\/+$/, '');
 }
 

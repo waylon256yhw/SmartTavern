@@ -150,7 +150,7 @@ declare global {
   interface ImportMetaEnv { VITE_API_BASE?: string }
 }
 
-const DEFAULT_BACKEND = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE) || 'http://localhost:8050'
+const DEFAULT_BACKEND = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050')
 
 function _readLS(key: string): string | null {
   try {
@@ -163,7 +163,7 @@ function _readLS(key: string): string | null {
 function getBackendBase(): string {
   const fromLS = _readLS('st.backend_base')
   const fromWin = (typeof window !== 'undefined') ? (window as any).ST_BACKEND_BASE : null
-  const base = String(fromLS || fromWin || DEFAULT_BACKEND || 'http://localhost:8050')
+  const base = String(fromLS || fromWin || DEFAULT_BACKEND)
   return base.replace(/\/+$/, '')
 }
 

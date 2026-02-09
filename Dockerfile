@@ -1,5 +1,12 @@
-FROM python:3.12-slim
+FROM oven/bun:1.2 AS frontend
+WORKDIR /build
+COPY frontend_projects/SmartTavern/package.json frontend_projects/SmartTavern/bun.lock* ./
+RUN bun install --frozen-lockfile
+COPY frontend_projects/SmartTavern/ ./
+COPY frontend_projects/SmartTavern/.env.production .env.production
+RUN bun run build
 
+FROM python:3.12-slim
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
@@ -14,8 +21,8 @@ RUN uv sync --frozen --no-install-project
 COPY . .
 RUN uv sync --frozen --no-editable
 
-RUN useradd -r -s /usr/sbin/nologin app && chown -R app:app /app
-USER app
+COPY --from=frontend /build/dist frontend_projects/SmartTavern/dist
+
 ENV UV_NO_CACHE=1 PYTHONUNBUFFERED=1
 
 EXPOSE 8050
@@ -23,4 +30,4 @@ EXPOSE 8050
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
     CMD curl -f http://localhost:8050/docs || exit 1
 
-CMD ["uv", "run", "python", "start_all_apis.py", "--host", "0.0.0.0", "--port", "8050"]
+CMD ["uv", "run", "python", "start_all_apis.py", "--host", "0.0.0.0", "--port", "8050", "--serve"]

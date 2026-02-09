@@ -93,22 +93,27 @@ async function bootstrapApp(): Promise<void> {
    * 1) localStorage('st.backend_base')
    * 2) window.ST_BACKEND_BASE
    * 3) import.meta.env.VITE_API_BASE
-   * 4) 'http://localhost:8050'
+   * 4) '' (production, same-origin) / 'http://localhost:8050' (dev)
    */
   (function initBackendBase(): void {
     try {
       const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {} as Record<string, any>
-      const def = env.VITE_API_BASE || 'http://localhost:8050'
+      const isProd = import.meta.env.PROD
+      const def = env.VITE_API_BASE || (isProd ? '' : 'http://localhost:8050')
       let base = def
       if (typeof window !== 'undefined') {
-        const fromLS = (function(): string | null { 
-          try { 
-            return localStorage.getItem('st.backend_base') 
-          } catch(_) { 
-            return null 
-          } 
+        const fromLS = (function(): string | null {
+          try {
+            return localStorage.getItem('st.backend_base')
+          } catch(_) {
+            return null
+          }
         })()
-        base = ((window as any).ST_BACKEND_BASE || fromLS || def)
+        if (isProd && fromLS && /^https?:\/\/localhost[:/]/.test(fromLS)) {
+          try { localStorage.removeItem('st.backend_base') } catch(_) {}
+        } else {
+          base = ((window as any).ST_BACKEND_BASE || fromLS || def)
+        }
         ;(window as any).ST_BACKEND_BASE = String(base).replace(/\/+$/, '')
       }
     } catch (_) {
@@ -191,8 +196,9 @@ async function bootstrapApp(): Promise<void> {
 
     async function loadPluginsFromSwitch(): Promise<void> {
       // 1) 加载前端固定工作流（内置编排）
+      const wfBase = import.meta.env.PROD ? '/assets/workflows' : '/src/workflow/workflows'
       const frontendWorkflows = [
-        { url: '/src/workflow/workflows/default-thread-orchestrator.js', name: 'default-thread-orchestrator' }
+        { url: `${wfBase}/default-thread-orchestrator.js`, name: 'default-thread-orchestrator' }
       ]
       for (const wf of frontendWorkflows) {
         try {

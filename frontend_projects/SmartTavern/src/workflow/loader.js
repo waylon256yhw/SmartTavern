@@ -31,7 +31,7 @@ let __seq = 1
  * - 以 'http' 开头：作为前缀匹配完整 URL
  * - 以 '/' 开头：匹配同源下的 pathname 前缀
  */
-let __whitelist = ['same-origin', 'blob:', 'data:', '/public/workflows/', '/workflows/', '/src/workflow/workflows/']
+let __whitelist = ['same-origin', 'blob:', 'data:', '/public/workflows/', '/workflows/', '/src/workflow/workflows/', '/assets/workflows/']
 
 /** 内部插件注册表：id -> { id, url, dispose?:Function, mod?:any } */
 const __plugins = new Map()
