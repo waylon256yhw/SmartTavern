@@ -20,6 +20,7 @@ from typing import Dict, Any, Optional
 import importlib.util
 
 framework_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(framework_root))
 
 try:
     import core

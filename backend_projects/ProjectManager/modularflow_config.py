@@ -17,7 +17,7 @@ VERSION = "1.0.0"
 DESCRIPTION = "ModularFlow 后端项目（仅 API 网关，无前端开发服务器）"
 
 # 运行命令（后端通常由框架统一启动，此处留空以避免误触发）
-INSTALL_COMMAND = "pip install -r requirements.txt"
+INSTALL_COMMAND = "uv sync"
 DEV_COMMAND = ""
 BUILD_COMMAND = ""
 

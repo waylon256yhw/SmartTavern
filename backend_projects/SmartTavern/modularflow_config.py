@@ -17,6 +17,6 @@ VERSION = "0.0.1"
 DESCRIPTION = "AI 对话后端 (FastAPI + Python)"
 
 # 运行命令
-INSTALL_COMMAND = "pip install -r requirements.txt"
-DEV_COMMAND = "python start_all_apis.py --reload"
+INSTALL_COMMAND = "uv sync"
+DEV_COMMAND = "uv run smarttavern --reload"
 BUILD_COMMAND = "echo 'No build required for Python backend'"
