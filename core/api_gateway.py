@@ -792,9 +792,12 @@ class APIGateway:
             return
 
         spa_index = index_path
+        api_prefix = self.config.api_prefix.lstrip("/") if self.config else "api"
 
         @self.app.get("/{full_path:path}")
         async def _spa_fallback(full_path: str):
+            if full_path.startswith(api_prefix):
+                raise HTTPException(404)
             if spa_index.exists():
                 return FileResponse(str(spa_index))
             raise HTTPException(404)

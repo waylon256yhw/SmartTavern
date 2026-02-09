@@ -6,3 +6,5 @@ dist/
 .git/
 docs/
 *.egg-info/
+.env
+.env.local

@@ -111,10 +111,8 @@ def create_app():
     reg = core.get_registry()
     print(f"[INFO] Registered API functions: {len(reg.list_functions())}")
 
-    from core.api_gateway import get_api_gateway, GatewayConfig
-    # 注意：此处 debug 设为 False，reload 将由 uvicorn 管理
-    gw_config = GatewayConfig(host="0.0.0.0", port=8050, debug=False)
-    gateway = get_api_gateway(config=gw_config)
+    from core.api_gateway import get_api_gateway
+    gateway = get_api_gateway()
 
     gateway.discover_and_register_functions()
     gateway.setup_websocket()
@@ -162,15 +160,11 @@ def main():
     reg = core.get_registry()
     print(f"[INFO] Registered API functions: {len(reg.list_functions())}")
 
-    from core.api_gateway import get_api_gateway, GatewayConfig
-    gw_config = GatewayConfig(host=args.host, port=args.port, debug=False)  # 避免 uvicorn reload 警告
-    gateway = get_api_gateway(config=gw_config, config_file=args.config)
-
-    gateway.discover_and_register_functions()
-    gateway.setup_websocket()
-    gateway.setup_static_files()
-    gateway._register_endpoints_to_fastapi()
-    gateway.setup_spa_fallback()
+    from core.api_gateway import get_api_gateway
+    gateway = get_api_gateway(config_file=args.config)
+    gateway.config.host = args.host
+    gateway.config.port = args.port
+    gateway.config.debug = False
 
     print(f"[INFO] Starting API Gateway on http://{args.host}:{args.port} (background={args.background}) ...")
     gateway.start_server(background=args.background)

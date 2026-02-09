@@ -1,3 +1,4 @@
+# 重建前端资源时需先清除 volume: docker compose down -v && docker compose up --build
 services:
   frontend-build:
     build:
@@ -5,6 +6,7 @@ services:
       dockerfile: Dockerfile.frontend
     volumes:
       - frontend_dist:/app/dist
+    command: ["true"]
 
   backend:
     build:

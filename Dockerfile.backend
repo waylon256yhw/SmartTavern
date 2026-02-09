@@ -6,12 +6,15 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev libpng-dev zlib1g-dev curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.7 /uv /usr/local/bin/uv
 
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-editable
 
 COPY . .
+
+RUN useradd -r -s /usr/sbin/nologin app && chown -R app:app /app
+USER app
 
 EXPOSE 8050
 
