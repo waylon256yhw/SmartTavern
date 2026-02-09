@@ -621,7 +621,7 @@ async function verifyAndSyncThemes() {
 
     <template #overlays>
       <transition name="st-panel-backdrop">
-        <div v-if="anyPanelOpen" class="st-panel-backdrop" @click="closeAllPanels()"></div>
+        <div v-if="anyPanelOpen" class="st-panel-backdrop" role="button" tabindex="-1" :aria-label="t('common.close')" @click="closeAllPanels()" @keydown.esc="closeAllPanels()"></div>
       </transition>
       
       <transition name="st-subpage">

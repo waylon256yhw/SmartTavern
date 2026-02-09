@@ -1,7 +1,7 @@
 <script setup>
 const props = defineProps({
   show: { type: Boolean, default: false },
-  message: { type: String, default: '加载中...' }
+  message: { type: String, default: '加载中\u2026' }
 })
 </script>
 

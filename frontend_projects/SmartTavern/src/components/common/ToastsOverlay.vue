@@ -144,7 +144,7 @@ function typeTitle(type) {
   margin: 0;
   border-radius: var(--st-spacing-sm);
   cursor: pointer;
-  transition: all var(--st-transition-normal);
+  transition: background-color var(--st-transition-normal), color var(--st-transition-normal);
   height: fit-content;
 }
 .st-toast__close:hover {

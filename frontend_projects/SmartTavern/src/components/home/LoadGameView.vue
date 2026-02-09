@@ -4,6 +4,7 @@ import Host from '@/workflow/core/host'
 import * as Conversation from '@/workflow/channels/conversation'
 import ChatBranches from '@/services/chatBranches'
 import DataCatalog from '@/services/dataCatalog'
+import DeleteConfirmModal from '@/components/common/DeleteConfirmModal.vue'
 import { useI18n } from '@/locales'
 
 const { t } = useI18n()
@@ -24,6 +25,34 @@ const loading = ref(false)
 const error = ref('')
 // items: [{ file, name, description, latest, character, persona, characterName, personaName, characterAvatarUrl, personaAvatarUrl, error? }]
 const items = ref([])
+
+const showDeleteModal = ref(false)
+const deleteTarget = ref(null)
+const deleting = ref(false)
+
+function onDelete(item) {
+  deleteTarget.value = { file: item.file, name: item.name || item.file }
+  showDeleteModal.value = true
+}
+
+function closeDeleteModal() {
+  showDeleteModal.value = false
+  deleteTarget.value = null
+}
+
+async function handleDeleteConfirm() {
+  if (!deleteTarget.value) return
+  deleting.value = true
+  try {
+    await ChatBranches.deleteConversation(deleteTarget.value.file)
+    loadData()
+  } catch (err) {
+    console.error('[LoadGameView] delete failed:', err)
+  } finally {
+    deleting.value = false
+    closeDeleteModal()
+  }
+}
 
 function baseName(file) {
   const s = String(file || '')
@@ -404,6 +433,7 @@ onMounted(() => {
             <button
               class="btn secondary"
               :title="t('home.loadGame.delete')"
+              @click="onDelete(it)"
             >
               <i data-lucide="trash-2" class="btn-icon"></i>
               {{ t('home.loadGame.delete') }}
@@ -458,6 +488,15 @@ onMounted(() => {
         </div>
       </div>
     </transition-group>
+
+    <DeleteConfirmModal
+      :show="showDeleteModal"
+      :item-name="deleteTarget?.name || ''"
+      :data-type-name="t('home.loadGame.typeName')"
+      :loading="deleting"
+      @close="closeDeleteModal"
+      @confirm="handleDeleteConfirm"
+    />
   </section>
 </template>
 

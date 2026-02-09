@@ -804,7 +804,7 @@ const {
   background: rgba(var(--st-surface-2), 0.8);
   color: rgb(var(--st-color-text));
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   white-space: nowrap;
 }
 
@@ -864,7 +864,7 @@ const {
   background: rgba(var(--st-surface-2), 0.5);
   border: 2px solid rgb(var(--st-border));
   border-radius: var(--st-radius-md, 6px);
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
   gap: var(--st-spacing-md, 10px);
   position: relative;
 }
@@ -912,7 +912,7 @@ const {
 .theme-drop-end {
   height: var(--st-theme-drop-end-height, 8px);
   border-radius: var(--st-radius-sm, 4px);
-  transition: all var(--st-transition-fast, 0.15s ease);
+  transition: height var(--st-transition-fast, 0.15s ease), background-color var(--st-transition-fast, 0.15s ease);
 }
 
 .theme-drop-end--active {
@@ -1106,7 +1106,7 @@ const {
   border-radius: var(--st-radius-md, 6px);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all var(--st-transition-fast, 0.15s ease);
+  transition: background-color var(--st-transition-fast, 0.15s ease), border-color var(--st-transition-fast, 0.15s ease), color var(--st-transition-fast, 0.15s ease);
   white-space: nowrap;
 }
 
@@ -1169,7 +1169,7 @@ const {
   border-radius: var(--st-radius-md, 6px);
   color: rgb(var(--st-color-text));
   cursor: pointer;
-  transition: all var(--st-transition-fast, 0.15s ease);
+  transition: background-color var(--st-transition-fast, 0.15s ease), border-color var(--st-transition-fast, 0.15s ease), color var(--st-transition-fast, 0.15s ease);
 }
 
 .st-refresh-btn:hover:not(:disabled) {

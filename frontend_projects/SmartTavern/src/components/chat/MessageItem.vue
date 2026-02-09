@@ -1123,7 +1123,7 @@ async function saveEdit() {
   color: rgba(var(--st-color-text), 0.6);
   width: var(--st-btn-sm); height: var(--st-btn-sm); border-radius: var(--st-radius-lg);
   cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
-  font-size: 18px; line-height: 1; transition: all var(--st-transition-fast);
+  font-size: 18px; line-height: 1; transition: background-color var(--st-transition-fast), border-color var(--st-transition-fast), color var(--st-transition-fast);
 }
 .menu-btn:hover { background: rgba(var(--st-surface-2), 0.8); border-color: rgba(var(--st-border), var(--st-border-alpha-strong)); color: rgba(var(--st-color-text), 0.9); }
 .menu-dropdown {
@@ -1223,7 +1223,7 @@ async function saveEdit() {
   border: 1px solid rgba(var(--st-border), var(--st-border-alpha-strong)); border-radius: var(--st-radius-full);
   background: rgb(var(--st-surface) / 0.78); backdrop-filter: blur(var(--st-blur-md)); -webkit-backdrop-filter: blur(var(--st-blur-md));
   color: rgba(var(--st-color-text), 0.9); box-shadow: var(--st-shadow-sm); margin-right: var(--st-spacing-md);
-  transition: all var(--st-transition-normal) ease;
+  transition: background-color var(--st-transition-normal) ease, color var(--st-transition-normal) ease, opacity var(--st-transition-normal) ease;
 }
 .status-chip.status-saving,
 .status-chip.status-deleting {
@@ -1339,7 +1339,7 @@ async function saveEdit() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--st-transition-fast);
+  transition: background-color var(--st-transition-fast), border-color var(--st-transition-fast), opacity var(--st-transition-fast);
 }
 .branch-btn:hover:not(:disabled) {
   background: rgba(var(--st-primary), var(--st-branch-btn-hover-bg-alpha, 0.15));

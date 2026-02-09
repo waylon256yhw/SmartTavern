@@ -221,7 +221,7 @@ select.st-number-input {
   border-radius: var(--st-radius-lg);
   background: rgb(var(--st-surface));
   cursor: pointer;
-  transition: all var(--st-transition-normal);
+  transition: border-color var(--st-transition-normal), background-color var(--st-transition-normal), box-shadow var(--st-transition-normal);
 }
 
 .st-radio-label:hover {

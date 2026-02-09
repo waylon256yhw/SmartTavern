@@ -216,12 +216,12 @@ async function bootstrapApp(): Promise<void> {
         if (Array.isArray(sw?.enabled)) {
           enabledNames = sw.enabled.map(x => String(x))
         } else {
-          Host.pushToast?.({ type: 'error', message: '缺失插件开关文件（plugins_switch.json）', timeout: 2800 })
+          Host.pushToast?.({ type: 'error', message: i18n.t('bootstrap.missingPluginSwitch'), timeout: 2800 })
           return
         }
       } catch (e) {
         console.warn('[bootstrap] getPluginsSwitch failed', e)
-        Host.pushToast?.({ type: 'error', message: '读取插件开关文件失败', timeout: 2600 })
+        Host.pushToast?.({ type: 'error', message: i18n.t('bootstrap.pluginSwitchReadFailed'), timeout: 2600 })
         return
       }
 
@@ -234,7 +234,7 @@ async function bootstrapApp(): Promise<void> {
         const errs = Array.isArray(res?.errors) ? res.errors : []
         for (const er of errs) {
           try {
-            Host.pushToast?.({ type: 'warning', message: `插件目录缺失：${er?.file || ''}`, timeout: 2600 })
+            Host.pushToast?.({ type: 'warning', message: i18n.t('bootstrap.pluginDirMissing', { file: er?.file || '' }), timeout: 2600 })
           } catch (_) {
             // Ignore errors
           }
@@ -264,11 +264,11 @@ async function bootstrapApp(): Promise<void> {
             loaded++
           } catch (e) {
             console.warn('[bootstrap] load plugin failed:', dir, e)
-            Host.pushToast?.({ type: 'error', message: `插件加载失败：${dir}`, timeout: 2200 })
+            Host.pushToast?.({ type: 'error', message: i18n.t('bootstrap.pluginLoadFailed', { dir }), timeout: 2200 })
           }
         }
         if (loaded > 0) {
-          Host.pushToast?.({ type: 'success', message: `已加载 ${loaded} 个插件`, timeout: 2000 })
+          Host.pushToast?.({ type: 'success', message: i18n.t('bootstrap.pluginsLoaded', { count: loaded }), timeout: 2000 })
         }
       } catch (e) {
         console.warn('[bootstrap] failed to load plugins', e)

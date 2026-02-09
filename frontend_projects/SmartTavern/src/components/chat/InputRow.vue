@@ -14,6 +14,8 @@
     <textarea
       ref="inputRef"
       v-model="text"
+      name="chat-input"
+      autocomplete="off"
       class="tch-input"
       :placeholder="effectivePlaceholder"
       :disabled="sending"

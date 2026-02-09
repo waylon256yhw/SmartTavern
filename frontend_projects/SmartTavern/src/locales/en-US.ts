@@ -38,13 +38,13 @@ const enUS = {
     create: 'Create',
     
     // Status
-    loading: 'Loading...',
-    importing: 'Importing...',
-    exporting: 'Exporting...',
-    saving: 'Saving...',
+    loading: 'Loading…',
+    importing: 'Importing…',
+    exporting: 'Exporting…',
+    saving: 'Saving…',
     saved: 'Saved!',
-    checking: 'Checking...',
-    processing: 'Processing...',
+    checking: 'Checking…',
+    processing: 'Processing…',
     
     // Form
     name: 'Name',
@@ -232,7 +232,7 @@ const enUS = {
     title: 'Confirm Delete',
     message: 'Are you sure you want to delete {type} "{name}"?',
     warning: 'This will delete the entire folder and all files within it. This action cannot be undone!',
-    deleting: 'Deleting...',
+    deleting: 'Deleting…',
   },
 
   // ==================== Create Item Modal ====================
@@ -250,7 +250,7 @@ const enUS = {
     removeIcon: 'Remove Icon',
     iconHint: 'Optional, supports common image formats',
     create: 'Create',
-    creating: 'Creating...',
+    creating: 'Creating…',
     errors: {
       emptyName: 'Name cannot be empty',
       emptyFolder: 'Folder name cannot be empty',
@@ -650,7 +650,7 @@ const enUS = {
       landscape: 'Landscape (Desktop/Tablet)',
       portrait: 'Portrait (Mobile)',
       noImage: 'No Image',
-      uploading: 'Uploading...',
+      uploading: 'Uploading…',
     },
     
     // Sandbox Appearance
@@ -988,8 +988,8 @@ const enUS = {
   app: {
     // Loading States
     loading: {
-      conversation: 'Loading conversation...',
-      sandbox: 'Loading sandbox project...',
+      conversation: 'Loading conversation…',
+      sandbox: 'Loading sandbox project…',
     },
     // Toast Messages
     toast: {
@@ -1056,12 +1056,13 @@ const enUS = {
       emptyHint: 'No saved conversations yet. Start a new chat and it will appear here.',
       confirm: 'Confirm',
       delete: 'Delete',
+      typeName: 'conversation',
     },
     // New Chat
     newChat: {
       title: 'New Chat',
-      loading: 'Loading list...',
-      creating: 'Creating...',
+      loading: 'Loading list…',
+      creating: 'Creating…',
       nameLabel: 'New Chat Name',
       namePlaceholder: 'Enter chat name',
       nameHelp: 'Allowed characters: letters, numbers, spaces, Chinese, -, _; Special characters (/ \\ : * ? " < > |) will be replaced with "-".',
@@ -1118,7 +1119,7 @@ const enUS = {
       unnamed: 'Unnamed',
     },
     routerClient: {
-      routerNotInjected: 'Router not injected or does not support call(action, ...)',
+      routerNotInjected: 'Router not injected or does not support call(action, …)',
     },
   },
 
@@ -1253,7 +1254,7 @@ const enUS = {
       sending: 'Sending',
       stop: 'Stop',
       stopWaiting: 'Stop Waiting',
-      placeholder: 'Enter message... (Enter to send, Shift+Enter for new line)',
+      placeholder: 'Enter message… (Enter to send, Shift+Enter for new line)',
       sendShortcut: 'Send (Enter)',
     },
     
@@ -1265,25 +1266,25 @@ const enUS = {
       copy: 'Copy',
       copied: 'Copied',
       retry: 'Retry',
-      editPlaceholder: 'Enter message content...',
+      editPlaceholder: 'Enter message content…',
       saveShortcut: 'Save (Ctrl+Enter)',
       cancelShortcut: 'Cancel (Esc)',
       
       // Status
-      waiting: 'Waiting...{seconds}s',
+      waiting: 'Waiting…{seconds}s',
       waitingAI: 'Waiting for AI response ({seconds}s)',
       sendSuccess: 'Sent successfully',
-      deleting: 'Deleting...',
+      deleting: 'Deleting…',
       deleteSuccess: 'Deleted successfully',
       deleteFailed: 'Delete failed',
       switchedToBranch: 'Switched to adjacent branch',
-      saving: 'Saving...',
+      saving: 'Saving…',
       saveSuccess: 'Saved successfully',
       saveFailed: 'Save failed',
     },
     
     branch: {
-      switching: 'Switching...',
+      switching: 'Switching…',
       switched: 'Switched',
       prevBranch: 'Switch to previous branch',
       nextBranch: 'Switch to next branch',
@@ -1305,6 +1306,14 @@ const enUS = {
       missingFileOrDoc: 'Missing conversation file or document',
       avatarLoadFailed: 'Avatar load failed, using default style',
     },
+  },
+
+  bootstrap: {
+    missingPluginSwitch: 'Missing plugin switch file (plugins_switch.json)',
+    pluginSwitchReadFailed: 'Failed to read plugin switch file',
+    pluginDirMissing: 'Plugin directory missing: {file}',
+    pluginLoadFailed: 'Failed to load plugin: {dir}',
+    pluginsLoaded: '{count} plugin(s) loaded',
   },
 }
 

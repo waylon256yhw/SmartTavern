@@ -7,6 +7,7 @@
 */
 
 :root {
+  color-scheme: light;
   /* UI 缩放变量（默认 1.0，由 JS 在 zoom 时同步设置） */
   --st-ui-scale: 1;
   
@@ -872,6 +873,7 @@
 
 /* 暗色主题 - 使用中性灰色配色 */
 [data-theme="dark"] {
+  color-scheme: dark;
   --st-color-bg: 18 18 20;
   --st-color-text: 235 235 240;
   --st-surface: 28 28 30;

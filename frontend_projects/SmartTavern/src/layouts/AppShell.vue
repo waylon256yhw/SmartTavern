@@ -84,6 +84,7 @@ const props = defineProps({
   height: calc(100vh / var(--st-ui-scale, 1));
   min-height: calc(100vh / var(--st-ui-scale, 1));
   overflow: hidden;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 .st-body {
   display: flex;

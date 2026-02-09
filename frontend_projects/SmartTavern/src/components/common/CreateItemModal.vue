@@ -1,7 +1,8 @@
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, toRef } from 'vue'
 import DataCatalog from '@/services/dataCatalog'
 import { useI18n } from '@/locales'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 
 const { t } = useI18n()
 
@@ -173,13 +174,16 @@ watch(() => props.show, (v) => {
     window.removeEventListener('keydown', handleKeydown)
   }
 }, { immediate: true })
+
+const modalRef = ref(null)
+useFocusTrap(modalRef, toRef(props, 'show'))
 </script>
 
 <template>
   <Teleport to="body">
     <transition name="modal-fade">
       <div v-if="show" class="cim-overlay" @click.self="handleClose">
-        <div class="cim-modal">
+        <div ref="modalRef" class="cim-modal" role="dialog" aria-modal="true" aria-labelledby="create-item-modal-title">
           <header class="cim-header">
             <div class="cim-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -187,7 +191,7 @@ watch(() => props.show, (v) => {
                 <path d="M5 12h14"></path>
               </svg>
             </div>
-            <h3 class="cim-title">{{ t('createItem.title', { type: dataTypeName }) }}</h3>
+            <h3 id="create-item-modal-title" class="cim-title">{{ t('createItem.title', { type: dataTypeName }) }}</h3>
             <button class="cim-close" @click="handleClose" :disabled="creating">✕</button>
           </header>
 
@@ -320,6 +324,7 @@ watch(() => props.show, (v) => {
   background: var(--st-modal-overlay-dark-bg, rgba(0, 0, 0, 0.6));
   backdrop-filter: blur(var(--st-blur-xs, 4px));
   -webkit-backdrop-filter: blur(var(--st-blur-xs, 4px));
+  overscroll-behavior: contain;
 }
 
 .cim-modal {
@@ -407,7 +412,7 @@ watch(() => props.show, (v) => {
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  transition: all var(--st-transition-normal);
+  transition: border-color var(--st-transition-normal), color var(--st-transition-normal), background-color var(--st-transition-normal);
   background: rgb(var(--st-surface));
   color: rgba(var(--st-color-text), 0.3);
 }
@@ -522,7 +527,7 @@ watch(() => props.show, (v) => {
   background: rgb(var(--st-surface));
   color: rgb(var(--st-color-text));
   outline: none;
-  transition: all var(--st-transition-normal);
+  transition: border-color var(--st-transition-normal), background-color var(--st-transition-normal);
   font-family: inherit;
 }
 
@@ -588,7 +593,7 @@ watch(() => props.show, (v) => {
   font-weight: 500;
   border-radius: var(--st-radius-md, 8px);
   cursor: pointer;
-  transition: all var(--st-transition-normal);
+  transition: background-color var(--st-transition-normal), border-color var(--st-transition-normal), box-shadow var(--st-transition-normal), filter var(--st-transition-normal);
 }
 
 .cim-btn:disabled {

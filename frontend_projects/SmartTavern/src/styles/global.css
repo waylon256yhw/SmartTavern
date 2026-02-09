@@ -138,7 +138,7 @@ input[type="checkbox"] {
   background: rgb(255, 255, 255) !important;
   cursor: pointer;
   position: relative;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   vertical-align: middle;
 }
 
@@ -222,7 +222,7 @@ input[type="checkbox"]:disabled {
   bottom: 0;
   background-color: rgb(200, 200, 205);
   border-radius: 22px;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease;
 }
 
 .st-switch .st-slider::before {
@@ -234,7 +234,7 @@ input[type="checkbox"]:disabled {
   bottom: 3px;
   background-color: white;
   border-radius: 50%;
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, background-color 0.3s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
@@ -767,7 +767,7 @@ input[type="range"]::-webkit-slider-thumb {
   box-shadow: 0 2px 8px rgba(34, 197, 94, 0.5) !important;
   margin-top: -6px !important;
   cursor: grab;
-  transition: all 0.15s ease;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 /* Firefox */
@@ -779,7 +779,7 @@ input[type="range"]::-moz-range-thumb {
   border: 2px solid #15803d !important;
   box-shadow: 0 2px 8px rgba(34, 197, 94, 0.5) !important;
   cursor: grab;
-  transition: all 0.15s ease;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 /* 悬停时滑块 */
@@ -926,4 +926,17 @@ input[type="range"]:disabled::-webkit-slider-thumb {
 
 input[type="range"]:disabled::-moz-range-thumb {
   cursor: not-allowed;
+}
+
+/* ========================== */
+/* prefers-reduced-motion     */
+/* ========================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

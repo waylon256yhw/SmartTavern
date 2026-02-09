@@ -1,6 +1,7 @@
 <script setup>
-import { computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, toRef } from 'vue'
 import { useI18n } from '@/locales'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 
 const { t } = useI18n()
 
@@ -94,6 +95,9 @@ function close() {
   emit('close')
 }
 
+const modalRef = ref(null)
+useFocusTrap(modalRef, toRef(props, 'show'))
+
 // 监听显示状态刷新图标
 watch(() => props.show, (v) => {
   if (v) {
@@ -112,12 +116,12 @@ onMounted(() => {
   <teleport to="body">
     <transition name="modal-fade">
       <div v-if="show" class="iem-overlay" @click.self="close">
-        <div class="iem-modal" role="dialog" aria-modal="true">
+        <div ref="modalRef" class="iem-modal" role="dialog" aria-modal="true" aria-labelledby="import-error-modal-title">
           <div class="iem-header">
             <div class="iem-icon-wrap" :class="errorCode === 'TYPE_MISMATCH' ? 'iem-icon-warning' : 'iem-icon-error'">
               <i :data-lucide="errorIcon"></i>
             </div>
-            <h3 class="iem-title">{{ errorTitle }}</h3>
+            <h3 id="import-error-modal-title" class="iem-title">{{ errorTitle }}</h3>
             <button class="iem-close" type="button" :title="t('common.close')" @click="close">✕</button>
           </div>
 
@@ -184,6 +188,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  overscroll-behavior: contain;
 }
 
 .iem-modal {

@@ -1,7 +1,8 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, toRef } from 'vue'
 import DataCatalog from '@/services/dataCatalog'
 import { useI18n } from '@/locales'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 
 const { t } = useI18n()
 
@@ -192,14 +193,17 @@ async function doExport() {
 function handleClose() {
   emit('close')
 }
+
+const modalRef = ref(null)
+useFocusTrap(modalRef, toRef(props, 'show'))
 </script>
 
 <template>
   <Teleport to="body">
     <div v-if="show" class="export-modal-overlay" @click.self="handleClose">
-      <div class="export-modal">
+      <div ref="modalRef" class="export-modal" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
         <header class="export-modal-header">
-          <h3>{{ t('exportModal.title', { type: dataTypeName }) }}</h3>
+          <h3 id="export-modal-title">{{ t('exportModal.title', { type: dataTypeName }) }}</h3>
           <button class="export-modal-close" @click="handleClose">✕</button>
         </header>
         
@@ -396,6 +400,7 @@ function handleClose() {
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(var(--st-backdrop-blur-xs));
+  overscroll-behavior: contain;
 }
 
 .export-modal {
@@ -480,7 +485,7 @@ function handleClose() {
   border: 1px solid rgb(var(--st-border) / 0.8);
   border-radius: var(--st-radius-lg);
   cursor: pointer;
-  transition: all var(--st-transition-normal);
+  transition: background-color var(--st-transition-normal), border-color var(--st-transition-normal), box-shadow var(--st-transition-normal);
   flex-shrink: 0;
   background: rgb(var(--st-surface) / 0.5);
 }
@@ -503,7 +508,7 @@ function handleClose() {
   background: rgb(var(--st-surface));
   border: 2px solid rgb(var(--st-border) / var(--st-border-alpha-medium));
   flex-shrink: 0;
-  transition: all var(--st-transition-normal);
+  transition: background-color var(--st-transition-normal), border-color var(--st-transition-normal);
 }
 .export-item-item:hover .export-item-check {
   border-color: rgb(var(--st-border) / var(--st-border-alpha-strong));
@@ -624,7 +629,7 @@ function handleClose() {
   border: 1px solid rgb(var(--st-border) / var(--st-border-alpha-medium));
   border-radius: var(--st-radius-lg);
   cursor: pointer;
-  transition: all var(--st-transition-normal) ease;
+  transition: background-color var(--st-transition-normal) ease, border-color var(--st-transition-normal) ease, box-shadow var(--st-transition-normal) ease;
   background: rgb(var(--st-surface) / 0.5);
 }
 .export-format-card:hover {
@@ -646,7 +651,7 @@ function handleClose() {
   background: rgb(var(--st-border) / 0.12);
   color: rgb(var(--st-color-text) / 0.6);
   flex-shrink: 0;
-  transition: all var(--st-transition-normal);
+  transition: background-color var(--st-transition-normal), color var(--st-transition-normal);
 }
 .export-format-card.selected .export-format-card-icon {
   background: rgb(var(--st-color-text) / 0.1);
@@ -679,7 +684,7 @@ function handleClose() {
   background: rgb(var(--st-surface));
   border: 2px solid rgb(var(--st-border) / 0.5);
   flex-shrink: 0;
-  transition: all var(--st-transition-normal);
+  transition: background-color var(--st-transition-normal), border-color var(--st-transition-normal);
 }
 .export-format-card:hover .export-format-card-check {
   border-color: rgb(var(--st-border) / 0.8);
@@ -724,7 +729,7 @@ function handleClose() {
   border: 2px dashed rgb(var(--st-border) / var(--st-border-alpha-medium));
   border-radius: var(--st-radius-lg);
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: border-color 0.25s ease, background-color 0.25s ease, transform 0.25s ease;
   min-height: 160px;
   position: relative;
   background-color: rgb(var(--st-surface-2) / 0.3);
@@ -755,7 +760,7 @@ function handleClose() {
   background: rgb(var(--st-border) / 0.1);
   border: 2px dashed rgb(var(--st-border) / 0.4);
   color: rgb(var(--st-color-text) / 0.5);
-  transition: all var(--st-transition-normal);
+  transition: background-color var(--st-transition-normal), border-color var(--st-transition-normal), color var(--st-transition-normal);
 }
 .export-image-dropzone:hover .export-image-icon-wrapper {
   background: rgb(var(--st-border) / 0.15);
@@ -824,7 +829,7 @@ function handleClose() {
   padding: var(--st-spacing-md) var(--st-spacing-2xl);
   font-size: var(--st-font-base);
   cursor: pointer;
-  transition: all var(--st-transition-normal);
+  transition: background-color var(--st-transition-normal), border-color var(--st-transition-normal), color var(--st-transition-normal);
 }
 .export-btn-cancel {
   border: 1px solid rgb(var(--st-border) / var(--st-border-alpha-strong));

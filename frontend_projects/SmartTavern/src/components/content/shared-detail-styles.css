@@ -271,7 +271,7 @@
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  transition: all var(--st-transition-normal);
+  transition: border-color var(--st-transition-normal), color var(--st-transition-normal), background-color var(--st-transition-normal);
   background: rgb(var(--st-surface));
   color: rgba(var(--st-color-text), 0.3);
 }

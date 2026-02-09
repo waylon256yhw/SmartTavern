@@ -260,7 +260,7 @@ onMounted(() => {
   font-size: var(--st-font-md);
   font-weight: var(--st-retry-btn-font-weight, 500);
   cursor: pointer;
-  transition: all var(--st-transition-normal) ease;
+  transition: background-color var(--st-transition-normal) ease, border-color var(--st-transition-normal) ease, transform var(--st-transition-normal) ease;
 }
 
 .retry-button:hover {

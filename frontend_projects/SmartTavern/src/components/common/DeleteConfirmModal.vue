@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, toRef } from 'vue'
 import { useI18n } from '@/locales'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 
 const { t } = useI18n()
 
@@ -47,13 +48,16 @@ watch(visible, (v) => {
     window.removeEventListener('keydown', handleKeydown)
   }
 }, { immediate: true })
+
+const modalRef = ref(null)
+useFocusTrap(modalRef, visible)
 </script>
 
 <template>
   <Teleport to="body">
     <transition name="modal-fade">
       <div v-if="visible" class="dcm-overlay" @click.self="close">
-        <div class="dcm-modal">
+        <div ref="modalRef" class="dcm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-confirm-modal-title">
           <header class="dcm-header">
             <div class="dcm-icon dcm-icon-warning">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -64,7 +68,7 @@ watch(visible, (v) => {
                 <line x1="14" y1="11" x2="14" y2="17"></line>
               </svg>
             </div>
-            <h3 class="dcm-title">{{ t('deleteConfirm.title') }}</h3>
+            <h3 id="delete-confirm-modal-title" class="dcm-title">{{ t('deleteConfirm.title') }}</h3>
           </header>
 
           <div class="dcm-body">
@@ -112,6 +116,7 @@ watch(visible, (v) => {
   background: var(--st-modal-overlay-dark-bg);
   backdrop-filter: blur(var(--st-blur-xs));
   -webkit-backdrop-filter: blur(var(--st-blur-xs));
+  overscroll-behavior: contain;
 }
 
 .dcm-modal {
@@ -194,7 +199,7 @@ watch(visible, (v) => {
   font-weight: 500;
   border-radius: var(--st-radius-md);
   cursor: pointer;
-  transition: all var(--st-transition-normal);
+  transition: background-color var(--st-transition-normal), border-color var(--st-transition-normal), box-shadow var(--st-transition-normal), color var(--st-transition-normal);
 }
 
 .dcm-btn:disabled {

@@ -1,11 +1,16 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useOptionsStore } from '@/stores/workflow/options'
 import { useI18n } from '@/locales'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 
 const { t } = useI18n()
 const store = useOptionsStore()
 const currentOption = computed(() => store.current)
+
+const panelRef = ref(null)
+const isActive = computed(() => !!currentOption.value)
+useFocusTrap(panelRef, isActive)
 
 /** 处理选项选择 */
 function handleSelect(value) {
@@ -56,13 +61,15 @@ function handleCancel() {
   <transition name="st-options-panel">
     <div
       v-if="currentOption"
+      ref="panelRef"
       class="st-options-panel"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="options-panel-title"
     >
       <div class="st-options-content">
         <!-- 标题 -->
-        <div v-if="currentOption.title" class="st-options-title">
+        <div v-if="currentOption.title" id="options-panel-title" class="st-options-title">
           {{ currentOption.title }}
         </div>
         
@@ -224,7 +231,7 @@ function handleCancel() {
   font-size: var(--st-font-base);
   font-weight: 500;
   cursor: pointer;
-  transition: all var(--st-transition-fast);
+  transition: background-color var(--st-transition-fast), border-color var(--st-transition-fast), color var(--st-transition-fast), transform var(--st-transition-fast);
   display: flex;
   align-items: center;
   gap: var(--st-spacing-md);
@@ -268,7 +275,7 @@ function handleCancel() {
   border-radius: var(--st-radius-circle);
   background: var(--st-options-bg);
   position: relative;
-  transition: all var(--st-transition-fast);
+  transition: border-color var(--st-transition-fast), background-color var(--st-transition-fast);
 }
 
 .st-radio-dot.is-active {
@@ -300,7 +307,7 @@ function handleCancel() {
   font-size: var(--st-font-xs);
   font-weight: 700;
   color: transparent;
-  transition: all var(--st-transition-fast);
+  transition: border-color var(--st-transition-fast), color var(--st-transition-fast), background-color var(--st-transition-fast);
 }
 
 .st-checkbox-check.is-active {
@@ -333,7 +340,7 @@ function handleCancel() {
   font-size: var(--st-font-base);
   font-weight: 500;
   cursor: pointer;
-  transition: all var(--st-transition-fast);
+  transition: background-color var(--st-transition-fast), border-color var(--st-transition-fast), color var(--st-transition-fast);
   min-width: var(--st-btn-min-width);
 }
 

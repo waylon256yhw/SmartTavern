@@ -1,7 +1,8 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, toRef } from 'vue'
 import DataCatalog from '@/services/dataCatalog'
 import { useI18n } from '@/locales'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 
 const { t } = useI18n()
 
@@ -64,14 +65,17 @@ async function handleRename() {
 function handleClose() {
   emit('close')
 }
+
+const modalRef = ref(null)
+useFocusTrap(modalRef, toRef(props, 'show'))
 </script>
 
 <template>
   <Teleport to="body">
     <div v-if="show" class="import-conflict-overlay" @click.self="handleClose">
-      <div class="import-conflict-modal">
+      <div ref="modalRef" class="import-conflict-modal" role="dialog" aria-modal="true" aria-labelledby="import-conflict-modal-title">
         <header class="import-conflict-header">
-          <h3>{{ t('importConflict.title') }}</h3>
+          <h3 id="import-conflict-modal-title">{{ t('importConflict.title') }}</h3>
           <button class="import-conflict-close" @click="handleClose">✕</button>
         </header>
         
@@ -154,6 +158,7 @@ function handleClose() {
   justify-content: center;
   z-index: 1100;
   backdrop-filter: blur(var(--st-spacing-sm));
+  overscroll-behavior: contain;
 }
 
 .import-conflict-modal {
@@ -227,7 +232,7 @@ function handleClose() {
   border: 1px solid rgb(var(--st-border) / var(--st-border-alpha-medium));
   border-radius: var(--st-spacing-md);
   cursor: pointer;
-  transition: all var(--st-transition-normal);
+  transition: background-color var(--st-transition-normal), border-color var(--st-transition-normal), transform var(--st-transition-normal), box-shadow var(--st-transition-normal);
   background: rgb(var(--st-surface-2) / 0.3);
 }
 .import-conflict-option:hover {
@@ -295,7 +300,7 @@ function handleClose() {
   background: rgb(var(--st-surface) / 0.8);
   color: rgb(var(--st-color-text));
   outline: none;
-  transition: all var(--st-transition-normal);
+  transition: border-color var(--st-transition-normal), background-color var(--st-transition-normal);
 }
 .import-conflict-rename-input:focus {
   border-color: rgb(var(--st-color-text));
@@ -318,7 +323,7 @@ function handleClose() {
   font-size: var(--st-font-base);
   font-weight: 500;
   cursor: pointer;
-  transition: all var(--st-transition-normal);
+  transition: background-color var(--st-transition-normal), opacity var(--st-transition-normal);
   white-space: nowrap;
 }
 .import-conflict-rename-btn:hover:not(:disabled) {
@@ -353,7 +358,7 @@ function handleClose() {
   padding: var(--st-spacing-lg) var(--st-spacing-4xl);
   font-size: var(--st-font-base);
   cursor: pointer;
-  transition: all var(--st-transition-normal);
+  transition: background-color var(--st-transition-normal);
 }
 .import-conflict-btn-cancel:hover {
   background: rgb(var(--st-surface-2) / 0.8);

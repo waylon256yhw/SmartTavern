@@ -38,13 +38,13 @@ const zhCN = {
     create: '新建',
     
     // 状态
-    loading: '加载中...',
-    importing: '正在导入...',
-    exporting: '导出中...',
-    saving: '保存中...',
+    loading: '加载中…',
+    importing: '正在导入…',
+    exporting: '导出中…',
+    saving: '保存中…',
     saved: '已保存！',
-    checking: '检查中...',
-    processing: '处理中...',
+    checking: '检查中…',
+    processing: '处理中…',
     
     // 表单
     name: '名称',
@@ -232,7 +232,7 @@ const zhCN = {
     title: '确认删除',
     message: '确定要删除{type}「{name}」吗？',
     warning: '此操作将删除整个文件夹及其中的所有文件，且无法撤销！',
-    deleting: '删除中...',
+    deleting: '删除中…',
   },
 
   // ==================== 新建弹窗 ====================
@@ -250,7 +250,7 @@ const zhCN = {
     removeIcon: '移除图标',
     iconHint: '可选，支持常见图片格式',
     create: '创建',
-    creating: '创建中...',
+    creating: '创建中…',
     errors: {
       emptyName: '名称不能为空',
       emptyFolder: '文件夹名称不能为空',
@@ -424,7 +424,7 @@ const zhCN = {
       personaInfoName: '用户信息名称',
       personaInfoNamePlaceholder: '输入用户信息名称',
       personaInfoDesc: '用户信息描述',
-      personaInfoDescPlaceholder: '输入用户信息描述，可以包含用户的偏好、背景、对话风格等...',
+      personaInfoDescPlaceholder: '输入用户信息描述，可以包含用户的偏好、背景、对话风格等…',
       personaName: '用户名称',
       personaNamePlaceholder: '在对话中显示的用户名称（可选）',
       personaBadge: '用户徽章',
@@ -592,7 +592,7 @@ const zhCN = {
       pluginName: '插件名称',
       pluginNamePlaceholder: '输入插件名称',
       pluginDesc: '插件描述',
-      pluginDescPlaceholder: '输入插件描述，可以包含插件的功能、用法等...',
+      pluginDescPlaceholder: '输入插件描述，可以包含插件的功能、用法等…',
       
       notes: {
         title: '说明',
@@ -614,7 +614,7 @@ const zhCN = {
       themeName: '主题名称',
       themeNamePlaceholder: '输入主题名称',
       themeDesc: '主题描述',
-      themeDescPlaceholder: '输入主题描述，可以包含主题的风格、特点等...',
+      themeDescPlaceholder: '输入主题描述，可以包含主题的风格、特点等…',
       
       notes: {
         title: '说明',
@@ -650,7 +650,7 @@ const zhCN = {
       landscape: '横版（桌面/平板）',
       portrait: '竖版（手机）',
       noImage: '暂无图片',
-      uploading: '上传中...',
+      uploading: '上传中…',
     },
     
     // 沙盒外观
@@ -988,8 +988,8 @@ const zhCN = {
   app: {
     // 加载状态
     loading: {
-      conversation: '正在加载对话...',
-      sandbox: '正在加载sandbox项目...',
+      conversation: '正在加载对话…',
+      sandbox: '正在加载sandbox项目…',
     },
     // Toast 消息
     toast: {
@@ -1056,6 +1056,7 @@ const zhCN = {
       emptyHint: '暂无历史对话，开始新对话后将在此处显示',
       confirm: '确认',
       delete: '删除',
+      typeName: '对话存档',
     },
     // 新建对话
     newChat: {
@@ -1118,7 +1119,7 @@ const zhCN = {
       unnamed: '未命名',
     },
     routerClient: {
-      routerNotInjected: '路由器未注入或不支持 call(action, ...)',
+      routerNotInjected: '路由器未注入或不支持 call(action, …)',
     },
   },
 
@@ -1253,7 +1254,7 @@ const zhCN = {
       sending: '发送中',
       stop: '停止',
       stopWaiting: '停止等待',
-      placeholder: '输入消息... (Enter 发送，Shift+Enter 换行)',
+      placeholder: '输入消息… (Enter 发送，Shift+Enter 换行)',
       sendShortcut: '发送 (Enter)',
     },
     
@@ -1265,25 +1266,25 @@ const zhCN = {
       copy: '复制',
       copied: '已复制',
       retry: '重试',
-      editPlaceholder: '输入消息内容...',
+      editPlaceholder: '输入消息内容…',
       saveShortcut: '保存 (Ctrl+Enter)',
       cancelShortcut: '取消 (Esc)',
       
       // 状态
-      waiting: '等待中...{seconds}s',
+      waiting: '等待中…{seconds}s',
       waitingAI: '等待AI响应（{seconds}s）',
       sendSuccess: '发送成功',
-      deleting: '删除中...',
+      deleting: '删除中…',
       deleteSuccess: '删除成功',
       deleteFailed: '删除失败',
       switchedToBranch: '已切换到相邻分支',
-      saving: '保存中...',
+      saving: '保存中…',
       saveSuccess: '保存成功',
       saveFailed: '保存失败',
     },
     
     branch: {
-      switching: '切换中...',
+      switching: '切换中…',
       switched: '已切换',
       prevBranch: '切换到前一个分支',
       nextBranch: '切换到下一个分支',
@@ -1305,6 +1306,14 @@ const zhCN = {
       missingFileOrDoc: '缺少对话文件或文档',
       avatarLoadFailed: '头像加载失败，使用默认样式',
     },
+  },
+
+  bootstrap: {
+    missingPluginSwitch: '缺失插件开关文件（plugins_switch.json）',
+    pluginSwitchReadFailed: '读取插件开关文件失败',
+    pluginDirMissing: '插件目录缺失：{file}',
+    pluginLoadFailed: '插件加载失败：{dir}',
+    pluginsLoaded: '已加载 {count} 个插件',
   },
 }
 

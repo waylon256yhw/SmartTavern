@@ -1,20 +1,24 @@
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, toRef } from 'vue'
 import { useI18n } from '@/locales'
 import CustomScrollbar2 from '@/components/common/CustomScrollbar2.vue'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 
 const { t } = useI18n()
 
 const props = defineProps({
   show: { type: Boolean, default: false },
   title: { type: String, default: '' },
-  icon: { type: String, default: '' }, // lucide icon name
+  icon: { type: String, default: '' },
   autoHeight: { type: Boolean, default: false },
 })
 
 const effectiveTitle = computed(() => props.title || t('components.modal.defaultTitle'))
 
 const emit = defineEmits(['close', 'update:show'])
+
+const modalRef = ref(null)
+useFocusTrap(modalRef, toRef(props, 'show'))
 
 function close() {
   emit('close')
@@ -43,14 +47,14 @@ watch(() => props.show, (v) => {
   <Teleport to="body">
     <transition name="modal-fade">
       <div v-if="show" class="modal-overlay" @click.self="close">
-        <div class="modal-container glass" :class="{ 'is-auto-height': autoHeight }">
+        <div ref="modalRef" class="modal-container glass" :class="{ 'is-auto-height': autoHeight }" role="dialog" aria-modal="true" aria-labelledby="content-view-modal-title">
           <!-- 顶部栏 -->
           <header class="modal-header">
-            <div class="modal-title">
+            <div id="content-view-modal-title" class="modal-title">
               <i v-if="icon" :data-lucide="icon" class="modal-icon icon-20" aria-hidden="true"></i>
               {{ effectiveTitle }}
             </div>
-            <button class="modal-close" type="button" :title="t('components.modal.closeEsc')" @click="close">✕</button>
+            <button class="modal-close" type="button" :aria-label="t('components.modal.closeEsc')" :title="t('components.modal.closeEsc')" @click="close">✕</button>
           </header>
 
           <!-- 内容区域 -->
@@ -77,6 +81,7 @@ watch(() => props.show, (v) => {
   backdrop-filter: blur(var(--st-blur-lg)) saturate(140%);
   -webkit-backdrop-filter: blur(var(--st-blur-lg)) saturate(140%);
   padding: var(--st-gap-2xl);
+  overscroll-behavior: contain;
 }
 
 .modal-container {

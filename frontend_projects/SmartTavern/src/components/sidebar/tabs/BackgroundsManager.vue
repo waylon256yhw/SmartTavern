@@ -486,7 +486,7 @@ onMounted(() => {
   border: 1px solid rgb(var(--st-border-default));
   border-radius: 0.375rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   overflow: hidden;
 }
 

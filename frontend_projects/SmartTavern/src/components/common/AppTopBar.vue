@@ -93,7 +93,7 @@ const viewTitle = computed(() => {
  color: rgba(var(--st-color-text),0.7);
  width: var(--st-btn-md); height: var(--st-btn-md); border-radius: var(--st-radius-md);
  display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
- transition: all var(--st-transition-fast);
+ transition: background-color var(--st-transition-fast), color var(--st-transition-fast), transform var(--st-transition-fast);
 }
 .icon-btn:hover{ background: rgba(var(--st-surface-2),var(--st-border-alpha-strong)); color: rgba(var(--st-color-text),0.95); transform: translateY(var(--st-topbar-hover-lift, -1px)); }
 .icon-16 { width: var(--st-icon-md); height: var(--st-icon-md); stroke: currentColor; }

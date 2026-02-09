@@ -1436,7 +1436,7 @@ function shouldRenderIframe(idx) {
   justify-content: center;
   font-size: 18px;
   line-height: 1;
-  transition: all var(--st-transition-fast);
+  transition: background-color var(--st-transition-fast), border-color var(--st-transition-fast), color var(--st-transition-fast);
 }
 
 .menu-btn:hover {
@@ -1536,7 +1536,7 @@ function shouldRenderIframe(idx) {
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  transition: all var(--st-transition-fast);
+  transition: background-color var(--st-transition-fast), border-color var(--st-transition-fast), opacity var(--st-transition-fast);
 }
 
 .branch-btn:hover:not(:disabled) {
