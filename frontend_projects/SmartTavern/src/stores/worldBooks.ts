@@ -59,8 +59,8 @@ async function readJsonFromBlob(blob: Blob): Promise<WorldBookMeta | null> {
 
 export const useWorldBooksStore = defineStore('worldBooks', () => {
   // 状态：存储多个世界书文件路径及其元数据
-  const currentWorldBookFiles = ref<string[]>([])  // Array<string>: backend_projects/.../world_books/.../worldbook.json
-  const metas = ref<Record<string, WorldBookMeta | null>>({})  // { [file: string]: meta } 世界书元数据字典
+  const currentWorldBookFiles = ref<string[]>([]) // Array<string>: backend_projects/.../world_books/.../worldbook.json
+  const metas = ref<Record<string, WorldBookMeta | null>>({}) // { [file: string]: meta } 世界书元数据字典
   const loading = ref<boolean>(false)
   const error = ref<string>('')
 
@@ -68,21 +68,19 @@ export const useWorldBooksStore = defineStore('worldBooks', () => {
   async function refreshFromConversation(): Promise<void> {
     // 不再需要手动处理，由 watch 自动监听 chatSettings.worldBooksFiles
   }
-  
+
   // 监听 chatSettings.worldBooksFiles 的变化，自动加载世界书
   const chatSettingsStore = useChatSettingsStore()
   watch(
     () => chatSettingsStore.worldBooksFiles,
     async (newFiles) => {
-      const worldBookFiles = Array.isArray(newFiles)
-        ? newFiles.map(f => toPosix(f))
-        : []
-      
+      const worldBookFiles = Array.isArray(newFiles) ? newFiles.map((f) => toPosix(f)) : []
+
       if (!worldBookFiles.length) {
         _setAll([], {})
         return
       }
-      
+
       loading.value = true
       error.value = ''
       try {
@@ -94,15 +92,15 @@ export const useWorldBooksStore = defineStore('worldBooks', () => {
         loading.value = false
       }
     },
-    { immediate: true, deep: true }
+    { immediate: true, deep: true },
   )
 
   /** 直接从"世界书文件路径列表"刷新状态（绕过 settings） */
   async function refreshFromWorldBookFiles(worldBookFiles: string[]): Promise<void> {
-    const files = Array.isArray(worldBookFiles) 
-      ? worldBookFiles.map(f => toPosix(f)).filter(Boolean)
+    const files = Array.isArray(worldBookFiles)
+      ? worldBookFiles.map((f) => toPosix(f)).filter(Boolean)
       : []
-    
+
     loading.value = true
     error.value = ''
     try {
@@ -118,7 +116,7 @@ export const useWorldBooksStore = defineStore('worldBooks', () => {
           } catch {
             nextMetas[wbFile] = null
           }
-        })
+        }),
       )
 
       _setAll(files, nextMetas)
@@ -200,7 +198,9 @@ export interface RegisterGlobalFunctionsOptions {
   exposeToWindow?: boolean
 }
 
-export function registerGlobalFunctions({ exposeToWindow = true }: RegisterGlobalFunctionsOptions = {}): void {
+export function registerGlobalFunctions({
+  exposeToWindow = true,
+}: RegisterGlobalFunctionsOptions = {}): void {
   if (typeof window === 'undefined') return
   if (exposeToWindow) {
     try {
@@ -214,7 +214,7 @@ export function registerGlobalFunctions({ exposeToWindow = true }: RegisterGloba
       })
     } catch {
       // 回退直接赋值
-      (window as any).getWorldBooks = (key?: string) => getWorldBooks(key)
+      ;(window as any).getWorldBooks = (key?: string) => getWorldBooks(key)
     }
   }
 }

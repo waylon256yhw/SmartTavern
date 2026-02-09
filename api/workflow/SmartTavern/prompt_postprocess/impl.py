@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 SmartTavern Prompt Post-Process Workflow Implementation (impl.py)
 
@@ -11,9 +10,10 @@ SmartTavern Prompt Post-Process Workflow Implementation (impl.py)
 - 输出：{"message":[...], "variables": {initial, final}}
 """
 
-from typing import Any, Dict, List, Optional, Tuple
 import asyncio
 import copy
+from typing import Any
+
 import core  # type: ignore
 
 
@@ -22,7 +22,7 @@ def _dbg(label: str, data: Any = None) -> None:
     return None
 
 
-def _first_content(msgs: List[Dict[str, Any]]) -> str:
+def _first_content(msgs: list[dict[str, Any]]) -> str:
     try:
         if msgs and isinstance(msgs[0], dict):
             return str(msgs[0].get("content", ""))
@@ -31,14 +31,14 @@ def _first_content(msgs: List[Dict[str, Any]]) -> str:
     return ""
 
 
-def _deepcopy_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _deepcopy_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     try:
         return copy.deepcopy(messages or [])
     except Exception:
         return [dict(m) for m in (messages or [])]
 
 
-def _safe_get_messages(res: Any, fallback: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _safe_get_messages(res: Any, fallback: list[dict[str, Any]]) -> list[dict[str, Any]]:
     try:
         if isinstance(res, dict) and isinstance(res.get("message"), list):
             return res["message"]
@@ -48,12 +48,12 @@ def _safe_get_messages(res: Any, fallback: List[Dict[str, Any]]) -> List[Dict[st
 
 
 async def _regex_apply_messages(
-    messages: List[Dict[str, Any]],
+    messages: list[dict[str, Any]],
     rules: Any,
     placement: str,
     view: str,
-    variables: Optional[Dict[str, Any]] = None,
-) -> List[Dict[str, Any]]:
+    variables: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
     """
     单视图正则处理（messages）
     - 调用 modules/smarttavern/regex_replace/apply_messages
@@ -86,9 +86,9 @@ async def _regex_apply_messages(
 
 
 async def _macro_process_messages(
-    messages: List[Dict[str, Any]],
-    variables: Optional[Dict[str, Any]] = None,
-) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    messages: list[dict[str, Any]],
+    variables: dict[str, Any] | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """
     调用 modules/smarttavern/macro/process
     - 返回 (messages, variables)；失败时返回 (原 messages, {})
@@ -118,11 +118,11 @@ async def _macro_process_messages(
 
 
 async def apply(
-    messages: List[Dict[str, Any]],
+    messages: list[dict[str, Any]],
     rules: Any,
     view: str,
-    variables: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    variables: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """
     工作流主入口（实现层，单视图）
     - 顺序：before_macro → macro → after_macro

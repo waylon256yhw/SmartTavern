@@ -19,7 +19,7 @@ const baseUrl = ref('')
 const emit = defineEmits<{
   'update:loading': [value: boolean]
   'update:loadingMessage': [value: string]
-  'ready': []
+  ready: []
 }>()
 
 /**
@@ -27,45 +27,45 @@ const emit = defineEmits<{
  * 遍历所有文件，找到最根层的index.html
  */
 async function findIndexHtml(zip: JSZip): Promise<{ html: string; basePath: string } | null> {
-  const files = Object.keys(zip.files).filter(name => {
+  const files = Object.keys(zip.files).filter((name) => {
     const fileObj = zip.files[name]
     return fileObj && !fileObj.dir
   })
-  
+
   // 查找所有index.html文件（不区分大小写）
-  const indexFiles = files.filter(name => {
+  const indexFiles = files.filter((name) => {
     const basename = name.split('/').pop()?.toLowerCase()
     return basename === 'index.html' || basename === 'index.htm'
   })
-  
+
   if (indexFiles.length === 0) {
     return null
   }
-  
+
   // 按路径深度排序，选择最浅的那个
   indexFiles.sort((a, b) => {
     const depthA = a.split('/').length
     const depthB = b.split('/').length
     return depthA - depthB
   })
-  
+
   const indexPath = indexFiles[0]
-  
+
   if (!indexPath) {
     return null
   }
-  
+
   const file = zip.files[indexPath]
-  
+
   if (!file) {
     return null
   }
-  
+
   const html = await file.async('text')
   // 获取基础路径（index.html所在目录）
   const lastSlashIndex = indexPath.lastIndexOf('/')
   const basePath = lastSlashIndex >= 0 ? indexPath.substring(0, lastSlashIndex + 1) : ''
-  
+
   return { html, basePath }
 }
 
@@ -76,11 +76,11 @@ async function loadSandbox() {
   loading.value = true
   error.value = null
   htmlContent.value = ''
-  
+
   // 通知父组件显示加载动画
   emit('update:loading', true)
   emit('update:loadingMessage', t('app.loading.sandbox'))
-  
+
   try {
     // 1. 获取当前对话的角色卡文件（可能尚未加载完成）
     if (!chatSettingsStore.characterFile) {
@@ -91,47 +91,46 @@ async function loadSandbox() {
     if (!characterFile) {
       throw new Error('未找到角色卡配置')
     }
-    
+
     // 2. 获取角色卡详情
     const characterDetail = await DataCatalog.getCharacterDetail(characterFile, { useCache: false })
-    
+
     if (!characterDetail?.content) {
       throw new Error('角色卡数据加载失败')
     }
-    
+
     // 3. 检查是否为sandbox类型
     if (characterDetail.content.type !== 'sandbox') {
       throw new Error('当前角色卡不是sandbox类型')
     }
-    
+
     // 4. 构建sandbox.zip的路径
     // characterFile 格式: backend_projects/SmartTavern/data/characters/角色名/character.json
     const characterDir = characterFile.substring(0, characterFile.lastIndexOf('/'))
     const sandboxZipPath = `${characterDir}/sandbox.zip`
-    
+
     // 5. 获取sandbox.zip文件
     const zipBlob = await DataCatalog.getDataAssetBlob(sandboxZipPath)
-    
+
     // 6. 解压zip文件
     const zip = await JSZip.loadAsync(zipBlob.blob)
-    
+
     // 7. 查找index.html
     const result = await findIndexHtml(zip)
-    
+
     if (!result) {
       throw new Error('在压缩包中未找到index.html文件')
     }
-    
+
     // 8. 设置HTML内容和基础路径
     htmlContent.value = result.html
     baseUrl.value = result.basePath
-    
+
     // 通知视图已准备好
     emit('ready')
     // 关闭加载动画
     emit('update:loading', false)
     emit('update:loadingMessage', '')
-    
   } catch (err: any) {
     console.error('[SandboxView] 加载失败:', err)
     error.value = err.message || '加载sandbox项目失败'
@@ -144,9 +143,12 @@ async function loadSandbox() {
 }
 
 // 监听角色卡变化，重新加载
-watch(() => chatSettingsStore.characterFile, () => {
-  loadSandbox()
-})
+watch(
+  () => chatSettingsStore.characterFile,
+  () => {
+    loadSandbox()
+  },
+)
 
 // 组件挂载时加载
 onMounted(() => {
@@ -162,7 +164,7 @@ onMounted(() => {
       <div class="status-text">{{ error }}</div>
       <button class="retry-button" @click="loadSandbox">重试</button>
     </div>
-    
+
     <!-- 显示内容 -->
     <SandboxStage v-else-if="htmlContent" :html="htmlContent" :base-url="baseUrl" />
   </section>
@@ -227,7 +229,8 @@ onMounted(() => {
   backdrop-filter: blur(var(--st-status-card-blur, 12px));
   -webkit-backdrop-filter: blur(var(--st-status-card-blur, 12px));
   border-radius: var(--st-radius-2xl);
-  border: var(--st-status-card-border-width, 1px) solid rgb(var(--st-primary) / var(--st-status-card-border-opacity, 0.2));
+  border: var(--st-status-card-border-width, 1px) solid
+    rgb(var(--st-primary) / var(--st-status-card-border-opacity, 0.2));
   box-shadow: var(--st-status-card-shadow, 0 8px 32px rgba(0, 0, 0, 0.12));
   max-width: var(--st-status-card-max-width, 480px);
   text-align: center;
@@ -254,13 +257,17 @@ onMounted(() => {
   margin-top: var(--st-spacing-md);
   padding: var(--st-spacing-lg) var(--st-spacing-3xl);
   background: rgb(var(--st-primary) / var(--st-retry-btn-bg-opacity, 0.12));
-  border: var(--st-retry-btn-border-width, 1px) solid rgb(var(--st-primary) / var(--st-retry-btn-border-opacity, 0.3));
+  border: var(--st-retry-btn-border-width, 1px) solid
+    rgb(var(--st-primary) / var(--st-retry-btn-border-opacity, 0.3));
   border-radius: var(--st-radius-lg);
   color: rgb(var(--st-color-text));
   font-size: var(--st-font-md);
   font-weight: var(--st-retry-btn-font-weight, 500);
   cursor: pointer;
-  transition: background-color var(--st-transition-normal) ease, border-color var(--st-transition-normal) ease, transform var(--st-transition-normal) ease;
+  transition:
+    background-color var(--st-transition-normal) ease,
+    border-color var(--st-transition-normal) ease,
+    transform var(--st-transition-normal) ease;
 }
 
 .retry-button:hover {

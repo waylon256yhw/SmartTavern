@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 SmartTavern.variables_update 包初始化
 

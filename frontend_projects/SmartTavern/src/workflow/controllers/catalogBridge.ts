@@ -28,8 +28,10 @@ function _trackBlobUrl(category: string, url: string): void {
 function _revokeBlobUrls(category: string): void {
   const urls = _blobUrlCache.get(category)
   if (urls) {
-    urls.forEach(url => {
-      try { URL.revokeObjectURL(url) } catch (_) {}
+    urls.forEach((url) => {
+      try {
+        URL.revokeObjectURL(url)
+      } catch (_) {}
     })
     urls.clear()
   }
@@ -44,53 +46,70 @@ function __deriveIconPath(file: string): string {
 }
 
 // helper: enrich card items with data icon blob URL
-async function __enrichWithDataIcons<T extends { file: string }>(items: T[], category: string): Promise<Array<T & { avatarUrl?: string }>> {
-  const out: Array<T & { avatarUrl?: string }> = Array.isArray(items) ? items.map(it => ({ ...it })) : []
-  await Promise.all(out.map(async (it) => {
-    const iconPath = __deriveIconPath(it.file)
-    try {
-      const { blob } = await DataCatalog.getDataAssetBlob(iconPath)
-      const typed = it as any
-      typed.avatarUrl = URL.createObjectURL(blob)
-      _trackBlobUrl(category, typed.avatarUrl)
-    } catch (_) {
-      // ignore; fallback stays
-    }
-  }))
+async function __enrichWithDataIcons<T extends { file: string }>(
+  items: T[],
+  category: string,
+): Promise<Array<T & { avatarUrl?: string }>> {
+  const out: Array<T & { avatarUrl?: string }> = Array.isArray(items)
+    ? items.map((it) => ({ ...it }))
+    : []
+  await Promise.all(
+    out.map(async (it) => {
+      const iconPath = __deriveIconPath(it.file)
+      try {
+        const { blob } = await DataCatalog.getDataAssetBlob(iconPath)
+        const typed = it as any
+        typed.avatarUrl = URL.createObjectURL(blob)
+        _trackBlobUrl(category, typed.avatarUrl)
+      } catch (_) {
+        // ignore; fallback stays
+      }
+    }),
+  )
   return out
 }
 
 // helper: enrich character items with character.png avatar
-async function __enrichCharactersWithAvatars<T extends { file: string }>(items: Array<T & { avatarUrl?: string }>, category: string): Promise<Array<T & { avatarUrl?: string; characterAvatarUrl?: string }>> {
-  const out = items.map(it => ({ ...it }))
-  await Promise.all(out.map(async (it) => {
-    const avatarPath = String(it.file || '').replace(/character\.json$/, 'character.png')
-    try {
-      const { blob } = await DataCatalog.getDataAssetBlob(avatarPath)
-      const typed = it as any
-      typed.characterAvatarUrl = URL.createObjectURL(blob)
-      _trackBlobUrl(category, typed.characterAvatarUrl)
-    } catch (_) {
-      // ignore; no avatar
-    }
-  }))
+async function __enrichCharactersWithAvatars<T extends { file: string }>(
+  items: Array<T & { avatarUrl?: string }>,
+  category: string,
+): Promise<Array<T & { avatarUrl?: string; characterAvatarUrl?: string }>> {
+  const out = items.map((it) => ({ ...it }))
+  await Promise.all(
+    out.map(async (it) => {
+      const avatarPath = String(it.file || '').replace(/character\.json$/, 'character.png')
+      try {
+        const { blob } = await DataCatalog.getDataAssetBlob(avatarPath)
+        const typed = it as any
+        typed.characterAvatarUrl = URL.createObjectURL(blob)
+        _trackBlobUrl(category, typed.characterAvatarUrl)
+      } catch (_) {
+        // ignore; no avatar
+      }
+    }),
+  )
   return out
 }
 
 // helper: enrich persona items with persona.png avatar
-async function __enrichPersonasWithAvatars<T extends { file: string }>(items: Array<T & { avatarUrl?: string }>, category: string): Promise<Array<T & { avatarUrl?: string; personaAvatarUrl?: string }>> {
-  const out = items.map(it => ({ ...it }))
-  await Promise.all(out.map(async (it) => {
-    const avatarPath = String(it.file || '').replace(/persona\.json$/, 'persona.png')
-    try {
-      const { blob } = await DataCatalog.getDataAssetBlob(avatarPath)
-      const typed = it as any
-      typed.personaAvatarUrl = URL.createObjectURL(blob)
-      _trackBlobUrl(category, typed.personaAvatarUrl)
-    } catch (_) {
-      // ignore; no avatar
-    }
-  }))
+async function __enrichPersonasWithAvatars<T extends { file: string }>(
+  items: Array<T & { avatarUrl?: string }>,
+  category: string,
+): Promise<Array<T & { avatarUrl?: string; personaAvatarUrl?: string }>> {
+  const out = items.map((it) => ({ ...it }))
+  await Promise.all(
+    out.map(async (it) => {
+      const avatarPath = String(it.file || '').replace(/persona\.json$/, 'persona.png')
+      try {
+        const { blob } = await DataCatalog.getDataAssetBlob(avatarPath)
+        const typed = it as any
+        typed.personaAvatarUrl = URL.createObjectURL(blob)
+        _trackBlobUrl(category, typed.personaAvatarUrl)
+      } catch (_) {
+        // ignore; no avatar
+      }
+    }),
+  )
   return out
 }
 
@@ -122,7 +141,7 @@ export function initCatalogBridge(bus: EventBus): void {
         requestId,
         success: true,
         items,
-        raw: res
+        raw: res,
       })
     } catch (error: any) {
       const errMsg = error?.message || String(error)
@@ -132,7 +151,7 @@ export function initCatalogBridge(bus: EventBus): void {
       bus.emit(CatalogChannel.EVT_CATALOG_CHARACTERS_RES, {
         requestId,
         success: false,
-        error: errMsg
+        error: errMsg,
       })
     }
   })
@@ -160,7 +179,7 @@ export function initCatalogBridge(bus: EventBus): void {
         requestId,
         success: true,
         items,
-        raw: res
+        raw: res,
       })
     } catch (error: any) {
       const errMsg = error?.message || String(error)
@@ -170,7 +189,7 @@ export function initCatalogBridge(bus: EventBus): void {
       bus.emit(CatalogChannel.EVT_CATALOG_PERSONAS_RES, {
         requestId,
         success: false,
-        error: errMsg
+        error: errMsg,
       })
     }
   })
@@ -197,7 +216,7 @@ export function initCatalogBridge(bus: EventBus): void {
         requestId,
         success: true,
         items,
-        raw: res
+        raw: res,
       })
     } catch (error: any) {
       const errMsg = error?.message || String(error)
@@ -207,7 +226,7 @@ export function initCatalogBridge(bus: EventBus): void {
       bus.emit(CatalogChannel.EVT_CATALOG_PRESETS_RES, {
         requestId,
         success: false,
-        error: errMsg
+        error: errMsg,
       })
     }
   })
@@ -234,7 +253,7 @@ export function initCatalogBridge(bus: EventBus): void {
         requestId,
         success: true,
         items,
-        raw: res
+        raw: res,
       })
     } catch (error: any) {
       const errMsg = error?.message || String(error)
@@ -244,7 +263,7 @@ export function initCatalogBridge(bus: EventBus): void {
       bus.emit(CatalogChannel.EVT_CATALOG_WORLDBOOKS_RES, {
         requestId,
         success: false,
-        error: errMsg
+        error: errMsg,
       })
     }
   })
@@ -271,7 +290,7 @@ export function initCatalogBridge(bus: EventBus): void {
         requestId,
         success: true,
         items,
-        raw: res
+        raw: res,
       })
     } catch (error: any) {
       const errMsg = error?.message || String(error)
@@ -281,7 +300,7 @@ export function initCatalogBridge(bus: EventBus): void {
       bus.emit(CatalogChannel.EVT_CATALOG_REGEX_RES, {
         requestId,
         success: false,
-        error: errMsg
+        error: errMsg,
       })
     }
   })
@@ -308,7 +327,7 @@ export function initCatalogBridge(bus: EventBus): void {
         requestId,
         success: true,
         items,
-        raw: res
+        raw: res,
       })
     } catch (error: any) {
       const errMsg = error?.message || String(error)
@@ -318,7 +337,7 @@ export function initCatalogBridge(bus: EventBus): void {
       bus.emit(CatalogChannel.EVT_CATALOG_LLMCONFIGS_RES, {
         requestId,
         success: false,
-        error: errMsg
+        error: errMsg,
       })
     }
   })
@@ -326,22 +345,29 @@ export function initCatalogBridge(bus: EventBus): void {
   // ===== 角色更新 =====
   bus.on(CatalogChannel.EVT_CATALOG_CHARACTER_UPDATE_REQ, async (payload: any) => {
     const { file, content, name, description, iconBase64, avatarBase64, tag } = payload || {}
-    
+
     try {
-      const res = await DataCatalog.updateCharacterFile(file, content, name, description, iconBase64, avatarBase64)
-      
+      const res = await DataCatalog.updateCharacterFile(
+        file,
+        content,
+        name,
+        description,
+        iconBase64,
+        avatarBase64,
+      )
+
       bus.emit(CatalogChannel.EVT_CATALOG_CHARACTER_UPDATE_OK, {
         tag,
         file,
         content,
-        result: res
+        result: res,
       })
     } catch (error: any) {
       const errMsg = error?.message || String(error)
       bus.emit(CatalogChannel.EVT_CATALOG_CHARACTER_UPDATE_FAIL, {
         tag,
         file,
-        message: errMsg
+        message: errMsg,
       })
     }
   })
@@ -349,22 +375,29 @@ export function initCatalogBridge(bus: EventBus): void {
   // ===== 人设更新 =====
   bus.on(CatalogChannel.EVT_CATALOG_PERSONA_UPDATE_REQ, async (payload: any) => {
     const { file, content, name, description, iconBase64, avatarBase64, tag } = payload || {}
-    
+
     try {
-      const res = await DataCatalog.updatePersonaFile(file, content, name, description, iconBase64, avatarBase64)
-      
+      const res = await DataCatalog.updatePersonaFile(
+        file,
+        content,
+        name,
+        description,
+        iconBase64,
+        avatarBase64,
+      )
+
       bus.emit(CatalogChannel.EVT_CATALOG_PERSONA_UPDATE_OK, {
         tag,
         file,
         content,
-        result: res
+        result: res,
       })
     } catch (error: any) {
       const errMsg = error?.message || String(error)
       bus.emit(CatalogChannel.EVT_CATALOG_PERSONA_UPDATE_FAIL, {
         tag,
         file,
-        message: errMsg
+        message: errMsg,
       })
     }
   })
@@ -372,22 +405,22 @@ export function initCatalogBridge(bus: EventBus): void {
   // ===== 预设更新 =====
   bus.on(CatalogChannel.EVT_CATALOG_PRESET_UPDATE_REQ, async (payload: any) => {
     const { file, content, name, description, iconBase64, tag } = payload || {}
-    
+
     try {
       const res = await DataCatalog.updatePresetFile(file, content, name, description, iconBase64)
-      
+
       bus.emit(CatalogChannel.EVT_CATALOG_PRESET_UPDATE_OK, {
         tag,
         file,
         content,
-        result: res
+        result: res,
       })
     } catch (error: any) {
       const errMsg = error?.message || String(error)
       bus.emit(CatalogChannel.EVT_CATALOG_PRESET_UPDATE_FAIL, {
         tag,
         file,
-        message: errMsg
+        message: errMsg,
       })
     }
   })
@@ -395,22 +428,28 @@ export function initCatalogBridge(bus: EventBus): void {
   // ===== 世界书更新 =====
   bus.on(CatalogChannel.EVT_CATALOG_WORLDBOOK_UPDATE_REQ, async (payload: any) => {
     const { file, content, name, description, iconBase64, tag } = payload || {}
-    
+
     try {
-      const res = await DataCatalog.updateWorldBookFile(file, content, name, description, iconBase64)
-      
+      const res = await DataCatalog.updateWorldBookFile(
+        file,
+        content,
+        name,
+        description,
+        iconBase64,
+      )
+
       bus.emit(CatalogChannel.EVT_CATALOG_WORLDBOOK_UPDATE_OK, {
         tag,
         file,
         content,
-        result: res
+        result: res,
       })
     } catch (error: any) {
       const errMsg = error?.message || String(error)
       bus.emit(CatalogChannel.EVT_CATALOG_WORLDBOOK_UPDATE_FAIL, {
         tag,
         file,
-        message: errMsg
+        message: errMsg,
       })
     }
   })
@@ -418,22 +457,28 @@ export function initCatalogBridge(bus: EventBus): void {
   // ===== 正则规则更新 =====
   bus.on(CatalogChannel.EVT_CATALOG_REGEX_UPDATE_REQ, async (payload: any) => {
     const { file, content, name, description, iconBase64, tag } = payload || {}
-    
+
     try {
-      const res = await DataCatalog.updateRegexRuleFile(file, content, name, description, iconBase64)
-      
+      const res = await DataCatalog.updateRegexRuleFile(
+        file,
+        content,
+        name,
+        description,
+        iconBase64,
+      )
+
       bus.emit(CatalogChannel.EVT_CATALOG_REGEX_UPDATE_OK, {
         tag,
         file,
         content,
-        result: res
+        result: res,
       })
     } catch (error: any) {
       const errMsg = error?.message || String(error)
       bus.emit(CatalogChannel.EVT_CATALOG_REGEX_UPDATE_FAIL, {
         tag,
         file,
-        message: errMsg
+        message: errMsg,
       })
     }
   })
@@ -441,22 +486,28 @@ export function initCatalogBridge(bus: EventBus): void {
   // ===== LLM配置更新 =====
   bus.on(CatalogChannel.EVT_CATALOG_LLMCONFIG_UPDATE_REQ, async (payload: any) => {
     const { file, content, name, description, iconBase64, tag } = payload || {}
-    
+
     try {
-      const res = await DataCatalog.updateLLMConfigFile(file, content, name, description, iconBase64)
-      
+      const res = await DataCatalog.updateLLMConfigFile(
+        file,
+        content,
+        name,
+        description,
+        iconBase64,
+      )
+
       bus.emit(CatalogChannel.EVT_CATALOG_LLMCONFIG_UPDATE_OK, {
         tag,
         file,
         content,
-        result: res
+        result: res,
       })
     } catch (error: any) {
       const errMsg = error?.message || String(error)
       bus.emit(CatalogChannel.EVT_CATALOG_LLMCONFIG_UPDATE_FAIL, {
         tag,
         file,
-        message: errMsg
+        message: errMsg,
       })
     }
   })
@@ -464,68 +515,73 @@ export function initCatalogBridge(bus: EventBus): void {
   // ===== 统一列表查询 =====
   bus.on(CatalogChannel.EVT_CATALOG_LIST_REQ, async (payload: any) => {
     const { category, tag } = payload || {}
-    
+
     try {
       const categoryMap: Record<string, () => Promise<any>> = {
-        'preset': DataCatalog.listPresets,
-        'character': DataCatalog.listCharacters,
-        'persona': DataCatalog.listPersonas,
-        'regex': DataCatalog.listRegexRules,
-        'worldbook': DataCatalog.listWorldBooks,
-        'llm_config': DataCatalog.listLLMConfigs
+        preset: DataCatalog.listPresets,
+        character: DataCatalog.listCharacters,
+        persona: DataCatalog.listPersonas,
+        regex: DataCatalog.listRegexRules,
+        worldbook: DataCatalog.listWorldBooks,
+        llm_config: DataCatalog.listLLMConfigs,
       }
-      
+
       const fetcher = categoryMap[category || '']
       if (!fetcher) {
         throw new Error(i18n.t('workflow.controllers.catalog.unknownResourceType', { category }))
       }
-      
+
       const res = await fetcher.call(DataCatalog)
       const items = Array.isArray(res?.items) ? res.items : []
-      
+
       bus.emit(CatalogChannel.EVT_CATALOG_LIST_OK, {
         category,
         items,
-        tag
+        tag,
       })
     } catch (error: any) {
       const errMsg = error?.message || String(error)
       bus.emit(CatalogChannel.EVT_CATALOG_LIST_FAIL, {
         category,
         message: errMsg,
-        tag
+        tag,
       })
     }
   })
-  
+
   // ===== 详情查询 =====
   bus.on(CatalogChannel.EVT_CATALOG_GET_DETAIL_REQ, async (payload: any) => {
     const { category, file, tag } = payload || {}
-    
+
     try {
       const detailFetchers: Record<string, (f: string) => Promise<any>> = {
-        'preset': (f: string) => DataCatalog.getPresetDetail(f, { useCache: false, persist: false }),
-        'worldbook': (f: string) => DataCatalog.getWorldBookDetail(f, { useCache: false, persist: false }),
-        'character': (f: string) => DataCatalog.getCharacterDetail(f, { useCache: false, persist: false }),
-        'persona': (f: string) => DataCatalog.getPersonaDetail(f, { useCache: false, persist: false }),
-        'regex': (f: string) => DataCatalog.getRegexRuleDetail(f, { useCache: false, persist: false }),
-        'llm_config': (f: string) => DataCatalog.getLLMConfigDetail(f, { useCache: false, persist: false })
+        preset: (f: string) => DataCatalog.getPresetDetail(f, { useCache: false, persist: false }),
+        worldbook: (f: string) =>
+          DataCatalog.getWorldBookDetail(f, { useCache: false, persist: false }),
+        character: (f: string) =>
+          DataCatalog.getCharacterDetail(f, { useCache: false, persist: false }),
+        persona: (f: string) =>
+          DataCatalog.getPersonaDetail(f, { useCache: false, persist: false }),
+        regex: (f: string) =>
+          DataCatalog.getRegexRuleDetail(f, { useCache: false, persist: false }),
+        llm_config: (f: string) =>
+          DataCatalog.getLLMConfigDetail(f, { useCache: false, persist: false }),
       }
-      
+
       const fetcher = detailFetchers[category || '']
       if (!fetcher) {
         throw new Error(i18n.t('workflow.controllers.catalog.unknownResourceType', { category }))
       }
-      
+
       const res = await fetcher(file || '')
       // 后端结构：{ file, name, description, content }
       const data = res && (res.content ?? res)
-      
+
       bus.emit(CatalogChannel.EVT_CATALOG_GET_DETAIL_OK, {
         category,
         file,
         data,
-        tag
+        tag,
       })
     } catch (error: any) {
       const errMsg = error?.message || String(error)
@@ -533,7 +589,7 @@ export function initCatalogBridge(bus: EventBus): void {
         category,
         file,
         message: errMsg,
-        tag
+        tag,
       })
     }
   })

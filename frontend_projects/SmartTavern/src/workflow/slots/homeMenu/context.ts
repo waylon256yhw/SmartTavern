@@ -8,9 +8,10 @@ import type { HomeMenuContext } from './contract'
 
 export function getHomeMenuContext(): HomeMenuContext {
   // 是否移动端（简单媒体查询）
-  const isMobile = typeof window !== 'undefined'
-    ? !!(window.matchMedia && window.matchMedia('(max-width: 640px)').matches)
-    : false
+  const isMobile =
+    typeof window !== 'undefined'
+      ? !!(window.matchMedia && window.matchMedia('(max-width: 640px)').matches)
+      : false
 
   // 是否存在存档：由服务端 list_conversations 结果在 HomeMenu 组件侧覆盖；此处默认 false，不读浏览器存储
   const hasSaves = false

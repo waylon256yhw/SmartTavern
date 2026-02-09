@@ -1,6 +1,6 @@
 // SmartTavern - 沙盒桥接脚本
 // 目标：在 iframe 内注入此脚本，自动桥接父窗口的前端 API，使沙盒 HTML 可直接调用
-// 
+//
 // 用法：HtmlIframeSandbox 在 srcdoc 的 <head> 中注入此脚本，沙盒内即可：
 //   const url = await getCurrentCharAvatarPath()
 //   const url2 = await getCharAvatarPath('current')
@@ -790,7 +790,7 @@ export function generateSandboxBridgeScript(): string {
 
   console.log('[SandboxBridge] Bridge functions ready:', Object.keys(window.STSandbox));
 })();
-`.trim();
+`.trim()
 }
 
 /**
@@ -798,12 +798,12 @@ export function generateSandboxBridgeScript(): string {
  * @returns {string} <script>...</script>
  */
 export function getSandboxBridgeScriptTag(): string {
-  return `<script>${generateSandboxBridgeScript()}</script>`;
+  return `<script>${generateSandboxBridgeScript()}</script>`
 }
 
 const sandboxBridge = {
   generateSandboxBridgeScript,
-  getSandboxBridgeScriptTag
+  getSandboxBridgeScriptTag,
 }
 
 export default sandboxBridge

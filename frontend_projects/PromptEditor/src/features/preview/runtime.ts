@@ -3,7 +3,11 @@ import { runPromptRaw } from '../workflow/promptRaw'
 import { runDialogView, runPreflightView } from '../workflow/promptFlows'
 import { usePreviewStore, type PreviewMode } from './store'
 
-type Messages = { role: 'system' | 'user' | 'assistant'; content: string; source?: Record<string, any> }
+type Messages = {
+  role: 'system' | 'user' | 'assistant'
+  content: string
+  source?: Record<string, any>
+}
 
 type DialogResult = { message: Messages[]; variables?: any }
 type PreflightResult = { message: Messages[]; variables?: any }
@@ -44,11 +48,14 @@ export const usePreviewRuntime = defineStore('previewRuntime', {
         clearTimeout(this._debounce)
         this._debounce = null
       }
-      this._debounce = setTimeout(() => {
-        this._debounce = null
-        // 调用 generateNow，按当前模式计算
-        this.generateNow(m)
-      }, Math.max(0, delay))
+      this._debounce = setTimeout(
+        () => {
+          this._debounce = null
+          // 调用 generateNow，按当前模式计算
+          this.generateNow(m)
+        },
+        Math.max(0, delay),
+      )
     },
 
     async generateNow(mode?: PreviewMode) {

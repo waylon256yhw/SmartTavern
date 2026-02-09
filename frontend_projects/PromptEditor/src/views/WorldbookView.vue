@@ -12,18 +12,28 @@ const fileTitle = ref<string>('')
 const renameError = ref<string | null>(null)
 watch(
   () => store.activeFile?.name,
-  (v) => { fileTitle.value = v ?? '' },
-  { immediate: true }
+  (v) => {
+    fileTitle.value = v ?? ''
+  },
+  { immediate: true },
 )
 function renameWorldbookFile() {
   renameError.value = null
   const oldName = store.activeFile?.name || ''
   const nn = (fileTitle.value || '').trim()
-  if (!nn) { renameError.value = '文件名不能为空'; return }
+  if (!nn) {
+    renameError.value = '文件名不能为空'
+    return
+  }
   if (nn === oldName) return
   const ok = (store as any).renameActive?.(nn)
-  if (!ok) { renameError.value = '重命名失败：可能与现有文件重名'; return }
-  try { fm.renameFile('worldbook', oldName, nn) } catch {}
+  if (!ok) {
+    renameError.value = '重命名失败：可能与现有文件重名'
+    return
+  }
+  try {
+    fm.renameFile('worldbook', oldName, nn)
+  } catch {}
 }
 
 /* 世界书面板：导入/导出复用顶部按钮；使用当前活动文件的 world_books */
@@ -40,20 +50,29 @@ watch(
     await nextTick()
     ;(window as any).lucide?.createIcons?.()
   },
-  { flush: 'post' }
+  { flush: 'post' },
 )
 
 // 右上角：新增条目（id + 名称 + 添加）
-const newId = ref<string>('') 
+const newId = ref<string>('')
 const newName = ref<string>('')
 
 async function addEntry() {
   const id = newId.value.trim()
   const name = newName.value.trim()
-  if (!id) { alert('请填写 id'); return }
-  if (!name) { alert('请填写 名称'); return }
+  if (!id) {
+    alert('请填写 id')
+    return
+  }
+  if (!name) {
+    alert('请填写 名称')
+    return
+  }
   const list = (store.activeData?.world_books || []) as WorldBookEntry[]
-  if (list.some(e => e.id === id)) { alert('id 已存在'); return }
+  if (list.some((e) => e.id === id)) {
+    alert('id 已存在')
+    return
+  }
   const entry: WorldBookEntry = {
     id,
     name,
@@ -85,7 +104,9 @@ function onDragStart(id: string, ev: DragEvent) {
   try {
     ev.dataTransfer?.setData('text/plain', id)
     ev.dataTransfer!.effectAllowed = 'move'
-    const canvas = document.createElement('canvas'); canvas.width = 1; canvas.height = 1
+    const canvas = document.createElement('canvas')
+    canvas.width = 1
+    canvas.height = 1
     ev.dataTransfer?.setDragImage(canvas, 0, 0)
   } catch {}
 }
@@ -109,7 +130,7 @@ function onDrop(overId: string | null, ev: DragEvent) {
   ev.preventDefault()
   const dId = dragging.value
   const list = [...((store.activeData?.world_books || []) as WorldBookEntry[])]
-  let ids = list.map(i => i.id)
+  let ids = list.map((i) => i.id)
   const fromIdx = ids.indexOf(dId)
   if (fromIdx < 0) return
   ids.splice(fromIdx, 1)
@@ -128,14 +149,21 @@ function onDrop(overId: string | null, ev: DragEvent) {
   ;(window as any).lucide?.createIcons?.()
 }
 
-function onDropEnd(ev: DragEvent) { onDrop(null, ev) }
-function onDragEnd() { dragging.value = null; dragOverId.value = null }
+function onDropEnd(ev: DragEvent) {
+  onDrop(null, ev)
+}
+function onDragEnd() {
+  dragging.value = null
+  dragOverId.value = null
+}
 </script>
 
 <template>
   <section class="space-y-6">
     <!-- 标题 -->
-    <div class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <i data-lucide="book-open" class="w-5 h-5 text-black"></i>
@@ -152,15 +180,22 @@ function onDragEnd() { dragging.value = null; dragOverId.value = null }
           <button
             class="px-3 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-sm hover:bg-gray-100 active:bg-gray-200 transition-all duration-200 ease-soft"
             @click="renameWorldbookFile"
-          >重命名</button>
+          >
+            重命名
+          </button>
         </div>
       </div>
-      <p class="mt-2 text-xs text-black/60">使用右上角 导入/导出 · 参考：backend_projects/SmartTavern/data/world_books/参考用main_world.json</p>
+      <p class="mt-2 text-xs text-black/60">
+        使用右上角 导入/导出 ·
+        参考：backend_projects/SmartTavern/data/world_books/参考用main_world.json
+      </p>
       <p v-if="renameError" class="text-xs text-red-600 mt-1">* {{ renameError }}</p>
     </div>
 
     <!-- 工具栏：仅新增（导入/导出请使用右上角按钮） -->
-    <div class="bg-white rounded-4 border border-gray-200 p-4 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-4 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between gap-3">
         <div class="text-sm text-black/70">
           条目数量：{{ (store.activeData?.world_books || []).length }}
@@ -188,7 +223,9 @@ function onDragEnd() { dragging.value = null; dragOverId.value = null }
     </div>
 
     <!-- 条目区域容器（白色背景，小标题：世界书编辑） -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center gap-2 mb-3">
         <i data-lucide="settings-2" class="w-4 h-4 text-black"></i>
         <h3 class="text-base font-semibold text-black">世界书编辑</h3>
@@ -197,13 +234,13 @@ function onDragEnd() { dragging.value = null; dragOverId.value = null }
       <!-- 列表（可拖拽排序，左侧握把 + 黑线插入预览） -->
       <div class="space-y-2">
         <div
-          v-for="w in (store.activeData?.world_books || [])"
+          v-for="w in store.activeData?.world_books || []"
           :key="w.id"
           class="flex items-stretch gap-2 group draglist-item"
           :class="{
             'dragging-item': dragging && dragging === w.id,
             'drag-over-top': dragging && dragOverId === w.id && dragOverBefore,
-            'drag-over-bottom': dragging && dragOverId === w.id && !dragOverBefore
+            'drag-over-bottom': dragging && dragOverId === w.id && !dragOverBefore,
           }"
           @dragover.prevent="onDragOver(w.id, $event)"
           @drop.prevent="onDrop(w.id, $event)"
@@ -215,7 +252,10 @@ function onDragEnd() { dragging.value = null; dragOverId.value = null }
             @dragend="onDragEnd"
             title="拖拽排序"
           >
-            <i data-lucide="grip-vertical" class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"></i>
+            <i
+              data-lucide="grip-vertical"
+              class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"
+            ></i>
           </div>
           <div class="flex-1">
             <WorldBookCard :entry="w" />
@@ -244,7 +284,9 @@ function onDragEnd() { dragging.value = null; dragOverId.value = null }
 }
 
 /* 拖拽动效与黑线插入预览（与预设/正则页面一致） */
-.draglist-item { position: relative; }
+.draglist-item {
+  position: relative;
+}
 .drag-over-top::before {
   content: '';
   position: absolute;
@@ -267,12 +309,17 @@ function onDragEnd() { dragging.value = null; dragOverId.value = null }
 }
 .dragging-item {
   transform: scale(0.98);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.18);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
   opacity: 0.92;
   z-index: 1;
-  transition: transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    opacity 150ms ease;
 }
-.draglist-end { position: relative; }
+.draglist-end {
+  position: relative;
+}
 .drag-over-end::after {
   content: '';
   position: absolute;

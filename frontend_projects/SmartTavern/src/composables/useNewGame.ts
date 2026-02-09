@@ -41,7 +41,11 @@ export interface UseNewGameAPI {
   createError: Ref<string | null>
 }
 
-export function useNewGame({ setView, refreshIcons, onConversationCreated }: UseNewGameOptions = {}): UseNewGameAPI {
+export function useNewGame({
+  setView,
+  refreshIcons,
+  onConversationCreated,
+}: UseNewGameOptions = {}): UseNewGameAPI {
   const newGameOpen = ref<boolean>(false)
   const isCreating = ref<boolean>(false)
   const createError = ref<string | null>(null)
@@ -50,14 +54,14 @@ export function useNewGame({ setView, refreshIcons, onConversationCreated }: Use
     newGameOpen.value = true
     // 打开后刷新图标与交互组件
     nextTick(() => {
-      try { 
-        (window as any)?.lucide?.createIcons?.() 
+      try {
+        ;(window as any)?.lucide?.createIcons?.()
       } catch (_) {
         // Ignore errors
       }
       if (typeof (window as any).initFlowbite === 'function') {
-        try { 
-          (window as any).initFlowbite() 
+        try {
+          ;(window as any).initFlowbite()
         } catch (_) {
           // Ignore errors
         }
@@ -68,14 +72,14 @@ export function useNewGame({ setView, refreshIcons, onConversationCreated }: Use
   function cancelNewGame(): void {
     newGameOpen.value = false
     nextTick(() => {
-      try { 
-        (window as any)?.lucide?.createIcons?.() 
+      try {
+        ;(window as any)?.lucide?.createIcons?.()
       } catch (_) {
         // Ignore errors
       }
       if (typeof (window as any).initFlowbite === 'function') {
-        try { 
-          (window as any).initFlowbite() 
+        try {
+          ;(window as any).initFlowbite()
         } catch (_) {
           // Ignore errors
         }
@@ -119,9 +123,12 @@ export function useNewGame({ setView, refreshIcons, onConversationCreated }: Use
       console.error('[useNewGame] createConversation failed:', err)
     } finally {
       isCreating.value = false
-      refreshIcons?.() || nextTick(() => {
-        try { (window as any)?.lucide?.createIcons?.() } catch (_) {}
-      })
+      refreshIcons?.() ||
+        nextTick(() => {
+          try {
+            ;(window as any)?.lucide?.createIcons?.()
+          } catch (_) {}
+        })
     }
   }
 

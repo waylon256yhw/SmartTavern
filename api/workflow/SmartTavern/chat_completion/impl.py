@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 SmartTavern AI 对话补全工作流 - 实现层
 
@@ -8,10 +7,12 @@ SmartTavern AI 对话补全工作流 - 实现层
 3. 调用 llm_api/chat 进行 AI 对话（支持流式/非流式）
 4. 保存 AI 响应到对话文件（调用 chat_branches/append_message）
 """
-from pathlib import Path
-from typing import Any, Dict, Iterator, Optional, List
+
 import json
 import time
+from collections.abc import Iterator
+from pathlib import Path
+from typing import Any
 
 import core
 
@@ -21,36 +22,36 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parents[4]
 
 
-def _safe_read_json(file_path: str) -> Dict[str, Any]:
+def _safe_read_json(file_path: str) -> dict[str, Any]:
     """安全读取JSON文件"""
     root = _repo_root()
     target = (root / Path(file_path)).resolve()
-    
+
     # 检查文件是否在 llm_configs 目录内
     llm_configs_dir = root / "backend_projects" / "SmartTavern" / "data" / "llm_configs"
     try:
         target.relative_to(llm_configs_dir)
     except ValueError:
         raise ValueError(f"LLM config file must be within llm_configs directory: {file_path}")
-    
+
     if not target.exists():
         raise FileNotFoundError(f"LLM config file not found: {file_path}")
-    
+
     with target.open("r", encoding="utf-8") as f:
         return json.load(f)
 
 
 def chat_completion_non_streaming(
     conversation_file: str,
-    llm_config_file: Optional[str] = None,
-) -> Dict[str, Any]:
+    llm_config_file: str | None = None,
+) -> dict[str, Any]:
     """
     非流式AI对话补全
-    
+
     参数：
     - conversation_file: 对话文件路径（相对仓库根）
     - llm_config_file: LLM配置文件路径（可选，若不提供则从settings.json自动读取）
-    
+
     返回：
       {
         "success": bool,
@@ -63,7 +64,7 @@ def chat_completion_non_streaming(
       }
     """
     start_time = time.time()
-    
+
     try:
         # 步骤0：如果未提供 llm_config_file，从 settings.json 读取
         if not llm_config_file:
@@ -71,41 +72,38 @@ def chat_completion_non_streaming(
                 "smarttavern/chat_branches/settings",
                 {"action": "get", "file": conversation_file},
                 method="POST",
-                namespace="modules"
+                namespace="modules",
             )
             if not settings_result or "settings" not in settings_result:
                 raise ValueError("Failed to get settings from conversation")
-            
+
             llm_config_file = settings_result["settings"].get("llm_config")
             if not llm_config_file:
                 raise ValueError("No llm_config found in conversation settings")
-        
+
         # 步骤1：使用 assistant_view 处理消息（发送给AI用）
         process_result = process_messages_view_impl(
             conversation_file=conversation_file,
             view="assistant_view",
-            variables=None  # 自动从文件读取
+            variables=None,  # 自动从文件读取
         )
-        
+
         if not process_result.get("success"):
             raise ValueError(f"Failed to process messages view: {process_result.get('error')}")
-        
+
         messages = process_result["messages"]
-        
+
         # 同时获取 active_path（用于后续保存）
         messages_result = core.call_api(
-            "smarttavern/chat_branches/openai_messages",
-            {"file": conversation_file},
-            method="POST",
-            namespace="modules"
+            "smarttavern/chat_branches/openai_messages", {"file": conversation_file}, method="POST", namespace="modules"
         )
-        
+
         if not messages_result:
             raise ValueError("Failed to get conversation metadata")
-        
+
         # 步骤2：读取LLM配置
         llm_config = _safe_read_json(llm_config_file)
-        
+
         # 步骤3：调用LLM API（只使用配置文件的值，不提供默认值）
         llm_params = {
             "provider": llm_config.get("provider"),
@@ -114,9 +112,9 @@ def chat_completion_non_streaming(
             "messages": messages,
             "stream": False,  # 非流式
         }
-        
+
         # 只添加配置文件中存在的参数
-        if "model" in llm_config and llm_config["model"]:
+        if llm_config.get("model"):
             llm_params["model"] = llm_config["model"]
         if "max_tokens" in llm_config and llm_config["max_tokens"] is not None:
             llm_params["max_tokens"] = llm_config["max_tokens"]
@@ -134,64 +132,52 @@ def chat_completion_non_streaming(
             llm_params["connect_timeout"] = llm_config["connect_timeout"]
         if "enable_logging" in llm_config:
             llm_params["enable_logging"] = llm_config["enable_logging"]
-        if "custom_params" in llm_config and llm_config["custom_params"]:
+        if llm_config.get("custom_params"):
             llm_params["custom_params"] = llm_config["custom_params"]
-        if "safety_settings" in llm_config and llm_config["safety_settings"]:
+        if llm_config.get("safety_settings"):
             llm_params["safety_settings"] = llm_config["safety_settings"]
-        
-        llm_response = core.call_api(
-            "llm_api/chat",
-            llm_params,
-            method="POST",
-            namespace="modules"
-        )
-        
+
+        llm_response = core.call_api("llm_api/chat", llm_params, method="POST", namespace="modules")
+
         if not llm_response.get("success"):
             return {
                 "success": False,
                 "error": llm_response.get("error", "LLM API call failed"),
-                "response_time": time.time() - start_time
+                "response_time": time.time() - start_time,
             }
-        
+
         ai_content = llm_response.get("content", "")
-        
+
         # 步骤4：保存AI响应到对话文件
         # 从 messages_result 中获取 path（active_path）
         active_path = messages_result.get("path", [])
         if not active_path:
             raise ValueError("No active_path found in conversation")
-        
+
         parent_id = active_path[-1]
         last_node_id = active_path[-1]
-        
+
         # 读取对话文档获取节点信息
         root = _repo_root()
         conv_file_path = (root / Path(conversation_file)).resolve()
         with conv_file_path.open("r", encoding="utf-8") as f:
             conv_doc = json.load(f)
-        
+
         nodes = conv_doc.get("nodes", {})
         last_node = nodes.get(last_node_id, {})
-        
+
         # 判断是否是空的 assistant 节点（重试创建的占位节点）
-        is_empty_assistant = (
-            last_node.get("role") == "assistant" and
-            last_node.get("content", "").strip() == ""
-        )
-        
+        is_empty_assistant = last_node.get("role") == "assistant" and last_node.get("content", "").strip() == ""
+
         if is_empty_assistant:
             # 更新现有节点
             update_result = core.call_api(
                 "smarttavern/chat_branches/update_message",
-                {
-                    "file": conversation_file,
-                    "node_id": last_node_id,
-                    "content": ai_content
-                },
+                {"file": conversation_file, "node_id": last_node_id, "content": ai_content},
                 method="POST",
-                namespace="modules"
+                namespace="modules",
             )
-            
+
             return {
                 "success": True,
                 "node_id": last_node_id,
@@ -199,12 +185,12 @@ def chat_completion_non_streaming(
                 "usage": llm_response.get("usage"),
                 "response_time": time.time() - start_time,
                 "model_used": llm_response.get("model_used"),
-                "doc": update_result
+                "doc": update_result,
             }
         else:
             # 创建新节点
             new_node_id = f"n_ass{int(time.time() * 1000)}"
-            
+
             append_result = core.call_api(
                 "smarttavern/chat_branches/append_message",
                 {
@@ -212,12 +198,12 @@ def chat_completion_non_streaming(
                     "node_id": new_node_id,
                     "pid": parent_id,
                     "role": "assistant",
-                    "content": ai_content
+                    "content": ai_content,
                 },
                 method="POST",
-                namespace="modules"
+                namespace="modules",
             )
-            
+
             return {
                 "success": True,
                 "node_id": new_node_id,
@@ -225,30 +211,26 @@ def chat_completion_non_streaming(
                 "usage": llm_response.get("usage"),
                 "response_time": time.time() - start_time,
                 "model_used": llm_response.get("model_used"),
-                "doc": append_result
+                "doc": append_result,
             }
-        
+
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "response_time": time.time() - start_time
-        }
+        return {"success": False, "error": str(e), "response_time": time.time() - start_time}
 
 
-def get_merged_rules_impl(conversation_file: str) -> Dict[str, Any]:
+def get_merged_rules_impl(conversation_file: str) -> dict[str, Any]:
     """
     获取对话的统一正则规则
-    
+
     工作流程：
     1. 从 settings.json 读取 preset、character、regex_rules 文件路径
     2. 读取这些文件的完整 JSON 内容
     3. 调用 assets_normalizer/normalize 合并规则
     4. 返回合并后的 regex_rules 数组
-    
+
     参数：
     - conversation_file: 对话文件路径（相对仓库根）
-    
+
     返回：
       {
         "success": bool,
@@ -263,39 +245,39 @@ def get_merged_rules_impl(conversation_file: str) -> Dict[str, Any]:
             "smarttavern/chat_branches/settings",
             {"action": "get", "file": conversation_file},
             method="POST",
-            namespace="modules"
+            namespace="modules",
         )
-        
+
         if not settings_result or "settings" not in settings_result:
             raise ValueError("Failed to get settings from conversation")
-        
+
         settings = settings_result["settings"]
-        
+
         # 步骤2：读取各个资产文件
         root = _repo_root()
-        
+
         # 读取 preset
         preset_file = settings.get("preset")
         if not preset_file:
             raise ValueError("No preset found in settings")
-        
+
         preset_path = (root / Path(preset_file)).resolve()
         with preset_path.open("r", encoding="utf-8") as f:
             preset = json.load(f)
-        
+
         # 读取 character（单值）
         character_file = settings.get("character")
         if not character_file:
             raise ValueError("No character found in settings")
-        
+
         character_path = (root / Path(character_file)).resolve()
         with character_path.open("r", encoding="utf-8") as f:
             character = json.load(f)
-        
+
         # 读取 regex_rules（独立正则文件数组）
         regex_files_list = settings.get("regex_rules", [])
         regex_files = {}
-        
+
         if regex_files_list:
             for i, regex_file in enumerate(regex_files_list):
                 if regex_file:
@@ -304,11 +286,11 @@ def get_merged_rules_impl(conversation_file: str) -> Dict[str, Any]:
                         regex_data = json.load(f)
                         # 使用索引作为 key，保持顺序
                         regex_files[f"regex_{i}"] = regex_data
-        
+
         # 读取 world_books（可选）
         world_books_list = settings.get("world_books", [])
         world_books = {}
-        
+
         if world_books_list:
             for i, wb_file in enumerate(world_books_list):
                 if wb_file:
@@ -316,46 +298,33 @@ def get_merged_rules_impl(conversation_file: str) -> Dict[str, Any]:
                     with wb_path.open("r", encoding="utf-8") as f:
                         wb_data = json.load(f)
                         world_books[f"wb_{i}"] = wb_data
-        
+
         # 步骤3：调用 assets_normalizer 合并
         normalize_result = core.call_api(
             "smarttavern/assets_normalizer/normalize",
-            {
-                "preset": preset,
-                "world_books": world_books,
-                "character": character,
-                "regex_files": regex_files
-            },
+            {"preset": preset, "world_books": world_books, "character": character, "regex_files": regex_files},
             method="POST",
-            namespace="modules"
+            namespace="modules",
         )
-        
+
         if not normalize_result or "merged_regex" not in normalize_result:
             raise ValueError("Failed to normalize assets")
-        
+
         merged_regex = normalize_result["merged_regex"]
         rules = merged_regex.get("regex_rules", [])
-        
-        return {
-            "success": True,
-            "regex_rules": rules,
-            "meta": normalize_result.get("meta", {})
-        }
-        
+
+        return {"success": True, "regex_rules": rules, "meta": normalize_result.get("meta", {})}
+
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "regex_rules": []
-        }
+        return {"success": False, "error": str(e), "regex_rules": []}
 
 
 def process_messages_view_impl(
     conversation_file: str,
     view: str,
-    variables: Optional[Dict[str, Any]] = None,
-    output: Optional[str] = "full",
-) -> Dict[str, Any]:
+    variables: dict[str, Any] | None = None,
+    output: str | None = "full",
+) -> dict[str, Any]:
     """
     处理对话消息的指定视图
 
@@ -393,7 +362,7 @@ def process_messages_view_impl(
             "smarttavern/chat_branches/settings",
             {"action": "get", "file": conversation_file},
             method="POST",
-            namespace="modules"
+            namespace="modules",
         )
         if not settings_result or "settings" not in settings_result:
             raise ValueError("Failed to get settings from conversation")
@@ -420,7 +389,7 @@ def process_messages_view_impl(
 
         # 独立正则（数组）
         regex_files_list = settings.get("regex_rules", [])
-        regex_files: Dict[str, Any] = {}
+        regex_files: dict[str, Any] = {}
         for i, regex_file in enumerate(regex_files_list or []):
             if regex_file:
                 regex_path = (root / Path(regex_file)).resolve()
@@ -430,7 +399,7 @@ def process_messages_view_impl(
 
         # 世界书（数组）
         world_books_list = settings.get("world_books", [])
-        world_books: Dict[str, Any] = {}
+        world_books: dict[str, Any] = {}
         for i, wb_file in enumerate(world_books_list or []):
             if wb_file:
                 wb_path = (root / Path(wb_file)).resolve()
@@ -440,10 +409,7 @@ def process_messages_view_impl(
 
         # 获取原始 messages（history）
         messages_result = core.call_api(
-            "smarttavern/chat_branches/openai_messages",
-            {"file": conversation_file},
-            method="POST",
-            namespace="modules"
+            "smarttavern/chat_branches/openai_messages", {"file": conversation_file}, method="POST", namespace="modules"
         )
         if not messages_result or "messages" not in messages_result:
             raise ValueError("Failed to get messages from conversation file")
@@ -452,14 +418,9 @@ def process_messages_view_impl(
         # 合并资产（标准化，得到单一 world_book 与合并正则）
         normalize_result = core.call_api(
             "smarttavern/assets_normalizer/normalize",
-            {
-                "preset": preset,
-                "world_books": world_books,
-                "character": character,
-                "regex_files": regex_files
-            },
+            {"preset": preset, "world_books": world_books, "character": character, "regex_files": regex_files},
             method="POST",
-            namespace="modules"
+            namespace="modules",
         )
         if not normalize_result or "merged_regex" not in normalize_result:
             raise ValueError("Failed to normalize assets")
@@ -486,10 +447,10 @@ def process_messages_view_impl(
                 "world_books": normalized_world_book,
                 "history": history,
                 "character": normalized_character,
-                "persona": persona_doc
+                "persona": persona_doc,
             },
             method="POST",
-            namespace="workflow"
+            namespace="workflow",
         )
         if not raw_result or "messages" not in raw_result:
             raise ValueError("Failed to assemble RAW messages")
@@ -501,7 +462,7 @@ def process_messages_view_impl(
                 "smarttavern/chat_branches/variables",
                 {"action": "get", "file": conversation_file},
                 method="POST",
-                namespace="modules"
+                namespace="modules",
             )
             if variables_result and "variables" in variables_result:
                 variables = variables_result["variables"]
@@ -511,14 +472,9 @@ def process_messages_view_impl(
         # 后处理：按视图应用规则与宏
         postprocess_result = core.call_api(
             "smarttavern/prompt_postprocess/apply",
-            {
-                "messages": messages,
-                "regex_rules": rules,
-                "view": view,
-                "variables": variables
-            },
+            {"messages": messages, "regex_rules": rules, "view": view, "variables": variables},
             method="POST",
-            namespace="workflow"
+            namespace="workflow",
         )
         if not postprocess_result:
             raise ValueError("Failed to process messages")
@@ -531,13 +487,9 @@ def process_messages_view_impl(
         if final_variables:
             core.call_api(
                 "smarttavern/chat_branches/variables",
-                {
-                    "action": "set",
-                    "file": conversation_file,
-                    "data": final_variables
-                },
+                {"action": "set", "file": conversation_file, "data": final_variables},
                 method="POST",
-                namespace="modules"
+                namespace="modules",
             )
 
         # 输出筛选：history 模式仅返回历史楼层（user/assistant 且来源为 history.*）
@@ -555,32 +507,23 @@ def process_messages_view_impl(
                     continue
             processed_messages = filtered
 
-        return {
-            "success": True,
-            "messages": processed_messages,
-            "variables": final_variables
-        }
+        return {"success": True, "messages": processed_messages, "variables": final_variables}
 
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "messages": [],
-            "variables": {}
-        }
+        return {"success": False, "error": str(e), "messages": [], "variables": {}}
 
 
 def chat_completion_streaming(
     conversation_file: str,
-    llm_config_file: Optional[str] = None,
-) -> Iterator[Dict[str, Any]]:
+    llm_config_file: str | None = None,
+) -> Iterator[dict[str, Any]]:
     """
     流式AI对话补全
-    
+
     参数：
     - conversation_file: 对话文件路径（相对仓库根）
     - llm_config_file: LLM配置文件路径（可选，若不提供则从settings.json自动读取）
-    
+
     生成器yield：
       {"type": "chunk", "content": str}
       {"type": "finish", "finish_reason": str}
@@ -596,61 +539,58 @@ def chat_completion_streaming(
                 "smarttavern/chat_branches/settings",
                 {"action": "get", "file": conversation_file},
                 method="POST",
-                namespace="modules"
+                namespace="modules",
             )
             if not settings_result or "settings" not in settings_result:
                 yield {"type": "error", "message": "Failed to get settings from conversation"}
                 yield {"type": "end"}
                 return
-            
+
             llm_config_file = settings_result["settings"].get("llm_config")
             if not llm_config_file:
                 yield {"type": "error", "message": "No llm_config found in conversation settings"}
                 yield {"type": "end"}
                 return
-        
+
         # 步骤1：使用 assistant_view 处理消息（发送给AI用）
         process_result = process_messages_view_impl(
             conversation_file=conversation_file,
             view="assistant_view",
-            variables=None  # 自动从文件读取
+            variables=None,  # 自动从文件读取
         )
-        
+
         if not process_result.get("success"):
             yield {"type": "error", "message": f"Failed to process messages view: {process_result.get('error')}"}
             yield {"type": "end"}
             return
-        
+
         messages = process_result["messages"]
-        
+
         # 同时获取 active_path（用于后续保存）
         messages_result = core.call_api(
-            "smarttavern/chat_branches/openai_messages",
-            {"file": conversation_file},
-            method="POST",
-            namespace="modules"
+            "smarttavern/chat_branches/openai_messages", {"file": conversation_file}, method="POST", namespace="modules"
         )
-        
+
         if not messages_result:
             yield {"type": "error", "message": "Failed to get conversation metadata"}
             yield {"type": "end"}
             return
-        
+
         active_path = messages_result.get("path", [])
-        
+
         if not active_path:
             yield {"type": "error", "message": "No active_path found in conversation"}
             yield {"type": "end"}
             return
-        
+
         parent_id = active_path[-1]
-        
+
         # 步骤2：读取LLM配置
         llm_config = _safe_read_json(llm_config_file)
-        
+
         # 步骤3：调用LLM API（流式，只使用配置文件的值）
         from api.modules.llm_api.impl import stream_chat_chunks
-        
+
         # 构建参数（只使用配置文件中存在的值）
         stream_params = {
             "provider": llm_config.get("provider"),
@@ -658,9 +598,9 @@ def chat_completion_streaming(
             "base_url": llm_config.get("base_url"),
             "messages": messages,
         }
-        
+
         # 只添加配置文件中存在的参数
-        if "model" in llm_config and llm_config["model"]:
+        if llm_config.get("model"):
             stream_params["model"] = llm_config["model"]
         if "max_tokens" in llm_config and llm_config["max_tokens"] is not None:
             stream_params["max_tokens"] = llm_config["max_tokens"]
@@ -678,19 +618,18 @@ def chat_completion_streaming(
             stream_params["connect_timeout"] = llm_config["connect_timeout"]
         if "enable_logging" in llm_config:
             stream_params["enable_logging"] = llm_config["enable_logging"]
-        if "custom_params" in llm_config and llm_config["custom_params"]:
+        if llm_config.get("custom_params"):
             stream_params["custom_params"] = llm_config["custom_params"]
-        if "safety_settings" in llm_config and llm_config["safety_settings"]:
+        if llm_config.get("safety_settings"):
             stream_params["safety_settings"] = llm_config["safety_settings"]
-        
+
         chunk_iter = stream_chat_chunks(**stream_params)
-        
+
         # 收集完整响应用于保存
         full_content = ""
-        finish_reason = None
         usage = None
         has_error = False
-        
+
         for chunk in chunk_iter:
             # 检查是否是错误
             if chunk.finish_reason == "error":
@@ -702,73 +641,61 @@ def chat_completion_streaming(
                 # 直接结束，不保存
                 yield {"type": "end"}
                 return
-            
+
             if chunk.content:
                 full_content += chunk.content
                 yield {"type": "chunk", "content": chunk.content}
-            
+
             if chunk.finish_reason:
-                finish_reason = chunk.finish_reason
                 yield {"type": "finish", "finish_reason": chunk.finish_reason}
-            
+
             if chunk.usage:
                 usage = chunk.usage
                 yield {"type": "usage", "usage": chunk.usage}
-        
+
         # 步骤4：仅在无错误且有内容时才保存
         if not has_error and full_content:
             try:
                 # 检查 active_path 末尾节点是否是空的 assistant 节点（重试场景）
                 # 如果是，更新该节点；否则创建新节点
                 last_node_id = active_path[-1]
-                
+
                 # 读取对话文档获取节点信息
-                doc_result = core.call_api(
+                core.call_api(
                     "smarttavern/chat_branches/openai_messages",
                     {"file": conversation_file},
                     method="POST",
-                    namespace="modules"
+                    namespace="modules",
                 )
-                
+
                 # 从完整文档中获取节点信息（需要读取原始文件）
                 import json
+
                 root = _repo_root()
                 conv_file_path = (root / Path(conversation_file)).resolve()
                 with conv_file_path.open("r", encoding="utf-8") as f:
                     conv_doc = json.load(f)
-                
+
                 nodes = conv_doc.get("nodes", {})
                 last_node = nodes.get(last_node_id, {})
-                
+
                 # 判断是否是空的 assistant 节点（重试创建的占位节点）
-                is_empty_assistant = (
-                    last_node.get("role") == "assistant" and
-                    last_node.get("content", "").strip() == ""
-                )
-                
+                is_empty_assistant = last_node.get("role") == "assistant" and last_node.get("content", "").strip() == ""
+
                 if is_empty_assistant:
                     # 更新现有节点
                     update_result = core.call_api(
                         "smarttavern/chat_branches/update_message",
-                        {
-                            "file": conversation_file,
-                            "node_id": last_node_id,
-                            "content": full_content
-                        },
+                        {"file": conversation_file, "node_id": last_node_id, "content": full_content},
                         method="POST",
-                        namespace="modules"
+                        namespace="modules",
                     )
-                    
-                    yield {
-                        "type": "saved",
-                        "node_id": last_node_id,
-                        "doc": update_result,
-                        "usage": usage
-                    }
+
+                    yield {"type": "saved", "node_id": last_node_id, "doc": update_result, "usage": usage}
                 else:
                     # 创建新节点
                     new_node_id = f"n_ass{int(time.time() * 1000)}"
-                    
+
                     append_result = core.call_api(
                         "smarttavern/chat_branches/append_message",
                         {
@@ -776,24 +703,19 @@ def chat_completion_streaming(
                             "node_id": new_node_id,
                             "pid": parent_id,
                             "role": "assistant",
-                            "content": full_content
+                            "content": full_content,
                         },
                         method="POST",
-                        namespace="modules"
+                        namespace="modules",
                     )
-                    
-                    yield {
-                        "type": "saved",
-                        "node_id": new_node_id,
-                        "doc": append_result,
-                        "usage": usage
-                    }
-                    
+
+                    yield {"type": "saved", "node_id": new_node_id, "doc": append_result, "usage": usage}
+
             except Exception as e:
-                yield {"type": "error", "message": f"Failed to save response: {str(e)}"}
-        
+                yield {"type": "error", "message": f"Failed to save response: {e!s}"}
+
         yield {"type": "end"}
-        
+
     except Exception as e:
         yield {"type": "error", "message": str(e)}
         yield {"type": "end"}
@@ -801,16 +723,16 @@ def chat_completion_streaming(
 
 def chat_with_config_non_streaming(
     conversation_file: str,
-    messages: List[Dict[str, str]],
-    stream_override: Optional[bool] = None,
-    custom_params_override: Optional[Dict[str, Any]] = None,
+    messages: list[dict[str, str]],
+    stream_override: bool | None = None,
+    custom_params_override: dict[str, Any] | None = None,
     apply_preset: bool = True,
     apply_world_book: bool = True,
     apply_regex: bool = True,
     save_result: bool = False,
     view: str = "assistant_view",
-    variables: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    variables: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """
     使用当前对话配置进行AI调用（自定义messages，非流式）
 
@@ -849,7 +771,7 @@ def chat_with_config_non_streaming(
             "smarttavern/chat_branches/settings",
             {"action": "get", "file": conversation_file},
             method="POST",
-            namespace="modules"
+            namespace="modules",
         )
         if not settings_result or "settings" not in settings_result:
             raise ValueError("Failed to get settings from conversation")
@@ -894,7 +816,7 @@ def chat_with_config_non_streaming(
                     character = json.load(f)
 
             # 加载世界书
-            world_books: Dict[str, Any] = {}
+            world_books: dict[str, Any] = {}
             if apply_world_book:
                 world_books_list = settings.get("world_books", [])
                 for i, wb_file in enumerate(world_books_list or []):
@@ -905,7 +827,7 @@ def chat_with_config_non_streaming(
                             world_books[f"wb_{i}"] = wb_data
 
             # 加载正则规则
-            regex_files: Dict[str, Any] = {}
+            regex_files: dict[str, Any] = {}
             if apply_regex:
                 regex_files_list = settings.get("regex_rules", [])
                 for i, regex_file in enumerate(regex_files_list or []):
@@ -919,14 +841,9 @@ def chat_with_config_non_streaming(
             if apply_preset or apply_world_book or apply_regex:
                 normalize_result = core.call_api(
                     "smarttavern/assets_normalizer/normalize",
-                    {
-                        "preset": preset,
-                        "world_books": world_books,
-                        "character": character,
-                        "regex_files": regex_files
-                    },
+                    {"preset": preset, "world_books": world_books, "character": character, "regex_files": regex_files},
                     method="POST",
-                    namespace="modules"
+                    namespace="modules",
                 )
                 if not normalize_result or "merged_regex" not in normalize_result:
                     raise ValueError("Failed to normalize assets")
@@ -952,10 +869,10 @@ def chat_with_config_non_streaming(
                         "world_books": normalized_world_book,
                         "history": messages,  # 前端传入的 messages 作为 history
                         "character": normalized_character,
-                        "persona": persona_doc
+                        "persona": persona_doc,
                     },
                     method="POST",
-                    namespace="workflow"
+                    namespace="workflow",
                 )
                 if not raw_result or "messages" not in raw_result:
                     raise ValueError("RAW assembly failed: no messages returned from prompt_raw/assemble_full")
@@ -968,21 +885,16 @@ def chat_with_config_non_streaming(
                         "smarttavern/chat_branches/variables",
                         {"action": "get", "file": conversation_file},
                         method="POST",
-                        namespace="modules"
+                        namespace="modules",
                     )
                     if variables_result and "variables" in variables_result:
                         final_variables = variables_result["variables"]
 
                 postprocess_result = core.call_api(
                     "smarttavern/prompt_postprocess/apply",
-                    {
-                        "messages": processed_messages,
-                        "regex_rules": rules,
-                        "view": view,
-                        "variables": final_variables
-                    },
+                    {"messages": processed_messages, "regex_rules": rules, "view": view, "variables": final_variables},
                     method="POST",
-                    namespace="workflow"
+                    namespace="workflow",
                 )
                 if not postprocess_result or "message" not in postprocess_result:
                     raise ValueError("Post-processing failed: no message returned from prompt_postprocess/apply")
@@ -993,10 +905,7 @@ def chat_with_config_non_streaming(
         # 提取纯 role/content 用于 LLM 调用
         llm_messages = []
         for m in processed_messages:
-            llm_messages.append({
-                "role": m.get("role"),
-                "content": m.get("content")
-            })
+            llm_messages.append({"role": m.get("role"), "content": m.get("content")})
 
         # 步骤4：调用LLM API
         llm_params = {
@@ -1007,7 +916,7 @@ def chat_with_config_non_streaming(
             "stream": False,
         }
 
-        if "model" in llm_config and llm_config["model"]:
+        if llm_config.get("model"):
             llm_params["model"] = llm_config["model"]
         if "max_tokens" in llm_config and llm_config["max_tokens"] is not None:
             llm_params["max_tokens"] = llm_config["max_tokens"]
@@ -1027,23 +936,18 @@ def chat_with_config_non_streaming(
             llm_params["enable_logging"] = llm_config["enable_logging"]
         if custom_params_override is not None:
             llm_params["custom_params"] = custom_params_override
-        elif "custom_params" in llm_config and llm_config["custom_params"]:
+        elif llm_config.get("custom_params"):
             llm_params["custom_params"] = llm_config["custom_params"]
-        if "safety_settings" in llm_config and llm_config["safety_settings"]:
+        if llm_config.get("safety_settings"):
             llm_params["safety_settings"] = llm_config["safety_settings"]
 
-        llm_response = core.call_api(
-            "llm_api/chat",
-            llm_params,
-            method="POST",
-            namespace="modules"
-        )
+        llm_response = core.call_api("llm_api/chat", llm_params, method="POST", namespace="modules")
 
         if not llm_response.get("success"):
             return {
                 "success": False,
                 "error": llm_response.get("error", "LLM API call failed"),
-                "response_time": time.time() - start_time
+                "response_time": time.time() - start_time,
             }
 
         ai_content = llm_response.get("content", "")
@@ -1054,7 +958,7 @@ def chat_with_config_non_streaming(
                 "smarttavern/chat_branches/openai_messages",
                 {"file": conversation_file},
                 method="POST",
-                namespace="modules"
+                namespace="modules",
             )
             if not messages_result:
                 raise ValueError("Failed to get conversation metadata for save_result")
@@ -1073,29 +977,25 @@ def chat_with_config_non_streaming(
                     "node_id": new_node_id,
                     "pid": parent_id,
                     "role": "assistant",
-                    "content": ai_content
+                    "content": ai_content,
                 },
                 method="POST",
-                namespace="modules"
+                namespace="modules",
             )
             if not append_result or not append_result.get("success"):
                 return {
                     "success": False,
                     "error": "Failed to save result to message tree",
-                    "response_time": time.time() - start_time
+                    "response_time": time.time() - start_time,
                 }
 
             # 保存更新后的 variables
             if final_variables:
                 core.call_api(
                     "smarttavern/chat_branches/variables",
-                    {
-                        "action": "set",
-                        "file": conversation_file,
-                        "data": final_variables
-                    },
+                    {"action": "set", "file": conversation_file, "data": final_variables},
                     method="POST",
-                    namespace="modules"
+                    namespace="modules",
                 )
 
         return {
@@ -1104,29 +1004,25 @@ def chat_with_config_non_streaming(
             "usage": llm_response.get("usage"),
             "response_time": time.time() - start_time,
             "model_used": llm_response.get("model_used"),
-            "finish_reason": llm_response.get("finish_reason")
+            "finish_reason": llm_response.get("finish_reason"),
         }
 
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "response_time": time.time() - start_time
-        }
+        return {"success": False, "error": str(e), "response_time": time.time() - start_time}
 
 
 def chat_with_config_streaming(
     conversation_file: str,
-    messages: List[Dict[str, str]],
-    stream_override: Optional[bool] = None,
-    custom_params_override: Optional[Dict[str, Any]] = None,
+    messages: list[dict[str, str]],
+    stream_override: bool | None = None,
+    custom_params_override: dict[str, Any] | None = None,
     apply_preset: bool = True,
     apply_world_book: bool = True,
     apply_regex: bool = True,
     save_result: bool = False,
     view: str = "assistant_view",
-    variables: Optional[Dict[str, Any]] = None,
-) -> Iterator[Dict[str, Any]]:
+    variables: dict[str, Any] | None = None,
+) -> Iterator[dict[str, Any]]:
     """
     使用当前对话配置进行AI调用（自定义messages，流式）
 
@@ -1161,7 +1057,7 @@ def chat_with_config_streaming(
             "smarttavern/chat_branches/settings",
             {"action": "get", "file": conversation_file},
             method="POST",
-            namespace="modules"
+            namespace="modules",
         )
         if not settings_result or "settings" not in settings_result:
             yield {"type": "error", "message": "Failed to get settings from conversation"}
@@ -1212,7 +1108,7 @@ def chat_with_config_streaming(
                 with character_path.open("r", encoding="utf-8") as f:
                     character = json.load(f)
 
-            world_books: Dict[str, Any] = {}
+            world_books: dict[str, Any] = {}
             if apply_world_book:
                 world_books_list = settings.get("world_books", [])
                 for i, wb_file in enumerate(world_books_list or []):
@@ -1222,7 +1118,7 @@ def chat_with_config_streaming(
                             wb_data = json.load(f)
                             world_books[f"wb_{i}"] = wb_data
 
-            regex_files: Dict[str, Any] = {}
+            regex_files: dict[str, Any] = {}
             if apply_regex:
                 regex_files_list = settings.get("regex_rules", [])
                 for i, regex_file in enumerate(regex_files_list or []):
@@ -1235,14 +1131,9 @@ def chat_with_config_streaming(
             if apply_preset or apply_world_book or apply_regex:
                 normalize_result = core.call_api(
                     "smarttavern/assets_normalizer/normalize",
-                    {
-                        "preset": preset,
-                        "world_books": world_books,
-                        "character": character,
-                        "regex_files": regex_files
-                    },
+                    {"preset": preset, "world_books": world_books, "character": character, "regex_files": regex_files},
                     method="POST",
-                    namespace="modules"
+                    namespace="modules",
                 )
                 if not normalize_result or "merged_regex" not in normalize_result:
                     yield {"type": "error", "message": "Failed to normalize assets"}
@@ -1269,13 +1160,16 @@ def chat_with_config_streaming(
                         "world_books": normalized_world_book,
                         "history": messages,
                         "character": normalized_character,
-                        "persona": persona_doc
+                        "persona": persona_doc,
                     },
                     method="POST",
-                    namespace="workflow"
+                    namespace="workflow",
                 )
                 if not raw_result or "messages" not in raw_result:
-                    yield {"type": "error", "message": "RAW assembly failed: no messages returned from prompt_raw/assemble_full"}
+                    yield {
+                        "type": "error",
+                        "message": "RAW assembly failed: no messages returned from prompt_raw/assemble_full",
+                    }
                     yield {"type": "end"}
                     return
                 processed_messages = raw_result["messages"]
@@ -1287,24 +1181,22 @@ def chat_with_config_streaming(
                         "smarttavern/chat_branches/variables",
                         {"action": "get", "file": conversation_file},
                         method="POST",
-                        namespace="modules"
+                        namespace="modules",
                     )
                     if variables_result and "variables" in variables_result:
                         final_variables = variables_result["variables"]
 
                 postprocess_result = core.call_api(
                     "smarttavern/prompt_postprocess/apply",
-                    {
-                        "messages": processed_messages,
-                        "regex_rules": rules,
-                        "view": view,
-                        "variables": final_variables
-                    },
+                    {"messages": processed_messages, "regex_rules": rules, "view": view, "variables": final_variables},
                     method="POST",
-                    namespace="workflow"
+                    namespace="workflow",
                 )
                 if not postprocess_result or "message" not in postprocess_result:
-                    yield {"type": "error", "message": "Post-processing failed: no message returned from prompt_postprocess/apply"}
+                    yield {
+                        "type": "error",
+                        "message": "Post-processing failed: no message returned from prompt_postprocess/apply",
+                    }
                     yield {"type": "end"}
                     return
                 processed_messages = postprocess_result["message"]
@@ -1314,10 +1206,7 @@ def chat_with_config_streaming(
         # 提取纯 role/content 用于 LLM 调用
         llm_messages = []
         for m in processed_messages:
-            llm_messages.append({
-                "role": m.get("role"),
-                "content": m.get("content")
-            })
+            llm_messages.append({"role": m.get("role"), "content": m.get("content")})
 
         # 步骤4：调用LLM API（流式）
         from api.modules.llm_api.impl import stream_chat_chunks
@@ -1329,7 +1218,7 @@ def chat_with_config_streaming(
             "messages": llm_messages,
         }
 
-        if "model" in llm_config and llm_config["model"]:
+        if llm_config.get("model"):
             stream_params["model"] = llm_config["model"]
         if "max_tokens" in llm_config and llm_config["max_tokens"] is not None:
             stream_params["max_tokens"] = llm_config["max_tokens"]
@@ -1349,9 +1238,9 @@ def chat_with_config_streaming(
             stream_params["enable_logging"] = llm_config["enable_logging"]
         if custom_params_override is not None:
             stream_params["custom_params"] = custom_params_override
-        elif "custom_params" in llm_config and llm_config["custom_params"]:
+        elif llm_config.get("custom_params"):
             stream_params["custom_params"] = llm_config["custom_params"]
-        if "safety_settings" in llm_config and llm_config["safety_settings"]:
+        if llm_config.get("safety_settings"):
             stream_params["safety_settings"] = llm_config["safety_settings"]
 
         chunk_iter = stream_chat_chunks(**stream_params)
@@ -1387,7 +1276,7 @@ def chat_with_config_streaming(
                 "smarttavern/chat_branches/openai_messages",
                 {"file": conversation_file},
                 method="POST",
-                namespace="modules"
+                namespace="modules",
             )
             if not messages_result:
                 yield {"type": "error", "message": "Failed to get conversation metadata for save_result"}
@@ -1410,10 +1299,10 @@ def chat_with_config_streaming(
                     "node_id": new_node_id,
                     "pid": parent_id,
                     "role": "assistant",
-                    "content": ai_content
+                    "content": ai_content,
                 },
                 method="POST",
-                namespace="modules"
+                namespace="modules",
             )
             if not append_result or not append_result.get("success"):
                 yield {"type": "error", "message": "Failed to save result to message tree"}
@@ -1421,13 +1310,9 @@ def chat_with_config_streaming(
             if final_variables:
                 core.call_api(
                     "smarttavern/chat_branches/variables",
-                    {
-                        "action": "set",
-                        "file": conversation_file,
-                        "data": final_variables
-                    },
+                    {"action": "set", "file": conversation_file, "data": final_variables},
                     method="POST",
-                    namespace="modules"
+                    namespace="modules",
                 )
 
         yield {"type": "end"}

@@ -15,14 +15,11 @@ export type {
   ThemeScript,
   ThemeTokens,
   ThemePackV1,
-  ThemeApplyOptions
+  ThemeApplyOptions,
 } from '../features/themes/pack'
 
 // Re-export store types
-export type {
-  ThemeStoreState,
-  ColorMode
-} from '../features/themes/store'
+export type { ThemeStoreState, ColorMode } from '../features/themes/store'
 
 // Additional utility types
 export type ThemeTokenName = `--${string}`
@@ -32,59 +29,59 @@ export type ThemeListener = (payload?: unknown) => void
 /** Snapshot of current Appearance settings (subset; fields may expand in minor versions) */
 export interface ThemeAppearanceSnapshot {
   // Threaded/common sizes
-  contentFontSize?: number;
-  nameFontSize?: number;
-  badgeFontSize?: number;
-  floorFontSize?: number;
-  avatarSize?: number;
-  chatWidth?: number;              // percentage
-  inputHeight?: number;            // px
+  contentFontSize?: number
+  nameFontSize?: number
+  badgeFontSize?: number
+  floorFontSize?: number
+  avatarSize?: number
+  chatWidth?: number // percentage
+  inputHeight?: number // px
 
   // Opacity percentages (0~100)
-  threadedBgOpacityPct?: number;
-  threadedMsgBgOpacityPct?: number;
-  threadedListBgOpacityPct?: number;
-  threadedInputBgOpacityPct?: number;
-  sandboxBgOpacityPct?: number;
-  sandboxStageBgOpacityPct?: number;
+  threadedBgOpacityPct?: number
+  threadedMsgBgOpacityPct?: number
+  threadedListBgOpacityPct?: number
+  threadedInputBgOpacityPct?: number
+  sandboxBgOpacityPct?: number
+  sandboxStageBgOpacityPct?: number
 
   // Sandbox layout
-  sandboxAspectX?: number;
-  sandboxAspectY?: number;
-  sandboxMaxWidth?: number;
-  sandboxMaxWidthLimit?: number;
-  sandboxPadding?: number;
-  sandboxRadius?: number;
+  sandboxAspectX?: number
+  sandboxAspectY?: number
+  sandboxMaxWidth?: number
+  sandboxMaxWidthLimit?: number
+  sandboxPadding?: number
+  sandboxRadius?: number
 
   // Threaded HTML stage
-  thAspectX?: number;
-  thAspectY?: number;
-  thMaxWidthPct?: number;
-  thPadding?: number;
-  thRadius?: number;
+  thAspectX?: number
+  thAspectY?: number
+  thMaxWidthPct?: number
+  thPadding?: number
+  thRadius?: number
 
   // Common appearance
-  contentLineHeight?: number;
-  messageGap?: number;
-  cardRadius?: number | null;
-  stripeWidth?: number;
+  contentLineHeight?: number
+  messageGap?: number
+  cardRadius?: number | null
+  stripeWidth?: number
 
   // Index signature for forward compatibility
-  [key: string]: number | string | null | undefined;
+  [key: string]: number | string | null | undefined
 }
 
 /** Lightweight extension for theming runtime (no untrusted code execution) */
 export interface ThemeExtension {
   /** Unique id */
-  id: string;
+  id: string
   /** Whether the extension is active (default true) */
-  enabled?: boolean;
+  enabled?: boolean
   /** Optional priority for ordering (higher runs first); not strictly guaranteed */
-  priority?: number;
+  priority?: number
   /** Logical scopes per contract.json (e.g., "chat-threaded", "sandbox") */
-  scopes?: string[];
+  scopes?: string[]
   /** Receive Appearance snapshot to optionally adjust tokens/CSS */
-  applyAppearance?(snapshot: ThemeAppearanceSnapshot): void;
+  applyAppearance?(snapshot: ThemeAppearanceSnapshot): void
 }
 
 // Note: Module declarations removed as these files are now in TypeScript.

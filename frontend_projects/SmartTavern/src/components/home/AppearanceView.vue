@@ -22,7 +22,9 @@ const tabs = computed(() => [
 /** 刷新 Lucide 图标 */
 function refreshLucideIcons() {
   nextTick(() => {
-    try { (window as any)?.lucide?.createIcons?.() } catch (_) {}
+    try {
+      ;(window as any)?.lucide?.createIcons?.()
+    } catch (_) {}
   })
 }
 
@@ -96,10 +98,11 @@ onMounted(() => {
   line-height: 1;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: background var(--st-transition-normal),
-              border-color var(--st-transition-normal),
-              transform var(--st-transition-normal),
-              box-shadow var(--st-transition-normal);
+  transition:
+    background var(--st-transition-normal),
+    border-color var(--st-transition-normal),
+    transform var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
 
 .appearance-tab i {

@@ -16,7 +16,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import HtmlIframeSandbox from './HtmlIframeSandbox.vue'
- 
+
 const props = defineProps({
   html: { type: String, default: '' },
   baseUrl: { type: String, default: '' },
@@ -24,13 +24,13 @@ const props = defineProps({
   sandbox: {
     type: String,
     default:
-      'allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-popups-to-escape-sandbox allow-presentation allow-storage-access-by-user-activation'
+      'allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-popups-to-escape-sandbox allow-presentation allow-storage-access-by-user-activation',
   },
   allow: {
     type: String,
     default:
       // Feature Policy / Permissions Policy，尽可能放宽（宿主仍受浏览器/CSP限制）
-      'fullscreen *; clipboard-read *; clipboard-write *; geolocation *; microphone *; camera *; autoplay *; encrypted-media *; payment *; usb *; serial *; midi *; gyroscope *; magnetometer *; xr-spatial-tracking *; display-capture *; gamepad *; idle-detection *'
+      'fullscreen *; clipboard-read *; clipboard-write *; geolocation *; microphone *; camera *; autoplay *; encrypted-media *; payment *; usb *; serial *; midi *; gyroscope *; magnetometer *; xr-spatial-tracking *; display-capture *; gamepad *; idle-detection *',
   },
   injectCss: { type: String, default: '' },
   csp: { type: String, default: '' },
@@ -39,11 +39,15 @@ const props = defineProps({
    * - 'auto' 自适应高度（默认）
    * - 'fixed' 固定容器（使用 CSS aspect-ratio）
    */
-  displayMode: { type: String, default: 'auto', validator: (v: string) => ['auto', 'fixed'].includes(v) },
+  displayMode: {
+    type: String,
+    default: 'auto',
+    validator: (v: string) => ['auto', 'fixed'].includes(v),
+  },
   // 当允许时，可由 HTML 内联指令 <!-- st:display-mode=auto|fixed --> 覆盖
-  preferInlineMode: { type: Boolean, default: false }
+  preferInlineMode: { type: Boolean, default: false },
 })
- 
+
 function parseInlineDisplayMode(s?: string): 'auto' | 'fixed' | null {
   if (!s) return null
   const re = /<!--\s*st:display-mode\s*=\s*(auto|fixed)\s*-->/gi
@@ -64,10 +68,12 @@ function readSandboxDisplayPref(): Pref {
     const snap = JSON.parse(raw)
     const sel = String(snap?.sandboxDisplayModeSel || '').toLowerCase()
     if (sel === 'inline') return { preferInline: true, displayMode: 'auto' }
-    if (sel === 'fixed')  return { preferInline: false, displayMode: 'fixed' }
-    if (sel === 'auto')   return { preferInline: false, displayMode: 'auto' }
+    if (sel === 'fixed') return { preferInline: false, displayMode: 'fixed' }
+    if (sel === 'auto') return { preferInline: false, displayMode: 'auto' }
     return null
-  } catch { return null }
+  } catch {
+    return null
+  }
 }
 
 const inlineDisplayMode = computed(() => parseInlineDisplayMode(props.html))
@@ -110,11 +116,18 @@ function onAppearanceSandboxUpdate(e: Event) {
     runtimePref.value = null
   }
 }
-onMounted(() => window.addEventListener('stAppearanceSandboxUpdate', onAppearanceSandboxUpdate as EventListener))
+onMounted(() =>
+  window.addEventListener('stAppearanceSandboxUpdate', onAppearanceSandboxUpdate as EventListener),
+)
 onBeforeUnmount(() => {
-  try { window.removeEventListener('stAppearanceSandboxUpdate', onAppearanceSandboxUpdate as EventListener) } catch (_) {}
+  try {
+    window.removeEventListener(
+      'stAppearanceSandboxUpdate',
+      onAppearanceSandboxUpdate as EventListener,
+    )
+  } catch (_) {}
 })
- 
+
 const DEFAULT_HTML = `
 <div class="stx">
   <header class="stx-header">
@@ -222,7 +235,7 @@ code{ color: var(--accent); font-family: ui-monospace, "JetBrains Mono", "Fira C
 })();
 <\/script>
 `
- 
+
 const effectiveHtml = computed(() => props.html || DEFAULT_HTML)
 </script>
 
@@ -245,15 +258,29 @@ const effectiveHtml = computed(() => props.html || DEFAULT_HTML)
   border-radius: var(--st-sandbox-radius);
   /* 可见边界与半透明底，保持与 App.vue 中样式一致 */
   /* 同步舞台透明度：边框/背景/玻璃强度随 --st-sandbox-stage-bg-opacity 变化 */
-  border: var(--st-border-width-md) solid rgb(var(--st-primary) / calc(var(--st-sandbox-stage-bg-opacity, 0.82) * var(--st-sandbox-stage-border-alpha)));
+  border: var(--st-border-width-md) solid
+    rgb(
+      var(--st-primary) /
+        calc(var(--st-sandbox-stage-bg-opacity, 0.82) * var(--st-sandbox-stage-border-alpha))
+    );
   background: rgb(var(--st-surface) / var(--st-sandbox-stage-bg-opacity, 0.82)) !important;
-  backdrop-filter: blur(calc(var(--st-sandbox-stage-bg-opacity, 0.82) * var(--st-sandbox-stage-blur-multiplier))) saturate(calc(1 + var(--st-sandbox-stage-bg-opacity, 0.82) * var(--st-sandbox-stage-saturate-boost)));
-  -webkit-backdrop-filter: blur(calc(var(--st-sandbox-stage-bg-opacity, 0.82) * var(--st-sandbox-stage-blur-multiplier))) saturate(calc(1 + var(--st-sandbox-stage-bg-opacity, 0.82) * var(--st-sandbox-stage-saturate-boost)));
+  backdrop-filter: blur(
+      calc(var(--st-sandbox-stage-bg-opacity, 0.82) * var(--st-sandbox-stage-blur-multiplier))
+    )
+    saturate(
+      calc(1 + var(--st-sandbox-stage-bg-opacity, 0.82) * var(--st-sandbox-stage-saturate-boost))
+    );
+  -webkit-backdrop-filter: blur(
+      calc(var(--st-sandbox-stage-bg-opacity, 0.82) * var(--st-sandbox-stage-blur-multiplier))
+    )
+    saturate(
+      calc(1 + var(--st-sandbox-stage-bg-opacity, 0.82) * var(--st-sandbox-stage-saturate-boost))
+    );
   box-shadow: var(--st-shadow-card);
   margin: 0 auto;
   overflow: hidden;
 }
- 
+
 /* 内部 iframe 铺满舞台区域（跨子组件样式，使用 :deep 穿透） */
 .st-sandbox-stage :deep(.st-iframe) {
   width: 100%;

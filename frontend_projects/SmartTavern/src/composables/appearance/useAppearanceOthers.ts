@@ -23,9 +23,9 @@ export type { DateTimeFormatOption }
 
 // Interfaces
 interface AppearanceOthersState {
-  fabMargin: Ref<number>  // 浮标吸附边距（本地状态）
-  timezone: Ref<string>   // 时区设置（来自 Pinia store，全局共享）
-  dateTimeFormat: Ref<DateTimeFormatOption>  // 日期时间显示格式（来自 Pinia store，全局共享）
+  fabMargin: Ref<number> // 浮标吸附边距（本地状态）
+  timezone: Ref<string> // 时区设置（来自 Pinia store，全局共享）
+  dateTimeFormat: Ref<DateTimeFormatOption> // 日期时间显示格式（来自 Pinia store，全局共享）
 }
 
 interface AppearanceOthersSnapshot {
@@ -43,7 +43,10 @@ function readCssVar(name: string, fallback: number): number {
 }
 
 function setRootVar(name: string, value: number | string): void {
-  document.documentElement.style.setProperty(name, typeof value === 'number' ? value + 'px' : String(value))
+  document.documentElement.style.setProperty(
+    name,
+    typeof value === 'number' ? value + 'px' : String(value),
+  )
 }
 
 // LS helpers
@@ -71,14 +74,14 @@ function createState(): AppearanceOthersState {
   // 获取 Pinia store
   const appearanceStore = useAppearanceSettingsStore()
   const { timezone, dateTimeFormat } = storeToRefs(appearanceStore)
-  
+
   // 浮标吸附边距（仅本地状态，不需要全局共享）
   const fabMargin = ref(12)
 
   return {
     fabMargin,
-    timezone,        // 来自 Pinia store，响应式共享
-    dateTimeFormat,  // 来自 Pinia store，响应式共享
+    timezone, // 来自 Pinia store，响应式共享
+    dateTimeFormat, // 来自 Pinia store，响应式共享
   }
 }
 
@@ -92,13 +95,16 @@ function buildSnapshot(state: AppearanceOthersState): AppearanceOthersSnapshot {
 }
 
 // Apply state from snapshot into refs + write CSS variables
-function applyState(state: AppearanceOthersState, s: Partial<AppearanceOthersSnapshot> | null | undefined): void {
+function applyState(
+  state: AppearanceOthersState,
+  s: Partial<AppearanceOthersSnapshot> | null | undefined,
+): void {
   if (!s || typeof s !== 'object') return
   const num = (v: any, f: number): number => (typeof v === 'number' ? v : f)
 
   state.fabMargin.value = num(s.fabMargin, 12)
   setRootVar('--st-fab-margin', state.fabMargin.value)
-  
+
   // 时区和日期时间格式通过 Pinia store 更新（自动同步到所有组件）
   const appearanceStore = useAppearanceSettingsStore()
   if (typeof s.timezone === 'string' && s.timezone) {
@@ -125,15 +131,20 @@ function initFromCSS(state: AppearanceOthersState): void {
 
   // 写回 CSS 变量，保持 UI 与变量同步
   setRootVar('--st-fab-margin', state.fabMargin.value)
-  
+
   // 时区和时间格式使用默认值（已在 createState 中设置）
 
   // 持久化一次，确保后续刷新可以完整恢复
-  try { saveSnapshotLS(buildSnapshot(state)) } catch (_) {}
+  try {
+    saveSnapshotLS(buildSnapshot(state))
+  } catch (_) {}
 }
 
 // Auto save timer
-function startAutoSave(state: AppearanceOthersState, { intervalMs = 1000 }: { intervalMs?: number } = {}): () => void {
+function startAutoSave(
+  state: AppearanceOthersState,
+  { intervalMs = 1000 }: { intervalMs?: number } = {},
+): () => void {
   let last = ''
   function tick(): void {
     try {
@@ -144,7 +155,9 @@ function startAutoSave(state: AppearanceOthersState, { intervalMs = 1000 }: { in
         last = str
       }
       // Broadcast snapshot for theme extensions (optional)
-      try { ThemeManager?.applyAppearanceSnapshot?.(snap) } catch (_) {}
+      try {
+        ThemeManager?.applyAppearanceSnapshot?.(snap)
+      } catch (_) {}
     } catch (_) {}
   }
   const timer = setInterval(tick, intervalMs)
@@ -154,7 +167,9 @@ function startAutoSave(state: AppearanceOthersState, { intervalMs = 1000 }: { in
 }
 
 function stopAutoSave(stopFn: (() => void) | undefined): void {
-  try { typeof stopFn === 'function' && stopFn() } catch (_) {}
+  try {
+    typeof stopFn === 'function' && stopFn()
+  } catch (_) {}
 }
 
 // Composable entry
@@ -164,7 +179,8 @@ export default function useAppearanceOthers() {
     state,
     // lifecycle helpers
     initFromCSS: (): void => initFromCSS(state),
-    applyState: (snap: Partial<AppearanceOthersSnapshot> | null | undefined): void => applyState(state, snap),
+    applyState: (snap: Partial<AppearanceOthersSnapshot> | null | undefined): void =>
+      applyState(state, snap),
     buildSnapshot: (): AppearanceOthersSnapshot => buildSnapshot(state),
     saveSnapshotLS: (snap: AppearanceOthersSnapshot): boolean => saveSnapshotLS(snap),
     loadSnapshotLS,

@@ -56,14 +56,14 @@ export function useUiAssets(): UseUiAssetsAPI {
       // Ignore errors
     }
 
-    try { 
-      (window as any)?.lucide?.createIcons?.() 
+    try {
+      ;(window as any)?.lucide?.createIcons?.()
     } catch (_) {
       // Ignore errors
     }
     if (typeof (window as any).initFlowbite === 'function') {
-      try { 
-        (window as any).initFlowbite() 
+      try {
+        ;(window as any).initFlowbite()
       } catch (_) {
         // Ignore errors
       }
@@ -72,14 +72,14 @@ export function useUiAssets(): UseUiAssetsAPI {
 
   function refreshIcons(): void {
     nextTick(() => {
-      try { 
-        (window as any)?.lucide?.createIcons?.() 
+      try {
+        ;(window as any)?.lucide?.createIcons?.()
       } catch (_) {
         // Ignore errors
       }
       if (typeof (window as any).initFlowbite === 'function') {
-        try { 
-          (window as any).initFlowbite() 
+        try {
+          ;(window as any).initFlowbite()
         } catch (_) {
           // Ignore errors
         }

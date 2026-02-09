@@ -44,7 +44,7 @@ function genNodeId(role: MessageRole = 'user'): string {
 function normalizeSend(p: any = {}): NormalizedSendRequest {
   const conversationFile = String(p.conversationFile || '').trim()
   const parentId = String(p.parentId || '').trim()
-  const role: MessageRole = (p.role === 'assistant' || p.role === 'system') ? p.role : 'user'
+  const role: MessageRole = p.role === 'assistant' || p.role === 'system' ? p.role : 'user'
   const content = String(p.content || '')
   const nodeId = p.nodeId ? String(p.nodeId) : genNodeId(role)
   const tag = p.tag ? String(p.tag) : undefined
@@ -82,114 +82,148 @@ export function initMessageBridge(): DisposerFn {
   const offs: DisposerFn[] = []
 
   // 发送请求
-  offs.push(Host.events.on(Msg.EVT_MESSAGE_SEND_REQ, async (payload: any) => {
-    let req: NormalizedSendRequest
-    try {
-      req = normalizeSend(payload)
-    } catch (e: any) {
+  offs.push(
+    Host.events.on(Msg.EVT_MESSAGE_SEND_REQ, async (payload: any) => {
+      let req: NormalizedSendRequest
       try {
-        Host.events.emit(Msg.EVT_MESSAGE_SEND_FAIL, {
-          conversationFile: payload?.conversationFile,
-          message: e?.message || e,
-          detail: e,
-          tag: payload?.tag,
+        req = normalizeSend(payload)
+      } catch (e: any) {
+        try {
+          Host.events.emit(Msg.EVT_MESSAGE_SEND_FAIL, {
+            conversationFile: payload?.conversationFile,
+            message: e?.message || e,
+            detail: e,
+            tag: payload?.tag,
+          })
+        } catch (_) {}
+        Host.pushToast?.({
+          type: 'error',
+          message: i18n.t('workflow.controllers.message.sendFailIncompleteParam'),
+          timeout: 2200,
         })
-      } catch (_) {}
-      Host.pushToast?.({ type: 'error', message: i18n.t('workflow.controllers.message.sendFailIncompleteParam'), timeout: 2200 })
-      return
-    }
+        return
+      }
 
-    try {
-      // 发送到后端：append_message
-      const updatedDoc = await ChatBranches.appendMessage({
-        file: req.conversationFile,
-        node_id: req.nodeId,
-        pid: req.parentId,
-        role: req.role,
-        content: req.content,
-      })
-
-      // 广播成功，包含占位助手节点的时间戳
-      Host.events.emit(Msg.EVT_MESSAGE_SEND_OK, {
-        conversationFile: req.conversationFile,
-        nodeId: req.nodeId,
-        role: req.role,
-        content: req.content,
-        doc: updatedDoc,
-        node_updated_at: updatedDoc?.node_updated_at,
-        placeholder_updated_at: updatedDoc?.placeholder_updated_at,
-        tag: req.tag,
-      })
-      Host.pushToast?.({ type: 'success', message: i18n.t('workflow.controllers.message.sendSuccess'), timeout: 1600 })
-    } catch (e: any) {
-      // 广播失败
       try {
-        Host.events.emit(Msg.EVT_MESSAGE_SEND_FAIL, {
-          conversationFile: req.conversationFile,
-          message: e?.message || i18n.t('workflow.controllers.message.sendFail'),
-          detail: e,
-          tag: req.tag,
+        // 发送到后端：append_message
+        const updatedDoc = await ChatBranches.appendMessage({
+          file: req.conversationFile,
+          node_id: req.nodeId,
+          pid: req.parentId,
+          role: req.role,
+          content: req.content,
         })
-      } catch (_) {}
-      Host.pushToast?.({ type: 'error', message: i18n.t('workflow.controllers.message.sendFail'), timeout: 2200 })
-    }
-  }))
 
-  // 编辑请求
-  offs.push(Host.events.on(Msg.EVT_MESSAGE_EDIT_REQ, async (payload: any) => {
-    let req: NormalizedEditRequest
-    try {
-      req = normalizeEdit(payload)
-    } catch (e: any) {
-      try {
-        Host.events.emit(Msg.EVT_MESSAGE_EDIT_FAIL, {
-          conversationFile: payload?.conversationFile,
-          nodeId: payload?.nodeId,
-          message: e?.message || e,
-          detail: e,
-          tag: payload?.tag,
-        })
-      } catch (_) {}
-      Host.pushToast?.({ type: 'error', message: i18n.t('workflow.controllers.message.editFailIncompleteParam'), timeout: 2200 })
-      return
-    }
-
-    try {
-      // 编辑到后端：update_message
-      const updatedDoc = await ChatBranches.updateMessage({
-        file: req.conversationFile,
-        node_id: req.nodeId,
-        content: req.content,
-      })
-
-      // 广播成功
-      Host.events.emit(Msg.EVT_MESSAGE_EDIT_OK, {
-        conversationFile: req.conversationFile,
-        nodeId: req.nodeId,
-        content: req.content,
-        doc: updatedDoc,
-        node_updated_at: updatedDoc?.node_updated_at,
-        tag: req.tag,
-      })
-      Host.pushToast?.({ type: 'success', message: i18n.t('workflow.controllers.message.editSuccess'), timeout: 1600 })
-    } catch (e: any) {
-      // 广播失败
-      try {
-        Host.events.emit(Msg.EVT_MESSAGE_EDIT_FAIL, {
+        // 广播成功，包含占位助手节点的时间戳
+        Host.events.emit(Msg.EVT_MESSAGE_SEND_OK, {
           conversationFile: req.conversationFile,
           nodeId: req.nodeId,
-          message: e?.message || i18n.t('workflow.controllers.message.editFail'),
-          detail: e,
+          role: req.role,
+          content: req.content,
+          doc: updatedDoc,
+          node_updated_at: updatedDoc?.node_updated_at,
+          placeholder_updated_at: updatedDoc?.placeholder_updated_at,
           tag: req.tag,
         })
-      } catch (_) {}
-      Host.pushToast?.({ type: 'error', message: i18n.t('workflow.controllers.message.editFail'), timeout: 2200 })
-    }
-  }))
+        Host.pushToast?.({
+          type: 'success',
+          message: i18n.t('workflow.controllers.message.sendSuccess'),
+          timeout: 1600,
+        })
+      } catch (e: any) {
+        // 广播失败
+        try {
+          Host.events.emit(Msg.EVT_MESSAGE_SEND_FAIL, {
+            conversationFile: req.conversationFile,
+            message: e?.message || i18n.t('workflow.controllers.message.sendFail'),
+            detail: e,
+            tag: req.tag,
+          })
+        } catch (_) {}
+        Host.pushToast?.({
+          type: 'error',
+          message: i18n.t('workflow.controllers.message.sendFail'),
+          timeout: 2200,
+        })
+      }
+    }),
+  )
+
+  // 编辑请求
+  offs.push(
+    Host.events.on(Msg.EVT_MESSAGE_EDIT_REQ, async (payload: any) => {
+      let req: NormalizedEditRequest
+      try {
+        req = normalizeEdit(payload)
+      } catch (e: any) {
+        try {
+          Host.events.emit(Msg.EVT_MESSAGE_EDIT_FAIL, {
+            conversationFile: payload?.conversationFile,
+            nodeId: payload?.nodeId,
+            message: e?.message || e,
+            detail: e,
+            tag: payload?.tag,
+          })
+        } catch (_) {}
+        Host.pushToast?.({
+          type: 'error',
+          message: i18n.t('workflow.controllers.message.editFailIncompleteParam'),
+          timeout: 2200,
+        })
+        return
+      }
+
+      try {
+        // 编辑到后端：update_message
+        const updatedDoc = await ChatBranches.updateMessage({
+          file: req.conversationFile,
+          node_id: req.nodeId,
+          content: req.content,
+        })
+
+        // 广播成功
+        Host.events.emit(Msg.EVT_MESSAGE_EDIT_OK, {
+          conversationFile: req.conversationFile,
+          nodeId: req.nodeId,
+          content: req.content,
+          doc: updatedDoc,
+          node_updated_at: updatedDoc?.node_updated_at,
+          tag: req.tag,
+        })
+        Host.pushToast?.({
+          type: 'success',
+          message: i18n.t('workflow.controllers.message.editSuccess'),
+          timeout: 1600,
+        })
+      } catch (e: any) {
+        // 广播失败
+        try {
+          Host.events.emit(Msg.EVT_MESSAGE_EDIT_FAIL, {
+            conversationFile: req.conversationFile,
+            nodeId: req.nodeId,
+            message: e?.message || i18n.t('workflow.controllers.message.editFail'),
+            detail: e,
+            tag: req.tag,
+          })
+        } catch (_) {}
+        Host.pushToast?.({
+          type: 'error',
+          message: i18n.t('workflow.controllers.message.editFail'),
+          timeout: 2200,
+        })
+      }
+    }),
+  )
 
   // 返回清理函数
   return () => {
-    try { offs.forEach(fn => { try { fn?.() } catch (_) {} }) } catch (_) {}
+    try {
+      offs.forEach((fn) => {
+        try {
+          fn?.()
+        } catch (_) {}
+      })
+    } catch (_) {}
     offs.length = 0
   }
 }

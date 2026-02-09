@@ -15,7 +15,9 @@ const { t } = useI18n()
 /** 刷新 Lucide 图标 */
 function refreshLucideIcons() {
   nextTick(() => {
-    try { window?.lucide?.createIcons?.() } catch (_) {}
+    try {
+      window?.lucide?.createIcons?.()
+    } catch (_) {}
   })
 }
 
@@ -53,8 +55,8 @@ const showDeleteConfirmModal = ref(false)
 const deleteTarget = ref(null)
 
 // 计算属性：过滤启用/禁用的主题
-const enabledThemes = computed(() => backendThemes.value.filter(t => t.enabled))
-const disabledThemes = computed(() => backendThemes.value.filter(t => !t.enabled))
+const enabledThemes = computed(() => backendThemes.value.filter((t) => t.enabled))
+const disabledThemes = computed(() => backendThemes.value.filter((t) => !t.enabled))
 
 // 拖拽排序状态
 const savingOrder = ref(false)
@@ -66,21 +68,25 @@ onMounted(async () => {
       themeInfo.value = ThemeManager.getCurrentTheme?.() || null
     })
   } catch (_) {}
-  
+
   // 加载后端主题列表
   await loadBackendThemes()
-  
+
   // 刷新 lucide 图标
   refreshLucideIcons()
 })
 
 onBeforeUnmount(() => {
-  try { off?.() } catch (_) {}
+  try {
+    off?.()
+  } catch (_) {}
   off = null
-  
+
   // 清理图标 blob URLs
   for (const url of Object.values(iconCache.value)) {
-    try { URL.revokeObjectURL(url) } catch (_) {}
+    try {
+      URL.revokeObjectURL(url)
+    } catch (_) {}
   }
   iconCache.value = {}
 })
@@ -94,10 +100,10 @@ async function loadBackendThemes() {
   try {
     const res = await StylesService.listThemes()
     backendThemes.value = res.items || []
-    
+
     // 等待 DOM 更新完成后再加载图标，避免响应式更新冲突
     await nextTick()
-    
+
     // 加载所有主题的图标（不等待完成，避免阻塞）
     const iconLoadPromises = []
     for (const theme of backendThemes.value) {
@@ -105,12 +111,12 @@ async function loadBackendThemes() {
         iconLoadPromises.push(loadThemeIcon(theme))
       }
     }
-    
+
     // 等待所有图标加载完成
     if (iconLoadPromises.length > 0) {
       await Promise.allSettled(iconLoadPromises)
     }
-    
+
     // 刷新 lucide 图标
     refreshLucideIcons()
   } catch (err) {
@@ -150,21 +156,23 @@ function getThemeIconUrl(theme) {
  */
 async function onToggleTheme(theme) {
   if (!theme || !theme.dir) return
-  
+
   applyingTheme.value = theme.dir
   try {
     // 切换启用状态
     const newEnabled = !theme.enabled
     await StylesService.setThemeEnabled(theme.dir, newEnabled)
-    
-    console.info(`[ThemeManagerTab] Theme ${newEnabled ? 'enabled' : 'disabled'}: ${theme.name || theme.dir}`)
-    
+
+    console.info(
+      `[ThemeManagerTab] Theme ${newEnabled ? 'enabled' : 'disabled'}: ${theme.name || theme.dir}`,
+    )
+
     // 刷新主题列表
     await loadBackendThemes()
-    
+
     // 应用所有启用主题的合并包
     await applyAllEnabledThemes()
-    
+
     // 刷新 Lucide 图标（主题切换后需要重新渲染）
     refreshLucideIcons()
   } catch (err) {
@@ -183,7 +191,7 @@ async function onToggleTheme(theme) {
 async function applyAllEnabledThemes() {
   try {
     const res = await StylesService.getAllEnabledThemes()
-    
+
     if (res.enabled_count === 0 || !res.merged_pack) {
       // 没有启用的主题，重置为默认
       await ThemeManager.resetTheme({ persist: true })
@@ -193,11 +201,14 @@ async function applyAllEnabledThemes() {
       refreshLucideIcons()
       return
     }
-    
+
     // 应用合并后的主题包
     await ThemeManager.applyThemePack(res.merged_pack, { persist: true })
-    console.info(`[ThemeManagerTab] Applied ${res.enabled_count} merged themes:`, res.enabled_themes)
-    
+    console.info(
+      `[ThemeManagerTab] Applied ${res.enabled_count} merged themes:`,
+      res.enabled_themes,
+    )
+
     // 主题应用后等待 DOM 更新，然后刷新图标
     await nextTick()
     refreshLucideIcons()
@@ -211,7 +222,7 @@ async function applyAllEnabledThemes() {
  */
 function onDeleteBackendTheme(theme) {
   if (!theme || !theme.dir) return
-  
+
   deleteTarget.value = {
     key: theme.dir,
     name: theme.name || theme.dir.split('/').pop() || '',
@@ -233,7 +244,7 @@ function closeDeleteConfirmModal() {
  */
 async function handleDeleteConfirm() {
   if (!deleteTarget.value) return
-  
+
   deletingTheme.value = deleteTarget.value.key
   try {
     const res = await StylesService.deleteTheme(deleteTarget.value.folderPath)
@@ -258,11 +269,11 @@ async function handleDeleteConfirm() {
 async function onThemeFileSelected(e) {
   const file = e?.target?.files?.[0]
   if (!file) return
-  
+
   importing.value = true
   try {
     const res = await StylesService.importStyleFromFile(file)
-    
+
     if (res.success) {
       console.info(`[ThemeManagerTab] Theme imported: ${res.name || res.folder}`)
       // 刷新列表
@@ -290,7 +301,9 @@ async function onThemeFileSelected(e) {
     alert(err.message || t('error.importFailed'))
   } finally {
     importing.value = false
-    try { e.target.value = '' } catch (_) {}
+    try {
+      e.target.value = ''
+    } catch (_) {}
   }
 }
 
@@ -306,17 +319,17 @@ function triggerImport() {
  */
 async function onConflictOverwrite() {
   if (!pendingImportData.value?.file) return
-  
+
   showConflictModal.value = false
   importing.value = true
-  
+
   try {
     const res = await StylesService.importStyleFromFile(
       pendingImportData.value.file,
       undefined,
-      true // overwrite
+      true, // overwrite
     )
-    
+
     if (res.success) {
       console.info(`[ThemeManagerTab] Theme imported (overwrite): ${res.name || res.folder}`)
       await loadBackendThemes()
@@ -343,17 +356,17 @@ async function onConflictOverwrite() {
  */
 async function onConflictRename(newName) {
   if (!pendingImportData.value?.file || !newName) return
-  
+
   showConflictModal.value = false
   importing.value = true
-  
+
   try {
     const res = await StylesService.importStyleFromFile(
       pendingImportData.value.file,
       newName,
-      false
+      false,
     )
-    
+
     if (res.success) {
       console.info(`[ThemeManagerTab] Theme imported (renamed): ${res.name || res.folder}`)
       await loadBackendThemes()
@@ -417,7 +430,7 @@ function onExportSuccess(data) {
  */
 async function onViewTheme(theme) {
   if (!theme || !theme.dir) return
-  
+
   try {
     // 获取主题详情
     const detail = await StylesService.getThemeDetail(theme.dir)
@@ -425,11 +438,11 @@ async function onViewTheme(theme) {
       alert(t('error.loadFailed', { error: detail.message || detail.error }))
       return
     }
-    
+
     detailTheme.value = detail
     detailThemeDir.value = theme.dir
     showDetailModal.value = true
-    
+
     // 刷新图标
     await nextTick()
     refreshLucideIcons()
@@ -460,7 +473,7 @@ function handleThemeSaved(payload) {
  * 计算导出列表项
  */
 const exportItems = computed(() => {
-  return backendThemes.value.map(theme => ({
+  return backendThemes.value.map((theme) => ({
     key: theme.dir, // 使用目录路径作为 key（用于导出）
     name: theme.name || theme.dir.split('/').pop(),
     avatarUrl: getThemeIconUrl(theme),
@@ -490,7 +503,7 @@ function isThemeEnabled(theme) {
 /**
  * 获取启用的主题数量
  */
-const enabledCount = computed(() => backendThemes.value.filter(t => t.enabled).length)
+const enabledCount = computed(() => backendThemes.value.filter((t) => t.enabled).length)
 
 // ==================== 拖拽排序功能 ====================
 
@@ -503,12 +516,7 @@ function getThemeFolderName(theme) {
 }
 
 // 主题拖拽 - 使用 composable
-const {
-  dragging,
-  dragOverId,
-  dragOverBefore,
-  startDrag,
-} = useCustomDrag({
+const { dragging, dragOverId, dragOverBefore, startDrag } = useCustomDrag({
   scrollContainerSelector: '.theme-list .scroll-container2',
   itemSelector: '.theme-item',
   dataAttribute: 'data-theme-dir',
@@ -516,21 +524,21 @@ const {
     const list = [...backendThemes.value]
     const draggedIdStr = String(draggedId)
     const targetIdStr = targetId ? String(targetId) : null
-    
-    const fromIdx = list.findIndex(t => String(t.dir) === draggedIdStr)
-    
+
+    const fromIdx = list.findIndex((t) => String(t.dir) === draggedIdStr)
+
     if (fromIdx >= 0 && draggedIdStr !== targetIdStr) {
       // 提取文件夹名称列表用于排序
-      let folderNames = list.map(t => getThemeFolderName(t))
+      let folderNames = list.map((t) => getThemeFolderName(t))
       const fromName = getThemeFolderName(list[fromIdx])
       const fromNameIdx = folderNames.indexOf(fromName)
-      
+
       if (fromNameIdx >= 0) {
         // 移除原位置
         folderNames.splice(fromNameIdx, 1)
-        
+
         if (targetIdStr) {
-          const targetTheme = list.find(t => String(t.dir) === targetIdStr)
+          const targetTheme = list.find((t) => String(t.dir) === targetIdStr)
           if (targetTheme) {
             const toName = getThemeFolderName(targetTheme)
             const toIdx = folderNames.indexOf(toName)
@@ -542,7 +550,7 @@ const {
         } else {
           folderNames.push(fromName)
         }
-        
+
         // 保存新顺序到后端
         savingOrder.value = true
         try {
@@ -560,9 +568,9 @@ const {
     }
   },
   getTitleForItem: (id) => {
-    const theme = backendThemes.value.find(t => String(t.dir) === String(id))
+    const theme = backendThemes.value.find((t) => String(t.dir) === String(id))
     return theme?.name || id
-  }
+  },
 })
 </script>
 
@@ -572,12 +580,7 @@ const {
     <div class="theme-header">
       <h3>{{ t('appearance.theme.title') }}</h3>
       <div class="theme-header-actions">
-        <button
-          class="st-action-btn"
-          type="button"
-          @click="triggerImport"
-          :disabled="importing"
-        >
+        <button class="st-action-btn" type="button" @click="triggerImport" :disabled="importing">
           <i data-lucide="download" class="action-icon"></i>
           {{ importing ? t('common.importing') : t('common.import') }}
         </button>
@@ -592,16 +595,16 @@ const {
         </button>
       </div>
     </div>
-    
+
     <!-- 隐藏的文件选择输入 -->
     <input
       ref="importInputRef"
       type="file"
       accept=".zip,.png"
-      style="display: none;"
+      style="display: none"
       @change="onThemeFileSelected"
     />
-    
+
     <p class="muted">{{ t('appearance.theme.desc') }}</p>
 
     <!-- 后端主题列表 -->
@@ -609,22 +612,22 @@ const {
       <label class="st-control-label">
         <span class="label-text">{{ t('appearance.theme.backendThemes') || '后端主题' }}</span>
       </label>
-      
+
       <!-- 加载错误 -->
       <div v-if="loadError" class="theme-error">
         {{ loadError }}
       </div>
-      
+
       <!-- 主题列表 -->
       <CustomScrollbar2 v-else class="theme-list">
         <div v-if="loadingThemes" class="theme-loading">
           {{ t('common.loading') }}
         </div>
-        
+
         <div v-else-if="backendThemes.length === 0" class="theme-empty">
           {{ t('common.noData') }}
         </div>
-        
+
         <div v-else class="theme-items">
           <div
             v-for="theme in backendThemes"
@@ -633,8 +636,10 @@ const {
             :class="{
               'theme-item--enabled': isThemeEnabled(theme),
               'theme-item--dragging': dragging && String(dragging.id) === String(theme.dir),
-              'theme-item--drag-over-top': dragOverId && String(dragOverId) === String(theme.dir) && dragOverBefore,
-              'theme-item--drag-over-bottom': dragOverId && String(dragOverId) === String(theme.dir) && !dragOverBefore
+              'theme-item--drag-over-top':
+                dragOverId && String(dragOverId) === String(theme.dir) && dragOverBefore,
+              'theme-item--drag-over-bottom':
+                dragOverId && String(dragOverId) === String(theme.dir) && !dragOverBefore,
             }"
             :data-theme-dir="theme.dir"
           >
@@ -646,7 +651,7 @@ const {
             >
               <i data-lucide="grip-vertical" class="grip-icon"></i>
             </div>
-            
+
             <!-- 启用复选框 -->
             <div class="theme-item-checkbox">
               <input
@@ -656,7 +661,7 @@ const {
                 :disabled="applyingTheme === theme.dir"
               />
             </div>
-            
+
             <!-- 主题图标 -->
             <div class="theme-item-icon">
               <img
@@ -667,7 +672,7 @@ const {
               />
               <i v-else data-lucide="palette" class="theme-icon-lucide"></i>
             </div>
-            
+
             <div class="theme-item-info">
               <div class="theme-item-name">
                 {{ theme.name || theme.dir.split('/').pop() }}
@@ -680,15 +685,13 @@ const {
                 {{ theme.description }}
               </div>
               <div class="theme-item-entries" v-if="theme.entries && theme.entries.length">
-                <span class="theme-entry-count">{{ theme.entries.length }} {{ t('common.file') }}</span>
+                <span class="theme-entry-count"
+                  >{{ theme.entries.length }} {{ t('common.file') }}</span
+                >
               </div>
             </div>
             <div class="theme-item-actions">
-              <button
-                class="st-btn st-btn--view"
-                type="button"
-                @click="onViewTheme(theme)"
-              >
+              <button class="st-btn st-btn--view" type="button" @click="onViewTheme(theme)">
                 {{ t('common.view') }}
               </button>
               <button
@@ -714,14 +717,18 @@ const {
         </div>
       </label>
       <p class="muted theme-multi-hint">
-        {{ t('appearance.theme.multiThemeHint') || '支持同时启用多个主题。排序靠前的主题优先级更高，会覆盖后面主题的相同样式。' }}
+        {{
+          t('appearance.theme.multiThemeHint') ||
+          '支持同时启用多个主题。排序靠前的主题优先级更高，会覆盖后面主题的相同样式。'
+        }}
       </p>
-      <div class="theme-actions" style="margin-top:8px; display:flex; gap:8px;">
-        <button class="st-settings-close" type="button" @click="onThemeReset">{{ t('appearance.theme.resetDefault') }}</button>
+      <div class="theme-actions" style="margin-top: 8px; display: flex; gap: 8px">
+        <button class="st-settings-close" type="button" @click="onThemeReset">
+          {{ t('appearance.theme.resetDefault') }}
+        </button>
       </div>
     </div>
 
-    
     <!-- 导出弹窗 -->
     <ExportModal
       :show="showExportModal"
@@ -734,7 +741,7 @@ const {
       @close="closeExportModal"
       @export="onExportSuccess"
     />
-    
+
     <!-- 导入冲突弹窗 -->
     <ImportConflictModal
       :show="showConflictModal"
@@ -746,7 +753,7 @@ const {
       @rename="onConflictRename"
       @close="onConflictCancel"
     />
-    
+
     <!-- 删除确认弹窗 -->
     <DeleteConfirmModal
       :show="showDeleteConfirmModal"
@@ -756,18 +763,14 @@ const {
       @close="closeDeleteConfirmModal"
       @confirm="handleDeleteConfirm"
     />
-    
+
     <!-- 详情面板 -->
     <ContentViewModal
       :show="showDetailModal"
       :title="t('panel.themes.detailTitle')"
       @close="closeDetailModal"
     >
-      <ThemeDetailView
-        :theme-data="detailTheme"
-        :dir="detailThemeDir"
-        @saved="handleThemeSaved"
-      />
+      <ThemeDetailView :theme-data="detailTheme" :dir="detailThemeDir" @saved="handleThemeSaved" />
     </ContentViewModal>
   </div>
 </template>
@@ -804,7 +807,10 @@ const {
   background: rgba(var(--st-surface-2), 0.8);
   color: rgb(var(--st-color-text));
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
   white-space: nowrap;
 }
 
@@ -864,7 +870,11 @@ const {
   background: rgba(var(--st-surface-2), 0.5);
   border: 2px solid rgb(var(--st-border));
   border-radius: var(--st-radius-md, 6px);
-  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
   gap: var(--st-spacing-md, 10px);
   position: relative;
 }
@@ -912,7 +922,9 @@ const {
 .theme-drop-end {
   height: var(--st-theme-drop-end-height, 8px);
   border-radius: var(--st-radius-sm, 4px);
-  transition: height var(--st-transition-fast, 0.15s ease), background-color var(--st-transition-fast, 0.15s ease);
+  transition:
+    height var(--st-transition-fast, 0.15s ease),
+    background-color var(--st-transition-fast, 0.15s ease);
 }
 
 .theme-drop-end--active {
@@ -998,14 +1010,14 @@ const {
   justify-content: center;
 }
 
-.theme-item-checkbox input[type="checkbox"] {
+.theme-item-checkbox input[type='checkbox'] {
   width: var(--st-theme-checkbox-size, 18px);
   height: var(--st-theme-checkbox-size, 18px);
   cursor: pointer;
   accent-color: rgb(var(--st-primary));
 }
 
-.theme-item-checkbox input[type="checkbox"]:disabled {
+.theme-item-checkbox input[type='checkbox']:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -1106,7 +1118,10 @@ const {
   border-radius: var(--st-radius-md, 6px);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background-color var(--st-transition-fast, 0.15s ease), border-color var(--st-transition-fast, 0.15s ease), color var(--st-transition-fast, 0.15s ease);
+  transition:
+    background-color var(--st-transition-fast, 0.15s ease),
+    border-color var(--st-transition-fast, 0.15s ease),
+    color var(--st-transition-fast, 0.15s ease);
   white-space: nowrap;
 }
 
@@ -1169,7 +1184,10 @@ const {
   border-radius: var(--st-radius-md, 6px);
   color: rgb(var(--st-color-text));
   cursor: pointer;
-  transition: background-color var(--st-transition-fast, 0.15s ease), border-color var(--st-transition-fast, 0.15s ease), color var(--st-transition-fast, 0.15s ease);
+  transition:
+    background-color var(--st-transition-fast, 0.15s ease),
+    border-color var(--st-transition-fast, 0.15s ease),
+    color var(--st-transition-fast, 0.15s ease);
 }
 
 .st-refresh-btn:hover:not(:disabled) {
@@ -1181,5 +1199,4 @@ const {
   opacity: 0.6;
   cursor: not-allowed;
 }
-
 </style>

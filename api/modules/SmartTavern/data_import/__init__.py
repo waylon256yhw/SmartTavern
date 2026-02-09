@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 SmartTavern.data_import 包初始化
 
@@ -12,4 +11,4 @@ SmartTavern.data_import 包初始化
 """
 
 # 注册入口：导入以触发 @core.register_api 装饰器
-from .data_import import import_data, export_data, get_supported_types, check_name_exists  # noqa: F401
+from .data_import import check_name_exists, export_data, get_supported_types, import_data

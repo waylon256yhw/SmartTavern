@@ -18,7 +18,9 @@ onMounted(() => {
 
 <template>
   <!-- 顶部标题栏（固定） -->
-  <header class="fixed top-0 left-0 right-0 h-16 bg-gradient-to-b from-white to-gray-50 border-b border-gray-200 z-40">
+  <header
+    class="fixed top-0 left-0 right-0 h-16 bg-gradient-to-b from-white to-gray-50 border-b border-gray-200 z-40"
+  >
     <div class="px-4 h-full">
       <div class="flex items-center justify-between h-full">
         <!-- 标题区 -->
@@ -71,7 +73,9 @@ onMounted(() => {
   <div class="fixed top-16 left-0 right-0 bottom-0">
     <div class="grid grid-cols-[240px_minmax(0,1fr)_384px] h-full w-full">
       <!-- 左侧插槽 -->
-      <aside class="block w-60 flex-shrink-0 h-full overflow-y-auto bg-white border-r border-gray-200 scrollbar-stable">
+      <aside
+        class="block w-60 flex-shrink-0 h-full overflow-y-auto bg-white border-r border-gray-200 scrollbar-stable"
+      >
         <slot name="left" />
       </aside>
 
@@ -81,7 +85,9 @@ onMounted(() => {
       </main>
 
       <!-- 右侧插槽 -->
-      <aside class="block w-96 flex-shrink-0 h-full overflow-y-auto bg-white border-l border-gray-200 scrollbar-stable">
+      <aside
+        class="block w-96 flex-shrink-0 h-full overflow-y-auto bg-white border-l border-gray-200 scrollbar-stable"
+      >
         <slot name="right" />
       </aside>
     </div>

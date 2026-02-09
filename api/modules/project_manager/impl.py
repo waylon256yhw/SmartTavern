@@ -4,25 +4,24 @@
 支持动态项目发现和配置脚本自动加载
 """
 
-import json
 import base64
-import subprocess
-import threading
-import time
-import requests
-import psutil
+import importlib.util
 import logging
 import os
-import shutil
-import tempfile
-import zipfile
-import importlib.util
-import sys
-from typing import Dict, List, Optional, Any
-from pathlib import Path
-from datetime import datetime
-from dataclasses import dataclass, field
 import re
+import shutil
+import subprocess
+import tempfile
+import threading
+import time
+import zipfile
+from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+import requests
+
 import core
 
 # 配置日志
@@ -34,7 +33,8 @@ _PORT_MAX = 65535
 _DEFAULT_FRONTEND_PORT = 3000
 _DEFAULT_BACKEND_PORT = 8050
 
-def _detect_project_role(project_dir: Path) -> Optional[str]:
+
+def _detect_project_role(project_dir: Path) -> str | None:
     """读取项目标记，区分前端/后端。仅读取 modularflow_config.py 中的 PROJECT_ROLE"""
     try:
         script = project_dir / "modularflow_config.py"
@@ -52,7 +52,8 @@ def _detect_project_role(project_dir: Path) -> Optional[str]:
     except Exception:
         return None
 
-def _read_ws_port_from_config(project_dir: Path) -> Optional[int]:
+
+def _read_ws_port_from_config(project_dir: Path) -> int | None:
     """读取 modularflow_config.py 中的 WEBSOCKET_PORT，若无则返回 None"""
     try:
         script = project_dir / "modularflow_config.py"
@@ -79,10 +80,10 @@ def _read_ws_port_from_config(project_dir: Path) -> Optional[int]:
 
 def _read_upload(obj, default_name="upload.bin"):
     """读取上传对象内容，返回 (bytes, filename)"""
-    if hasattr(obj, 'file'):
-        return obj.file.read(), getattr(obj, 'filename', None) or default_name
-    elif hasattr(obj, 'read'):
-        return obj.read(), getattr(obj, 'name', None) or default_name
+    if hasattr(obj, "file"):
+        return obj.file.read(), getattr(obj, "filename", None) or default_name
+    elif hasattr(obj, "read"):
+        return obj.read(), getattr(obj, "name", None) or default_name
     elif isinstance(obj, (bytes, bytearray)):
         return obj, default_name
     else:
@@ -92,28 +93,29 @@ def _read_upload(obj, default_name="upload.bin"):
 @dataclass
 class ProjectStatus:
     """项目状态信息"""
+
     name: str
     namespace: str
     project_path: str
-    config_script_path: Optional[str] = None
+    config_script_path: str | None = None
     enabled: bool = True
     frontend_running: bool = False
     backend_running: bool = False
-    frontend_port: Optional[int] = None
-    backend_port: Optional[int] = None
-    frontend_pid: Optional[int] = None
-    backend_pid: Optional[int] = None
-    start_time: Optional[datetime] = None
-    last_health_check: Optional[datetime] = None
+    frontend_port: int | None = None
+    backend_port: int | None = None
+    frontend_pid: int | None = None
+    backend_pid: int | None = None
+    start_time: datetime | None = None
+    last_health_check: datetime | None = None
     health_status: str = "unknown"  # healthy, unhealthy, unknown
-    errors: List[str] = field(default_factory=list)
-    config: Optional[core.ProjectConfigInterface] = None
+    errors: list[str] = field(default_factory=list)
+    config: core.ProjectConfigInterface | None = None
 
 
 class ProjectManager:
     """
     统一项目管理器
-    
+
     负责管理所有注册项目的生命周期，包括：
     - 动态项目发现和配置加载
     - 项目启动/停止
@@ -121,32 +123,32 @@ class ProjectManager:
     - 健康检查
     - 状态监控
     """
-    
+
     def __init__(self):
-        self.projects: Dict[str, ProjectStatus] = {}
-        self.processes: Dict[str, subprocess.Popen] = {}
-        self.health_check_thread: Optional[threading.Thread] = None
+        self.projects: dict[str, ProjectStatus] = {}
+        self.processes: dict[str, subprocess.Popen] = {}
+        self.health_check_thread: threading.Thread | None = None
         self.health_check_running = False
         self.frontend_projects_path = Path("frontend_projects")
         self.backend_projects_path = Path("backend_projects")
-        self.port_registry: Dict[int, str] = {}  # 端口注册表
-        
+        self.port_registry: dict[int, str] = {}  # 端口注册表
+
         # 动态发现和加载项目（前端+后端）
         self._discover_and_load_projects()
         self._discover_and_load_backend_projects()
-        
+
         # 启动健康检查
         self._start_health_check()
-    
+
     def _discover_and_load_projects(self):
         """动态发现和加载前端项目"""
         if not self.frontend_projects_path.exists():
             logger.warning(f"⚠️ 前端项目目录不存在: {self.frontend_projects_path}")
             return
-        
+
         discovered_count = 0
         for project_dir in self.frontend_projects_path.iterdir():
-            if project_dir.is_dir() and not project_dir.name.startswith('.'):
+            if project_dir.is_dir() and not project_dir.name.startswith("."):
                 try:
                     project_status = self._load_project_from_directory(project_dir)
                     if project_status:
@@ -155,7 +157,7 @@ class ProjectManager:
                         logger.info(f"✓ 发现项目: {project_status.name} ({project_status.project_path})")
                 except Exception as e:
                     logger.error(f"❌ 加载项目失败 {project_dir.name}: {e}")
-        
+
         logger.info(f"✓ 动态发现了 {discovered_count} 个前端项目")
 
     def _discover_and_load_backend_projects(self):
@@ -166,7 +168,7 @@ class ProjectManager:
 
         discovered_count = 0
         for project_dir in self.backend_projects_path.iterdir():
-            if project_dir.is_dir() and not project_dir.name.startswith('.'):
+            if project_dir.is_dir() and not project_dir.name.startswith("."):
                 try:
                     project_status = self._load_backend_project_from_directory(project_dir)
                     if project_status:
@@ -181,7 +183,7 @@ class ProjectManager:
                     logger.error(f"❌ 加载后端项目失败 {project_dir.name}: {e}")
         logger.info(f"✓ 动态发现了 {discovered_count} 个后端项目")
 
-    def _load_backend_project_from_directory(self, project_dir: Path) -> Optional[ProjectStatus]:
+    def _load_backend_project_from_directory(self, project_dir: Path) -> ProjectStatus | None:
         """从目录加载单个后端项目（仅后端端口，前端为空）"""
         project_name = project_dir.name
         try:
@@ -201,6 +203,7 @@ class ProjectManager:
             if api_endpoint:
                 try:
                     from urllib.parse import urlparse
+
                     parsed = urlparse(api_endpoint)
                     if parsed.port:
                         backend_port_from_config = parsed.port
@@ -217,9 +220,9 @@ class ProjectManager:
                 project_path=str(project_dir),
                 config_script_path=config_script_path,
                 enabled=True,
-                frontend_port=None,   # 后端项目不含前端端口
+                frontend_port=None,  # 后端项目不含前端端口
                 backend_port=backend_port,
-                config=config
+                config=config,
             )
             # 仅更新后端运行标记
             self._update_running_flags(status_obj)
@@ -228,44 +231,45 @@ class ProjectManager:
         except Exception as e:
             logger.error(f"❌ 加载后端项目配置失败 {project_name}: {e}")
             return None
-    
-    def _load_project_from_directory(self, project_dir: Path) -> Optional[ProjectStatus]:
+
+    def _load_project_from_directory(self, project_dir: Path) -> ProjectStatus | None:
         """从目录加载单个项目"""
         project_name = project_dir.name
-        
+
         # 加载项目配置
         try:
             config = core.load_project_config(project_dir)
             project_info = config.get_project_info()
             runtime_config = config.get_runtime_config()
             api_config = config.get_api_config()
-            
+
             # 检查配置脚本是否存在
             config_script_path = None
             modularflow_config = project_dir / "modularflow_config.py"
             if modularflow_config.exists():
                 config_script_path = str(modularflow_config)
-            
+
             # 分配端口 - 优先使用配置文件中的端口
             frontend_port = self._allocate_port(runtime_config.get("port", _DEFAULT_FRONTEND_PORT), project_name)
-            
+
             # 从API配置中获取后端端口
             api_endpoint = api_config.get("api_endpoint", "")
             backend_port_from_config = None
             if api_endpoint:
                 try:
                     from urllib.parse import urlparse
+
                     parsed = urlparse(api_endpoint)
                     if parsed.port:
                         backend_port_from_config = parsed.port
                 except Exception:
                     pass
-            
+
             # 后端端口不再进行动态分配：保持配置中的端口（可能冲突，但不自动调整）
             # 如果配置中没有端口信息，使用默认值
             preferred_backend_port = backend_port_from_config or _DEFAULT_BACKEND_PORT
             backend_port = preferred_backend_port
-            
+
             # 构建状态对象后，立即探测端口以“实时”确定运行状态（而不是默认False）
             status_obj = ProjectStatus(
                 name=project_info["name"],
@@ -275,47 +279,48 @@ class ProjectManager:
                 enabled=True,
                 frontend_port=frontend_port,
                 backend_port=backend_port,
-                config=config
+                config=config,
             )
             # 实时检测（端口探测）
             self._update_running_flags(status_obj)
             return status_obj
-            
+
         except Exception as e:
             logger.error(f"❌ 加载项目配置失败 {project_name}: {e}")
             return None
-    
+
     def _allocate_port(self, preferred_port: int, project_identifier: str) -> int:
         """分配端口，避免冲突"""
         # 如果首选端口可用，直接使用
         if preferred_port not in self.port_registry:
             self.port_registry[preferred_port] = project_identifier
             return preferred_port
-        
+
         # 如果首选端口已被同一项目占用，直接返回
         if self.port_registry.get(preferred_port) == project_identifier:
             return preferred_port
-        
+
         # 寻找可用端口
         for port in range(preferred_port + 1, preferred_port + 100):
             if port not in self.port_registry:
                 self.port_registry[port] = project_identifier
                 logger.info(f"⚠️ 端口 {preferred_port} 已占用，为 {project_identifier} 分配端口 {port}")
                 return port
-        
+
         # 如果找不到可用端口，使用随机端口
         import random
+
         for _ in range(10):
             port = random.randint(10000, _PORT_MAX)
             if port not in self.port_registry:
                 self.port_registry[port] = project_identifier
                 logger.warning(f"⚠️ 无法找到合适端口，为 {project_identifier} 分配随机端口 {port}")
                 return port
-        
+
         # 最后的备选方案
         logger.error(f"❌ 无法为 {project_identifier} 分配端口")
         return preferred_port
-    
+
     def _update_running_flags(self, status: ProjectStatus):
         """通过端口探测实时更新运行标记，避免仅初始化时的静态状态"""
         # 探测前端
@@ -349,13 +354,10 @@ class ProjectManager:
         """启动健康检查线程"""
         if not self.health_check_running:
             self.health_check_running = True
-            self.health_check_thread = threading.Thread(
-                target=self._health_check_loop, 
-                daemon=True
-            )
+            self.health_check_thread = threading.Thread(target=self._health_check_loop, daemon=True)
             self.health_check_thread.start()
             logger.info("✓ 健康检查线程已启动")
-    
+
     def _health_check_loop(self):
         """健康检查循环"""
         while self.health_check_running:
@@ -367,16 +369,16 @@ class ProjectManager:
             except Exception as e:
                 logger.error(f"健康检查异常: {e}")
                 time.sleep(10)
-    
+
     def _check_project_health(self, project_name: str):
         """检查单个项目的健康状态"""
         if project_name not in self.projects:
             return
-        
+
         status = self.projects[project_name]
         status.last_health_check = datetime.now()
         status.errors.clear()
-        
+
         # 检查前端健康状态（直接探测端口，不依赖已有运行标记）
         if status.frontend_port:
             frontend_url = f"http://localhost:{status.frontend_port}"
@@ -390,7 +392,7 @@ class ProjectManager:
             except Exception:
                 # 连接失败时，不累计错误，仅标记为未运行，避免将整体状态误判为不健康
                 status.frontend_running = False
-        
+
         # 检查后端健康状态（直接探测端口，不依赖已有运行标记）
         if status.backend_port:
             try:
@@ -403,7 +405,7 @@ class ProjectManager:
             except Exception:
                 # 连接失败不累计错误，标记为未运行
                 status.backend_running = False
-        
+
         # 更新整体健康状态
         if status.errors:
             status.health_status = "unhealthy"
@@ -411,7 +413,7 @@ class ProjectManager:
             status.health_status = "healthy"
         else:
             status.health_status = "unknown"
-    
+
     def _check_command_availability(self, command: str) -> bool:
         """检查命令是否可用"""
         try:
@@ -419,88 +421,79 @@ class ProjectManager:
             return shutil.which(cmd_name) is not None
         except Exception:
             return False
-    
-    def _execute_command_safely(self, command: str, cwd: str = None, project_name: str = "") -> subprocess.Popen:
+
+    def _execute_command_safely(self, command: str, cwd: str | None = None, project_name: str = "") -> subprocess.Popen:
         """安全执行命令，处理Windows特殊情况"""
         try:
             # 检查命令是否可用
             if not self._check_command_availability(command):
                 raise FileNotFoundError(f"命令不可用: {command.split()[0]}")
-            
+
             # 在Windows上，使用shell=True并设置正确的环境
             env = os.environ.copy()
-            
+
             # 确保PATH包含npm路径
-            if "npm" in command and os.name == 'nt':
+            if "npm" in command and os.name == "nt":
                 # 添加常见的npm路径
                 npm_paths = [
                     r"C:\Program Files\nodejs",
                     r"C:\Program Files (x86)\nodejs",
-                    os.path.expanduser(r"~\AppData\Roaming\npm")
+                    os.path.expanduser(r"~\AppData\Roaming\npm"),
                 ]
                 current_path = env.get("PATH", "")
                 for npm_path in npm_paths:
                     if os.path.exists(npm_path) and npm_path not in current_path:
                         env["PATH"] = f"{npm_path};{current_path}"
-            
+
             logger.info(f"执行命令: {command} (工作目录: {cwd or '当前目录'})")
-            
+
             # 在Windows上，避免使用PIPE和CREATE_NEW_CONSOLE同时使用
             # 这会导致连接重置错误
-            if os.name == 'nt':
+            if os.name == "nt":
                 process = subprocess.Popen(
-                    command,
-                    shell=True,
-                    cwd=cwd,
-                    env=env,
-                    creationflags=subprocess.CREATE_NEW_CONSOLE
+                    command, shell=True, cwd=cwd, env=env, creationflags=subprocess.CREATE_NEW_CONSOLE
                 )
             else:
                 process = subprocess.Popen(
-                    command,
-                    shell=True,
-                    cwd=cwd,
-                    env=env,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE
+                    command, shell=True, cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )
-            
+
             return process
-            
+
         except Exception as e:
             logger.error(f"❌ 执行命令失败 {command}: {e}")
             raise
-    
-    def start_project(self, project_name: str, component: str = "all") -> Dict[str, Any]:
+
+    def start_project(self, project_name: str, component: str = "all") -> dict[str, Any]:
         """
         启动项目
-        
+
         Args:
             project_name: 项目名称
             component: 启动组件 ("frontend", "backend", "all")
-        
+
         Returns:
             启动结果
         """
         if project_name not in self.projects:
             return {"success": False, "error": f"项目 {project_name} 不存在"}
-        
+
         status = self.projects[project_name]
         if not status.config:
             return {"success": False, "error": f"项目 {project_name} 配置未加载"}
-        
+
         results = {"success": True, "started_components": []}
-        
+
         try:
             # 启动前端
             if component in ["frontend", "all"]:
                 runtime_config = status.config.get_runtime_config()
                 dev_command = runtime_config.get("dev_command")
                 install_command = runtime_config.get("install_command")
-                
+
                 if dev_command:
                     project_path = Path(status.project_path)
-                    
+
                     if project_path.exists():
                         # 检查是否需要安装依赖
                         if install_command and self._should_install_dependencies(project_path, status.config):
@@ -508,40 +501,36 @@ class ProjectManager:
                             try:
                                 # 执行安装命令
                                 install_process = self._execute_install_command(
-                                    install_command,
-                                    cwd=str(project_path),
-                                    project_name=project_name
+                                    install_command, cwd=str(project_path), project_name=project_name
                                 )
-                                
+
                                 # 等待安装完成
                                 install_process.wait()
-                                
+
                                 if install_process.returncode == 0:
                                     logger.info(f"✅ {project_name} 依赖安装成功")
                                     results["dependency_installed"] = True
                                 else:
                                     logger.warning(f"⚠️ {project_name} 依赖安装可能有问题，但继续启动")
                                     results["dependency_warning"] = "依赖安装可能有问题"
-                                    
+
                             except Exception as e:
                                 logger.warning(f"⚠️ {project_name} 依赖安装失败: {e}，但继续尝试启动")
                                 results["dependency_error"] = str(e)
-                        
+
                         logger.info(f"启动 {project_name} 前端: {dev_command}")
-                        
+
                         # 启动前端进程
                         process = self._execute_command_safely(
-                            dev_command,
-                            cwd=str(project_path),
-                            project_name=project_name
+                            dev_command, cwd=str(project_path), project_name=project_name
                         )
-                        
+
                         self.processes[f"{project_name}_frontend"] = process
                         status.frontend_pid = process.pid
                         status.frontend_running = True
                         status.start_time = datetime.now()
                         results["started_components"].append("frontend")
-                        
+
                         logger.info(f"✓ {project_name} 前端启动成功 (PID: {process.pid})")
                     else:
                         logger.error(f"❌ {project_name} 项目路径不存在: {project_path}")
@@ -549,36 +538,36 @@ class ProjectManager:
                         results["error"] = f"项目路径不存在: {project_path}"
                 else:
                     logger.info(f"⚠️ {project_name} 没有配置开发命令，跳过前端启动")
-            
+
             # 启动后端（如果有配置）
             if component in ["backend", "all"]:
                 # 这里可以根据需要添加后端启动逻辑
                 # 目前大多数前端项目不需要独立的后端启动
                 logger.info(f"⚠️ {project_name} 后端启动功能待实现")
-            
+
             return results
-            
+
         except Exception as e:
             logger.error(f"❌ 启动项目 {project_name} 失败: {e}")
             return {"success": False, "error": str(e)}
-    
-    def stop_project(self, project_name: str, component: str = "all") -> Dict[str, Any]:
+
+    def stop_project(self, project_name: str, component: str = "all") -> dict[str, Any]:
         """
         停止项目
-        
+
         Args:
             project_name: 项目名称
             component: 停止组件 ("frontend", "backend", "all")
-        
+
         Returns:
             停止结果
         """
         if project_name not in self.projects:
             return {"success": False, "error": f"项目 {project_name} 不存在"}
-        
+
         status = self.projects[project_name]
         results = {"success": True, "stopped_components": []}
-        
+
         try:
             # 停止后端
             if component in ["backend", "all"]:
@@ -588,16 +577,16 @@ class ProjectManager:
                     try:
                         # 强制终止进程及其子进程
                         self._terminate_process_tree(process)
-                        
+
                         del self.processes[backend_process_key]
                         status.backend_running = False
                         status.backend_pid = None
                         results["stopped_components"].append("backend")
-                        
+
                         logger.info(f"✓ {project_name} 后端已停止")
                     except Exception as e:
                         logger.warning(f"停止 {project_name} 后端时出现问题: {e}")
-            
+
             # 停止前端
             if component in ["frontend", "all"]:
                 frontend_process_key = f"{project_name}_frontend"
@@ -606,52 +595,50 @@ class ProjectManager:
                     try:
                         # 强制终止进程及其子进程
                         self._terminate_process_tree(process)
-                        
+
                         del self.processes[frontend_process_key]
                         status.frontend_running = False
                         status.frontend_pid = None
                         results["stopped_components"].append("frontend")
-                        
+
                         logger.info(f"✓ {project_name} 前端已停止")
                     except Exception as e:
                         logger.warning(f"停止 {project_name} 前端时出现问题: {e}")
-                
+
                 # 停止控制台（通过 SDK 调用）
                 try:
                     import core
+
                     _ = core.call_api(
-                        "web_server/stop_project",
-                        {"project_name": project_name},
-                        method="POST",
-                        namespace="modules"
+                        "web_server/stop_project", {"project_name": project_name}, method="POST", namespace="modules"
                     )
                     results["stopped_components"].append("console")
                 except Exception as e:
                     logger.warning(f"停止 {project_name} 控制台时出现问题: {e}")
-            
+
             return results
-            
+
         except Exception as e:
             logger.error(f"❌ 停止项目 {project_name} 失败: {e}")
             return {"success": False, "error": str(e)}
-    
-    def restart_project(self, project_name: str, component: str = "all") -> Dict[str, Any]:
+
+    def restart_project(self, project_name: str, component: str = "all") -> dict[str, Any]:
         """重启项目"""
         stop_result = self.stop_project(project_name, component)
         if not stop_result["success"]:
             return stop_result
-        
+
         # 等待进程完全停止
         time.sleep(3)
-        
+
         return self.start_project(project_name, component)
-    
-    def get_project_status(self, project_name: str = None) -> Dict[str, Any]:
+
+    def get_project_status(self, project_name: str | None = None) -> dict[str, Any]:
         """获取项目状态（实时探测端口以更新运行标志与健康状态）"""
         if project_name:
             if project_name not in self.projects:
                 return {"error": f"项目 {project_name} 不存在"}
-            
+
             status = self.projects[project_name]
             try:
                 self._update_running_flags(status)
@@ -671,11 +658,11 @@ class ProjectManager:
                 "start_time": status.start_time.isoformat() if status.start_time else None,
                 "last_health_check": status.last_health_check.isoformat() if status.last_health_check else None,
                 "health_status": status.health_status,
-                "errors": status.errors
+                "errors": status.errors,
             }
         else:
             # 返回所有项目状态（逐项实时探测）
-            result: Dict[str, Any] = {}
+            result: dict[str, Any] = {}
             for name, status in self.projects.items():
                 try:
                     self._update_running_flags(status)
@@ -690,35 +677,35 @@ class ProjectManager:
                     "frontend_port": status.frontend_port,
                     "backend_port": status.backend_port,
                     "health_status": status.health_status,
-                    "errors": len(status.errors)
+                    "errors": len(status.errors),
                 }
             return result
-    
-    def get_port_usage(self) -> Dict[str, Any]:
+
+    def get_port_usage(self) -> dict[str, Any]:
         """获取端口使用情况"""
         port_usage = {}
-        
+
         for project_name, status in self.projects.items():
             project_ports = {}
-            
+
             if status.frontend_port:
                 project_ports["frontend"] = {
                     "port": status.frontend_port,
                     "running": status.frontend_running,
-                    "pid": status.frontend_pid
+                    "pid": status.frontend_pid,
                 }
-            
+
             if status.backend_port:
                 project_ports["backend"] = {
                     "port": status.backend_port,
                     "running": status.backend_running,
-                    "pid": status.backend_pid
+                    "pid": status.backend_pid,
                 }
-            
+
             port_usage[project_name] = project_ports
-        
+
         return port_usage
-    
+
     def _should_install_dependencies(self, project_path: Path, config: core.ProjectConfigInterface) -> bool:
         """检查是否需要安装依赖"""
         try:
@@ -726,53 +713,55 @@ class ProjectManager:
             if (project_path / "package.json").exists():
                 node_modules = project_path / "node_modules"
                 if not node_modules.exists():
-                    logger.info(f"检测到 package.json 但缺少 node_modules，需要安装依赖")
+                    logger.info("检测到 package.json 但缺少 node_modules，需要安装依赖")
                     return True
-                
+
                 # 检查 node_modules 是否为空或不完整
                 if node_modules.exists():
                     try:
                         # 简单检查：如果 node_modules 目录存在但几乎为空，可能需要重新安装
                         contents = list(node_modules.iterdir())
                         if len(contents) < 3:  # 通常至少会有几个基础包
-                            logger.info(f"检测到 node_modules 目录不完整，需要安装依赖")
+                            logger.info("检测到 node_modules 目录不完整，需要安装依赖")
                             return True
                     except Exception:
                         # 如果无法读取 node_modules，假设需要安装
                         return True
-            
+
             # 其他项目类型的依赖检查可以在这里添加
             return False
-            
+
         except Exception as e:
             logger.warning(f"检查依赖时出错: {e}")
             return False
-    
-    def _execute_install_command(self, command: str, cwd: str = None, project_name: str = "") -> subprocess.Popen:
+
+    def _execute_install_command(
+        self, command: str, cwd: str | None = None, project_name: str = ""
+    ) -> subprocess.Popen:
         """执行安装命令，使用同步方式等待完成"""
         try:
             # 检查命令是否可用
             if not self._check_command_availability(command):
                 raise FileNotFoundError(f"命令不可用: {command.split()[0]}")
-            
+
             # 在Windows上，使用shell=True并设置正确的环境
             env = os.environ.copy()
-            
+
             # 确保PATH包含npm路径
-            if "npm" in command and os.name == 'nt':
+            if "npm" in command and os.name == "nt":
                 # 添加常见的npm路径
                 npm_paths = [
                     r"C:\Program Files\nodejs",
                     r"C:\Program Files (x86)\nodejs",
-                    os.path.expanduser(r"~\AppData\Roaming\npm")
+                    os.path.expanduser(r"~\AppData\Roaming\npm"),
                 ]
                 current_path = env.get("PATH", "")
                 for npm_path in npm_paths:
                     if os.path.exists(npm_path) and npm_path not in current_path:
                         env["PATH"] = f"{npm_path};{current_path}"
-            
+
             logger.info(f"执行安装命令: {command} (工作目录: {cwd or '当前目录'})")
-            
+
             # 对于安装命令，我们需要等待完成，所以使用 PIPE 来捕获输出
             process = subprocess.Popen(
                 command,
@@ -781,27 +770,25 @@ class ProjectManager:
                 env=env,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                universal_newlines=True
+                universal_newlines=True,
             )
-            
+
             return process
-            
+
         except Exception as e:
             logger.error(f"❌ 执行安装命令失败 {command}: {e}")
             raise
-    
+
     def _terminate_process_tree(self, process: subprocess.Popen):
         """终止进程及其所有子进程"""
         try:
             if process.poll() is None:  # 进程仍在运行
                 # 在Windows上，尝试终止整个进程树
-                if os.name == 'nt':
+                if os.name == "nt":
                     try:
                         # 使用taskkill命令终止进程树
                         subprocess.run(
-                            ['taskkill', '/F', '/T', '/PID', str(process.pid)],
-                            check=False,
-                            capture_output=True
+                            ["taskkill", "/F", "/T", "/PID", str(process.pid)], check=False, capture_output=True
                         )
                         logger.info(f"✓ 使用taskkill终止进程树 PID: {process.pid}")
                     except Exception as e:
@@ -812,6 +799,7 @@ class ProjectManager:
                     # Unix系统使用进程组终止
                     try:
                         import signal
+
                         os.killpg(os.getpgid(process.pid), signal.SIGTERM)
                         process.wait(timeout=10)
                     except Exception:
@@ -824,17 +812,17 @@ class ProjectManager:
                 process.kill()
             except Exception:
                 pass
-    
+
     def cleanup(self):
         """清理资源"""
         logger.info("🧹 开始清理项目管理器资源...")
-        
+
         # 停止健康检查线程
         self.health_check_running = False
         if self.health_check_thread and self.health_check_thread.is_alive():
             self.health_check_thread.join(timeout=5)
             logger.info("✓ 健康检查线程已停止")
-        
+
         # 停止所有进程
         processes_to_clean = list(self.processes.items())
         for process_name, process in processes_to_clean:
@@ -844,23 +832,24 @@ class ProjectManager:
                 logger.info(f"✓ 进程 {process_name} 已停止")
             except Exception as e:
                 logger.warning(f"清理进程 {process_name} 时出现问题: {e}")
-        
+
         # 清空进程字典
         self.processes.clear()
-        
+
         # 重置所有项目状态
-        for project_name, status in self.projects.items():
+        for _project_name, status in self.projects.items():
             status.frontend_running = False
             status.backend_running = False
             status.frontend_pid = None
             status.backend_pid = None
             status.health_status = "unknown"
-        
+
         logger.info("✅ 项目管理器资源清理完成")
 
 
 # 全局项目管理器实例
 _project_manager_instance = None
+
 
 def get_project_manager() -> ProjectManager:
     """获取项目管理器单例"""
@@ -872,14 +861,16 @@ def get_project_manager() -> ProjectManager:
 
 # 内部实现供 API 层调用（对外 API 暴露统一在 api/modules/project_manager/project_manager.py）
 
+
 def get_managed_projects():
     """获取可管理项目列表（实时同步文件系统与配置脚本）"""
     manager = get_project_manager()
     projects_list = []
 
-    def _parse_port_from_url(url: str) -> Optional[int]:
+    def _parse_port_from_url(url: str) -> int | None:
         try:
             from urllib.parse import urlparse
+
             parsed = urlparse(url)
             if parsed.port:
                 return int(parsed.port)
@@ -896,7 +887,7 @@ def get_managed_projects():
     try:
         if manager.frontend_projects_path.exists():
             for project_dir in manager.frontend_projects_path.iterdir():
-                if project_dir.is_dir() and not project_dir.name.startswith('.'):
+                if project_dir.is_dir() and not project_dir.name.startswith("."):
                     pname = project_dir.name
                     if pname not in manager.projects:
                         ps = manager._load_project_from_directory(project_dir)
@@ -910,7 +901,7 @@ def get_managed_projects():
     try:
         if manager.backend_projects_path.exists():
             for project_dir in manager.backend_projects_path.iterdir():
-                if project_dir.is_dir() and not project_dir.name.startswith('.'):
+                if project_dir.is_dir() and not project_dir.name.startswith("."):
                     pname = project_dir.name
                     if pname not in manager.projects:
                         ps = manager._load_backend_project_from_directory(project_dir)
@@ -991,8 +982,8 @@ def get_managed_projects():
                 "ports": {
                     "frontend_dev": frontend_dev_port if frontend_dev_port else "未设置",
                     "api_gateway": api_gateway_port if api_gateway_port else "未设置",
-                    "websocket": websocket_port if websocket_port else "未设置"
-                }
+                    "websocket": websocket_port if websocket_port else "未设置",
+                },
             }
             projects_list.append(project_data)
         except Exception:
@@ -1000,6 +991,7 @@ def get_managed_projects():
             continue
 
     return projects_list
+
 
 def _find_project_dir_in(extract_path):
     """在解压目录中查找包含 modularflow_config.py 的项目目录"""
@@ -1016,12 +1008,12 @@ def _extract_project_from_zip(file_content, filename):
     try:
         archive_path = os.path.join(temp_dir, filename)
 
-        with open(archive_path, 'wb') as f:
+        with open(archive_path, "wb") as f:
             f.write(file_content)
 
         extract_path = os.path.join(temp_dir, "extracted")
         os.makedirs(extract_path, exist_ok=True)
-        with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+        with zipfile.ZipFile(archive_path, "r") as zip_ref:
             zip_ref.extractall(extract_path)
 
         if not any(Path(extract_path).iterdir()):
@@ -1057,7 +1049,7 @@ def _extract_project_from_image(image):
             "smarttavern/image_binding/extract_files_from_image",
             {"image_path": image_path, "output_dir": temp_dir},
             method="POST",
-            namespace="modules"
+            namespace="modules",
         )
         if not isinstance(result, dict) or not result.get("success"):
             raise ValueError(f"提取失败: {result if not isinstance(result, dict) else result.get('message')}")
@@ -1115,11 +1107,7 @@ def _install_project(project_dir, target_subdir, expected_role, manager):
     except Exception:
         pass
 
-    return {
-        "success": True,
-        "project_name": project_name,
-        "message": f"项目 {project_name} 导入成功"
-    }
+    return {"success": True, "project_name": project_name, "message": f"项目 {project_name} 导入成功"}
 
 
 def import_project(project_archive):
@@ -1137,105 +1125,103 @@ def import_project(project_archive):
         if temp_dir and os.path.isdir(temp_dir):
             shutil.rmtree(temp_dir, ignore_errors=True)
 
+
 def delete_project(project_name: str):
     """删除项目"""
     manager = get_project_manager()
-    
+
     try:
         # 检查项目是否存在
         if project_name not in manager.projects:
             return {"success": False, "error": f"项目 {project_name} 不存在"}
-        
+
         status = manager.projects[project_name]
-        
+
         # 首先停止项目
         manager.stop_project(project_name)
-        
-        framework_root = Path(__file__).parent.parent.parent.parent
+
         project_path = Path(status.project_path)
-        
+
         # 直接删除项目目录（不生成备份）
         if project_path.exists():
             shutil.rmtree(str(project_path), ignore_errors=True)
             logger.info(f"✓ 已删除项目目录: {project_path}")
-        
+
         # 从端口注册表中移除端口
         if status.frontend_port and status.frontend_port in manager.port_registry:
             del manager.port_registry[status.frontend_port]
         if status.backend_port and status.backend_port in manager.port_registry:
             del manager.port_registry[status.backend_port]
-        
+
         # 从项目列表中移除
         del manager.projects[project_name]
-        
-        return {
-            "success": True,
-            "message": f"项目 {project_name} 已删除"
-        }
-        
+
+        return {"success": True, "message": f"项目 {project_name} 已删除"}
+
     except Exception as e:
-        logger.error(f"删除项目失败: {str(e)}")
+        logger.error(f"删除项目失败: {e!s}")
         return {"success": False, "error": str(e)}
+
 
 def _persist_port_to_config(config_path, constant_name, new_value):
     """正则替换 modularflow_config.py 中的端口常量（仅处理简单赋值行）"""
-    text = Path(config_path).read_text(encoding='utf-8')
-    pattern = rf'^({re.escape(constant_name)}\s*=\s*)(.+?)(\s*#.*)?$'
-    replacement = rf'\g<1>{new_value}\3'
+    text = Path(config_path).read_text(encoding="utf-8")
+    pattern = rf"^({re.escape(constant_name)}\s*=\s*)(.+?)(\s*#.*)?$"
+    replacement = rf"\g<1>{new_value}\3"
     new_text, count = re.subn(pattern, replacement, text, count=1, flags=re.MULTILINE)
     if count == 0:
         return False
-    Path(config_path).write_text(new_text, encoding='utf-8')
+    Path(config_path).write_text(new_text, encoding="utf-8")
     return True
 
 
 def update_project_ports(project_name: str, ports: dict):
     """更新项目端口配置"""
     manager = get_project_manager()
-    
+
     try:
         # 检查项目是否存在
         if project_name not in manager.projects:
             return {"success": False, "error": f"项目 {project_name} 不存在"}
-        
+
         status = manager.projects[project_name]
-        
+
         # 获取并验证端口
-        frontend_port = ports.get('frontend_dev')
-        backend_port = ports.get('api_gateway')
-        
+        frontend_port = ports.get("frontend_dev")
+        backend_port = ports.get("api_gateway")
+
         if frontend_port and not (_PORT_MIN <= frontend_port <= _PORT_MAX):
             return {"success": False, "error": f"前端端口必须在{_PORT_MIN}-{_PORT_MAX}范围内"}
 
         if backend_port and not (_PORT_MIN <= backend_port <= _PORT_MAX):
             return {"success": False, "error": f"后端端口必须在{_PORT_MIN}-{_PORT_MAX}范围内"}
-        
+
         # 检查端口冲突
         if frontend_port and frontend_port in manager.port_registry:
             existing_project = manager.port_registry[frontend_port]
             if existing_project != project_name and existing_project != f"{project_name}_frontend":
                 return {"success": False, "error": f"前端端口 {frontend_port} 已被项目 {existing_project} 占用"}
-        
+
         if backend_port and backend_port in manager.port_registry:
             existing_project = manager.port_registry[backend_port]
             if existing_project != project_name and existing_project != f"{project_name}_backend":
                 return {"success": False, "error": f"后端端口 {backend_port} 已被项目 {existing_project} 占用"}
-        
+
         # 更新端口注册表
         if status.frontend_port and status.frontend_port in manager.port_registry:
             del manager.port_registry[status.frontend_port]
         if status.backend_port and status.backend_port in manager.port_registry:
             del manager.port_registry[status.backend_port]
-        
+
         # 更新项目状态中的端口
         if frontend_port:
             status.frontend_port = frontend_port
             manager.port_registry[frontend_port] = project_name
-        
+
         if backend_port:
             status.backend_port = backend_port
             manager.port_registry[backend_port] = f"{project_name}_backend"
-        
+
         # 持久化端口到 modularflow_config.py
         if status.config_script_path:
             try:
@@ -1247,92 +1233,86 @@ def update_project_ports(project_name: str, ports: dict):
                     _persist_port_to_config(cfg, "WEBSOCKET_PORT", backend_port)
             except Exception as e:
                 logger.warning(f"持久化端口到配置脚本失败: {e}")
-        
+
         return {
             "success": True,
             "message": f"项目 {project_name} 端口配置已更新",
-            "ports": {
-                "frontend_dev": status.frontend_port,
-                "api_gateway": status.backend_port
-            }
+            "ports": {"frontend_dev": status.frontend_port, "api_gateway": status.backend_port},
         }
-        
+
     except Exception as e:
-        logger.error(f"更新项目端口配置失败: {str(e)}")
+        logger.error(f"更新项目端口配置失败: {e!s}")
         return {"success": False, "error": str(e)}
 
 
 def refresh_projects():
     """重新扫描和加载所有项目"""
     manager = get_project_manager()
-    
+
     try:
         # 清空当前项目列表和端口注册表
         old_projects = list(manager.projects.keys())
         manager.projects.clear()
         manager.port_registry.clear()
-        
+
         # 重新发现和加载项目（前端+后端）
         manager._discover_and_load_projects()
         manager._discover_and_load_backend_projects()
-        
+
         new_projects = list(manager.projects.keys())
-        
+
         return {
             "success": True,
             "message": "项目列表已刷新",
             "old_projects": old_projects,
             "new_projects": new_projects,
             "added": [p for p in new_projects if p not in old_projects],
-            "removed": [p for p in old_projects if p not in new_projects]
+            "removed": [p for p in old_projects if p not in new_projects],
         }
-        
+
     except Exception as e:
-        logger.error(f"刷新项目列表失败: {str(e)}")
+        logger.error(f"刷新项目列表失败: {e!s}")
         return {"success": False, "error": str(e)}
 
 
 def install_project_dependencies(project_name: str):
     """安装项目依赖"""
     manager = get_project_manager()
-    
+
     try:
         if project_name not in manager.projects:
             return {"success": False, "error": f"项目 {project_name} 不存在"}
-        
+
         status = manager.projects[project_name]
         if not status.config:
             return {"success": False, "error": f"项目 {project_name} 配置未加载"}
-        
+
         # 检查依赖
         dep_check = status.config.check_dependencies()
         if not dep_check["success"]:
-            return {
-                "success": False,
-                "error": f"依赖检查失败，缺少: {', '.join(dep_check['missing'])}"
-            }
-        
+            return {"success": False, "error": f"依赖检查失败，缺少: {', '.join(dep_check['missing'])}"}
+
         # 执行安装
         install_success = status.config.install()
-        
+
         return {
             "success": install_success,
-            "message": f"项目 {project_name} {'安装成功' if install_success else '安装失败'}"
+            "message": f"项目 {project_name} {'安装成功' if install_success else '安装失败'}",
         }
-        
+
     except Exception as e:
-        logger.error(f"安装项目依赖失败: {str(e)}")
+        logger.error(f"安装项目依赖失败: {e!s}")
         return {"success": False, "error": str(e)}
 
 
 def get_project_config_info(project_name: str):
     """获取项目配置信息（实时从配置脚本读取最新内容）"""
     manager = get_project_manager()
-    
+
     try:
         if project_name not in manager.projects:
             return {"error": f"项目 {project_name} 不存在"}
-        
+
         status = manager.projects[project_name]
         # 实时加载配置脚本
         try:
@@ -1344,37 +1324,39 @@ def get_project_config_info(project_name: str):
             if status.config:
                 return status.config.get_full_config()
             return {"error": f"项目 {project_name} 配置未加载"}
-        
+
     except Exception as e:
-        logger.error(f"获取项目配置失败: {str(e)}")
+        logger.error(f"获取项目配置失败: {e!s}")
         return {"error": str(e)}
 
 
 def validate_project_config_script(project_name: str):
     """验证项目配置脚本"""
     manager = get_project_manager()
-    
+
     try:
         if project_name not in manager.projects:
             return {"success": False, "error": f"项目 {project_name} 不存在"}
-        
+
         status = manager.projects[project_name]
         if not status.config_script_path:
             return {"success": False, "error": f"项目 {project_name} 没有配置脚本"}
-        
+
         config_file = Path(status.config_script_path)
         validation_result = core.validate_config_script(config_file)
-        
+
         return {
             "success": validation_result["valid"],
             "errors": validation_result["errors"],
             "warnings": validation_result["warnings"],
-            "config_script_path": status.config_script_path
+            "config_script_path": status.config_script_path,
         }
-        
+
     except Exception as e:
-        logger.error(f"验证配置脚本失败: {str(e)}")
+        logger.error(f"验证配置脚本失败: {e!s}")
         return {"success": False, "error": str(e)}
+
+
 # === 图像绑定扩展：ZIP 嵌入与提取 ===
 def embed_zip_into_image(image, archive):
     """将zip压缩包嵌入到PNG图片中，返回嵌入后图片的base64字符串"""
@@ -1413,21 +1395,20 @@ def embed_zip_into_image(image, archive):
             "smarttavern/image_binding/embed_files_to_image",
             {"image_path": image_path, "file_paths": [archive_path], "output_path": output_path},
             method="POST",
-            namespace="modules"
+            namespace="modules",
         )
         if not isinstance(result, dict) or not result.get("success"):
-            return {"success": False, "error": f"嵌入失败: {result if not isinstance(result, dict) else result.get('message')}"}
+            return {
+                "success": False,
+                "error": f"嵌入失败: {result if not isinstance(result, dict) else result.get('message')}",
+            }
 
         # 读取输出并返回base64
         with open(output_path, "rb") as f:
             out_bytes = f.read()
         img_b64 = base64.b64encode(out_bytes).decode("utf-8")
 
-        return {
-            "success": True,
-            "filename": os.path.basename(output_path),
-            "image_base64": img_b64
-        }
+        return {"success": True, "filename": os.path.basename(output_path), "image_base64": img_b64}
     except Exception as e:
         return {"success": False, "error": str(e)}
     finally:
@@ -1459,10 +1440,13 @@ def extract_zip_from_image(image):
             "smarttavern/image_binding/extract_files_from_image",
             {"image_path": image_path, "output_dir": temp_dir},
             method="POST",
-            namespace="modules"
+            namespace="modules",
         )
         if not isinstance(result, dict) or not result.get("success"):
-            return {"success": False, "error": f"提取失败: {result if not isinstance(result, dict) else result.get('message')}"}
+            return {
+                "success": False,
+                "error": f"提取失败: {result if not isinstance(result, dict) else result.get('message')}",
+            }
         extracted = result.get("files", [])
 
         # 查找zip文件
@@ -1476,11 +1460,7 @@ def extract_zip_from_image(image):
         if not zip_file_info:
             return {"success": False, "error": "图片内未发现zip文件"}
 
-        return {
-            "success": True,
-            "zip_path": zip_file_info.get("path"),
-            "files": extracted
-        }
+        return {"success": True, "zip_path": zip_file_info.get("path"), "files": extracted}
     except Exception as e:
         return {"success": False, "error": str(e)}
     finally:
@@ -1503,6 +1483,7 @@ def import_project_from_image(image):
         if temp_dir and os.path.isdir(temp_dir):
             shutil.rmtree(temp_dir, ignore_errors=True)
 
+
 def import_backend_project(project_archive):
     """导入后端项目（zip，要求含 modularflow_config.py）"""
     manager = get_project_manager()
@@ -1517,6 +1498,7 @@ def import_backend_project(project_archive):
     finally:
         if temp_dir and os.path.isdir(temp_dir):
             shutil.rmtree(temp_dir, ignore_errors=True)
+
 
 def import_backend_project_from_image(image):
     """从 PNG 图片反嵌入 zip 并导入后端项目"""

@@ -8,20 +8,22 @@
   • api/workflow/* => workflow
 - 输入与输出采用严格 JSON Schema（draft-07/2020-12），不再使用 inputs/outputs 列表
 """
-from typing import Any, Callable, Dict, List, Optional
+
+from collections.abc import Callable
 from dataclasses import dataclass
-import inspect
+from typing import Any
 
 
 @dataclass
 class FunctionSpec:
     """函数规范 - 新版，以 JSON Schema 与斜杠路径为核心"""
-    name: str                   # 函数内部标识（默认函数名）
-    description: str            # 描述（内部属性）
-    path: str                   # 相对业务路径（斜杠风格，不含 /api 前缀）
-    namespace: str              # 命名空间：modules | workflow（自动解析）
-    input_schema: Dict[str, Any]   # 请求体 JSON Schema
-    output_schema: Dict[str, Any]  # 响应体 JSON Schema
+
+    name: str  # 函数内部标识（默认函数名）
+    description: str  # 描述（内部属性）
+    path: str  # 相对业务路径（斜杠风格，不含 /api 前缀）
+    namespace: str  # 命名空间：modules | workflow（自动解析）
+    input_schema: dict[str, Any]  # 请求体 JSON Schema
+    output_schema: dict[str, Any]  # 响应体 JSON Schema
 
     def __repr__(self):
         return f"{self.namespace}:{self.path} [{self.name}]"
@@ -32,9 +34,9 @@ class FunctionRegistry:
 
     def __init__(self):
         # 使用 path 作为唯一键
-        self.functions: Dict[str, Callable] = {}
-        self.specs: Dict[str, FunctionSpec] = {}
-        self.workflows: Dict[str, Callable] = {}  # 兼容保留
+        self.functions: dict[str, Callable] = {}
+        self.specs: dict[str, FunctionSpec] = {}
+        self.workflows: dict[str, Callable] = {}  # 兼容保留
 
     def _derive_namespace(self, func: Callable) -> str:
         mod = getattr(func, "__module__", "") or ""
@@ -50,9 +52,9 @@ class FunctionRegistry:
         self,
         path: str,
         func: Callable,
-        input_schema: Dict[str, Any],
-        output_schema: Dict[str, Any],
-        name: Optional[str] = None,
+        input_schema: dict[str, Any],
+        output_schema: dict[str, Any],
+        name: str | None = None,
         description: str = "",
     ) -> None:
         """
@@ -100,11 +102,11 @@ class FunctionRegistry:
         func = self.functions[path]
         return func(**kwargs) if kwargs else func()
 
-    def list_functions(self) -> List[str]:
+    def list_functions(self) -> list[str]:
         """列出所有已注册的 API 路径（斜杠风格）"""
         return list(self.functions.keys())
 
-    def get_spec(self, path: str) -> Optional[FunctionSpec]:
+    def get_spec(self, path: str) -> FunctionSpec | None:
         """获取函数规范（按 path）"""
         return self.specs.get(path)
 
@@ -121,10 +123,10 @@ class FunctionRegistry:
         except UnicodeEncodeError:
             print(f"[OK] 已注册工作流: {name}")
 
-    def get_workflow(self, name: str) -> Optional[Callable]:
+    def get_workflow(self, name: str) -> Callable | None:
         return self.workflows.get(name)
 
-    def list_workflows(self) -> List[str]:
+    def list_workflows(self) -> list[str]:
         return list(self.workflows.keys())
 
 
@@ -139,17 +141,19 @@ def get_registry() -> FunctionRegistry:
 
 def register_workflow(name: str):
     """装饰器：注册工作流（兼容保留）"""
+
     def decorator(func):
         _registry.register_workflow(name, func)
         return func
+
     return decorator
 
 
 def register_api(
     path: str,
-    input_schema: Dict[str, Any],
-    output_schema: Dict[str, Any],
-    name: Optional[str] = None,
+    input_schema: dict[str, Any],
+    output_schema: dict[str, Any],
+    name: str | None = None,
     description: str = "",
 ):
     """
@@ -164,10 +168,12 @@ def register_api(
         def restart_frontend_project(...):
             ...
     """
+
     def decorator(func):
         # 仅在底层 register 中打印一次，避免重复打印“已注册API”
         _registry.register(path, func, input_schema, output_schema, name=name, description=description)
         return func
+
     return decorator
 
 

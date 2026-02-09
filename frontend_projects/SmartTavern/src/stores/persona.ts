@@ -50,12 +50,11 @@ function dirname(p: string): string {
 function buildDefaultUserAvatar(letter?: string): string {
   const defaultLetter = letter || i18n.t('stores.persona.defaultAvatarLetter')
   const size = 256
-  const bg = '#DBEAFE'     // tailwind: blue-100
-  const fg = '#1E3A8A'     // tailwind: blue-900
+  const bg = '#DBEAFE' // tailwind: blue-100
+  const fg = '#1E3A8A' // tailwind: blue-900
   const fontSize = 112
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-      <rect x="0" y="0" width="${size}" height="${size}" rx="${Math.round(size*0.18)}" fill="${bg}" />
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <rect x="0" y="0" width="${size}" height="${size}" rx="${Math.round(size * 0.18)}" fill="${bg}" />
       <text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle"
         fill="${fg}" font-size="${fontSize}" font-weight="700" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', 'WenQuanYi Micro Hei', sans-serif">${defaultLetter}</text>
     </svg>`
@@ -83,16 +82,18 @@ async function readJsonFromBlob(blob: Blob): Promise<PersonaMeta | null> {
 /** 安全释放旧的 ObjectURL */
 function safeRevoke(url: string | null): void {
   if (!url) return
-  try { URL.revokeObjectURL(url) } catch {}
+  try {
+    URL.revokeObjectURL(url)
+  } catch {}
 }
 
 // ========== Pinia Store 定义 ==========
 
 export const usePersonaStore = defineStore('persona', () => {
   // 状态
-  const currentPersonaFile = ref<string | null>(null)   // backend_projects/.../personas/.../persona.json
-  const avatarUrl = ref<string | null>(null)            // ObjectURL 或 data:URL
-  const meta = ref<PersonaMeta | null>(null)            // 用户画像 JSON（可选）
+  const currentPersonaFile = ref<string | null>(null) // backend_projects/.../personas/.../persona.json
+  const avatarUrl = ref<string | null>(null) // ObjectURL 或 data:URL
+  const meta = ref<PersonaMeta | null>(null) // 用户画像 JSON（可选）
   const loading = ref<boolean>(false)
   const error = ref<string>('')
 
@@ -103,7 +104,7 @@ export const usePersonaStore = defineStore('persona', () => {
   async function refreshFromConversation(): Promise<void> {
     // 不再需要手动处理，由 watch 自动监听 chatSettings.personaFile
   }
-  
+
   // 监听 chatSettings.personaFile 的变化，自动加载用户画像
   const chatSettingsStore = useChatSettingsStore()
   watch(
@@ -125,7 +126,7 @@ export const usePersonaStore = defineStore('persona', () => {
         loading.value = false
       }
     },
-    { immediate: true }
+    { immediate: true },
   )
 
   /** 直接从"用户画像文件路径"刷新状态（绕过 settings） */
@@ -164,7 +165,11 @@ export const usePersonaStore = defineStore('persona', () => {
     }
   }
 
-  function _setAll(pf: string | null, nextAvatar: string | null, nextMeta: PersonaMeta | null): void {
+  function _setAll(
+    pf: string | null,
+    nextAvatar: string | null,
+    nextMeta: PersonaMeta | null,
+  ): void {
     currentPersonaFile.value = pf || null
 
     if (avatarUrl.value && avatarUrl.value !== nextAvatar) safeRevoke(__prevAvatar)
@@ -258,7 +263,9 @@ export interface RegisterGlobalFunctionsOptions {
   exposeToWindow?: boolean
 }
 
-export function registerGlobalFunctions({ exposeToWindow = true }: RegisterGlobalFunctionsOptions = {}): void {
+export function registerGlobalFunctions({
+  exposeToWindow = true,
+}: RegisterGlobalFunctionsOptions = {}): void {
   if (typeof window === 'undefined') return
   if (exposeToWindow) {
     try {
@@ -280,8 +287,8 @@ export function registerGlobalFunctions({ exposeToWindow = true }: RegisterGloba
       })
     } catch {
       // 回退直接赋值
-      (window as any).getPersonaAvatarPath = () => getPersonaAvatarPath();
-      (window as any).getPersona = (key?: string) => getPersona(key)
+      ;(window as any).getPersonaAvatarPath = () => getPersonaAvatarPath()
+      ;(window as any).getPersona = (key?: string) => getPersona(key)
     }
   }
 }

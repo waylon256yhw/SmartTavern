@@ -27,8 +27,8 @@ export function useBackgroundFx(): BackgroundFxAPI {
     const target = document.body
 
     // 随机焦点位移（细微偏移，营造镜头对焦感）
-    const rx = ((Math.random() * 2) - 1) * 14 // -14 ~ 14 px
-    const ry = ((Math.random() * 2) - 1) * 10 // -10 ~ 10 px
+    const rx = (Math.random() * 2 - 1) * 14 // -14 ~ 14 px
+    const ry = (Math.random() * 2 - 1) * 10 // -10 ~ 10 px
     docEl.style.setProperty('--fx-shift-x', rx.toFixed(1) + 'px')
     docEl.style.setProperty('--fx-shift-y', ry.toFixed(1) + 'px')
 
@@ -50,9 +50,15 @@ export function useBackgroundFx(): BackgroundFxAPI {
     }, 4100)
   }
 
-  function playHomeBgFX(): void      { __triggerBgAnim('st-bg-anim') }
-  function playThreadedBgFX(): void  { __triggerBgAnim('st-bg-anim-threaded') }
-  function playSandboxBgFX(): void   { __triggerBgAnim('st-bg-anim-sandbox') }
+  function playHomeBgFX(): void {
+    __triggerBgAnim('st-bg-anim')
+  }
+  function playThreadedBgFX(): void {
+    __triggerBgAnim('st-bg-anim-threaded')
+  }
+  function playSandboxBgFX(): void {
+    __triggerBgAnim('st-bg-anim-sandbox')
+  }
 
   function stopBgFX(): void {
     // 主动停止：移除类名与变量

@@ -1,7 +1,7 @@
 <script setup>
 const props = defineProps({
   show: { type: Boolean, default: false },
-  message: { type: String, default: '加载中\u2026' }
+  message: { type: String, default: '加载中\u2026' },
 })
 </script>
 
@@ -11,7 +11,14 @@ const props = defineProps({
       <div class="st-loading-content">
         <div class="st-loading-spinner">
           <svg class="spinner-svg" viewBox="0 0 50 50">
-            <circle class="spinner-path" cx="25" cy="25" r="20" fill="none" stroke-width="4"></circle>
+            <circle
+              class="spinner-path"
+              cx="25"
+              cy="25"
+              r="20"
+              fill="none"
+              stroke-width="4"
+            ></circle>
           </svg>
         </div>
         <div class="st-loading-message">{{ message }}</div>
@@ -82,7 +89,10 @@ const props = defineProps({
   font-size: var(--st-font-xl);
   font-weight: 500;
   color: var(--st-loading-text-color, white);
-  text-shadow: var(--st-loading-text-shadow, 0 var(--st-spacing-xs) var(--st-spacing-xs) rgba(0, 0, 0, 0.3));
+  text-shadow: var(
+    --st-loading-text-shadow,
+    0 var(--st-spacing-xs) var(--st-spacing-xs) rgba(0, 0, 0, 0.3)
+  );
 }
 
 .st-loading-fade-enter-active,

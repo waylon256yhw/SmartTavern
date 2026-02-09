@@ -72,19 +72,21 @@ export interface NormalizedOption {
 /**
  * 规范化选项对象
  */
-function normalizeOption(option: OptionsConfig & { 
-  resolve?: (value: any) => void
-  reject?: (reason?: any) => void
-} = {}): NormalizedOption {
+function normalizeOption(
+  option: OptionsConfig & {
+    resolve?: (value: any) => void
+    reject?: (reason?: any) => void
+  } = {},
+): NormalizedOption {
   // 选项数组规范化
   const options = Array.isArray(option.options)
-    ? option.options.map(opt => {
+    ? option.options.map((opt) => {
         if (typeof opt === 'string') {
           return { label: opt, value: opt }
         }
         return {
           label: String(opt.label ?? opt.value ?? ''),
-          value: opt.value ?? opt.label ?? ''
+          value: opt.value ?? opt.label ?? '',
         }
       })
     : []
@@ -119,7 +121,7 @@ export const useOptionsStore = defineStore('options', () => {
       const option = normalizeOption({
         ...config,
         resolve,
-        reject
+        reject,
       })
 
       current.value = option
@@ -135,7 +137,7 @@ export const useOptionsStore = defineStore('options', () => {
 
     const selected = current.value.selected
     const index = selected.indexOf(value)
-    
+
     if (index >= 0) {
       // 已选中，移除
       selected.splice(index, 1)
@@ -216,7 +218,9 @@ export interface ShowOptionsFunction {
  * @param config - 配置对象
  * @returns Promise，解析为用户选择的值
  */
-export const showOptions: ShowOptionsFunction = async function(config: OptionsConfig): Promise<any> {
+export const showOptions: ShowOptionsFunction = async function (
+  config: OptionsConfig,
+): Promise<any> {
   try {
     const store = useOptionsStore()
     return await store.show(config)
@@ -231,7 +235,7 @@ export const showOptions: ShowOptionsFunction = async function(config: OptionsCo
  * @param config - 配置对象（type 固定为 'single'）
  * @returns Promise，解析为用户选择的值
  */
-showOptions.single = async function(config: OptionsConfig): Promise<any> {
+showOptions.single = async function (config: OptionsConfig): Promise<any> {
   return await showOptions({ ...config, type: 'single' })
 }
 
@@ -240,7 +244,7 @@ showOptions.single = async function(config: OptionsConfig): Promise<any> {
  * @param config - 配置对象（type 固定为 'multiple'）
  * @returns Promise，解析为用户选择的值数组
  */
-showOptions.multiple = async function(config: OptionsConfig): Promise<any[]> {
+showOptions.multiple = async function (config: OptionsConfig): Promise<any[]> {
   return await showOptions({ ...config, type: 'multiple' })
 }
 
@@ -249,7 +253,7 @@ showOptions.multiple = async function(config: OptionsConfig): Promise<any[]> {
  * @param config - 配置对象（type 固定为 'any'）
  * @returns Promise，解析为用户选择的值数组
  */
-showOptions.any = async function(config: OptionsConfig): Promise<any[]> {
+showOptions.any = async function (config: OptionsConfig): Promise<any[]> {
   return await showOptions({ ...config, type: 'any' })
 }
 
@@ -260,7 +264,9 @@ export interface RegisterGlobalFunctionsOptions {
   exposeToWindow?: boolean
 }
 
-export function registerGlobalFunctions({ exposeToWindow = true }: RegisterGlobalFunctionsOptions = {}): void {
+export function registerGlobalFunctions({
+  exposeToWindow = true,
+}: RegisterGlobalFunctionsOptions = {}): void {
   if (typeof window === 'undefined') return
   if (exposeToWindow) {
     try {
@@ -272,7 +278,7 @@ export function registerGlobalFunctions({ exposeToWindow = true }: RegisterGloba
       })
     } catch {
       // 回退直接赋值
-      (window as any).showOptions = showOptions
+      ;(window as any).showOptions = showOptions
     }
   }
 }

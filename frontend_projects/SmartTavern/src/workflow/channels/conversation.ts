@@ -1,6 +1,6 @@
 /**
  * 对话生命周期事件通道 (Conversation Channel)
- * 
+ *
  * 负责处理对话的创建、加载、保存、删除等生命周期事件。
  * 组件通过此通道请求对话操作，桥接器负责调用后端服务并返回结果。
  */
@@ -11,32 +11,32 @@ import { ref, type Ref } from 'vue'
 
 /** 对话文档 */
 export interface ConversationDoc {
-  [key: string]: any;
+  [key: string]: any
 }
 
 /** 对话列表项 */
 export interface ConversationItem {
-  name: string;
-  file: string;
-  [key: string]: any;
+  name: string
+  file: string
+  [key: string]: any
 }
 
 /** 加载状态映射 */
 export interface ConversationLoadingStates {
-  create: boolean;
-  load: boolean;
-  save: boolean;
-  delete: boolean;
-  list: boolean;
+  create: boolean
+  load: boolean
+  save: boolean
+  delete: boolean
+  list: boolean
 }
 
 /** 错误状态映射 */
 export interface ConversationErrorStates {
-  create: string | null;
-  load: string | null;
-  save: string | null;
-  delete: string | null;
-  list: string | null;
+  create: string | null
+  load: string | null
+  save: string | null
+  delete: string | null
+  list: string | null
 }
 
 // ============ Event Constants ============
@@ -88,7 +88,7 @@ export const loadingStates: Ref<ConversationLoadingStates> = ref({
   load: false,
   save: false,
   delete: false,
-  list: false
+  list: false,
 })
 
 /** 错误状态 */
@@ -97,7 +97,7 @@ export const errorStates: Ref<ConversationErrorStates> = ref({
   load: null,
   save: null,
   delete: null,
-  list: null
+  list: null,
 })
 
 // ============ Helper Functions ============
@@ -123,12 +123,12 @@ export function clearConversationsList(): void {
 export function resetAllConversationState(): void {
   resetCurrentConversation()
   clearConversationsList()
-  
-  Object.keys(loadingStates.value).forEach(key => {
+
+  Object.keys(loadingStates.value).forEach((key) => {
     loadingStates.value[key as keyof ConversationLoadingStates] = false
   })
-  
-  Object.keys(errorStates.value).forEach(key => {
+
+  Object.keys(errorStates.value).forEach((key) => {
     errorStates.value[key as keyof ConversationErrorStates] = null
   })
 }

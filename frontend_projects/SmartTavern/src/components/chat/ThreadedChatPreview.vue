@@ -30,16 +30,16 @@ const appearanceStore = useAppearanceSettingsStore()
 const props = defineProps({
   messages: {
     type: Array,
-    default: () => []
+    default: () => [],
   },
   conversationFile: {
     type: String,
-    default: null
+    default: null,
   },
   conversationDoc: {
     type: Object,
-    default: null
-  }
+    default: null,
+  },
 })
 
 const msgStore = useMessagesStore()
@@ -64,7 +64,9 @@ function refreshIcons() {
       window.lucide.createIcons()
     }
     if (typeof window.initFlowbite === 'function') {
-      try { window.initFlowbite() } catch (_) {}
+      try {
+        window.initFlowbite()
+      } catch (_) {}
     }
   })
 }
@@ -74,7 +76,7 @@ async function deleteMessage(payload) {
   // 支持两种形式：字符串 msgId 或对象 { id, latest, active_path }
   const isObj = payload && typeof payload === 'object'
   const msgId = isObj ? payload.id : payload
-  const idx = props.messages.findIndex(m => m.id === msgId)
+  const idx = props.messages.findIndex((m) => m.id === msgId)
   if (idx >= 0) {
     props.messages.splice(idx, 1)
     // 清理该节点的状态和流式内容索引
@@ -83,8 +85,8 @@ async function deleteMessage(payload) {
     // 使用 delete 返回的 latest（若提供）直接更新分支指示；否则不再请求分支表
     if (isObj && payload.latest && payload.latest.node_id) {
       const lid = payload.latest.node_id
-      const lj = (payload.latest.j != null) ? payload.latest.j : null
-      const ln = (payload.latest.n != null) ? payload.latest.n : null
+      const lj = payload.latest.j != null ? payload.latest.j : null
+      const ln = payload.latest.n != null ? payload.latest.n : null
       const newMap = {}
       if (lj != null && ln != null) newMap[lid] = { j: lj, n: ln }
       branchInfoMap.value = newMap
@@ -207,7 +209,7 @@ async function loadBranchInfo() {
 
       const newMap = {}
       if (result?.levels && Array.isArray(result.levels)) {
-        result.levels.forEach(level => {
+        result.levels.forEach((level) => {
           if (level.node_id && level.j !== null && level.n !== null) {
             newMap[level.node_id] = { j: level.j, n: level.n }
           }
@@ -218,17 +220,28 @@ async function loadBranchInfo() {
       console.log('分支信息加载成功(事件):', newMap)
       refreshIcons()
 
-      try { offOk?.() } catch (_) {}
-      try { offFail?.() } catch (_) {}
+      try {
+        offOk?.()
+      } catch (_) {}
+      try {
+        offFail?.()
+      } catch (_) {}
       resolve(true)
     })
-    const offFail = Host.events.on(Branch.EVT_BRANCH_TABLE_FAIL, ({ conversationFile, message }) => {
-      if (conversationFile && conversationFile !== convFile) return
-      console.error(t('chat.errors.loadBranchFailed') + '(事件):', message)
-      try { offOk?.() } catch (_) {}
-      try { offFail?.() } catch (_) {}
-      resolve(false)
-    })
+    const offFail = Host.events.on(
+      Branch.EVT_BRANCH_TABLE_FAIL,
+      ({ conversationFile, message }) => {
+        if (conversationFile && conversationFile !== convFile) return
+        console.error(t('chat.errors.loadBranchFailed') + '(事件):', message)
+        try {
+          offOk?.()
+        } catch (_) {}
+        try {
+          offFail?.()
+        } catch (_) {}
+        resolve(false)
+      },
+    )
 
     __uiOffs.push(offOk, offFail)
     Host.events.emit(Branch.EVT_BRANCH_TABLE_REQ, { conversationFile: convFile })
@@ -248,16 +261,16 @@ onMounted(async () => {
   await Promise.all([
     characterStore.refreshFromConversation(props.conversationFile),
     personaStore.refreshFromConversation(props.conversationFile),
-    loadBranchInfo()
+    loadBranchInfo(),
   ])
-  
+
   // 等待下一帧再初始化iframe跟踪，确保消息已渲染
   await nextTick()
   await nextTick()
-  
+
   // 初始化iframe加载跟踪
   initIframesTracking()
-  
+
   // 首次挂载后强制更新滚动条（确保容器尺寸已稳定）
   messageListRef.value?.update?.()
 
@@ -267,14 +280,14 @@ onMounted(async () => {
   const wheelHandler = (e) => {
     const container = messageListRef.value?.$el?.querySelector('.scroll-container')
     if (!container) return
-    
+
     // 如果事件来源本就在列表容器内，让原生滚动处理
     if (container.contains(e.target)) return
-    
+
     // 如果事件来源在输入框容器内（包括 textarea 和自定义滚动条），让原生滚动处理
     const inputContainer = document.querySelector('.input-container')
     if (inputContainer && inputContainer.contains(e.target)) return
-    
+
     // 位于聊天统一区域或主区域空白时，拦截并转发滚动到消息容器
     const inChatUnified = chatUnified && chatUnified.contains(e.target)
     const inMainArea = mainArea && mainArea.contains(e.target)
@@ -289,7 +302,7 @@ onMounted(async () => {
     chatUnified?.removeEventListener('wheel', wheelHandler)
     mainArea?.removeEventListener('wheel', wheelHandler)
   }
-  
+
   // 视口追踪：监听滚动事件更新视口中心
   const container = messageListRef.value?.$el?.querySelector('.scroll-container')
   if (container) {
@@ -301,51 +314,70 @@ onMounted(async () => {
       }, 100)
     }
     container.addEventListener('scroll', scrollHandler, { passive: true })
-    
+
     // 初始化视口中心
     nextTick(() => {
       updateViewportCenter()
     })
   }
-  
+
   refreshIcons()
   // 初始化现有消息的智能色条调色板（若有头像则提取主色）
-  props.messages.forEach(m => { ensurePaletteFor(m) })
+  props.messages.forEach((m) => {
+    ensurePaletteFor(m)
+  })
 })
 
 onBeforeUnmount(() => {
   removeWheel?.()
-  if (sendErrorTimer) { clearTimeout(sendErrorTimer); sendErrorTimer = null }
-  if (sendSuccessTimer) { clearTimeout(sendSuccessTimer); sendSuccessTimer = null }
+  if (sendErrorTimer) {
+    clearTimeout(sendErrorTimer)
+    sendErrorTimer = null
+  }
+  if (sendSuccessTimer) {
+    clearTimeout(sendSuccessTimer)
+    sendSuccessTimer = null
+  }
   // 角色头像和用户头像 Blob URL 都由对应的 store 管理，无需手动清理
   // 清理补全事件监听（避免组件卸载后仍然持有回调）
   try {
-    __completionOffs?.forEach(fn => { try { fn?.() } catch (_) {} })
+    __completionOffs?.forEach((fn) => {
+      try {
+        fn?.()
+      } catch (_) {}
+    })
     __completionOffs.length = 0
   } catch (_) {}
   // 清理 UI 事件监听
   try {
-    __uiOffs?.forEach(fn => { try { fn?.() } catch (_) {} })
+    __uiOffs?.forEach((fn) => {
+      try {
+        fn?.()
+      } catch (_) {}
+    })
     __uiOffs.length = 0
   } catch (_) {}
 })
 
-watch(() => props.messages.length, () => {
-  // 下一拍更新滚动条
-  nextTick(() => {
-    messageListRef.value?.update?.()
-    refreshIcons()
-    // 消息数量变化后，重新初始化iframe跟踪
-    initIframesTracking()
-  })
-})
+watch(
+  () => props.messages.length,
+  () => {
+    // 下一拍更新滚动条
+    nextTick(() => {
+      messageListRef.value?.update?.()
+      refreshIcons()
+      // 消息数量变化后，重新初始化iframe跟踪
+      initIframesTracking()
+    })
+  },
+)
 
 /**
  * 事件驱动：为指定 tag 附加 Completion 监听（用于 UI 占位与后续更新）
  */
 function attachCompletionHandlersForTag(tagNodeId) {
   // 打字机与等待态
-  let currentNodeId = tagNodeId  // 关键修复：跟踪当前节点ID（可能从临时ID变为真实ID）
+  let currentNodeId = tagNodeId // 关键修复：跟踪当前节点ID（可能从临时ID变为真实ID）
   let typewriterBuffer = ''
   let isTyping = false
   let hasReceivedError = false
@@ -361,7 +393,10 @@ function attachCompletionHandlersForTag(tagNodeId) {
     // 第一个 chunk 到达，结束等待动画
     if (nodeStates.value[currentNodeId]?.waitingAI) {
       nodeStates.value[currentNodeId].waitingAI = false
-      if (waitingTimer) { clearInterval(waitingTimer); waitingTimer = null }
+      if (waitingTimer) {
+        clearInterval(waitingTimer)
+        waitingTimer = null
+      }
     }
 
     // 后台索引（完整内容）- 使用当前节点ID
@@ -369,7 +404,8 @@ function attachCompletionHandlersForTag(tagNodeId) {
     streamContentIndex.value[currentNodeId] += content
 
     // 初始化可见缓冲并启动自适应打字机循环
-    if (streamVisibleIndex.value[currentNodeId] == null) streamVisibleIndex.value[currentNodeId] = ''
+    if (streamVisibleIndex.value[currentNodeId] == null)
+      streamVisibleIndex.value[currentNodeId] = ''
     _ensureTypingLoop()
 
     // 不直接修改前台消息文本，避免切换分支时清空/覆盖其他分支内容；
@@ -380,68 +416,75 @@ function attachCompletionHandlersForTag(tagNodeId) {
     const container = messageListRef.value?.$el?.querySelector('.scroll-container')
     if (container) container.scrollTop = container.scrollHeight
   })
-  const offSaved = Host.events.on(Completion.EVT_COMPLETION_SAVED, ({ tag, node_id, doc, content, node_updated_at }) => {
-    if (tag !== tagNodeId) return
-    if (hasReceivedError) return
-    const oldNodeId = currentNodeId
-    const msg = props.messages.find(m => m.id === oldNodeId)
-    if (msg) {
-      // 更新为真实ID
-      if (node_id && oldNodeId !== node_id) {
-        msg.id = node_id
-        // 关键修复：更新 currentNodeId，使后续chunk事件能找到消息
-        currentNodeId = node_id
-        // 迁移节点状态和流式内容索引
-        if (nodeStates.value[oldNodeId]) {
-          nodeStates.value[node_id] = nodeStates.value[oldNodeId]
-          delete nodeStates.value[oldNodeId]
-        }
-        if (streamContentIndex.value[oldNodeId]) {
-          streamContentIndex.value[node_id] = streamContentIndex.value[oldNodeId]
-          delete streamContentIndex.value[oldNodeId]
-        }
-      }
-      // 更新节点时间戳
-      if (node_updated_at) {
-        msg.node_updated_at = node_updated_at
-        // 同步更新 rawMessages
-        try {
-          const rawMsgs = msgStore.rawMessages || []
-          const idx = rawMsgs.findIndex(m => m && m.id === (node_id || oldNodeId))
-          if (idx >= 0 && rawMsgs[idx]) {
-            rawMsgs[idx].node_updated_at = node_updated_at
-            if (content) rawMsgs[idx].content = content
+  const offSaved = Host.events.on(
+    Completion.EVT_COMPLETION_SAVED,
+    ({ tag, node_id, doc, content, node_updated_at }) => {
+      if (tag !== tagNodeId) return
+      if (hasReceivedError) return
+      const oldNodeId = currentNodeId
+      const msg = props.messages.find((m) => m.id === oldNodeId)
+      if (msg) {
+        // 更新为真实ID
+        if (node_id && oldNodeId !== node_id) {
+          msg.id = node_id
+          // 关键修复：更新 currentNodeId，使后续chunk事件能找到消息
+          currentNodeId = node_id
+          // 迁移节点状态和流式内容索引
+          if (nodeStates.value[oldNodeId]) {
+            nodeStates.value[node_id] = nodeStates.value[oldNodeId]
+            delete nodeStates.value[oldNodeId]
           }
-        } catch (_) {}
+          if (streamContentIndex.value[oldNodeId]) {
+            streamContentIndex.value[node_id] = streamContentIndex.value[oldNodeId]
+            delete streamContentIndex.value[oldNodeId]
+          }
+        }
+        // 更新节点时间戳
+        if (node_updated_at) {
+          msg.node_updated_at = node_updated_at
+          // 同步更新 rawMessages
+          try {
+            const rawMsgs = msgStore.rawMessages || []
+            const idx = rawMsgs.findIndex((m) => m && m.id === (node_id || oldNodeId))
+            if (idx >= 0 && rawMsgs[idx]) {
+              rawMsgs[idx].node_updated_at = node_updated_at
+              if (content) rawMsgs[idx].content = content
+            }
+          } catch (_) {}
+        }
+        // 非流式模式直接替换内容
+        if (content) {
+          msg.content = content
+          if (nodeStates.value[node_id || oldNodeId])
+            nodeStates.value[node_id || oldNodeId].waitingAI = false
+        }
       }
-      // 非流式模式直接替换内容
-      if (content) {
-        msg.content = content
-        if (nodeStates.value[node_id || oldNodeId]) nodeStates.value[node_id || oldNodeId].waitingAI = false
+      // 迁移可见缓冲
+      if (streamVisibleIndex.value[oldNodeId]) {
+        streamVisibleIndex.value[node_id] = streamVisibleIndex.value[oldNodeId]
+        delete streamVisibleIndex.value[oldNodeId]
       }
-    }
-    // 迁移可见缓冲
-    if (streamVisibleIndex.value[oldNodeId]) {
-      streamVisibleIndex.value[node_id] = streamVisibleIndex.value[oldNodeId]
-      delete streamVisibleIndex.value[oldNodeId]
-    }
-    if (doc && props.conversationDoc) Object.assign(props.conversationDoc, doc)
+      if (doc && props.conversationDoc) Object.assign(props.conversationDoc, doc)
 
-    // 仅使用 append/后端返回的 latest（若存在），不进行前端计算
-    if (doc && doc.latest && doc.latest.node_id) {
-      const lid = doc.latest.node_id
-      const lj = (doc.latest.j != null) ? doc.latest.j : null
-      const ln = (doc.latest.n != null) ? doc.latest.n : null
-      const map = {}
-      if (lj != null && ln != null) map[lid] = { j: lj, n: ln }
-      branchInfoMap.value = map
-    }
-  })
+      // 仅使用 append/后端返回的 latest（若存在），不进行前端计算
+      if (doc && doc.latest && doc.latest.node_id) {
+        const lid = doc.latest.node_id
+        const lj = doc.latest.j != null ? doc.latest.j : null
+        const ln = doc.latest.n != null ? doc.latest.n : null
+        const map = {}
+        if (lj != null && ln != null) map[lid] = { j: lj, n: ln }
+        branchInfoMap.value = map
+      }
+    },
+  )
   const offError = Host.events.on(Completion.EVT_COMPLETION_ERROR, ({ tag, message }) => {
     if (tag !== tagNodeId) return
     console.error(t('chat.errors.aiCallFailed') + ':', message)
     hasReceivedError = true
-    if (waitingTimer) { clearInterval(waitingTimer); waitingTimer = null }
+    if (waitingTimer) {
+      clearInterval(waitingTimer)
+      waitingTimer = null
+    }
     typewriterBuffer = ''
     isTyping = false
     if (nodeStates.value[currentNodeId]) {
@@ -453,8 +496,13 @@ function attachCompletionHandlersForTag(tagNodeId) {
   })
   const offEnd = Host.events.on(Completion.EVT_COMPLETION_END, async ({ tag }) => {
     if (tag !== tagNodeId) return
-    if (waitingTimer) { clearInterval(waitingTimer); waitingTimer = null }
-    while (isTyping || typewriterBuffer.length > 0) { await new Promise(r => setTimeout(r, 50)) }
+    if (waitingTimer) {
+      clearInterval(waitingTimer)
+      waitingTimer = null
+    }
+    while (isTyping || typewriterBuffer.length > 0) {
+      await new Promise((r) => setTimeout(r, 50))
+    }
     if (nodeStates.value[currentNodeId]) nodeStates.value[currentNodeId].waitingAI = false
     if (hasReceivedError) {
       await nextTick()
@@ -465,7 +513,11 @@ function attachCompletionHandlersForTag(tagNodeId) {
       refreshIcons()
     }
     // 清理监听
-    ;[offChunk, offSaved, offError, offEnd].forEach(fn => { try { fn?.() } catch (_) {} })
+    ;[offChunk, offSaved, offError, offEnd].forEach((fn) => {
+      try {
+        fn?.()
+      } catch (_) {}
+    })
   })
 
   // 记录统一清理器
@@ -476,64 +528,70 @@ function attachCompletionHandlersForTag(tagNodeId) {
  * UI通道：占位助手消息创建（组件仅响应事件与状态）
  * - 工作流（插件）负责在此事件之后触发 Completion.EVT_COMPLETION_REQ（携带相同 tag）
  */
-const offAssistPlaceholder = Host.events.on(Threaded.EVT_THREAD_ASSIST_PLACEHOLDER_CREATE, ({ conversationFile, tempNodeId, node_updated_at }) => {
-if (conversationFile !== props.conversationFile) return
+const offAssistPlaceholder = Host.events.on(
+  Threaded.EVT_THREAD_ASSIST_PLACEHOLDER_CREATE,
+  ({ conversationFile, tempNodeId, node_updated_at }) => {
+    if (conversationFile !== props.conversationFile) return
 
-// 防御性检查：如果该节点已存在，跳过创建
-const rawMsgs = msgStore.rawMessages || []
-const existsInMessages = rawMsgs.some(m => m && m.id === tempNodeId)
-if (existsInMessages) return
+    // 防御性检查：如果该节点已存在，跳过创建
+    const rawMsgs = msgStore.rawMessages || []
+    const existsInMessages = rawMsgs.some((m) => m && m.id === tempNodeId)
+    if (existsInMessages) return
 
-// 仅更新 rawMessages（因为 props.messages 是它的引用，会自动更新）
-try {
-  rawMsgs.push({
-    id: tempNodeId,
-    role: 'assistant',
-    content: '',
-    node_updated_at: node_updated_at || null
-  })
-  msgStore.updateRawMessages([...rawMsgs])
-  
-  // 设置节点状态和调色板
-  ensurePaletteFor(rawMsgs[rawMsgs.length - 1])
-  nodeStates.value[tempNodeId] = { waitingAI: true, waitingSeconds: 0, error: null }
-} catch (_) {}
-  
-  // 附加 Completion 监听以驱动后续更新
-  attachCompletionHandlersForTag(tempNodeId)
+    // 仅更新 rawMessages（因为 props.messages 是它的引用，会自动更新）
+    try {
+      rawMsgs.push({
+        id: tempNodeId,
+        role: 'assistant',
+        content: '',
+        node_updated_at: node_updated_at || null,
+      })
+      msgStore.updateRawMessages([...rawMsgs])
 
-  // 立即显示分支切换器：优先使用 append 返回的 latest（pendingAssistantJN），否则回退预测
-  try {
-    if (pendingAssistantJN.value) {
-      branchInfoMap.value = { ...(branchInfoMap.value || {}), [tempNodeId]: { ...pendingAssistantJN.value } }
-      pendingAssistantJN.value = null
-    } else {
-      const doc = props.conversationDoc || {}
-      const ap = Array.isArray(doc.active_path) ? doc.active_path : []
-      const pid = ap.length ? ap[ap.length - 1] : null
-      let n = 1
-      if (pid && doc.children && Array.isArray(doc.children[pid])) {
-        const siblings = doc.children[pid]
-        n = siblings.length + 1
+      // 设置节点状态和调色板
+      ensurePaletteFor(rawMsgs[rawMsgs.length - 1])
+      nodeStates.value[tempNodeId] = { waitingAI: true, waitingSeconds: 0, error: null }
+    } catch (_) {}
+
+    // 附加 Completion 监听以驱动后续更新
+    attachCompletionHandlersForTag(tempNodeId)
+
+    // 立即显示分支切换器：优先使用 append 返回的 latest（pendingAssistantJN），否则回退预测
+    try {
+      if (pendingAssistantJN.value) {
+        branchInfoMap.value = {
+          ...(branchInfoMap.value || {}),
+          [tempNodeId]: { ...pendingAssistantJN.value },
+        }
+        pendingAssistantJN.value = null
+      } else {
+        const doc = props.conversationDoc || {}
+        const ap = Array.isArray(doc.active_path) ? doc.active_path : []
+        const pid = ap.length ? ap[ap.length - 1] : null
+        let n = 1
+        if (pid && doc.children && Array.isArray(doc.children[pid])) {
+          const siblings = doc.children[pid]
+          n = siblings.length + 1
+        }
+        const j = n
+        branchInfoMap.value = { ...(branchInfoMap.value || {}), [tempNodeId]: { j, n } }
       }
-      const j = n
-      branchInfoMap.value = { ...(branchInfoMap.value || {}), [tempNodeId]: { j, n } }
-    }
-  } catch (_) {}
-})
+    } catch (_) {}
+  },
+)
 __uiOffs.push(offAssistPlaceholder)
 
 function sendMessage() {
   const text = inputText.value.trim()
   if (!text) return
-  
+
   // 创建新消息
   const newMessage = {
     id: Date.now(), // 简单的ID生成
     role: 'user',
-    content: text
+    content: text,
   }
-  
+
   // 若等待中则直接返回（不允许再次发送）
   if (pendingMessageId?.value) return
 
@@ -543,10 +601,10 @@ function sendMessage() {
   ensurePaletteFor(newMessage)
   // 启动 10 秒等待占位
   startPendingFor(newMessage.id)
-  
+
   // 清空输入框
   inputText.value = ''
-  
+
   // 滚动到底部（丝滑且自然）
   nextTick(() => {
     setTimeout(() => {
@@ -562,7 +620,7 @@ function sendMessage() {
             const end = container.scrollHeight
             const dur = 420
             const t0 = performance.now()
-            const ease = t => 1 - Math.pow(1 - t, 3) // easeOutCubic
+            const ease = (t) => 1 - Math.pow(1 - t, 3) // easeOutCubic
             const step = (now) => {
               const p = Math.min(1, (now - t0) / dur)
               container.scrollTop = start + (end - start) * ease(p)
@@ -613,49 +671,63 @@ async function regenerateMessage(msg) {
       const tag = `retry_ass_${Date.now()}`
       const oldId = msg.id
 
-      const offOk = Host.events.on(Branch.EVT_BRANCH_RETRY_ASSIST_OK, ({ conversationFile, newNodeId, doc, latest, active_path, node_updated_at, tag: rtag }) => {
-        if (conversationFile !== props.conversationFile || rtag !== tag) return
+      const offOk = Host.events.on(
+        Branch.EVT_BRANCH_RETRY_ASSIST_OK,
+        ({ conversationFile, newNodeId, doc, latest, active_path, node_updated_at, tag: rtag }) => {
+          if (conversationFile !== props.conversationFile || rtag !== tag) return
 
-        // 仅更新 rawMessages（因为 props.messages 是它的引用，会自动更新）
-        try {
-          const rawMsgs = msgStore.rawMessages || []
-          const rawIdx = rawMsgs.findIndex(m => m && m.id === oldId)
-          if (rawIdx >= 0 && rawMsgs[rawIdx]) {
-            rawMsgs[rawIdx].id = newNodeId
-            rawMsgs[rawIdx].content = ''
-            rawMsgs[rawIdx].node_updated_at = node_updated_at
-            msgStore.updateRawMessages([...rawMsgs])
-            
-            // 设置调色板和节点状态
-            ensurePaletteFor(rawMsgs[rawIdx])
-            nodeStates.value[newNodeId] = { waitingAI: true, waitingSeconds: 0, error: null }
-            
-            // 关键修复：附加 Completion 监听器，以便后续 AI 补全内容可以显示
-            attachCompletionHandlersForTag(newNodeId)
+          // 仅更新 rawMessages（因为 props.messages 是它的引用，会自动更新）
+          try {
+            const rawMsgs = msgStore.rawMessages || []
+            const rawIdx = rawMsgs.findIndex((m) => m && m.id === oldId)
+            if (rawIdx >= 0 && rawMsgs[rawIdx]) {
+              rawMsgs[rawIdx].id = newNodeId
+              rawMsgs[rawIdx].content = ''
+              rawMsgs[rawIdx].node_updated_at = node_updated_at
+              msgStore.updateRawMessages([...rawMsgs])
+
+              // 设置调色板和节点状态
+              ensurePaletteFor(rawMsgs[rawIdx])
+              nodeStates.value[newNodeId] = { waitingAI: true, waitingSeconds: 0, error: null }
+
+              // 关键修复：附加 Completion 监听器，以便后续 AI 补全内容可以显示
+              attachCompletionHandlersForTag(newNodeId)
+            }
+          } catch (_) {}
+
+          if (doc && props.conversationDoc) Object.assign(props.conversationDoc, doc)
+
+          // 用 latest 直接更新分支映射（无网络额外请求）
+          if (latest && latest.node_id) {
+            const lid = latest.node_id
+            const lj = latest.j != null ? latest.j : null
+            const ln = latest.n != null ? latest.n : null
+            const map = {}
+            if (lj != null && ln != null) map[lid] = { j: lj, n: ln }
+            branchInfoMap.value = map
           }
-        } catch (_) {}
 
-        if (doc && props.conversationDoc) Object.assign(props.conversationDoc, doc)
-        
-        // 用 latest 直接更新分支映射（无网络额外请求）
-        if (latest && latest.node_id) {
-          const lid = latest.node_id
-          const lj = (latest.j != null) ? latest.j : null
-          const ln = (latest.n != null) ? latest.n : null
-          const map = {}
-          if (lj != null && ln != null) map[lid] = { j: lj, n: ln }
-          branchInfoMap.value = map
-        }
-        
-        try { offOk?.() } catch (_) {}
-        try { offFail?.() } catch (_) {}
-      })
-      const offFail = Host.events.on(Branch.EVT_BRANCH_RETRY_ASSIST_FAIL, ({ conversationFile, message, tag: rtag }) => {
-        if (conversationFile !== props.conversationFile || rtag !== tag) return
-        console.error(t('chat.errors.retryFailed') + ':', message)
-        try { offOk?.() } catch (_) {}
-        try { offFail?.() } catch (_) {}
-      })
+          try {
+            offOk?.()
+          } catch (_) {}
+          try {
+            offFail?.()
+          } catch (_) {}
+        },
+      )
+      const offFail = Host.events.on(
+        Branch.EVT_BRANCH_RETRY_ASSIST_FAIL,
+        ({ conversationFile, message, tag: rtag }) => {
+          if (conversationFile !== props.conversationFile || rtag !== tag) return
+          console.error(t('chat.errors.retryFailed') + ':', message)
+          try {
+            offOk?.()
+          } catch (_) {}
+          try {
+            offFail?.()
+          } catch (_) {}
+        },
+      )
 
       __uiOffs.push(offOk, offFail)
       Host.events.emit(Branch.EVT_BRANCH_RETRY_ASSIST_REQ, {
@@ -666,68 +738,99 @@ async function regenerateMessage(msg) {
     } else if (msg.role === 'user') {
       // 事件化：用户智能重试 -> 由桥接器决定创建助手或重试既有助手
       const tag = `retry_user_${Date.now()}`
-      
+
       // 监听 RETRY_USER_OK，如果是 retry_assistant 则继续监听分支创建
-      const offOk = Host.events.on(Branch.EVT_BRANCH_RETRY_USER_OK, ({ conversationFile, action, assistantNodeId, doc, tag: rtag }) => {
-        if (conversationFile !== props.conversationFile || rtag !== tag) return
-        if (doc && props.conversationDoc) Object.assign(props.conversationDoc, doc)
-        
-        // 如果是 retry_assistant，监听后续的分支创建事件以更新UI
-        if (action === 'retry_assistant' && assistantNodeId) {
-          const oldAssistantId = assistantNodeId
-          
-          // 监听工作流触发的助手分支创建事件
-          const offAssistOk = Host.events.on(Branch.EVT_BRANCH_RETRY_ASSIST_OK, ({ conversationFile: cf, newNodeId, doc: newDoc, latest: latest2, active_path: ap2, node_updated_at, tag: assTag }) => {
-            // 检查是否是我们触发的重试（通过检查时间戳）
-            if (cf !== props.conversationFile) return
-            if (!assTag || !assTag.startsWith('retry_user_assist_')) return
-            
-            // 仅更新 rawMessages（因为 props.messages 是它的引用，会自动更新）
-            try {
-              const rawMsgs = msgStore.rawMessages || []
-              const rawIdx = rawMsgs.findIndex(m => m && m.id === oldAssistantId)
-              if (rawIdx >= 0 && rawMsgs[rawIdx]) {
-                rawMsgs[rawIdx].id = newNodeId
-                rawMsgs[rawIdx].content = ''
-                rawMsgs[rawIdx].node_updated_at = node_updated_at
-                msgStore.updateRawMessages([...rawMsgs])
-                
-                // 设置调色板和节点状态
-                ensurePaletteFor(rawMsgs[rawIdx])
-                nodeStates.value[newNodeId] = { waitingAI: true, waitingSeconds: 0, error: null }
-                
-                // 附加 Completion 监听以驱动后续更新
-                attachCompletionHandlersForTag(newNodeId)
-              }
-            } catch (_) {}
-            
-            if (newDoc && props.conversationDoc) Object.assign(props.conversationDoc, newDoc)
-            
-            // 用 latest 直接更新分支映射
-            if (latest2 && latest2.node_id) {
-              const lid = latest2.node_id
-              const lj = (latest2.j != null) ? latest2.j : null
-              const ln = (latest2.n != null) ? latest2.n : null
-              const map = {}
-              if (lj != null && ln != null) map[lid] = { j: lj, n: ln }
-              branchInfoMap.value = map
-            }
-            
-            try { offAssistOk?.() } catch (_) {}
-          })
-          
-          __uiOffs.push(offAssistOk)
-        }
-        
-        try { offOk?.() } catch (_) {}
-        try { offFail?.() } catch (_) {}
-      })
-      const offFail = Host.events.on(Branch.EVT_BRANCH_RETRY_USER_FAIL, ({ conversationFile, message, tag: rtag }) => {
-        if (conversationFile !== props.conversationFile || rtag !== tag) return
-        console.error(t('chat.errors.retryFailed') + ':', message)
-        try { offOk?.() } catch (_) {}
-        try { offFail?.() } catch (_) {}
-      })
+      const offOk = Host.events.on(
+        Branch.EVT_BRANCH_RETRY_USER_OK,
+        ({ conversationFile, action, assistantNodeId, doc, tag: rtag }) => {
+          if (conversationFile !== props.conversationFile || rtag !== tag) return
+          if (doc && props.conversationDoc) Object.assign(props.conversationDoc, doc)
+
+          // 如果是 retry_assistant，监听后续的分支创建事件以更新UI
+          if (action === 'retry_assistant' && assistantNodeId) {
+            const oldAssistantId = assistantNodeId
+
+            // 监听工作流触发的助手分支创建事件
+            const offAssistOk = Host.events.on(
+              Branch.EVT_BRANCH_RETRY_ASSIST_OK,
+              ({
+                conversationFile: cf,
+                newNodeId,
+                doc: newDoc,
+                latest: latest2,
+                active_path: ap2,
+                node_updated_at,
+                tag: assTag,
+              }) => {
+                // 检查是否是我们触发的重试（通过检查时间戳）
+                if (cf !== props.conversationFile) return
+                if (!assTag || !assTag.startsWith('retry_user_assist_')) return
+
+                // 仅更新 rawMessages（因为 props.messages 是它的引用，会自动更新）
+                try {
+                  const rawMsgs = msgStore.rawMessages || []
+                  const rawIdx = rawMsgs.findIndex((m) => m && m.id === oldAssistantId)
+                  if (rawIdx >= 0 && rawMsgs[rawIdx]) {
+                    rawMsgs[rawIdx].id = newNodeId
+                    rawMsgs[rawIdx].content = ''
+                    rawMsgs[rawIdx].node_updated_at = node_updated_at
+                    msgStore.updateRawMessages([...rawMsgs])
+
+                    // 设置调色板和节点状态
+                    ensurePaletteFor(rawMsgs[rawIdx])
+                    nodeStates.value[newNodeId] = {
+                      waitingAI: true,
+                      waitingSeconds: 0,
+                      error: null,
+                    }
+
+                    // 附加 Completion 监听以驱动后续更新
+                    attachCompletionHandlersForTag(newNodeId)
+                  }
+                } catch (_) {}
+
+                if (newDoc && props.conversationDoc) Object.assign(props.conversationDoc, newDoc)
+
+                // 用 latest 直接更新分支映射
+                if (latest2 && latest2.node_id) {
+                  const lid = latest2.node_id
+                  const lj = latest2.j != null ? latest2.j : null
+                  const ln = latest2.n != null ? latest2.n : null
+                  const map = {}
+                  if (lj != null && ln != null) map[lid] = { j: lj, n: ln }
+                  branchInfoMap.value = map
+                }
+
+                try {
+                  offAssistOk?.()
+                } catch (_) {}
+              },
+            )
+
+            __uiOffs.push(offAssistOk)
+          }
+
+          try {
+            offOk?.()
+          } catch (_) {}
+          try {
+            offFail?.()
+          } catch (_) {}
+        },
+      )
+      const offFail = Host.events.on(
+        Branch.EVT_BRANCH_RETRY_USER_FAIL,
+        ({ conversationFile, message, tag: rtag }) => {
+          if (conversationFile !== props.conversationFile || rtag !== tag) return
+          console.error(t('chat.errors.retryFailed') + ':', message)
+          try {
+            offOk?.()
+          } catch (_) {}
+          try {
+            offFail?.()
+          } catch (_) {}
+        },
+      )
 
       __uiOffs.push(offOk, offFail)
       Host.events.emit(Branch.EVT_BRANCH_RETRY_USER_REQ, {
@@ -740,7 +843,6 @@ async function regenerateMessage(msg) {
     console.error(t('chat.errors.retryFailed') + ':', error)
   }
 }
-
 
 /* 发送状态管理 */
 const isSending = ref(false)
@@ -771,9 +873,10 @@ async function onSubmit(text) {
 
   // 获取父节点：始终以 rawMessages 的最后一条为准（始终最新且正确）
   const rawList = Array.isArray(msgStore.rawMessages) ? msgStore.rawMessages : []
-  const parentId = (rawList.length > 0 && rawList[rawList.length - 1] && rawList[rawList.length - 1].id)
-    ? rawList[rawList.length - 1].id
-    : null
+  const parentId =
+    rawList.length > 0 && rawList[rawList.length - 1] && rawList[rawList.length - 1].id
+      ? rawList[rawList.length - 1].id
+      : null
   if (!parentId) {
     isSending.value = false
     sendErrorMsg.value = t('chat.errors.cannotDetermineParentId')
@@ -784,110 +887,141 @@ async function onSubmit(text) {
   const tag = newNodeId
 
   // 监听发送结果（一次性）
-  const offOk = Host.events.on(Message.EVT_MESSAGE_SEND_OK, async ({ conversationFile, nodeId, role, content, doc, node_updated_at, placeholder_updated_at, tag: rtag }) => {
-    if (conversationFile !== props.conversationFile || nodeId !== newNodeId || rtag !== tag) return
+  const offOk = Host.events.on(
+    Message.EVT_MESSAGE_SEND_OK,
+    async ({
+      conversationFile,
+      nodeId,
+      role,
+      content,
+      doc,
+      node_updated_at,
+      placeholder_updated_at,
+      tag: rtag,
+    }) => {
+      if (conversationFile !== props.conversationFile || nodeId !== newNodeId || rtag !== tag)
+        return
 
-    // 仅更新 rawMessages（因为 props.messages 是它的引用，会自动更新）
-    try {
-      const rawMsgs = msgStore.rawMessages || []
-      const newMessage = { id: newNodeId, role: 'user', content: inputText, node_updated_at: node_updated_at || null }
-      rawMsgs.push(newMessage)
-      msgStore.updateRawMessages([...rawMsgs])
-      
-      // 设置调色板
-      ensurePaletteFor(newMessage)
-    } catch (_) {}
-
-    if (doc && props.conversationDoc) {
-      // append_message 现返回 active_path/latest（非完整 doc）：安全合并有效字段
+      // 仅更新 rawMessages（因为 props.messages 是它的引用，会自动更新）
       try {
-        if (Array.isArray(doc.active_path)) props.conversationDoc.active_path = doc.active_path
-        if (doc.nodes && typeof doc.nodes === 'object') Object.assign(props.conversationDoc.nodes || {}, doc.nodes)
-        if (doc.children && typeof doc.children === 'object') Object.assign(props.conversationDoc.children || {}, doc.children)
-        if (doc.roots && Array.isArray(doc.roots)) props.conversationDoc.roots = doc.roots
+        const rawMsgs = msgStore.rawMessages || []
+        const newMessage = {
+          id: newNodeId,
+          role: 'user',
+          content: inputText,
+          node_updated_at: node_updated_at || null,
+        }
+        rawMsgs.push(newMessage)
+        msgStore.updateRawMessages([...rawMsgs])
+
+        // 设置调色板
+        ensurePaletteFor(newMessage)
       } catch (_) {}
-    }
 
-    inputRowRef.value?.clearText?.()
-    isSending.value = false
+      if (doc && props.conversationDoc) {
+        // append_message 现返回 active_path/latest（非完整 doc）：安全合并有效字段
+        try {
+          if (Array.isArray(doc.active_path)) props.conversationDoc.active_path = doc.active_path
+          if (doc.nodes && typeof doc.nodes === 'object')
+            Object.assign(props.conversationDoc.nodes || {}, doc.nodes)
+          if (doc.children && typeof doc.children === 'object')
+            Object.assign(props.conversationDoc.children || {}, doc.children)
+          if (doc.roots && Array.isArray(doc.roots)) props.conversationDoc.roots = doc.roots
+        } catch (_) {}
+      }
 
-    // 成功反馈
-    lastSentMessageId.value = newNodeId
-    if (sendSuccessTimer) clearTimeout(sendSuccessTimer)
-    sendSuccessTimer = setTimeout(() => {
-      lastSentMessageId.value = null
-      refreshIcons()
-    }, 1500)
+      inputRowRef.value?.clearText?.()
+      isSending.value = false
 
-    // 滚动到底部
-    nextTick(() => {
-      setTimeout(() => {
-        if (messageListRef.value?.$el) {
-          const container = messageListRef.value.$el.querySelector('.scroll-container')
-          if (container) {
-            try {
-              container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
-            } catch (_) {
-              const start = container.scrollTop
-              const end = container.scrollHeight
-              const dur = 420
-              const t0 = performance.now()
-              const ease = t => 1 - Math.pow(1 - t, 3)
-              const step = (now) => {
-                const p = Math.min(1, (now - t0) / dur)
-                container.scrollTop = start + (end - start) * ease(p)
-                if (p < 1) requestAnimationFrame(step)
+      // 成功反馈
+      lastSentMessageId.value = newNodeId
+      if (sendSuccessTimer) clearTimeout(sendSuccessTimer)
+      sendSuccessTimer = setTimeout(() => {
+        lastSentMessageId.value = null
+        refreshIcons()
+      }, 1500)
+
+      // 滚动到底部
+      nextTick(() => {
+        setTimeout(() => {
+          if (messageListRef.value?.$el) {
+            const container = messageListRef.value.$el.querySelector('.scroll-container')
+            if (container) {
+              try {
+                container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
+              } catch (_) {
+                const start = container.scrollTop
+                const end = container.scrollHeight
+                const dur = 420
+                const t0 = performance.now()
+                const ease = (t) => 1 - Math.pow(1 - t, 3)
+                const step = (now) => {
+                  const p = Math.min(1, (now - t0) / dur)
+                  container.scrollTop = start + (end - start) * ease(p)
+                  if (p < 1) requestAnimationFrame(step)
+                }
+                requestAnimationFrame(step)
               }
-              requestAnimationFrame(step)
             }
           }
+        }, 60)
+      })
+
+      // 用 latest 直接更新分支指示，避免调用分支表；并暂存给占位节点使用
+      // latest.node_id 指向占位助手节点
+      if (doc && doc.latest && doc.latest.node_id) {
+        const lid = doc.latest.node_id
+        const lj = doc.latest.j != null ? doc.latest.j : null
+        const ln = doc.latest.n != null ? doc.latest.n : null
+        const newMap = {}
+        if (lj != null && ln != null) newMap[lid] = { j: lj, n: ln }
+        branchInfoMap.value = newMap
+        pendingAssistantJN.value = lj != null && ln != null ? { j: lj, n: ln } : null
+
+        // 触发占位助手创建事件（UI和rawMessages更新由监听器统一处理）
+        const placeholderTimestamp = placeholder_updated_at || null
+        if (placeholderTimestamp && lid) {
+          Host.events.emit(Threaded.EVT_THREAD_ASSIST_PLACEHOLDER_CREATE, {
+            conversationFile: props.conversationFile,
+            tempNodeId: lid,
+            node_updated_at: placeholderTimestamp,
+          })
         }
-      }, 60)
-    })
-
-    // 用 latest 直接更新分支指示，避免调用分支表；并暂存给占位节点使用
-    // latest.node_id 指向占位助手节点
-    if (doc && doc.latest && doc.latest.node_id) {
-      const lid = doc.latest.node_id
-      const lj = (doc.latest.j != null) ? doc.latest.j : null
-      const ln = (doc.latest.n != null) ? doc.latest.n : null
-      const newMap = {}
-      if (lj != null && ln != null) newMap[lid] = { j: lj, n: ln }
-      branchInfoMap.value = newMap
-      pendingAssistantJN.value = (lj != null && ln != null) ? { j: lj, n: ln } : null
-      
-      // 触发占位助手创建事件（UI和rawMessages更新由监听器统一处理）
-      const placeholderTimestamp = placeholder_updated_at || null
-      if (placeholderTimestamp && lid) {
-        Host.events.emit(Threaded.EVT_THREAD_ASSIST_PLACEHOLDER_CREATE, {
-          conversationFile: props.conversationFile,
-          tempNodeId: lid,
-          node_updated_at: placeholderTimestamp
-        })
       }
-    }
 
-    try { offOk?.() } catch (_) {}
-    try { offFail?.() } catch (_) {}
-  })
-  const offFail = Host.events.on(Message.EVT_MESSAGE_SEND_FAIL, ({ conversationFile, message, tag: rtag }) => {
-    if (conversationFile && conversationFile !== props.conversationFile) return
-    if (rtag && rtag !== tag) return
+      try {
+        offOk?.()
+      } catch (_) {}
+      try {
+        offFail?.()
+      } catch (_) {}
+    },
+  )
+  const offFail = Host.events.on(
+    Message.EVT_MESSAGE_SEND_FAIL,
+    ({ conversationFile, message, tag: rtag }) => {
+      if (conversationFile && conversationFile !== props.conversationFile) return
+      if (rtag && rtag !== tag) return
 
-    isSending.value = false
-    sendErrorMsg.value = message || t('chat.errors.sendFailed')
+      isSending.value = false
+      sendErrorMsg.value = message || t('chat.errors.sendFailed')
 
-    if (sendErrorTimer) clearTimeout(sendErrorTimer)
-    sendErrorTimer = setTimeout(() => {
-      sendErrorMsg.value = ''
+      if (sendErrorTimer) clearTimeout(sendErrorTimer)
+      sendErrorTimer = setTimeout(() => {
+        sendErrorMsg.value = ''
+        refreshIcons()
+      }, 2500)
+
       refreshIcons()
-    }, 2500)
 
-    refreshIcons()
-
-    try { offOk?.() } catch (_) {}
-    try { offFail?.() } catch (_) {}
-  })
+      try {
+        offOk?.()
+      } catch (_) {}
+      try {
+        offFail?.()
+      } catch (_) {}
+    },
+  )
 
   __uiOffs.push(offOk, offFail)
 
@@ -911,12 +1045,12 @@ function onMessageUpdate(msg) {
 async function onBranchSwitched(data) {
   // 分支切换后的回调
   console.log('Branch switched:', data)
-  
+
   // 更新本地文档
   if (data.doc && props.conversationDoc) {
     Object.assign(props.conversationDoc, data.doc)
   }
-  
+
   // 如果仅返回了目标节点ID（删除后智能切换场景），同步更新最后一条消息的节点ID
   if (data.nodeId && props.messages && props.messages.length > 0) {
     const last = props.messages[props.messages.length - 1]
@@ -924,27 +1058,29 @@ async function onBranchSwitched(data) {
       last.id = data.nodeId
     }
   }
-  
+
   // 无论 switch 还是 delete，切换后都重新处理视图（由路由生成最终显示内容）
-  try { await msgStore.processMessagesView?.() } catch (_) {}
-  
+  try {
+    await msgStore.processMessagesView?.()
+  } catch (_) {}
+
   // 清理消息对象上可能残留的临时状态属性（向后兼容）
   if (data.msg) {
     delete data.msg.waitingAI
     delete data.msg.waitingSeconds
     delete data.msg.error
-    
+
     // 如果后台索引中有该节点的流式内容，同步到消息显示
     if (streamContentIndex.value[data.msg.id]) {
       data.msg.content = streamContentIndex.value[data.msg.id]
     }
   }
-  
+
   // 使用事件返回的 latest 直接更新最后一条的分支指示，避免再次请求分支表
   if (data.latest && data.latest.node_id) {
     const lid = data.latest.node_id
-    const lj = (data.latest.j != null) ? data.latest.j : null
-    const ln = (data.latest.n != null) ? data.latest.n : null
+    const lj = data.latest.j != null ? data.latest.j : null
+    const ln = data.latest.n != null ? data.latest.n : null
     const newMap = {}
     if (lj != null && ln != null) newMap[lid] = { j: lj, n: ln }
     branchInfoMap.value = newMap
@@ -952,13 +1088,9 @@ async function onBranchSwitched(data) {
     // 兜底：若没有提供 latest，则回退一次性读取分支表
     await loadBranchInfo()
   }
-  
+
   refreshIcons()
 }
-
- 
-
-
 
 /**
  * 判断是否是该角色的最后一条消息
@@ -980,7 +1112,7 @@ function getRenderContent(msg) {
   const isStreaming = !!(sid && (nodeStates.value[sid]?.waitingAI || streamContentIndex.value[sid]))
   if (isStreaming) {
     // 打字机：优先返回可见缓冲，其次返回完整流式缓存
-    return (streamVisibleIndex.value[sid] ?? streamContentIndex.value[sid] ?? msg?.content ?? '')
+    return streamVisibleIndex.value[sid] ?? streamContentIndex.value[sid] ?? msg?.content ?? ''
   }
   // 否则（已结束流式或从未流式），优先展示经过 process_messages_view 处理后的视图内容
   return msgStore.getMessageContent(sid)
@@ -1019,7 +1151,7 @@ function initIframesTracking() {
       iframesLoading.value.add(m.id)
     }
   })
-  
+
   // 如果没有需要加载的iframe，立即通知完成
   if (iframesLoading.value.size === 0) {
     nextTick(() => {
@@ -1033,30 +1165,30 @@ function initIframesTracking() {
  */
 function updateViewportCenter() {
   if (!messageListRef.value) return
-  
+
   const container = messageListRef.value.$el?.querySelector('.scroll-container')
   if (!container) return
-  
+
   const containerRect = container.getBoundingClientRect()
   const centerY = containerRect.top + containerRect.height / 2
-  
+
   // 找到最接近视口中心的消息
   const messageElements = container.querySelectorAll('[data-message-idx]')
   let closestIdx = 0
   let minDistance = Infinity
-  
+
   messageElements.forEach((el) => {
     const rect = el.getBoundingClientRect()
     const elementCenterY = rect.top + rect.height / 2
     const distance = Math.abs(elementCenterY - centerY)
-    
+
     if (distance < minDistance) {
       minDistance = distance
       const idx = parseInt(el.getAttribute('data-message-idx') || '0', 10)
       closestIdx = idx
     }
   })
-  
+
   viewportCenterIdx.value = closestIdx
 }
 
@@ -1066,33 +1198,33 @@ function updateViewportCenter() {
 function shouldRenderIframe(idx) {
   const mode = appearanceStore.iframeRenderMode
   const range = appearanceStore.iframeRenderRange
-  
+
   if (mode === 'all') {
     return true
   }
-  
+
   const totalMessages = props.messages.length
-  
+
   if (mode === 'track_latest') {
     const latestIdx = totalMessages - 1
     const startIdx = Math.max(0, latestIdx - range + 1)
     return idx >= startIdx
   }
-  
+
   if (mode === 'track_viewport') {
     // 以视口中心消息为基准，前后各渲染部分
     const centerIdx = viewportCenterIdx.value
     const halfRange = Math.floor(range / 2)
     const startIdx = Math.max(0, centerIdx - halfRange)
     const endIdx = Math.min(totalMessages - 1, centerIdx + halfRange)
-    
+
     // 如果一端不足，补充到另一端
     let actualStart = startIdx
     let actualEnd = endIdx
-    
+
     const beforeCount = centerIdx - startIdx
     const afterCount = endIdx - centerIdx
-    
+
     if (beforeCount < halfRange) {
       // 前面不足，补充到后面
       const deficit = halfRange - beforeCount
@@ -1102,54 +1234,60 @@ function shouldRenderIframe(idx) {
       const deficit = halfRange - afterCount
       actualStart = Math.max(0, actualStart - deficit)
     }
-    
+
     return idx >= actualStart && idx <= actualEnd
   }
-  
+
   return true
 }
 </script>
 
 <template>
   <div data-scope="chat-threaded" class="tch-container">
-    <CustomScrollbar
-      class="tch-list"
-      ref="messageListRef"
-      :width="8"
-    >
+    <CustomScrollbar class="tch-list" ref="messageListRef" :width="8">
       <div data-scope="message-list" class="tch-list-inner">
         <transition-group name="msg" tag="div" class="msg-group" appear>
-            <MessageItem
-              v-for="(m, idx) in props.messages"
-              :key="m.id"
-              :msg="m"
-              :idx="idx"
-              :is-last="idx === props.messages.length - 1"
-              :is-last-of-role="isLastOfRole(m, idx)"
-              :split-before="getDisplayParts(m).before"
-              :split-html="getDisplayParts(m).html"
-              :split-after="getDisplayParts(m).after"
-              :display-content="getRenderContent(m)"
-              :pending-active="false"
-              :pending-seconds="0"
-              :waiting-a-i="nodeStates[m.id]?.waitingAI || false"
-              :waiting-seconds="nodeStates[m.id]?.waitingSeconds || 0"
-              :node-error="nodeStates[m.id]?.error || null"
-              :send-status="m.id === lastSentMessageId ? 'success' : null"
-              :send-message="m.id === lastSentMessageId ? t('chat.message.sendSuccess') : ''"
-              :conversation-file="props.conversationFile"
-              :branch-info="branchInfoMap[m.id] || null"
-              :avatar-url="m.role === 'assistant' ? assistantAvatarUrl : (m.role === 'user' ? userAvatarUrl : null)"
-              :display-name="m.role === 'assistant' ? characterDisplayName : (m.role === 'user' ? userDisplayName : null)"
-              :badge-text="m.role === 'assistant' ? characterBadge : (m.role === 'user' ? userBadge : null)"
-              :should-render-iframe="shouldRenderIframe(idx)"
-              @delete="deleteMessage"
-              @regenerate="regenerateMessage"
-              @edit="startEdit"
-              @update="onMessageUpdate"
-              @branch-switched="onBranchSwitched"
-              @iframe-loaded="onIframeLoaded(m.id)"
-            />
+          <MessageItem
+            v-for="(m, idx) in props.messages"
+            :key="m.id"
+            :msg="m"
+            :idx="idx"
+            :is-last="idx === props.messages.length - 1"
+            :is-last-of-role="isLastOfRole(m, idx)"
+            :split-before="getDisplayParts(m).before"
+            :split-html="getDisplayParts(m).html"
+            :split-after="getDisplayParts(m).after"
+            :display-content="getRenderContent(m)"
+            :pending-active="false"
+            :pending-seconds="0"
+            :waiting-a-i="nodeStates[m.id]?.waitingAI || false"
+            :waiting-seconds="nodeStates[m.id]?.waitingSeconds || 0"
+            :node-error="nodeStates[m.id]?.error || null"
+            :send-status="m.id === lastSentMessageId ? 'success' : null"
+            :send-message="m.id === lastSentMessageId ? t('chat.message.sendSuccess') : ''"
+            :conversation-file="props.conversationFile"
+            :branch-info="branchInfoMap[m.id] || null"
+            :avatar-url="
+              m.role === 'assistant' ? assistantAvatarUrl : m.role === 'user' ? userAvatarUrl : null
+            "
+            :display-name="
+              m.role === 'assistant'
+                ? characterDisplayName
+                : m.role === 'user'
+                  ? userDisplayName
+                  : null
+            "
+            :badge-text="
+              m.role === 'assistant' ? characterBadge : m.role === 'user' ? userBadge : null
+            "
+            :should-render-iframe="shouldRenderIframe(idx)"
+            @delete="deleteMessage"
+            @regenerate="regenerateMessage"
+            @edit="startEdit"
+            @update="onMessageUpdate"
+            @branch-switched="onBranchSwitched"
+            @iframe-loaded="onIframeLoaded(m.id)"
+          />
         </transition-group>
       </div>
     </CustomScrollbar>
@@ -1163,13 +1301,8 @@ function shouldRenderIframe(idx) {
           <span>{{ sendErrorMsg }}</span>
         </div>
       </transition>
-      
-      <InputRow
-        ref="inputRowRef"
-        :sending="isSending"
-        :pending-active="false"
-        @submit="onSubmit"
-      />
+
+      <InputRow ref="inputRowRef" :sending="isSending" :pending-active="false" @submit="onSubmit" />
     </div>
   </div>
 </template>
@@ -1195,16 +1328,20 @@ function shouldRenderIframe(idx) {
   border-radius: var(--st-radius-lg);
   background: rgb(var(--st-surface) / var(--st-threaded-list-bg-opacity, 0.62)) !important;
   /* 根据不透明度动态衰减玻璃效果，0 时完全无模糊/饱和 */
-  backdrop-filter: blur(calc(var(--st-threaded-list-bg-opacity, 0.62) * 18px)) saturate(calc(1 + var(--st-threaded-list-bg-opacity, 0.62) * 0.6));
-  -webkit-backdrop-filter: blur(calc(var(--st-threaded-list-bg-opacity, 0.62) * 18px)) saturate(calc(1 + var(--st-threaded-list-bg-opacity, 0.62) * 0.6));
+  backdrop-filter: blur(calc(var(--st-threaded-list-bg-opacity, 0.62) * 18px))
+    saturate(calc(1 + var(--st-threaded-list-bg-opacity, 0.62) * 0.6));
+  -webkit-backdrop-filter: blur(calc(var(--st-threaded-list-bg-opacity, 0.62) * 18px))
+    saturate(calc(1 + var(--st-threaded-list-bg-opacity, 0.62) * 0.6));
   box-shadow: var(--st-shadow-sm);
   overflow: visible;
 }
 /* 让滚动容器包装与容器背景一致（custom-scrollbar-wrapper） */
 .tch-list :deep(.custom-scrollbar-wrapper) {
   background: rgb(var(--st-surface) / var(--st-threaded-list-bg-opacity, 0.62)) !important;
-  backdrop-filter: blur(calc(var(--st-threaded-list-bg-opacity, 0.62) * 18px)) saturate(calc(1 + var(--st-threaded-list-bg-opacity, 0.62) * 0.6));
-  -webkit-backdrop-filter: blur(calc(var(--st-threaded-list-bg-opacity, 0.62) * 18px)) saturate(calc(1 + var(--st-threaded-list-bg-opacity, 0.62) * 0.6));
+  backdrop-filter: blur(calc(var(--st-threaded-list-bg-opacity, 0.62) * 18px))
+    saturate(calc(1 + var(--st-threaded-list-bg-opacity, 0.62) * 0.6));
+  -webkit-backdrop-filter: blur(calc(var(--st-threaded-list-bg-opacity, 0.62) * 18px))
+    saturate(calc(1 + var(--st-threaded-list-bg-opacity, 0.62) * 0.6));
 }
 
 /* 内部容器（供过渡动画使用） */
@@ -1226,7 +1363,9 @@ function shouldRenderIframe(idx) {
   backdrop-filter: blur(var(--st-blur-sm));
   -webkit-backdrop-filter: blur(var(--st-blur-sm));
   box-shadow: none;
-  transition: background var(--st-transition-fast) ease, border-color var(--st-transition-fast) ease;
+  transition:
+    background var(--st-transition-fast) ease,
+    border-color var(--st-transition-fast) ease;
 }
 
 /* 楼层卡（玻璃拟态） */
@@ -1239,7 +1378,11 @@ function shouldRenderIframe(idx) {
   -webkit-backdrop-filter: blur(var(--st-blur-sm));
   box-shadow: none;
   overflow: visible; /* 确保伪元素色条与悬浮阴影不被裁剪 */
-  transition: transform var(--st-transition-fast) ease, box-shadow var(--st-transition-fast) ease, background var(--st-transition-fast) ease, border-color var(--st-transition-fast) ease;
+  transition:
+    transform var(--st-transition-fast) ease,
+    box-shadow var(--st-transition-fast) ease,
+    background var(--st-transition-fast) ease,
+    border-color var(--st-transition-fast) ease;
   will-change: transform, opacity, filter;
 }
 .floor-card:hover {
@@ -1249,13 +1392,16 @@ function shouldRenderIframe(idx) {
 }
 
 /* 智能渐变色条（变量驱动，带柔和光晕），assistant/system 左侧，user 右侧 */
-.floor-card { position: relative; }
+.floor-card {
+  position: relative;
+}
 
 .floor-card::before,
 .floor-card::after {
   content: '';
   position: absolute;
-  top: 0; bottom: 0;
+  top: 0;
+  bottom: 0;
   width: var(--st-stripe-width, 8px);
   pointer-events: none;
   z-index: 1;
@@ -1266,36 +1412,40 @@ function shouldRenderIframe(idx) {
   left: 0;
   border-top-left-radius: var(--st-card-radius, var(--st-radius-lg));
   border-bottom-left-radius: var(--st-card-radius, var(--st-radius-lg));
-  background: linear-gradient(180deg,
+  background: linear-gradient(
+    180deg,
     var(--stripe-start, rgb(var(--st-primary))),
-    var(--stripe-end,   rgb(var(--st-accent))));
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.02) inset;
+    var(--stripe-end, rgb(var(--st-accent)))
+  );
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.02) inset;
 }
 
 /* 柔光外晕（与主色一致，增强高级感） */
 .floor-card::after {
   left: 0;
   filter: blur(12px);
-  opacity: .28;
-  background: linear-gradient(180deg,
-    var(--stripe-start, rgb(var(--st-primary))),
-    transparent 72%);
+  opacity: 0.28;
+  background: linear-gradient(180deg, var(--stripe-start, rgb(var(--st-primary))), transparent 72%);
 }
 
 /* 用户在右侧显示色条与光晕 */
-.floor-card[data-role="user"]::before {
-  left: auto; right: 0;
+.floor-card[data-role='user']::before {
+  left: auto;
+  right: 0;
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   border-top-right-radius: var(--st-card-radius, var(--st-radius-lg));
   border-bottom-right-radius: var(--st-card-radius, var(--st-radius-lg));
 }
-.floor-card[data-role="user"]::after {
-  left: auto; right: 0;
+.floor-card[data-role='user']::after {
+  left: auto;
+  right: 0;
 }
 
 /* 悬浮时层级提升，避免被相邻元素/容器遮挡（阴影在 .floor-card:hover） */
-.floor-card:hover { z-index: 2; }
+.floor-card:hover {
+  z-index: 2;
+}
 
 /* 楼层布局：左侧头像+徽章，右侧名称+楼层+内容 */
 .floor-layout {
@@ -1341,7 +1491,9 @@ function shouldRenderIframe(idx) {
   align-items: center;
   justify-content: center;
   color: var(--st-primary-contrast);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 6px 14px rgba(0,0,0,0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 6px 14px rgba(0, 0, 0, 0.08);
   user-select: none;
 }
 .avatar-letter {
@@ -1352,13 +1504,25 @@ function shouldRenderIframe(idx) {
 
 /* 头像占位渐变（不同角色差异） */
 .role-user {
-  background: linear-gradient(135deg, var(--st-avatar-user-start, rgba(59,130,246,0.85)), var(--st-avatar-user-end, rgba(99,102,241,0.85)));
+  background: linear-gradient(
+    135deg,
+    var(--st-avatar-user-start, rgba(59, 130, 246, 0.85)),
+    var(--st-avatar-user-end, rgba(99, 102, 241, 0.85))
+  );
 }
 .role-assistant {
-  background: linear-gradient(135deg, var(--st-avatar-assistant-start, rgba(14,165,233,0.85)), var(--st-avatar-assistant-end, rgba(94,234,212,0.85)));
+  background: linear-gradient(
+    135deg,
+    var(--st-avatar-assistant-start, rgba(14, 165, 233, 0.85)),
+    var(--st-avatar-assistant-end, rgba(94, 234, 212, 0.85))
+  );
 }
 .role-system {
-  background: linear-gradient(135deg, var(--st-avatar-system-start, rgba(251,191,36,0.85)), var(--st-avatar-system-end, rgba(253,230,138,0.85)));
+  background: linear-gradient(
+    135deg,
+    var(--st-avatar-system-start, rgba(251, 191, 36, 0.85)),
+    var(--st-avatar-system-end, rgba(253, 230, 138, 0.85))
+  );
 }
 
 .name {
@@ -1373,8 +1537,8 @@ function shouldRenderIframe(idx) {
   justify-content: center;
   font-size: var(--st-badge-font-size, 11px);
   color: rgb(var(--st-color-text));
-  background: rgba(var(--st-primary),0.12);
-  border: 1px solid rgba(var(--st-primary),0.32);
+  background: rgba(var(--st-primary), 0.12);
+  border: 1px solid rgba(var(--st-primary), 0.32);
   border-radius: 9999px;
   padding: 4px 8px;
   white-space: nowrap;
@@ -1384,7 +1548,7 @@ function shouldRenderIframe(idx) {
 .floor-index-left {
   font-weight: 700;
   color: rgba(var(--st-color-text), 0.6);
-  letter-spacing: .3px;
+  letter-spacing: 0.3px;
   font-size: var(--st-floor-font-size, 14px);
   text-align: center;
   margin-top: 4px;
@@ -1395,25 +1559,31 @@ function shouldRenderIframe(idx) {
   color: rgba(var(--st-color-text), 0.95);
   font-size: var(--st-content-font-size, 18px);
   line-height: var(--st-content-line-height, 1.75);
-  letter-spacing: .2px;
+  letter-spacing: 0.2px;
   word-break: break-word;
   white-space: pre-wrap;
 }
-.floor-content p { margin: 0; }
-.floor-content p + p { margin-top: 8px; }
+.floor-content p {
+  margin: 0;
+}
+.floor-content p + p {
+  margin-top: 8px;
+}
 .floor-content a {
   color: rgb(var(--st-primary));
   text-decoration: none;
   border-bottom: 1px dashed rgba(var(--st-primary), 0.4);
 }
-.floor-content a:hover { text-decoration: underline; }
+.floor-content a:hover {
+  text-decoration: underline;
+}
 .floor-content code {
   font-family: var(--st-font-mono);
   background: rgba(var(--st-color-text), 0.06);
   padding: 0 4px;
   border-radius: var(--st-radius-sm);
 }
-[data-theme="dark"] .floor-content code {
+[data-theme='dark'] .floor-content code {
   background: rgba(var(--st-color-text), 0.14);
 }
 
@@ -1436,7 +1606,10 @@ function shouldRenderIframe(idx) {
   justify-content: center;
   font-size: 18px;
   line-height: 1;
-  transition: background-color var(--st-transition-fast), border-color var(--st-transition-fast), color var(--st-transition-fast);
+  transition:
+    background-color var(--st-transition-fast),
+    border-color var(--st-transition-fast),
+    color var(--st-transition-fast);
 }
 
 .menu-btn:hover {
@@ -1492,21 +1665,35 @@ function shouldRenderIframe(idx) {
   font-size: 14px;
 }
 /* icon utilities */
-.icon-14 { width: var(--st-icon-sm); height: var(--st-icon-sm); stroke: currentColor; }
-.icon-16 { width: var(--st-icon-md); height: var(--st-icon-md); stroke: currentColor; }
+.icon-14 {
+  width: var(--st-icon-sm);
+  height: var(--st-icon-sm);
+  stroke: currentColor;
+}
+.icon-16 {
+  width: var(--st-icon-md);
+  height: var(--st-icon-md);
+  stroke: currentColor;
+}
 /* a11y helper */
 .sr-only {
   position: absolute;
-  width: 1px; height: 1px;
-  padding: 0; margin: -1px;
-  overflow: hidden; clip: rect(0, 0, 0, 0);
-  white-space: nowrap; border: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* 菜单弹出动画 */
 .menu-slide-enter-active,
 .menu-slide-leave-active {
-  transition: opacity 0.15s ease, transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition:
+    opacity 0.15s ease,
+    transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 .menu-slide-enter-from,
@@ -1536,7 +1723,10 @@ function shouldRenderIframe(idx) {
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  transition: background-color var(--st-transition-fast), border-color var(--st-transition-fast), opacity var(--st-transition-fast);
+  transition:
+    background-color var(--st-transition-fast),
+    border-color var(--st-transition-fast),
+    opacity var(--st-transition-fast);
 }
 
 .branch-btn:hover:not(:disabled) {
@@ -1576,7 +1766,9 @@ function shouldRenderIframe(idx) {
   gap: var(--st-spacing-md);
   opacity: 0;
   transform: translateY(4px);
-  transition: opacity var(--st-transition-fast), transform var(--st-transition-normal);
+  transition:
+    opacity var(--st-transition-fast),
+    transform var(--st-transition-normal);
 }
 .floor-card:hover .floor-actions {
   opacity: 1;
@@ -1596,7 +1788,11 @@ function shouldRenderIframe(idx) {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background var(--st-transition-fast), border-color var(--st-transition-fast), transform var(--st-transition-fast), box-shadow var(--st-transition-fast);
+  transition:
+    background var(--st-transition-fast),
+    border-color var(--st-transition-fast),
+    transform var(--st-transition-fast),
+    box-shadow var(--st-transition-fast);
 }
 .act-btn:hover {
   background: rgba(var(--st-surface-2), 0.9);
@@ -1618,10 +1814,10 @@ function shouldRenderIframe(idx) {
 
 /* 成功态复制按钮 */
 .act-btn.success {
-  background: linear-gradient(135deg, rgba(var(--st-accent),1), rgba(var(--st-primary),1));
+  background: linear-gradient(135deg, rgba(var(--st-accent), 1), rgba(var(--st-primary), 1));
   color: var(--st-primary-contrast);
   border-color: transparent;
-  box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
   transform: translateY(-1px);
 }
 .act-btn.success:hover {
@@ -1646,16 +1842,23 @@ function shouldRenderIframe(idx) {
   box-shadow: var(--st-shadow-sm);
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: .2px;
+  letter-spacing: 0.2px;
   pointer-events: none;
   z-index: 2;
 }
 
 /* 复制提示动效 */
 .copy-tip-enter-from,
-.copy-tip-leave-to { opacity: 0; transform: translateY(4px); }
+.copy-tip-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
+}
 .copy-tip-enter-active,
-.copy-tip-leave-active { transition: opacity var(--st-transition-fast) ease, transform var(--st-transition-normal); }
+.copy-tip-leave-active {
+  transition:
+    opacity var(--st-transition-fast) ease,
+    transform var(--st-transition-normal);
+}
 
 /* 输入行（玻璃拟态输入容器） */
 .tch-input-row {
@@ -1666,18 +1869,30 @@ function shouldRenderIframe(idx) {
   padding: 10px 12px;
   border: 1px solid rgba(var(--st-border), 0.9);
   border-radius: var(--st-radius-lg);
-  background: rgb(var(--st-surface) / var(--st-threaded-input-bg-opacity, 0.80)) !important;
+  background: rgb(var(--st-surface) / var(--st-threaded-input-bg-opacity, 0.8)) !important;
   /* 根据不透明度动态衰减玻璃效果，0 时完全无模糊/饱和 */
-  backdrop-filter: blur(calc(var(--st-threaded-input-bg-opacity, 0.80) * 18px)) saturate(calc(1 + var(--st-threaded-input-bg-opacity, 0.80) * 0.6));
-  -webkit-backdrop-filter: blur(calc(var(--st-threaded-input-bg-opacity, 0.80) * 18px)) saturate(calc(1 + var(--st-threaded-input-bg-opacity, 0.80) * 0.6));
+  backdrop-filter: blur(calc(var(--st-threaded-input-bg-opacity, 0.8) * 18px))
+    saturate(calc(1 + var(--st-threaded-input-bg-opacity, 0.8) * 0.6));
+  -webkit-backdrop-filter: blur(calc(var(--st-threaded-input-bg-opacity, 0.8) * 18px))
+    saturate(calc(1 + var(--st-threaded-input-bg-opacity, 0.8) * 0.6));
   box-shadow: var(--st-shadow-sm);
   flex-shrink: 0;
-  min-height: clamp(calc(var(--st-content-font-size) * 2.8 + 28px), var(--st-input-height, 100px), 100vh);
-  transition: box-shadow .2s cubic-bezier(.22,.61,.36,1), border-color .2s cubic-bezier(.22,.61,.36,1), background .2s cubic-bezier(.22,.61,.36,1), transform .2s cubic-bezier(.22,.61,.36,1);
+  min-height: clamp(
+    calc(var(--st-content-font-size) * 2.8 + 28px),
+    var(--st-input-height, 100px),
+    100vh
+  );
+  transition:
+    box-shadow 0.2s cubic-bezier(0.22, 0.61, 0.36, 1),
+    border-color 0.2s cubic-bezier(0.22, 0.61, 0.36, 1),
+    background 0.2s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 .tch-input-row:focus-within {
   border-color: rgba(var(--st-primary), 0.45);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.08), 0 0 0 3px rgba(var(--st-primary), 0.08);
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.08),
+    0 0 0 3px rgba(var(--st-primary), 0.08);
   background: rgb(var(--st-surface) / var(--st-threaded-input-bg-focus-opacity, 0.86)) !important;
 }
 
@@ -1701,7 +1916,11 @@ function shouldRenderIframe(idx) {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background .18s cubic-bezier(.22,.61,.36,1), border-color .18s cubic-bezier(.22,.61,.36,1), transform .18s cubic-bezier(.22,.61,.36,1), box-shadow .18s cubic-bezier(.22,.61,.36,1);
+  transition:
+    background 0.18s cubic-bezier(0.22, 0.61, 0.36, 1),
+    border-color 0.18s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.18s cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 0.18s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 .tool-btn:hover {
   background: rgba(var(--st-surface-2), 0.9);
@@ -1762,21 +1981,24 @@ function shouldRenderIframe(idx) {
   gap: 8px;
   padding: 10px 12px;
   border-radius: var(--st-radius-md);
-  background: linear-gradient(135deg, rgba(var(--st-primary),1), rgba(var(--st-accent),1));
+  background: linear-gradient(135deg, rgba(var(--st-primary), 1), rgba(var(--st-accent), 1));
   color: var(--st-primary-contrast);
   border: 1px solid transparent;
   cursor: pointer;
   height: 36px;
   box-sizing: border-box;
-  transition: filter .18s cubic-bezier(.22,.61,.36,1), transform .18s cubic-bezier(.22,.61,.36,1), box-shadow .18s cubic-bezier(.22,.61,.36,1);
+  transition:
+    filter 0.18s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.18s cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 0.18s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
-.tch-send[aria-label="停止等待"] {
-  background: linear-gradient(135deg, rgba(220,38,38,1), rgba(244,63,94,1));
+.tch-send[aria-label='停止等待'] {
+  background: linear-gradient(135deg, rgba(220, 38, 38, 1), rgba(244, 63, 94, 1));
 }
 .tch-send:hover:enabled {
   filter: saturate(1.08) brightness(1.04);
   transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(0,0,0,0.10);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
 }
 .tch-send:active:enabled {
   transform: translateY(0);
@@ -1789,7 +2011,7 @@ function shouldRenderIframe(idx) {
 
 .tch-send-text {
   font-weight: 600;
-  letter-spacing: .2px;
+  letter-spacing: 0.2px;
 }
 
 /* 消息进出场动画由 MessageItem.vue 统一定义，这里不再重复定义 msg-* 相关样式 */
@@ -1859,7 +2081,9 @@ function shouldRenderIframe(idx) {
 }
 
 @keyframes st-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* 减少动画偏好 */
@@ -1889,16 +2113,22 @@ function shouldRenderIframe(idx) {
 }
 .floor-card.msg-enter-active {
   transition:
-    opacity var(--st-msg-enter-opacity-duration, 0.34s) cubic-bezier(.22,.61,.36,1),
-    transform var(--st-msg-enter-transform-duration, 0.44s) cubic-bezier(.22,.61,.36,1),
+    opacity var(--st-msg-enter-opacity-duration, 0.34s) cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform var(--st-msg-enter-transform-duration, 0.44s) cubic-bezier(0.22, 0.61, 0.36, 1),
     filter var(--st-msg-enter-transform-duration, 0.44s) ease;
   will-change: opacity, transform, filter;
 }
 
 /* 轻微阶梯延时：最新的 1~3 条入场动画更靠后，营造自然"瀑布式"感觉 */
-[data-scope="message-list"] .floor-card.msg-enter-active:nth-last-child(1) { transition-delay: var(--st-msg-enter-delay-1, 24ms); }
-[data-scope="message-list"] .floor-card.msg-enter-active:nth-last-child(2) { transition-delay: var(--st-msg-enter-delay-2, 48ms); }
-[data-scope="message-list"] .floor-card.msg-enter-active:nth-last-child(3) { transition-delay: var(--st-msg-enter-delay-3, 72ms); }
+[data-scope='message-list'] .floor-card.msg-enter-active:nth-last-child(1) {
+  transition-delay: var(--st-msg-enter-delay-1, 24ms);
+}
+[data-scope='message-list'] .floor-card.msg-enter-active:nth-last-child(2) {
+  transition-delay: var(--st-msg-enter-delay-2, 48ms);
+}
+[data-scope='message-list'] .floor-card.msg-enter-active:nth-last-child(3) {
+  transition-delay: var(--st-msg-enter-delay-3, 72ms);
+}
 
 /* 输入容器 */
 .input-container {
@@ -1930,7 +2160,9 @@ function shouldRenderIframe(idx) {
   color: rgb(var(--st-color-error));
   font-size: 13px;
   font-weight: 600;
-  box-shadow: 0 8px 20px rgba(var(--st-color-error), var(--st-error-tip-shadow-alpha, 0.15)), var(--st-shadow-sm);
+  box-shadow:
+    0 8px 20px rgba(var(--st-color-error), var(--st-error-tip-shadow-alpha, 0.15)),
+    var(--st-shadow-sm);
   z-index: 10;
   pointer-events: none;
 }
@@ -1943,7 +2175,8 @@ function shouldRenderIframe(idx) {
 }
 .error-tip-enter-active,
 .error-tip-leave-active {
-  transition: opacity var(--st-error-tip-enter-duration, 0.25s) ease, transform var(--st-error-tip-transform-duration, 0.28s) cubic-bezier(.22,.61,.36,1);
+  transition:
+    opacity var(--st-error-tip-enter-duration, 0.25s) ease,
+    transform var(--st-error-tip-transform-duration, 0.28s) cubic-bezier(0.22, 0.61, 0.36, 1);
 }
-
 </style>

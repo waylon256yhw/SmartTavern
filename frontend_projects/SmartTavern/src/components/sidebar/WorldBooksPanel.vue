@@ -22,7 +22,7 @@ const props = defineProps({
   conversationFile: { type: String, default: null },
 })
 
-const emit = defineEmits(['close','use','view','delete','import','export','create'])
+const emit = defineEmits(['close', 'use', 'view', 'delete', 'import', 'export', 'create'])
 
 const panelStyle = computed(() => ({
   position: 'fixed',
@@ -67,15 +67,17 @@ const showCreateModal = ref(false)
 
 // 使用通道响应式状态
 const worldbooks = CatalogChannel.worldbooks
-const loading = computed(() =>
-  CatalogChannel.loadingStates.value.worldbooks ||
-  (props.conversationFile ? SettingsChannel.isLoading(props.conversationFile) : false) ||
-  importing.value
+const loading = computed(
+  () =>
+    CatalogChannel.loadingStates.value.worldbooks ||
+    (props.conversationFile ? SettingsChannel.isLoading(props.conversationFile) : false) ||
+    importing.value,
 )
-const error = computed(() =>
-  importError.value ||
-  CatalogChannel.errorStates.value.worldbooks ||
-  (props.conversationFile ? SettingsChannel.getError(props.conversationFile) : null)
+const error = computed(
+  () =>
+    importError.value ||
+    CatalogChannel.errorStates.value.worldbooks ||
+    (props.conversationFile ? SettingsChannel.getError(props.conversationFile) : null),
 )
 
 let unsubscribeWorldbooks = null
@@ -83,15 +85,15 @@ let unsubscribeSettings = null
 
 function loadData() {
   if (settingsLoaded.value) return
-  
+
   Host.events.emit(CatalogChannel.EVT_CATALOG_WORLDBOOKS_REQ, {
-    requestId: Date.now()
+    requestId: Date.now(),
   })
-  
+
   if (props.conversationFile) {
     Host.events.emit(SettingsChannel.EVT_SETTINGS_GET_REQ, {
       conversationFile: props.conversationFile,
-      requestId: Date.now()
+      requestId: Date.now(),
     })
   } else {
     settingsLoaded.value = true
@@ -100,7 +102,7 @@ function loadData() {
 
 function refreshWorldbooks() {
   Host.events.emit(CatalogChannel.EVT_CATALOG_WORLDBOOKS_REQ, {
-    requestId: Date.now()
+    requestId: Date.now(),
   })
 }
 
@@ -117,7 +119,7 @@ onMounted(() => {
       // 数据更新成功，等待 transition 完成后初始化图标
     }
   })
-  
+
   unsubscribeSettings = Host.events.on(SettingsChannel.EVT_SETTINGS_GET_RES, (payload) => {
     if (payload?.success && payload?.conversationFile === props.conversationFile) {
       const settings = payload.settings || {}
@@ -134,13 +136,19 @@ onUnmounted(() => {
   if (unsubscribeSettings) unsubscribeSettings()
 })
 
-watch(() => props.conversationFile, (v) => {
-  if (v && !settingsLoaded.value) {
-    loadData()
-  }
-}, { immediate: true })
+watch(
+  () => props.conversationFile,
+  (v) => {
+    if (v && !settingsLoaded.value) {
+      loadData()
+    }
+  },
+  { immediate: true },
+)
 
-function close(){ emit('close') }
+function close() {
+  emit('close')
+}
 
 function onUse(k) {
   if (!props.conversationFile) {
@@ -153,7 +161,7 @@ function onUse(k) {
     emit('use', k)
     return
   }
-  
+
   const newKeys = [...usingKeys.value]
   const idx = newKeys.indexOf(k)
   if (idx >= 0) {
@@ -161,13 +169,13 @@ function onUse(k) {
   } else {
     newKeys.push(k)
   }
-  
+
   Host.events.emit(SettingsChannel.EVT_SETTINGS_UPDATE_REQ, {
     conversationFile: props.conversationFile,
     patch: { world_books: newKeys },
-    requestId: Date.now()
+    requestId: Date.now(),
   })
-  
+
   const unsubUpdate = Host.events.on(SettingsChannel.EVT_SETTINGS_UPDATE_RES, (payload) => {
     if (payload?.conversationFile === props.conversationFile) {
       if (payload.success) {
@@ -179,14 +187,16 @@ function onUse(k) {
   })
 }
 
-function onView(k){ emit('view', k) }
+function onView(k) {
+  emit('view', k)
+}
 
 // ==================== 删除功能 ====================
 
 function onDelete(k) {
-  const item = worldbooks.value.find(p => p.key === k)
+  const item = worldbooks.value.find((p) => p.key === k)
   if (!item) return
-  
+
   deleteTarget.value = {
     key: k,
     name: item.name || getFolderName(k),
@@ -202,7 +212,7 @@ function closeDeleteConfirmModal() {
 
 async function handleDeleteConfirm() {
   if (!deleteTarget.value) return
-  
+
   deleting.value = true
   try {
     const result = await DataCatalog.deleteDataFolder(deleteTarget.value.folderPath)
@@ -255,7 +265,7 @@ function extractWorldbookName(filename) {
 async function handleFileSelect(event) {
   const files = event.target.files
   if (!files || files.length === 0) return
-  
+
   const file = files[0]
   const validTypes = ['.json', '.zip', '.png']
   const ext = '.' + (file.name.split('.').pop() || '').toLowerCase()
@@ -264,7 +274,7 @@ async function handleFileSelect(event) {
     event.target.value = ''
     return
   }
-  
+
   // 直接调用导入，后端会处理名称冲突检测
   await doImport(file, false)
   event.target.value = ''
@@ -273,7 +283,7 @@ async function handleFileSelect(event) {
 async function doImport(file, overwrite = false, targetName = null) {
   importing.value = true
   importError.value = null
-  
+
   try {
     const result = await DataCatalog.importDataFromFile('worldbook', file, targetName, overwrite)
     if (result.success) {
@@ -285,7 +295,11 @@ async function doImport(file, overwrite = false, targetName = null) {
       if (errorCode === 'NAME_EXISTS') {
         // 名称冲突，显示冲突弹窗
         openImportConflictModal(file, result.folder_name, result.suggested_name)
-      } else if (errorCode === 'TYPE_MISMATCH' || errorCode === 'NO_TYPE_INFO' || errorCode === 'NO_TYPE_IN_FILENAME') {
+      } else if (
+        errorCode === 'TYPE_MISMATCH' ||
+        errorCode === 'NO_TYPE_INFO' ||
+        errorCode === 'NO_TYPE_IN_FILENAME'
+      ) {
         openImportErrorModal(errorCode, result.message, result.expected_type, result.actual_type)
       } else {
         importError.value = result.message || result.error || t('error.importFailed')
@@ -372,75 +386,67 @@ function handleCreated(result) {
 </script>
 
 <template>
-  <div
-    data-scope="worldbook-view"
-    class="wb-panel"
-    :style="panelStyle"
-  >
-      <header class="wb-header">
-        <div class="wb-title st-panel-title">
-          <span class="wb-icon"><i data-lucide="book-open"></i></span>
-          {{ t('panel.worldBooks.title') }}
-        </div>
-        <div class="wb-header-actions">
-          <button
-            class="wb-action-btn st-btn-shrinkable"
-            type="button"
-            :title="t('panel.worldBooks.createTitle')"
-            @click="openCreateModal"
-          >
-            <i data-lucide="plus"></i>
-            <span class="st-btn-text">{{ t('common.create') }}</span>
-          </button>
-          <button
-            class="wb-action-btn st-btn-shrinkable"
-            type="button"
-            :title="t('panel.worldBooks.importTitle')"
-            @click="triggerImport"
-            :disabled="importing"
-          >
-            <i data-lucide="download"></i>
-            <span class="st-btn-text">{{ t('common.import') }}</span>
-          </button>
-          <button
-            class="wb-action-btn st-btn-shrinkable"
-            type="button"
-            :title="t('panel.worldBooks.exportTitle')"
-            @click="openExportModal"
-            :disabled="worldbooks.length === 0"
-          >
-            <i data-lucide="upload"></i>
-            <span class="st-btn-text">{{ t('common.export') }}</span>
-          </button>
-          <button class="wb-close" type="button" :title="t('common.close')" @click="close">✕</button>
-        </div>
-      </header>
+  <div data-scope="worldbook-view" class="wb-panel" :style="panelStyle">
+    <header class="wb-header">
+      <div class="wb-title st-panel-title">
+        <span class="wb-icon"><i data-lucide="book-open"></i></span>
+        {{ t('panel.worldBooks.title') }}
+      </div>
+      <div class="wb-header-actions">
+        <button
+          class="wb-action-btn st-btn-shrinkable"
+          type="button"
+          :title="t('panel.worldBooks.createTitle')"
+          @click="openCreateModal"
+        >
+          <i data-lucide="plus"></i>
+          <span class="st-btn-text">{{ t('common.create') }}</span>
+        </button>
+        <button
+          class="wb-action-btn st-btn-shrinkable"
+          type="button"
+          :title="t('panel.worldBooks.importTitle')"
+          @click="triggerImport"
+          :disabled="importing"
+        >
+          <i data-lucide="download"></i>
+          <span class="st-btn-text">{{ t('common.import') }}</span>
+        </button>
+        <button
+          class="wb-action-btn st-btn-shrinkable"
+          type="button"
+          :title="t('panel.worldBooks.exportTitle')"
+          @click="openExportModal"
+          :disabled="worldbooks.length === 0"
+        >
+          <i data-lucide="upload"></i>
+          <span class="st-btn-text">{{ t('common.export') }}</span>
+        </button>
+        <button class="wb-close" type="button" :title="t('common.close')" @click="close">✕</button>
+      </div>
+    </header>
 
-      <input
-        ref="fileInputRef"
-        type="file"
-        accept=".json,.zip,.png"
-        style="display: none;"
-        @change="handleFileSelect"
-      />
+    <input
+      ref="fileInputRef"
+      type="file"
+      accept=".json,.zip,.png"
+      style="display: none"
+      @change="handleFileSelect"
+    />
 
-      <CustomScrollbar2 class="wb-body">
-        <transition name="wb-content" mode="out-in" @after-enter="handleTransitionComplete">
-          <div v-if="loading" key="loading" class="wb-loading">
-            {{ importing ? t('common.importing') : t('common.loading') }}
-          </div>
-          
-          <div v-else-if="error" key="error" class="wb-error">
-            {{ importError ? importError : t('error.loadFailed', { error }) }}
-            <button v-if="importError" class="wb-error-dismiss" @click="importError = null">×</button>
-          </div>
-          
-          <div v-else key="content" class="wb-list">
-          <div
-            v-for="it in worldbooks"
-            :key="it.key"
-            class="wb-card"
-          >
+    <CustomScrollbar2 class="wb-body">
+      <transition name="wb-content" mode="out-in" @after-enter="handleTransitionComplete">
+        <div v-if="loading" key="loading" class="wb-loading">
+          {{ importing ? t('common.importing') : t('common.loading') }}
+        </div>
+
+        <div v-else-if="error" key="error" class="wb-error">
+          {{ importError ? importError : t('error.loadFailed', { error }) }}
+          <button v-if="importError" class="wb-error-dismiss" @click="importError = null">×</button>
+        </div>
+
+        <div v-else key="content" class="wb-list">
+          <div v-for="it in worldbooks" :key="it.key" class="wb-card">
             <div class="wb-main">
               <div class="wb-avatar">
                 <img v-if="it.avatarUrl" :src="it.avatarUrl" alt="" class="wb-avatar-img" />
@@ -450,8 +456,21 @@ function handleCreated(result) {
               <div class="wb-texts">
                 <div class="wb-name">{{ it.name }}</div>
                 <div class="wb-folder">
-                  <svg class="wb-folder-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  <svg
+                    class="wb-folder-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                    ></path>
                   </svg>
                   <span>{{ getFolderName(it.key) }}</span>
                 </div>
@@ -465,70 +484,80 @@ function handleCreated(result) {
                 type="button"
                 @click="onUse(it.key)"
                 :aria-pressed="isUsing(it.key)"
-              >{{ isUsing(it.key) ? t('common.using') : t('common.use') }}</button>
+              >
+                {{ isUsing(it.key) ? t('common.using') : t('common.use') }}
+              </button>
 
-              <button class="wb-btn st-btn-shrinkable" type="button" @click="onView(it.key)">{{ t('common.view') }}</button>
+              <button class="wb-btn st-btn-shrinkable" type="button" @click="onView(it.key)">
+                {{ t('common.view') }}
+              </button>
 
-              <button class="wb-btn wb-danger st-btn-shrinkable" type="button" @click="onDelete(it.key)">{{ t('common.delete') }}</button>
+              <button
+                class="wb-btn wb-danger st-btn-shrinkable"
+                type="button"
+                @click="onDelete(it.key)"
+              >
+                {{ t('common.delete') }}
+              </button>
             </div>
           </div>
-          </div>
-        </transition>
-      </CustomScrollbar2>
+        </div>
+      </transition>
+    </CustomScrollbar2>
 
-      <!-- 使用可复用的导入冲突弹窗组件 -->
-      <ImportConflictModal
-        :show="showImportConflictModal"
-        data-type="worldbook"
-        :data-type-name="t('panel.worldBooks.typeName')"
-        :existing-name="importConflictExistingName"
-        :suggested-name="importConflictSuggestedName"
-        @close="closeImportConflictModal"
-        @overwrite="handleConflictOverwrite"
-        @rename="handleConflictRename"
-      />
+    <!-- 使用可复用的导入冲突弹窗组件 -->
+    <ImportConflictModal
+      :show="showImportConflictModal"
+      data-type="worldbook"
+      :data-type-name="t('panel.worldBooks.typeName')"
+      :existing-name="importConflictExistingName"
+      :suggested-name="importConflictSuggestedName"
+      @close="closeImportConflictModal"
+      @overwrite="handleConflictOverwrite"
+      @rename="handleConflictRename"
+    />
 
-      <!-- 使用可复用的导出弹窗组件 -->
-      <ExportModal
-        :show="showExportModal"
-        data-type="worldbook"
-        :data-type-name="t('panel.worldBooks.typeName')"
-        :items="worldbooks"
-        default-icon="book-open"
-        @close="closeExportModal"
-        @export="handleExportComplete"
-      />
+    <!-- 使用可复用的导出弹窗组件 -->
+    <ExportModal
+      :show="showExportModal"
+      data-type="worldbook"
+      :data-type-name="t('panel.worldBooks.typeName')"
+      :items="worldbooks"
+      default-icon="book-open"
+      @close="closeExportModal"
+      @export="handleExportComplete"
+    />
 
-      <!-- 导入错误弹窗 -->
-      <ImportErrorModal
-        :show="showImportErrorModal"
-        :error-code="importErrorCode"
-        :error-message="importErrorMessage"
-        :data-type-name="t('panel.worldBooks.typeName')"
-        :expected-type="importExpectedType"
-        :actual-type="importActualType"
-        @close="closeImportErrorModal"
-      />
+    <!-- 导入错误弹窗 -->
+    <ImportErrorModal
+      :show="showImportErrorModal"
+      :error-code="importErrorCode"
+      :error-message="importErrorMessage"
+      :data-type-name="t('panel.worldBooks.typeName')"
+      :expected-type="importExpectedType"
+      :actual-type="importActualType"
+      @close="closeImportErrorModal"
+    />
 
-      <!-- 删除确认弹窗 -->
-      <DeleteConfirmModal
-        :show="showDeleteConfirmModal"
-        :item-name="deleteTarget?.name || ''"
-        :data-type-name="t('panel.worldBooks.typeName')"
-        :loading="deleting"
-        @close="closeDeleteConfirmModal"
-        @confirm="handleDeleteConfirm"
-      />
+    <!-- 删除确认弹窗 -->
+    <DeleteConfirmModal
+      :show="showDeleteConfirmModal"
+      :item-name="deleteTarget?.name || ''"
+      :data-type-name="t('panel.worldBooks.typeName')"
+      :loading="deleting"
+      @close="closeDeleteConfirmModal"
+      @confirm="handleDeleteConfirm"
+    />
 
-      <!-- 新建弹窗 -->
-      <CreateItemModal
-        :show="showCreateModal"
-        data-type="worldbook"
-        :data-type-name="t('panel.worldBooks.typeName')"
-        @close="closeCreateModal"
-        @created="handleCreated"
-      />
-    </div>
+    <!-- 新建弹窗 -->
+    <CreateItemModal
+      :show="showCreateModal"
+      data-type="worldbook"
+      :data-type-name="t('panel.worldBooks.typeName')"
+      @close="closeCreateModal"
+      @created="handleCreated"
+    />
+  </div>
 </template>
 
 <style scoped>
@@ -558,7 +587,11 @@ function handleCreated(result) {
   font-weight: 700;
   color: rgb(var(--st-color-text));
 }
-.wb-icon i { width: var(--st-icon-md); height: var(--st-icon-md); display: inline-block; }
+.wb-icon i {
+  width: var(--st-icon-md);
+  height: var(--st-icon-md);
+  display: inline-block;
+}
 
 .wb-header-actions {
   display: flex;
@@ -578,9 +611,16 @@ function handleCreated(result) {
   padding: var(--st-btn-padding-sm);
   font-size: var(--st-font-sm);
   cursor: pointer;
-  transition: transform var(--st-transition-normal), background var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    transform var(--st-transition-normal),
+    background var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
-.wb-action-btn i { width: var(--st-icon-sm); height: var(--st-icon-sm); display: inline-block; }
+.wb-action-btn i {
+  width: var(--st-icon-sm);
+  height: var(--st-icon-sm);
+  display: inline-block;
+}
 .wb-action-btn:hover:not(:disabled) {
   background: rgba(var(--st-primary), 0.15);
   transform: translateY(-1px);
@@ -598,7 +638,10 @@ function handleCreated(result) {
   border-radius: var(--st-radius-lg);
   padding: var(--st-spacing-sm) var(--st-spacing-md);
   cursor: pointer;
-  transition: transform var(--st-transition-normal), background var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    transform var(--st-transition-normal),
+    background var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
 .wb-close:hover {
   background: rgb(var(--st-surface));
@@ -626,7 +669,11 @@ function handleCreated(result) {
   background: rgb(var(--st-surface));
   padding: var(--st-spacing-xl);
   min-height: var(--st-preview-height-sm);
-  transition: background var(--st-transition-normal), border-color var(--st-transition-normal), transform var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    background var(--st-transition-normal),
+    border-color var(--st-transition-normal),
+    transform var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
 .wb-card:hover {
   transform: translateY(-1px);
@@ -647,13 +694,28 @@ function handleCreated(result) {
   align-items: center;
   justify-content: center;
   font-size: var(--st-font-xl);
-  background: linear-gradient(135deg, var(--st-panel-avatar-gradient-start, rgba(var(--st-primary),0.12)), var(--st-panel-avatar-gradient-end, rgba(var(--st-accent),0.12)));
+  background: linear-gradient(
+    135deg,
+    var(--st-panel-avatar-gradient-start, rgba(var(--st-primary), 0.12)),
+    var(--st-panel-avatar-gradient-end, rgba(var(--st-accent), 0.12))
+  );
   border: 1px solid rgba(var(--st-border), 0.9);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
-.wb-avatar i { width: var(--st-icon-md); height: var(--st-icon-md); display: inline-block; }
-.wb-avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--st-radius-lg); }
-.wb-texts { min-width: 0; }
+.wb-avatar i {
+  width: var(--st-icon-md);
+  height: var(--st-icon-md);
+  display: inline-block;
+}
+.wb-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--st-radius-lg);
+}
+.wb-texts {
+  min-width: 0;
+}
 .wb-name {
   font-weight: 700;
   color: rgb(var(--st-color-text));
@@ -705,7 +767,11 @@ function handleCreated(result) {
   border-radius: var(--st-radius-lg);
   font-size: var(--st-font-sm);
   cursor: pointer;
-  transition: transform var(--st-transition-normal), box-shadow var(--st-transition-normal), background var(--st-transition-normal), border-color var(--st-transition-normal);
+  transition:
+    transform var(--st-transition-normal),
+    box-shadow var(--st-transition-normal),
+    background var(--st-transition-normal),
+    border-color var(--st-transition-normal);
   min-width: var(--st-btn-min-width);
   text-align: center;
 }
@@ -760,12 +826,16 @@ function handleCreated(result) {
   line-height: 1;
 }
 
-.wb-error-dismiss:hover { background: rgba(220, 38, 38, 0.2); }
+.wb-error-dismiss:hover {
+  background: rgba(220, 38, 38, 0.2);
+}
 
 /* 内容过渡动画 */
 .wb-content-enter-active,
 .wb-content-leave-active {
-  transition: opacity var(--st-transition-medium), transform var(--st-transition-medium);
+  transition:
+    opacity var(--st-transition-medium),
+    transform var(--st-transition-medium);
 }
 
 .wb-content-enter-from {
@@ -779,7 +849,11 @@ function handleCreated(result) {
 }
 
 @media (max-width: 640px) {
-  .wb-card { grid-template-columns: 1fr; }
-  .wb-actions { flex-direction: row; }
+  .wb-card {
+    grid-template-columns: 1fr;
+  }
+  .wb-actions {
+    flex-direction: row;
+  }
 }
 </style>

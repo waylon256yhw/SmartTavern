@@ -59,8 +59,8 @@ async function readJsonFromBlob(blob: Blob): Promise<PresetMeta | null> {
 
 export const usePresetStore = defineStore('preset', () => {
   // 状态
-  const currentPresetFile = ref<string | null>(null)   // backend_projects/.../presets/.../preset.json
-  const meta = ref<PresetMeta | null>(null)            // 预设 JSON（可选）
+  const currentPresetFile = ref<string | null>(null) // backend_projects/.../presets/.../preset.json
+  const meta = ref<PresetMeta | null>(null) // 预设 JSON（可选）
   const loading = ref<boolean>(false)
   const error = ref<string>('')
 
@@ -68,7 +68,7 @@ export const usePresetStore = defineStore('preset', () => {
   async function refreshFromConversation(): Promise<void> {
     // 不再需要手动处理，由 watch 自动监听 chatSettings.presetFile
   }
-  
+
   // 监听 chatSettings.presetFile 的变化，自动加载预设
   const chatSettingsStore = useChatSettingsStore()
   watch(
@@ -90,7 +90,7 @@ export const usePresetStore = defineStore('preset', () => {
         loading.value = false
       }
     },
-    { immediate: true }
+    { immediate: true },
   )
 
   /** 直接从"预设文件路径"刷新状态（绕过 settings） */
@@ -188,7 +188,9 @@ export interface RegisterGlobalFunctionsOptions {
   exposeToWindow?: boolean
 }
 
-export function registerGlobalFunctions({ exposeToWindow = true }: RegisterGlobalFunctionsOptions = {}): void {
+export function registerGlobalFunctions({
+  exposeToWindow = true,
+}: RegisterGlobalFunctionsOptions = {}): void {
   if (typeof window === 'undefined') return
   if (exposeToWindow) {
     try {
@@ -202,7 +204,7 @@ export function registerGlobalFunctions({ exposeToWindow = true }: RegisterGloba
       })
     } catch {
       // 回退直接赋值
-      (window as any).getPreset = (key?: string) => getPreset(key)
+      ;(window as any).getPreset = (key?: string) => getPreset(key)
     }
   }
 }

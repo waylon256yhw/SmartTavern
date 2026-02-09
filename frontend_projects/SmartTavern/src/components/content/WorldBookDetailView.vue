@@ -13,7 +13,7 @@ const { t } = useI18n()
 
 const props = defineProps({
   worldbookData: { type: Object, default: null },
-  file: { type: String, default: '' }
+  file: { type: String, default: '' },
 })
 
 // 图标上传相关
@@ -32,14 +32,14 @@ const hasIcon = computed(() => !!iconPreviewUrl.value)
 function handleIconSelect(e) {
   const file = e.target.files?.[0]
   if (!file) return
-  
+
   // 验证文件类型
   if (!file.type.startsWith('image/')) {
     return
   }
-  
+
   iconFile.value = file
-  
+
   // 创建预览URL
   if (iconPreviewUrl.value) {
     URL.revokeObjectURL(iconPreviewUrl.value)
@@ -101,12 +101,12 @@ async function fileToBase64(file) {
 async function loadExistingIcon() {
   // 重置当前图标
   resetIconPreview()
-  
+
   if (!props.file) return
-  
+
   // 构建图标路径：将文件路径的 worldbook.json 替换为 icon.png
   const iconPath = props.file.replace(/worldbook\.json$/, 'icon.png')
-  
+
   try {
     // 使用 DataCatalog.getDataAssetBlob 获取图标
     const { blob, mime } = await DataCatalog.getDataAssetBlob(iconPath)
@@ -121,7 +121,6 @@ async function loadExistingIcon() {
     iconLoadedFromServer.value = false
   }
 }
-
 
 /** 深拷贝工具 */
 function deepClone(x) {
@@ -141,7 +140,7 @@ function normalizeWorldbookData(src) {
     : Array.isArray(src.entries)
       ? src.entries
       : []
-  const mapped = entries.map(e => ({
+  const mapped = entries.map((e) => ({
     id: e?.id ?? e?.identifier ?? '',
     name: e?.name ?? e?.title ?? '',
     enabled: e?.enabled !== false,
@@ -158,18 +157,23 @@ function normalizeWorldbookData(src) {
 // 当前编辑的数据（内存中）
 const currentData = ref(
   deepClone(
-    normalizeWorldbookData(props.worldbookData) || { name: '', description: '', world_books: [] }
-  )
+    normalizeWorldbookData(props.worldbookData) || { name: '', description: '', world_books: [] },
+  ),
 )
 
 // 当外部传入的 worldbookData 变化时，重新规范化并刷新图标
-watch(() => props.worldbookData, async (v) => {
-  currentData.value = deepClone(normalizeWorldbookData(v) || { name: '', description: '', world_books: [] })
-  // 加载已有图标
-  await loadExistingIcon()
-  await nextTick()
-  window.lucide?.createIcons?.()
-})
+watch(
+  () => props.worldbookData,
+  async (v) => {
+    currentData.value = deepClone(
+      normalizeWorldbookData(v) || { name: '', description: '', world_books: [] },
+    )
+    // 加载已有图标
+    await loadExistingIcon()
+    await nextTick()
+    window.lucide?.createIcons?.()
+  },
+)
 
 // 新增条目
 const newId = ref('')
@@ -189,7 +193,7 @@ async function addEntry() {
     return
   }
   const list = currentData.value.world_books || []
-  if (list.some(e => e.id === id)) {
+  if (list.some((e) => e.id === id)) {
     addError.value = t('detail.worldBook.errors.idExists')
     return
   }
@@ -217,7 +221,7 @@ function onEntryUpdate(updated) {
   const list = currentData.value.world_books || []
   // 如果 ID 改变了，需要找到原 ID
   const oldId = updated._oldId || updated.id
-  const idx = list.findIndex(w => w.id === oldId)
+  const idx = list.findIndex((w) => w.id === oldId)
   if (idx >= 0) {
     const { _oldId, ...cleanData } = updated
     list[idx] = cleanData
@@ -225,26 +229,21 @@ function onEntryUpdate(updated) {
 }
 
 function onEntryDelete(id) {
-  currentData.value.world_books = (currentData.value.world_books || []).filter(w => w.id !== id)
+  currentData.value.world_books = (currentData.value.world_books || []).filter((w) => w.id !== id)
 }
 
 // 世界书拖拽 - 使用 composable
-const {
-  dragging,
-  dragOverId,
-  dragOverBefore,
-  startDrag,
-} = useCustomDrag({
+const { dragging, dragOverId, dragOverBefore, startDrag } = useCustomDrag({
   scrollContainerSelector: '.modal-scroll .scroll-container2',
   itemSelector: '.draglist-item',
   dataAttribute: 'data-wb-id',
   onReorder: (draggedId, targetId, insertBefore) => {
     const list = [...(currentData.value.world_books || [])]
-    let ids = list.map(i => String(i.id))
+    let ids = list.map((i) => String(i.id))
     const draggedIdStr = String(draggedId)
     const targetIdStr = targetId ? String(targetId) : null
     const fromIdx = ids.indexOf(draggedIdStr)
-    
+
     if (fromIdx >= 0 && draggedIdStr !== targetIdStr) {
       ids.splice(fromIdx, 1)
       if (targetIdStr) {
@@ -256,15 +255,17 @@ const {
       } else {
         ids.push(draggedIdStr)
       }
-      
-      currentData.value.world_books = ids.map(id => list.find(w => String(w.id) === id)).filter(Boolean)
+
+      currentData.value.world_books = ids
+        .map((id) => list.find((w) => String(w.id) === id))
+        .filter(Boolean)
       window.lucide?.createIcons?.()
     }
   },
   getTitleForItem: (id) => {
-    const entry = currentData.value.world_books?.find(w => String(w.id) === String(id))
+    const entry = currentData.value.world_books?.find((w) => String(w.id) === String(id))
     return entry?.name || id
-  }
+  },
 })
 
 // 初始化 Lucide 图标
@@ -274,10 +275,14 @@ onMounted(async () => {
   await loadExistingIcon()
 })
 
-watch(() => currentData.value.world_books, async () => {
-  await nextTick()
-  window.lucide?.createIcons?.()
-}, { flush: 'post' })
+watch(
+  () => currentData.value.world_books,
+  async () => {
+    await nextTick()
+    window.lucide?.createIcons?.()
+  },
+  { flush: 'post' },
+)
 
 const __eventOffs = [] // 事件监听清理器
 const saving = ref(false)
@@ -286,7 +291,11 @@ let __saveTimer = null
 
 onBeforeUnmount(() => {
   try {
-    __eventOffs?.forEach(fn => { try { fn?.() } catch (_) {} })
+    __eventOffs?.forEach((fn) => {
+      try {
+        fn?.()
+      } catch (_) {}
+    })
     __eventOffs.length = 0
     if (__saveTimer) clearTimeout(__saveTimer)
   } catch (_) {}
@@ -296,11 +305,13 @@ onBeforeUnmount(() => {
 async function save() {
   const file = props.file
   if (!file) {
-    try { alert(t('error.missingFilePath')); } catch (_) {}
+    try {
+      alert(t('error.missingFilePath'))
+    } catch (_) {}
     return
   }
   // 将内部 world_books 转换为 entries
-  const entries = (currentData.value.world_books || []).map(w => ({
+  const entries = (currentData.value.world_books || []).map((w) => ({
     id: w?.id ?? '',
     name: w?.name ?? '',
     content: w?.content ?? '',
@@ -314,9 +325,9 @@ async function save() {
   const content = {
     name: currentData.value.name || '',
     description: currentData.value.description || '',
-    entries
+    entries,
   }
-  
+
   // 处理图标：
   // - 用户选择了新图标 -> 转换为 base64
   // - 用户删除了图标 -> 传空字符串 ''（告诉后端删除）
@@ -334,61 +345,84 @@ async function save() {
     iconBase64 = ''
   }
   // 否则 iconBase64 保持 undefined，表示不修改图标
-  
+
   saving.value = true
   const tag = `worldbook_save_${Date.now()}`
-  
-  if (__saveTimer) { try { clearTimeout(__saveTimer) } catch {} __saveTimer = null }
-  
+
+  if (__saveTimer) {
+    try {
+      clearTimeout(__saveTimer)
+    } catch {}
+    __saveTimer = null
+  }
+
   // 监听保存结果（一次性）
-  const offOk = Host.events.on(Catalog.EVT_CATALOG_WORLDBOOK_UPDATE_OK, async ({ file: resFile, tag: resTag }) => {
-    if (resFile !== file || resTag !== tag) return
-    console.log('[WorldBookDetailView] 保存成功（事件）')
-    savedOk.value = true
-    saving.value = false
-    if (savedOk.value) {
-      __saveTimer = setTimeout(() => { savedOk.value = false }, 1800)
-    }
-    
-    // 保存成功后，刷新侧边栏列表
-    try {
-      console.log('[WorldBookDetailView] 刷新世界书列表')
-      Host.events.emit(Catalog.EVT_CATALOG_WORLDBOOKS_REQ, {
-        requestId: Date.now()
-      })
-    } catch (err) {
-      console.warn('[WorldBookDetailView] 刷新世界书列表失败:', err)
-    }
-    
-    // 保存成功后，检查是否是当前使用的世界书之一，如果是则刷新 store
-    try {
-      const chatSettingsStore = useChatSettingsStore()
-      const worldBooksStore = useWorldBooksStore()
-      const currentWorldBookFiles = chatSettingsStore.worldBooksFiles || []
-      if (currentWorldBookFiles.includes(file)) {
-        console.log('[WorldBookDetailView] 刷新世界书 store')
-        await worldBooksStore.refreshFromWorldBookFiles(currentWorldBookFiles)
+  const offOk = Host.events.on(
+    Catalog.EVT_CATALOG_WORLDBOOK_UPDATE_OK,
+    async ({ file: resFile, tag: resTag }) => {
+      if (resFile !== file || resTag !== tag) return
+      console.log('[WorldBookDetailView] 保存成功（事件）')
+      savedOk.value = true
+      saving.value = false
+      if (savedOk.value) {
+        __saveTimer = setTimeout(() => {
+          savedOk.value = false
+        }, 1800)
       }
-    } catch (err) {
-      console.warn('[WorldBookDetailView] 刷新世界书 store 失败:', err)
-    }
-    
-    try { offOk?.() } catch (_) {}
-    try { offFail?.() } catch (_) {}
-  })
-  
-  const offFail = Host.events.on(Catalog.EVT_CATALOG_WORLDBOOK_UPDATE_FAIL, ({ file: resFile, message, tag: resTag }) => {
-    if (resFile && resFile !== file) return
-    if (resTag && resTag !== tag) return
-    console.error('[WorldBookDetailView] 保存失败（事件）:', message)
-    try { alert(t('detail.worldBook.saveFailed') + '：' + message) } catch (_) {}
-    saving.value = false
-    try { offOk?.() } catch (_) {}
-    try { offFail?.() } catch (_) {}
-  })
-  
+
+      // 保存成功后，刷新侧边栏列表
+      try {
+        console.log('[WorldBookDetailView] 刷新世界书列表')
+        Host.events.emit(Catalog.EVT_CATALOG_WORLDBOOKS_REQ, {
+          requestId: Date.now(),
+        })
+      } catch (err) {
+        console.warn('[WorldBookDetailView] 刷新世界书列表失败:', err)
+      }
+
+      // 保存成功后，检查是否是当前使用的世界书之一，如果是则刷新 store
+      try {
+        const chatSettingsStore = useChatSettingsStore()
+        const worldBooksStore = useWorldBooksStore()
+        const currentWorldBookFiles = chatSettingsStore.worldBooksFiles || []
+        if (currentWorldBookFiles.includes(file)) {
+          console.log('[WorldBookDetailView] 刷新世界书 store')
+          await worldBooksStore.refreshFromWorldBookFiles(currentWorldBookFiles)
+        }
+      } catch (err) {
+        console.warn('[WorldBookDetailView] 刷新世界书 store 失败:', err)
+      }
+
+      try {
+        offOk?.()
+      } catch (_) {}
+      try {
+        offFail?.()
+      } catch (_) {}
+    },
+  )
+
+  const offFail = Host.events.on(
+    Catalog.EVT_CATALOG_WORLDBOOK_UPDATE_FAIL,
+    ({ file: resFile, message, tag: resTag }) => {
+      if (resFile && resFile !== file) return
+      if (resTag && resTag !== tag) return
+      console.error('[WorldBookDetailView] 保存失败（事件）:', message)
+      try {
+        alert(t('detail.worldBook.saveFailed') + '：' + message)
+      } catch (_) {}
+      saving.value = false
+      try {
+        offOk?.()
+      } catch (_) {}
+      try {
+        offFail?.()
+      } catch (_) {}
+    },
+  )
+
   __eventOffs.push(offOk, offFail)
-  
+
   // 发送保存请求事件
   Host.events.emit(Catalog.EVT_CATALOG_WORLDBOOK_UPDATE_REQ, {
     file,
@@ -396,7 +430,7 @@ async function save() {
     name: content.name,
     description: content.description,
     iconBase64,
-    tag
+    tag,
   })
 }
 </script>
@@ -404,17 +438,23 @@ async function save() {
 <template>
   <section class="space-y-6">
     <!-- 页面标题 -->
-    <div class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <i data-lucide="book-open" class="w-5 h-5 text-black"></i>
-          <h2 class="text-lg font-bold text-black">{{ currentData.name || t('detail.worldBook.pageTitle') }}</h2>
+          <h2 class="text-lg font-bold text-black">
+            {{ currentData.name || t('detail.worldBook.pageTitle') }}
+          </h2>
         </div>
         <div class="flex items-center gap-2">
           <!-- 保存状态：左侧提示区 -->
           <div class="save-indicator min-w-[72px] h-7 flex items-center justify-center">
             <span v-if="saving" class="save-spinner" :aria-label="t('detail.preset.saving')"></span>
-            <span v-else-if="savedOk" class="save-done"><strong>{{ t('detail.preset.saved') }}</strong></span>
+            <span v-else-if="savedOk" class="save-done"
+              ><strong>{{ t('detail.preset.saved') }}</strong></span
+            >
           </div>
           <button
             type="button"
@@ -422,7 +462,9 @@ async function save() {
             :disabled="saving"
             @click="save"
             :title="t('detail.preset.saveToBackend')"
-          >{{ t('common.save') }}</button>
+          >
+            {{ t('common.save') }}
+          </button>
           <div class="px-3 py-1 rounded-4 bg-gray-100 border border-gray-300 text-black text-sm">
             {{ t('detail.worldBook.editMode') }}
           </div>
@@ -432,7 +474,9 @@ async function save() {
     </div>
 
     <!-- 基本信息（名称/描述/图标） -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center gap-2 mb-3">
         <i data-lucide="id-card" class="w-4 h-4 text-black"></i>
         <h3 class="text-base font-semibold text-black">{{ t('detail.worldBook.basicInfo') }}</h3>
@@ -440,12 +484,10 @@ async function save() {
       <div class="flex gap-6">
         <!-- 左侧：图标上传区域 -->
         <div class="flex-shrink-0">
-          <label class="block text-sm font-medium text-black mb-2">{{ t('createItem.iconLabel') }}</label>
-          <div
-            class="icon-upload-area"
-            :class="{ 'has-icon': hasIcon }"
-            @click="triggerIconSelect"
-          >
+          <label class="block text-sm font-medium text-black mb-2">{{
+            t('createItem.iconLabel')
+          }}</label>
+          <div class="icon-upload-area" :class="{ 'has-icon': hasIcon }" @click="triggerIconSelect">
             <input
               ref="iconInputRef"
               type="file"
@@ -466,18 +508,30 @@ async function save() {
             </template>
             <template v-else>
               <div class="icon-placeholder">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
-                  <circle cx="9" cy="9" r="2"/>
-                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                  <circle cx="9" cy="9" r="2" />
+                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
                 </svg>
                 <span class="text-xs">{{ t('createItem.uploadIcon') }}</span>
               </div>
             </template>
           </div>
-          <div class="text-xs text-black/50 mt-1 text-center max-w-[120px]">{{ t('createItem.iconHint') }}</div>
+          <div class="text-xs text-black/50 mt-1 text-center max-w-[120px]">
+            {{ t('createItem.iconHint') }}
+          </div>
         </div>
-        
+
         <!-- 右侧：名称和描述 -->
         <div class="flex-1 grid grid-cols-1 gap-4">
           <div>
@@ -488,7 +542,9 @@ async function save() {
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-black mb-2">{{ t('common.description') }}</label>
+            <label class="block text-sm font-medium text-black mb-2">{{
+              t('common.description')
+            }}</label>
             <textarea
               v-model="currentData.description"
               rows="2"
@@ -500,10 +556,14 @@ async function save() {
     </div>
 
     <!-- 工具栏：新增 -->
-    <div class="bg-white rounded-4 border border-gray-200 p-4 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-4 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between gap-3">
         <div class="text-sm text-black/70">
-          {{ t('detail.worldBook.toolbar.entryCount') }}：{{ (currentData.world_books || []).length }}
+          {{ t('detail.worldBook.toolbar.entryCount') }}：{{
+            (currentData.world_books || []).length
+          }}
         </div>
         <div class="flex items-center gap-2">
           <input
@@ -528,7 +588,9 @@ async function save() {
     </div>
 
     <!-- 条目区域容器 -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center gap-2 mb-3">
         <i data-lucide="settings-2" class="w-4 h-4 text-black"></i>
         <h3 class="text-base font-semibold text-black">{{ t('detail.worldBook.editor.title') }}</h3>
@@ -537,13 +599,14 @@ async function save() {
       <!-- 列表（可拖拽排序） -->
       <div class="space-y-2">
         <div
-          v-for="w in (currentData.world_books || [])"
+          v-for="w in currentData.world_books || []"
           :key="w.id"
           class="flex items-stretch gap-2 group draglist-item"
           :class="{
             'dragging-item': dragging && String(dragging.id) === String(w.id),
             'drag-over-top': dragOverId && String(dragOverId) === String(w.id) && dragOverBefore,
-            'drag-over-bottom': dragOverId && String(dragOverId) === String(w.id) && !dragOverBefore
+            'drag-over-bottom':
+              dragOverId && String(dragOverId) === String(w.id) && !dragOverBefore,
           }"
           :data-wb-id="w.id"
         >
@@ -552,20 +615,21 @@ async function save() {
             @mousedown="startDrag(w.id, $event)"
             :title="t('detail.preset.prompts.dragToSort')"
           >
-            <i data-lucide="grip-vertical" class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"></i>
+            <i
+              data-lucide="grip-vertical"
+              class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"
+            ></i>
           </div>
           <div class="flex-1">
-            <WorldBookCard
-              :entry="w"
-              @update="onEntryUpdate"
-              @delete="onEntryDelete"
-            />
+            <WorldBookCard :entry="w" @update="onEntryUpdate" @delete="onEntryDelete" />
           </div>
         </div>
-
       </div>
 
-      <div v-if="(currentData.world_books || []).length === 0" class="text-center py-8 text-black/50 text-sm">
+      <div
+        v-if="(currentData.world_books || []).length === 0"
+        class="text-center py-8 text-black/50 text-sm"
+      >
         {{ t('detail.worldBook.editor.empty') }}
       </div>
     </div>

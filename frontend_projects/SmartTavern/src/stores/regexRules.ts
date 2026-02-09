@@ -59,8 +59,8 @@ async function readJsonFromBlob(blob: Blob): Promise<RegexRuleMeta | null> {
 
 export const useRegexRulesStore = defineStore('regexRules', () => {
   // 状态：存储多个正则规则文件路径及其元数据
-  const currentRegexRuleFiles = ref<string[]>([])  // Array<string>: backend_projects/.../regex_rules/.../regex_rule.json
-  const metas = ref<Record<string, RegexRuleMeta | null>>({})  // { [file: string]: meta } 正则规则元数据字典
+  const currentRegexRuleFiles = ref<string[]>([]) // Array<string>: backend_projects/.../regex_rules/.../regex_rule.json
+  const metas = ref<Record<string, RegexRuleMeta | null>>({}) // { [file: string]: meta } 正则规则元数据字典
   const loading = ref<boolean>(false)
   const error = ref<string>('')
 
@@ -68,21 +68,19 @@ export const useRegexRulesStore = defineStore('regexRules', () => {
   async function refreshFromConversation(): Promise<void> {
     // 不再需要手动处理，由 watch 自动监听 chatSettings.regexRulesFiles
   }
-  
+
   // 监听 chatSettings.regexRulesFiles 的变化，自动加载正则规则
   const chatSettingsStore = useChatSettingsStore()
   watch(
     () => chatSettingsStore.regexRulesFiles,
     async (newFiles) => {
-      const regexRuleFiles = Array.isArray(newFiles)
-        ? newFiles.map(f => toPosix(f))
-        : []
-      
+      const regexRuleFiles = Array.isArray(newFiles) ? newFiles.map((f) => toPosix(f)) : []
+
       if (!regexRuleFiles.length) {
         _setAll([], {})
         return
       }
-      
+
       loading.value = true
       error.value = ''
       try {
@@ -94,15 +92,15 @@ export const useRegexRulesStore = defineStore('regexRules', () => {
         loading.value = false
       }
     },
-    { immediate: true, deep: true }
+    { immediate: true, deep: true },
   )
 
   /** 直接从"正则规则文件路径列表"刷新状态（绕过 settings） */
   async function refreshFromRegexRuleFiles(regexRuleFiles: string[]): Promise<void> {
-    const files = Array.isArray(regexRuleFiles) 
-      ? regexRuleFiles.map(f => toPosix(f)).filter(Boolean)
+    const files = Array.isArray(regexRuleFiles)
+      ? regexRuleFiles.map((f) => toPosix(f)).filter(Boolean)
       : []
-    
+
     loading.value = true
     error.value = ''
     try {
@@ -118,7 +116,7 @@ export const useRegexRulesStore = defineStore('regexRules', () => {
           } catch {
             nextMetas[rrFile] = null
           }
-        })
+        }),
       )
 
       _setAll(files, nextMetas)
@@ -200,7 +198,9 @@ export interface RegisterGlobalFunctionsOptions {
   exposeToWindow?: boolean
 }
 
-export function registerGlobalFunctions({ exposeToWindow = true }: RegisterGlobalFunctionsOptions = {}): void {
+export function registerGlobalFunctions({
+  exposeToWindow = true,
+}: RegisterGlobalFunctionsOptions = {}): void {
   if (typeof window === 'undefined') return
   if (exposeToWindow) {
     try {
@@ -214,7 +214,7 @@ export function registerGlobalFunctions({ exposeToWindow = true }: RegisterGloba
       })
     } catch {
       // 回退直接赋值
-      (window as any).getRegexRules = (key?: string) => getRegexRules(key)
+      ;(window as any).getRegexRules = (key?: string) => getRegexRules(key)
     }
   }
 }

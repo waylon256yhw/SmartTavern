@@ -13,16 +13,16 @@ import type { SidebarEntry } from '@/stores/workflow/sidebar'
  */
 export function registerSidebarBuiltins(): void {
   const store = useSidebarStore()
-  
+
   // 内置侧边栏项配置（按 order 排序）
   // 使用 labelKey/descKey 替代静态翻译，实现语言切换时动态更新
   const builtins: SidebarEntry[] = [
     {
       id: 'presets',
-      label: 'Presets',  // fallback
+      label: 'Presets', // fallback
       labelKey: 'slots.sidebar.presets.label',
       icon: 'sliders-horizontal',
-      desc: 'Manage prompt presets',  // fallback
+      desc: 'Manage prompt presets', // fallback
       descKey: 'slots.sidebar.presets.desc',
       order: 10,
       actionId: 'sidebar.panel.presets',
@@ -108,7 +108,7 @@ export function registerSidebarBuiltins(): void {
       actionId: 'sidebar.panel.app',
     },
   ]
-  
+
   // 批量注册
   for (const item of builtins) {
     try {
@@ -117,6 +117,6 @@ export function registerSidebarBuiltins(): void {
       console.warn(`[sidebar bootstrap] failed to register ${item.id}:`, e)
     }
   }
-  
+
   console.log('[sidebar bootstrap] registered', builtins.length, 'builtin items')
 }

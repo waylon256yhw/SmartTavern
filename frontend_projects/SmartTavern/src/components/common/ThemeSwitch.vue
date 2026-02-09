@@ -5,7 +5,7 @@ import { useI18n } from '@/locales'
 const { t } = useI18n()
 
 const props = defineProps({
-  theme: { type: String, default: 'system' } // 'system' | 'light' | 'dark'
+  theme: { type: String, default: 'system' }, // 'system' | 'light' | 'dark'
 })
 const emit = defineEmits(['update:theme'])
 
@@ -53,7 +53,7 @@ function getTitle(opt) {
   border: 1px solid rgba(var(--st-border), var(--st-border-alpha-strong));
   box-shadow: var(--st-shadow-sm);
 }
-[data-theme="dark"] .st-theme-switch {
+[data-theme='dark'] .st-theme-switch {
   background: rgba(var(--st-surface), 0.28);
 }
 .st-pill {
@@ -74,7 +74,7 @@ function getTitle(opt) {
   transform: translateY(var(--st-topbar-hover-lift, -1px));
   background: var(--st-theme-pill-hover-light, rgba(0, 0, 0, 0.04));
 }
-[data-theme="dark"] .st-pill:hover {
+[data-theme='dark'] .st-pill:hover {
   background: var(--st-theme-pill-hover-dark, rgba(255, 255, 255, 0.06));
 }
 /* 选中态：使用中性灰色，遵循规范避免蓝紫色 */
@@ -83,7 +83,7 @@ function getTitle(opt) {
   color: rgb(var(--st-color-text));
   border: 1px solid var(--st-theme-pill-active-border-light, rgba(60, 60, 70, 0.35));
 }
-[data-theme="dark"] .st-pill.active {
+[data-theme='dark'] .st-pill.active {
   background: var(--st-theme-pill-active-bg-dark, rgba(180, 180, 190, 0.14));
   border: 1px solid var(--st-theme-pill-active-border-dark, rgba(180, 180, 190, 0.4));
 }

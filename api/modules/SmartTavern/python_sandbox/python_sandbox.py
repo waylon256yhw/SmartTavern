@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 API 封装层：SmartTavern.python_sandbox
 - 注册受限 Python 求值 API（表达式 + 受限语句）
 """
-from typing import Any, Dict, Optional
+
+from typing import Any
+
 import core
+
 from .impl import eval_expr as _eval_expr
 
 
@@ -52,7 +54,7 @@ from .impl import eval_expr as _eval_expr
 )
 def eval(
     code: str,
-    variables: Optional[Dict[str, Any]] = None,
-    policy: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    variables: dict[str, Any] | None = None,
+    policy: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     return _eval_expr(code=code, variables=variables or {}, policy=policy or {})

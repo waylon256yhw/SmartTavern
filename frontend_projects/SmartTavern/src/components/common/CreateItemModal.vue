@@ -33,14 +33,14 @@ const hasIcon = computed(() => !!iconPreviewUrl.value)
 function handleIconSelect(e) {
   const file = e.target.files?.[0]
   if (!file) return
-  
+
   // 验证文件类型
   if (!file.type.startsWith('image/')) {
     return
   }
-  
+
   iconFile.value = file
-  
+
   // 创建预览URL
   if (iconPreviewUrl.value) {
     URL.revokeObjectURL(iconPreviewUrl.value)
@@ -81,59 +81,62 @@ async function fileToBase64(file) {
 }
 
 // 当弹窗显示时重置表单
-watch(() => props.show, (val) => {
-  if (val) {
-    name.value = ''
-    description.value = ''
-    folderName.value = ''
-    nameError.value = ''
-    folderError.value = ''
-    creating.value = false
-    removeIcon()
-  }
-})
+watch(
+  () => props.show,
+  (val) => {
+    if (val) {
+      name.value = ''
+      description.value = ''
+      folderName.value = ''
+      nameError.value = ''
+      folderError.value = ''
+      creating.value = false
+      removeIcon()
+    }
+  },
+)
 
 // 验证并创建
 async function handleCreate() {
   nameError.value = ''
   folderError.value = ''
-  
+
   const trimmedName = name.value.trim()
   const trimmedFolder = folderName.value.trim()
-  
+
   if (!trimmedName) {
     nameError.value = t('createItem.errors.emptyName')
     return
   }
-  
+
   if (!trimmedFolder) {
     folderError.value = t('createItem.errors.emptyFolder')
     return
   }
-  
+
   // 验证文件夹名称格式（不允许特殊字符）
   if (!/^[a-zA-Z0-9_\-\u4e00-\u9fa5]+$/.test(trimmedFolder)) {
     folderError.value = t('createItem.errors.invalidFolder')
     return
   }
-  
+
   creating.value = true
-  
+
   try {
     // 如果有图标，转换为Base64
     let iconBase64 = null
     if (iconFile.value) {
       iconBase64 = await fileToBase64(iconFile.value)
     }
-    
+
     const result = await DataCatalog.createDataFolder(
       props.dataType,
       trimmedName,
       description.value.trim(),
       trimmedFolder,
-      iconBase64
+      iconBase64,
     )
-    
+
     if (result.success) {
       emit('created', result)
       emit('close')
@@ -167,13 +170,17 @@ function handleKeydown(e) {
   }
 }
 
-watch(() => props.show, (v) => {
-  if (v) {
-    window.addEventListener('keydown', handleKeydown)
-  } else {
-    window.removeEventListener('keydown', handleKeydown)
-  }
-}, { immediate: true })
+watch(
+  () => props.show,
+  (v) => {
+    if (v) {
+      window.addEventListener('keydown', handleKeydown)
+    } else {
+      window.removeEventListener('keydown', handleKeydown)
+    }
+  },
+  { immediate: true },
+)
 
 const modalRef = ref(null)
 useFocusTrap(modalRef, toRef(props, 'show'))
@@ -183,15 +190,33 @@ useFocusTrap(modalRef, toRef(props, 'show'))
   <Teleport to="body">
     <transition name="modal-fade">
       <div v-if="show" class="cim-overlay" @click.self="handleClose">
-        <div ref="modalRef" class="cim-modal" role="dialog" aria-modal="true" aria-labelledby="create-item-modal-title">
+        <div
+          ref="modalRef"
+          class="cim-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-item-modal-title"
+        >
           <header class="cim-header">
             <div class="cim-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
                 <path d="M12 5v14"></path>
                 <path d="M5 12h14"></path>
               </svg>
             </div>
-            <h3 id="create-item-modal-title" class="cim-title">{{ t('createItem.title', { type: dataTypeName }) }}</h3>
+            <h3 id="create-item-modal-title" class="cim-title">
+              {{ t('createItem.title', { type: dataTypeName }) }}
+            </h3>
             <button class="cim-close" @click="handleClose" :disabled="creating">✕</button>
           </header>
 
@@ -225,10 +250,20 @@ useFocusTrap(modalRef, toRef(props, 'show'))
                   </template>
                   <template v-else>
                     <div class="cim-icon-placeholder">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
-                        <circle cx="9" cy="9" r="2"/>
-                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="32"
+                        height="32"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                        <circle cx="9" cy="9" r="2" />
+                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
                       </svg>
                       <span>{{ t('createItem.uploadIcon') }}</span>
                     </div>
@@ -412,7 +447,10 @@ useFocusTrap(modalRef, toRef(props, 'show'))
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  transition: border-color var(--st-transition-normal), color var(--st-transition-normal), background-color var(--st-transition-normal);
+  transition:
+    border-color var(--st-transition-normal),
+    color var(--st-transition-normal),
+    background-color var(--st-transition-normal);
   background: rgb(var(--st-surface));
   color: rgba(var(--st-color-text), 0.3);
 }
@@ -527,7 +565,9 @@ useFocusTrap(modalRef, toRef(props, 'show'))
   background: rgb(var(--st-surface));
   color: rgb(var(--st-color-text));
   outline: none;
-  transition: border-color var(--st-transition-normal), background-color var(--st-transition-normal);
+  transition:
+    border-color var(--st-transition-normal),
+    background-color var(--st-transition-normal);
   font-family: inherit;
 }
 
@@ -593,7 +633,11 @@ useFocusTrap(modalRef, toRef(props, 'show'))
   font-weight: 500;
   border-radius: var(--st-radius-md, 8px);
   cursor: pointer;
-  transition: background-color var(--st-transition-normal), border-color var(--st-transition-normal), box-shadow var(--st-transition-normal), filter var(--st-transition-normal);
+  transition:
+    background-color var(--st-transition-normal),
+    border-color var(--st-transition-normal),
+    box-shadow var(--st-transition-normal),
+    filter var(--st-transition-normal);
 }
 
 .cim-btn:disabled {
@@ -639,7 +683,9 @@ useFocusTrap(modalRef, toRef(props, 'show'))
 }
 
 @keyframes cim-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* 模态框动画 */

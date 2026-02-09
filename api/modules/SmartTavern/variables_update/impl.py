@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 SmartTavern.variables_update 实现层
 
@@ -26,12 +25,12 @@ SmartTavern.variables_update 实现层
 - 不修改传入对象，返回全新对象
 - 容错：遇到类型不匹配时，overlay 直接覆盖 base
 """
+
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple, Union, Optional
 import copy
 import json
-
+from typing import Any
 
 _ArrayStrategy = str  # "replace" | "concat" | "union"
 
@@ -44,7 +43,7 @@ def _as_json_key(v: Any) -> str:
         return str(v)
 
 
-def _get_by_path_value(obj: Any, path: Optional[str]) -> Any:
+def _get_by_path_value(obj: Any, path: str | None) -> Any:
     """从对象中按点/方括号路径读取值；失败返回 None"""
     if path is None or path == "":
         return None
@@ -64,14 +63,17 @@ def _get_by_path_value(obj: Any, path: Optional[str]) -> Any:
     except Exception:
         return None
 
-def _merge_arrays(a: List[Any], b: List[Any], strategy: _ArrayStrategy = "replace", array_key: Optional[str] = None) -> List[Any]:
+
+def _merge_arrays(
+    a: list[Any], b: list[Any], strategy: _ArrayStrategy = "replace", array_key: str | None = None
+) -> list[Any]:
     s = (strategy or "replace").lower()
     if s == "concat":
         return list(a or []) + list(b or [])
     if s == "prepend":
         return list(b or []) + list(a or [])
     if s == "union_by_key":
-        out: List[Any] = []
+        out: list[Any] = []
         seen = set()
         # 遍历 a+b，按 array_key 提取键，进行去重
         for item in list(a or []) + list(b or []):
@@ -85,7 +87,7 @@ def _merge_arrays(a: List[Any], b: List[Any], strategy: _ArrayStrategy = "replac
             out.append(item)
         return out
     if s == "union":
-        out: List[Any] = []
+        out: list[Any] = []
         seen = set()
         for item in list(a or []) + list(b or []):
             k = _as_json_key(item)
@@ -98,13 +100,15 @@ def _merge_arrays(a: List[Any], b: List[Any], strategy: _ArrayStrategy = "replac
     return list(b or [])
 
 
-def deep_merge(base: Any, overlay: Any, array_strategy: _ArrayStrategy = "replace", array_key: Optional[str] = None) -> Any:
+def deep_merge(
+    base: Any, overlay: Any, array_strategy: _ArrayStrategy = "replace", array_key: str | None = None
+) -> Any:
     """
     深度合并：不修改 base/overlay，返回新对象
     """
     # 类型完全相同的快速路径
     if isinstance(base, dict) and isinstance(overlay, dict):
-        res: Dict[str, Any] = {}
+        res: dict[str, Any] = {}
         # 先复制 base
         for k, v in (base or {}).items():
             res[k] = copy.deepcopy(v)
@@ -124,10 +128,10 @@ def deep_merge(base: Any, overlay: Any, array_strategy: _ArrayStrategy = "replac
 
 
 def merge_variables_document(
-    base_document: Dict[str, Any],
-    overrides: Dict[str, Any],
-    options: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    base_document: dict[str, Any],
+    overrides: dict[str, Any],
+    options: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """
     将 overrides 深度覆盖到 base_document，返回合并后的完整变量 JSON。
 
@@ -154,42 +158,54 @@ def merge_variables_document(
         merged = {"value": merged}
     return merged
 
+
 # ===== 新增：常用操作策略封装 =====
 
-from typing import List as _List, Union as _Union
+_PathToken = str | int
 
-_PathToken = _Union[str, int]
 
-def _parse_path(path: str) -> _List[_PathToken]:
+def _parse_path(path: str) -> list[_PathToken]:
     s = str(path or "")
-    tokens: _List[_PathToken] = []
+    tokens: list[_PathToken] = []
     i, n = 0, len(s)
-    buf: _List[str] = []
+    buf: list[str] = []
+
     def flush_buf():
         nonlocal buf
         if buf:
             tokens.append("".join(buf))
             buf = []
+
     while i < n:
         ch = s[i]
         if ch == ".":
-            flush_buf(); i += 1; continue
+            flush_buf()
+            i += 1
+            continue
         if ch == "[":
-            flush_buf(); i += 1
+            flush_buf()
+            i += 1
             if i < n and s[i] in ("'", '"'):
-                q = s[i]; i += 1
-                qb: _List[str] = []
+                q = s[i]
+                i += 1
+                qb: list[str] = []
                 while i < n and s[i] != q:
-                    qb.append(s[i]); i += 1
-                if i < n and s[i] == q: i += 1
-                while i < n and s[i] != "]": i += 1
-                if i < n and s[i] == "]": i += 1
+                    qb.append(s[i])
+                    i += 1
+                if i < n and s[i] == q:
+                    i += 1
+                while i < n and s[i] != "]":
+                    i += 1
+                if i < n and s[i] == "]":
+                    i += 1
                 tokens.append("".join(qb))
             else:
-                nb: _List[str] = []
+                nb: list[str] = []
                 while i < n and s[i] != "]":
-                    nb.append(s[i]); i += 1
-                if i < n and s[i] == "]": i += 1
+                    nb.append(s[i])
+                    i += 1
+                if i < n and s[i] == "]":
+                    i += 1
                 raw = "".join(nb).strip()
                 if raw.isdigit() or (raw.startswith("-") and raw[1:].isdigit()):
                     try:
@@ -199,17 +215,19 @@ def _parse_path(path: str) -> _List[_PathToken]:
                 else:
                     tokens.append(raw)
             continue
-        buf.append(ch); i += 1
+        buf.append(ch)
+        i += 1
     flush_buf()
     return [t for t in tokens if t != "" and t is not None]
 
-def _delete_by_path(doc: Dict[str, Any], path: str) -> None:
+
+def _delete_by_path(doc: dict[str, Any], path: str) -> None:
     toks = _parse_path(path)
     if not toks:
         return
     cur: Any = doc
     for idx, t in enumerate(toks):
-        last = (idx == len(toks) - 1)
+        last = idx == len(toks) - 1
         if last:
             try:
                 if isinstance(t, int) and isinstance(cur, list) and 0 <= t < len(cur):
@@ -229,7 +247,8 @@ def _delete_by_path(doc: Dict[str, Any], path: str) -> None:
                     return
                 cur = cur[t]
 
-def _delete_many(doc: Dict[str, Any], paths: _List[str]) -> None:
+
+def _delete_many(doc: dict[str, Any], paths: list[str]) -> None:
     if not isinstance(paths, list):
         return
     for p in paths:
@@ -237,8 +256,9 @@ def _delete_many(doc: Dict[str, Any], paths: _List[str]) -> None:
             continue
         _delete_by_path(doc, str(p))
 
-def shallow_merge_documents(base_document: Dict[str, Any], overrides: Dict[str, Any]) -> Dict[str, Any]:
-    res: Dict[str, Any] = {}
+
+def shallow_merge_documents(base_document: dict[str, Any], overrides: dict[str, Any]) -> dict[str, Any]:
+    res: dict[str, Any] = {}
     if isinstance(base_document, dict):
         for k, v in base_document.items():
             res[k] = copy.deepcopy(v)
@@ -247,12 +267,13 @@ def shallow_merge_documents(base_document: Dict[str, Any], overrides: Dict[str, 
             res[k] = copy.deepcopy(v)
     return res
 
+
 def apply_operation(
-    base_document: Dict[str, Any],
-    overrides: Dict[str, Any],
+    base_document: dict[str, Any],
+    overrides: dict[str, Any],
     operation: str = "merge",
-    options: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    options: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """
     常用操作策略：
       - replace: 直接返回 overrides

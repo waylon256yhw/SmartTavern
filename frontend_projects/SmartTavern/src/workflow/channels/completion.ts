@@ -14,67 +14,67 @@ export type CompletionMode = 'auto' | 'stream' | 'single'
 
 /** 补全请求 Payload */
 export interface CompletionRequestPayload {
-  conversationFile: string;
-  llmConfigFile?: string;
-  mode?: CompletionMode;
-  tag?: string;
+  conversationFile: string
+  llmConfigFile?: string
+  mode?: CompletionMode
+  tag?: string
 }
 
 /** 补全 Chunk Payload */
 export interface CompletionChunkPayload {
-  conversationFile: string;
-  content: string;
-  tag?: string;
+  conversationFile: string
+  content: string
+  tag?: string
 }
 
 /** 补全完成 Payload */
 export interface CompletionFinishPayload {
-  conversationFile: string;
-  finish_reason: string;
-  tag?: string;
+  conversationFile: string
+  finish_reason: string
+  tag?: string
 }
 
 /** 补全 Usage Payload */
 export interface CompletionUsagePayload {
-  conversationFile: string;
-  usage: any;
-  tag?: string;
+  conversationFile: string
+  usage: any
+  tag?: string
 }
 
 /** 补全保存 Payload */
 export interface CompletionSavedPayload {
-  conversationFile: string;
-  node_id: string;
-  doc: any;
-  usage?: any;
-  content?: string;
-  tag?: string;
+  conversationFile: string
+  node_id: string
+  doc: any
+  usage?: any
+  content?: string
+  tag?: string
 }
 
 /** 补全错误 Payload */
 export interface CompletionErrorPayload {
-  conversationFile?: string;
-  message: string;
-  detail?: any;
-  tag?: string;
+  conversationFile?: string
+  message: string
+  detail?: any
+  tag?: string
 }
 
 /** 补全结束 Payload */
 export interface CompletionEndPayload {
-  conversationFile?: string;
-  tag?: string;
+  conversationFile?: string
+  tag?: string
 }
 
 /** 补全中止请求 Payload */
 export interface CompletionAbortPayload {
-  conversationFile?: string;
-  tag?: string;
+  conversationFile?: string
+  tag?: string
 }
 
 /** 补全已中止 Payload */
 export interface CompletionAbortedPayload {
-  conversationFile?: string;
-  tag?: string;
+  conversationFile?: string
+  tag?: string
 }
 
 // ============ Event Constants ============

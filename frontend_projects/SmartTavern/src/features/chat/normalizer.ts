@@ -10,11 +10,11 @@
  */
 export interface HtmlSplitResult {
   /** 前置文本 */
-  before: string;
+  before: string
   /** HTML 文档内容 */
-  html: string;
+  html: string
   /** 后置文本 */
-  after: string;
+  after: string
 }
 
 // ============ Regular Expressions ============

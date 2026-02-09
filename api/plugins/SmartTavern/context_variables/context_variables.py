@@ -12,16 +12,18 @@ SmartTavern Plugin Backend — Context Variables (entry registration)
 - /api/plugins/smarttavern/context_variables/*
 """
 
-from typing import Any, Dict
+from typing import Any
+
 from core.api_registry import register_api
+
 from .impl import (
     ensure_init_impl,
     get_context_variables_impl,
-    set_context_variables_impl,
     merge_context_variables_impl,
     replay_context_variables_impl,
     replay_get_value_impl,
     replay_keys_impl,
+    set_context_variables_impl,
 )
 
 
@@ -29,10 +31,8 @@ from .impl import (
     path="smarttavern/context_variables/ensure_init",
     input_schema={
         "type": "object",
-        "properties": {
-            "conversation_file": {"type": "string"}
-        },
-        "required": ["conversation_file"]
+        "properties": {"conversation_file": {"type": "string"}},
+        "required": ["conversation_file"],
     },
     output_schema={
         "type": "object",
@@ -40,13 +40,13 @@ from .impl import (
             "success": {"type": "boolean"},
             "file": {"type": "string"},
             "created": {"type": "boolean"},
-            "content": {"type": "object"}
+            "content": {"type": "object"},
         },
-        "required": ["success", "file", "created", "content"]
+        "required": ["success", "file", "created", "content"],
     },
-    description="若当前对话目录下不存在 context_variables.json，则从角色卡的 [InitVar] 初始化创建；已存在则不覆盖，仅返回内容"
+    description="若当前对话目录下不存在 context_variables.json，则从角色卡的 [InitVar] 初始化创建；已存在则不覆盖，仅返回内容",
 )
-def ensure_init(conversation_file: str) -> Dict[str, Any]:
+def ensure_init(conversation_file: str) -> dict[str, Any]:
     return ensure_init_impl(conversation_file)
 
 
@@ -54,23 +54,17 @@ def ensure_init(conversation_file: str) -> Dict[str, Any]:
     path="smarttavern/context_variables/get",
     input_schema={
         "type": "object",
-        "properties": {
-            "conversation_file": {"type": "string"}
-        },
-        "required": ["conversation_file"]
+        "properties": {"conversation_file": {"type": "string"}},
+        "required": ["conversation_file"],
     },
     output_schema={
         "type": "object",
-        "properties": {
-            "success": {"type": "boolean"},
-            "file": {"type": "string"},
-            "content": {"type": "object"}
-        },
-        "required": ["success", "file", "content"]
+        "properties": {"success": {"type": "boolean"}, "file": {"type": "string"}, "content": {"type": "object"}},
+        "required": ["success", "file", "content"],
     },
-    description="读取对话目录中的 context_variables.json；不存在则返回 {}"
+    description="读取对话目录中的 context_variables.json；不存在则返回 {}",
 )
-def get_context_variables(conversation_file: str) -> Dict[str, Any]:
+def get_context_variables(conversation_file: str) -> dict[str, Any]:
     return get_context_variables_impl(conversation_file)
 
 
@@ -78,24 +72,17 @@ def get_context_variables(conversation_file: str) -> Dict[str, Any]:
     path="smarttavern/context_variables/set",
     input_schema={
         "type": "object",
-        "properties": {
-            "conversation_file": {"type": "string"},
-            "content": {"type": "object"}
-        },
-        "required": ["conversation_file", "content"]
+        "properties": {"conversation_file": {"type": "string"}, "content": {"type": "object"}},
+        "required": ["conversation_file", "content"],
     },
     output_schema={
         "type": "object",
-        "properties": {
-            "success": {"type": "boolean"},
-            "file": {"type": "string"},
-            "content": {"type": "object"}
-        },
-        "required": ["success", "file", "content"]
+        "properties": {"success": {"type": "boolean"}, "file": {"type": "string"}, "content": {"type": "object"}},
+        "required": ["success", "file", "content"],
     },
-    description="完整覆盖写入 context_variables.json"
+    description="完整覆盖写入 context_variables.json",
 )
-def set_context_variables(conversation_file: str, content: Dict[str, Any]) -> Dict[str, Any]:
+def set_context_variables(conversation_file: str, content: dict[str, Any]) -> dict[str, Any]:
     return set_context_variables_impl(conversation_file, content)
 
 
@@ -103,24 +90,17 @@ def set_context_variables(conversation_file: str, content: Dict[str, Any]) -> Di
     path="smarttavern/context_variables/merge",
     input_schema={
         "type": "object",
-        "properties": {
-            "conversation_file": {"type": "string"},
-            "patch": {"type": "object"}
-        },
-        "required": ["conversation_file", "patch"]
+        "properties": {"conversation_file": {"type": "string"}, "patch": {"type": "object"}},
+        "required": ["conversation_file", "patch"],
     },
     output_schema={
         "type": "object",
-        "properties": {
-            "success": {"type": "boolean"},
-            "file": {"type": "string"},
-            "content": {"type": "object"}
-        },
-        "required": ["success", "file", "content"]
+        "properties": {"success": {"type": "boolean"}, "file": {"type": "string"}, "content": {"type": "object"}},
+        "required": ["success", "file", "content"],
     },
-    description="合并写入：读取现有 context_variables.json 与传入 patch 合并后写回"
+    description="合并写入：读取现有 context_variables.json 与传入 patch 合并后写回",
 )
-def merge_context_variables(conversation_file: str, patch: Dict[str, Any]) -> Dict[str, Any]:
+def merge_context_variables(conversation_file: str, patch: dict[str, Any]) -> dict[str, Any]:
     return merge_context_variables_impl(conversation_file, patch)
 
 
@@ -132,23 +112,22 @@ def merge_context_variables(conversation_file: str, patch: Dict[str, Any]) -> Di
             "name": {"type": "string"},
             "params": {"type": "string"},
             "variables": {"type": "object", "additionalProperties": True},
-            "policy": {"type": "object", "additionalProperties": True}
+            "policy": {"type": "object", "additionalProperties": True},
         },
         "required": ["name"],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
     output_schema={
         "type": "object",
-        "properties": {
-            "text": {"type": "string"},
-            "variables": {"type": "object", "additionalProperties": True}
-        },
+        "properties": {"text": {"type": "string"}, "variables": {"type": "object", "additionalProperties": True}},
         "required": ["text"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
-    description="自定义宏处理：getCtxVar，从 context_variables.json 读取值"
+    description="自定义宏处理：getCtxVar，从 context_variables.json 读取值",
 )
-def macro_get(name: str, params: str = "", variables: Dict[str, Any] | None = None, policy: Dict[str, Any] | None = None) -> Dict[str, Any]:
+def macro_get(
+    name: str, params: str = "", variables: dict[str, Any] | None = None, policy: dict[str, Any] | None = None
+) -> dict[str, Any]:
     # 解析对话文件
     conv = None
     try:
@@ -160,10 +139,10 @@ def macro_get(name: str, params: str = "", variables: Dict[str, Any] | None = No
         return {"text": ""}
 
     # 解析路径：支持 a.b.c 与 a[b] 混写
-    def _read_by_path(doc: Dict[str, Any], path_str: str) -> str:
+    def _read_by_path(doc: dict[str, Any], path_str: str) -> str:
         s = str(path_str or "").strip()
-        s2 = s.replace('[', '.').replace(']', '.')
-        toks = [t.strip().strip("'\"") for t in s2.split('.') if t.strip()]
+        s2 = s.replace("[", ".").replace("]", ".")
+        toks = [t.strip().strip("'\"") for t in s2.split(".") if t.strip()]
         cur: Any = doc
         try:
             for t in toks:
@@ -179,7 +158,7 @@ def macro_get(name: str, params: str = "", variables: Dict[str, Any] | None = No
     try:
         key = str(params or "").strip()
         res = replay_get_value_impl(str(conv), key=key, until_node_id=None)
-        return {"text": str(res.get("value",""))}
+        return {"text": str(res.get("value", ""))}
     except Exception:
         return {"text": ""}
 
@@ -192,23 +171,24 @@ def macro_get(name: str, params: str = "", variables: Dict[str, Any] | None = No
             "name": {"type": "string"},
             "params": {"type": "string"},
             "variables": {"type": "object", "additionalProperties": True},
-            "policy": {"type": "object", "additionalProperties": True}
+            "policy": {"type": "object", "additionalProperties": True},
         },
         "required": ["name"],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
     output_schema={
         "type": "object",
-        "properties": {
-            "text": {"type": "string"}
-        },
+        "properties": {"text": {"type": "string"}},
         "required": ["text"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
-    description="自定义宏：getCtxVarJSON，返回 JSON 值（不传key返回整个对象；传key返回该路径JSON或子键字典）"
+    description="自定义宏：getCtxVarJSON，返回 JSON 值（不传key返回整个对象；传key返回该路径JSON或子键字典）",
 )
-def macro_get_json(name: str, params: str = "", variables: Dict[str, Any] | None = None, policy: Dict[str, Any] | None = None) -> Dict[str, Any]:
+def macro_get_json(
+    name: str, params: str = "", variables: dict[str, Any] | None = None, policy: dict[str, Any] | None = None
+) -> dict[str, Any]:
     import json as _json
+
     conv = None
     try:
         if isinstance(variables, dict):
@@ -230,12 +210,12 @@ def macro_get_json(name: str, params: str = "", variables: Dict[str, Any] | None
         def _resolve(obj: Any, path: str) -> Any:
             if not path:
                 return obj
-            s2 = path.replace('[', '.').replace(']', '.')
-            toks = [t.strip().strip("'\"") for t in s2.split('.') if t.strip()]
+            s2 = path.replace("[", ".").replace("]", ".")
+            toks = [t.strip().strip("'\"") for t in s2.split(".") if t.strip()]
             cur: Any = obj
             for t in toks:
                 # 尝试数组索引
-                if isinstance(cur, list) and t.lstrip('-').isdigit():
+                if isinstance(cur, list) and t.lstrip("-").isdigit():
                     idx = int(t)
                     if idx < 0 or idx >= len(cur):
                         return None
@@ -260,12 +240,9 @@ def macro_get_json(name: str, params: str = "", variables: Dict[str, Any] | None
     path="smarttavern/context_variables/replay",
     input_schema={
         "type": "object",
-        "properties": {
-            "conversation_file": {"type": "string"},
-            "until_node_id": {"type": ["string", "null"]}
-        },
+        "properties": {"conversation_file": {"type": "string"}, "until_node_id": {"type": ["string", "null"]}},
         "required": ["conversation_file"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -273,13 +250,13 @@ def macro_get_json(name: str, params: str = "", variables: Dict[str, Any] | None
             "success": {"type": "boolean"},
             "content": {"type": "object"},
             "applied": {"type": "integer"},
-            "path": {"type": "array", "items": {"type": "string"}}
+            "path": {"type": "array", "items": {"type": "string"}},
         },
         "required": ["success", "content"],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def replay(conversation_file: str, until_node_id: str | None = None) -> Dict[str, Any]:
+def replay(conversation_file: str, until_node_id: str | None = None) -> dict[str, Any]:
     return replay_context_variables_impl(conversation_file, until_node_id=until_node_id)
 
 
@@ -290,23 +267,19 @@ def replay(conversation_file: str, until_node_id: str | None = None) -> Dict[str
         "properties": {
             "conversation_file": {"type": "string"},
             "key": {"type": "string"},
-            "until_node_id": {"type": ["string", "null"]}
+            "until_node_id": {"type": ["string", "null"]},
         },
         "required": ["conversation_file", "key"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
-        "properties": {
-            "success": {"type": "boolean"},
-            "value": {"type": "string"},
-            "applied": {"type": "integer"}
-        },
+        "properties": {"success": {"type": "boolean"}, "value": {"type": "string"}, "applied": {"type": "integer"}},
         "required": ["success", "value"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
 )
-def replay_get(conversation_file: str, key: str, until_node_id: str | None = None) -> Dict[str, Any]:
+def replay_get(conversation_file: str, key: str, until_node_id: str | None = None) -> dict[str, Any]:
     return replay_get_value_impl(conversation_file, key=key, until_node_id=until_node_id)
 
 
@@ -317,20 +290,20 @@ def replay_get(conversation_file: str, key: str, until_node_id: str | None = Non
         "properties": {
             "conversation_file": {"type": "string"},
             "key": {"type": ["string", "null"]},
-            "until_node_id": {"type": ["string", "null"]}
+            "until_node_id": {"type": ["string", "null"]},
         },
         "required": ["conversation_file"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
         "properties": {
             "success": {"type": "boolean"},
-            "keys": {"type": "object", "additionalProperties": {"type": "boolean"}}
+            "keys": {"type": "object", "additionalProperties": {"type": "boolean"}},
         },
         "required": ["success", "keys"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
 )
-def replay_keys(conversation_file: str, key: str | None = None, until_node_id: str | None = None) -> Dict[str, Any]:
+def replay_keys(conversation_file: str, key: str | None = None, until_node_id: str | None = None) -> dict[str, Any]:
     return replay_keys_impl(conversation_file, key=key, until_node_id=until_node_id)

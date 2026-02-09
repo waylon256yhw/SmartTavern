@@ -1,38 +1,38 @@
 /**
  * SmartTavern 国际化（i18n）系统
- * 
+ *
  * 功能特性：
  * - 内置简体中文（zh-CN）语言包
  * - 支持插件动态注册语言包
  * - 支持语言包热替换和合并
  * - 支持嵌套键路径访问
  * - 支持带参数的翻译
- * 
+ *
  * 目录结构：
  * - locales/
  *   - index.ts          - 入口文件，导出 i18n 服务
  *   - zh-CN.ts          - 简体中文语言包（内置）
- * 
+ *
  * 插件语言包：
  * - 插件可以通过 registerLocale() 注册新语言
  * - 插件可以通过 mergeMessages() 扩展现有语言
  * - 插件目录: backend_projects/SmartTavern/plugins/<plugin-name>/
- * 
+ *
  * 使用方法：
  * 1. 在组件中导入 useI18n composable
  *    import { useI18n } from '@/locales'
  *    const { t } = useI18n()
- * 
+ *
  * 2. 使用 t 函数获取翻译文本
  *    t('common.import')  // => "导入"
  *    t('panel.presets.title')  // => "预设 Presets"
- * 
+ *
  * 3. 支持带参数的翻译
  *    t('common.loadFailed', { error: '网络错误' })  // => "加载失败：网络错误"
- * 
+ *
  * 4. 插件注册新语言
  *    i18n.registerLocale('ja-JP', jaMessages, { name: '日本語', nativeName: '日本語' })
- * 
+ *
  * 5. 插件扩展现有语言
  *    i18n.mergeMessages('zh-CN', { plugin: { myKey: '我的文本' } })
  */
@@ -85,7 +85,7 @@ localeMetas.set('zh-CN', {
   name: 'Chinese (Simplified)',
   nativeName: '简体中文',
   direction: 'ltr',
-  source: 'builtin'
+  source: 'builtin',
 })
 
 // 注册内置英文
@@ -94,7 +94,7 @@ localeMetas.set('en-US', {
   name: 'English',
   nativeName: 'English',
   direction: 'ltr',
-  source: 'builtin'
+  source: 'builtin',
 })
 
 // ==================== 响应式状态 ====================
@@ -153,26 +153,26 @@ function getNestedValue(obj: any, path: string): string | undefined {
 function translate(key: string, params?: Record<string, string | number>): string {
   const messages = localeMessages.get(currentLocale.value)
   let text = messages ? getNestedValue(messages, key) : undefined
-  
+
   // 如果当前语言没找到，尝试使用中文作为 fallback
   if (text === undefined && currentLocale.value !== 'zh-CN') {
     const fallback = localeMessages.get('zh-CN')
     text = fallback ? getNestedValue(fallback, key) : undefined
   }
-  
+
   // 如果还是没找到，返回 key 本身
   if (text === undefined) {
     console.warn(`[i18n] Missing translation for key: ${key}`)
     return key
   }
-  
+
   // 替换参数 {param}
   if (params) {
     for (const [k, v] of Object.entries(params)) {
       text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v))
     }
   }
-  
+
   return text
 }
 
@@ -184,23 +184,23 @@ function setLocale(locale: LocaleCode): boolean {
     console.warn(`[i18n] Locale not registered: ${locale}`)
     return false
   }
-  
+
   currentLocale.value = locale
-  
+
   // 保存到 localStorage
   try {
     localStorage.setItem('st:locale', locale)
   } catch (e) {
     console.warn('[i18n] Failed to save locale to localStorage:', e)
   }
-  
+
   // 更新 HTML lang 属性
   document.documentElement.lang = locale
-  
+
   // 更新文字方向
   const meta = localeMetas.get(locale)
   document.documentElement.dir = meta?.direction || 'ltr'
-  
+
   console.log(`[i18n] Locale changed to: ${locale}`)
   return true
 }
@@ -219,7 +219,7 @@ function getAvailableLocales(): RegisteredLocale[] {
   return Array.from(localeMessages.entries()).map(([code, messages]) => ({
     code,
     messages,
-    meta: localeMetas.get(code) || { name: code, nativeName: code }
+    meta: localeMetas.get(code) || { name: code, nativeName: code },
   }))
 }
 
@@ -237,34 +237,36 @@ function getAvailableLocales(): RegisteredLocale[] {
 function registerLocale(
   code: LocaleCode,
   messages: LocaleMessages,
-  meta: Partial<LocaleMeta> & { name: string; nativeName: string }
+  meta: Partial<LocaleMeta> & { name: string; nativeName: string },
 ): boolean {
   try {
     // 检查是否是内置语言，内置语言不允许被覆盖
     if (BUILTIN_LOCALES.includes(code)) {
-      console.warn(`[i18n] Cannot register builtin locale: ${code}. Builtin locales cannot be overridden by plugins.`)
+      console.warn(
+        `[i18n] Cannot register builtin locale: ${code}. Builtin locales cannot be overridden by plugins.`,
+      )
       return false
     }
-    
+
     // 检查是否已存在（非内置）
     if (localeMessages.has(code)) {
       console.warn(`[i18n] Locale already registered: ${code}, use mergeMessages() to extend it`)
       return false
     }
-    
+
     // 注册语言包
     localeMessages.set(code, messages)
     localeMetas.set(code, {
       direction: 'ltr',
       source: 'plugin',
-      ...meta
+      ...meta,
     })
-    
+
     // 更新响应式列表
     if (!registeredLocales.value.includes(code)) {
       registeredLocales.value = [...registeredLocales.value, code]
     }
-    
+
     console.log(`[i18n] Registered new locale: ${code} (${meta.nativeName})`)
     return true
   } catch (e) {
@@ -282,24 +284,22 @@ function registerLocale(
  *
  * 注意：对于内置语言，只能添加新键，不会覆盖已有键
  */
-function mergeMessages(
-  code: LocaleCode,
-  messages: LocaleMessages,
-  source?: string
-): boolean {
+function mergeMessages(code: LocaleCode, messages: LocaleMessages, source?: string): boolean {
   try {
     const existing = localeMessages.get(code)
     if (!existing) {
       console.warn(`[i18n] Cannot merge: locale not found: ${code}`)
       return false
     }
-    
+
     // 对于内置语言，使用安全合并（不覆盖已有键）
     const isBuiltin = BUILTIN_LOCALES.includes(code)
     const merged = isBuiltin ? safeMerge(existing, messages) : deepMerge(existing, messages)
     localeMessages.set(code, merged)
-    
-    console.log(`[i18n] Merged messages into ${code}${source ? ` (from ${source})` : ''}${isBuiltin ? ' (builtin: existing keys preserved)' : ''}`)
+
+    console.log(
+      `[i18n] Merged messages into ${code}${source ? ` (from ${source})` : ''}${isBuiltin ? ' (builtin: existing keys preserved)' : ''}`,
+    )
     return true
   } catch (e) {
     console.error(`[i18n] Failed to merge messages for ${code}:`, e)
@@ -343,20 +343,20 @@ function unregisterLocale(code: LocaleCode): boolean {
     console.warn(`[i18n] Cannot unregister builtin locale: ${code}`)
     return false
   }
-  
+
   if (!localeMessages.has(code)) {
     return false
   }
-  
+
   // 如果当前正在使用该语言，切换回中文
   if (currentLocale.value === code) {
     setLocale('zh-CN')
   }
-  
+
   localeMessages.delete(code)
   localeMetas.delete(code)
-  registeredLocales.value = registeredLocales.value.filter(c => c !== code)
-  
+  registeredLocales.value = registeredLocales.value.filter((c) => c !== code)
+
   console.log(`[i18n] Unregistered locale: ${code}`)
   return true
 }
@@ -388,7 +388,7 @@ function initLocale(): void {
       setLocale(saved)
       return
     }
-    
+
     // 其次使用浏览器语言设置
     const browserLang = navigator.language || (navigator as any).userLanguage
     if (browserLang) {
@@ -399,7 +399,7 @@ function initLocale(): void {
       }
       // 尝试前缀匹配（如 zh -> zh-CN）
       const prefix = browserLang.split('-')[0]
-      const matched = Array.from(localeMessages.keys()).find(l => l.startsWith(prefix))
+      const matched = Array.from(localeMessages.keys()).find((l) => l.startsWith(prefix))
       if (matched) {
         setLocale(matched)
         return
@@ -408,7 +408,7 @@ function initLocale(): void {
   } catch (e) {
     console.warn('[i18n] Failed to init locale:', e)
   }
-  
+
   // 默认使用中文
   setLocale('zh-CN')
 }
@@ -458,19 +458,19 @@ export const i18n = {
   setLocale,
   getLocale,
   init: initLocale,
-  
+
   // 查询功能
   hasLocale,
   getLocaleMeta,
   getAvailableLocales,
   availableLocales: registeredLocales,
   isBuiltinLocale,
-  
+
   // 插件接口
   registerLocale,
   mergeMessages,
   unregisterLocale,
-  
+
   // 常量
   BUILTIN_LOCALES,
 }

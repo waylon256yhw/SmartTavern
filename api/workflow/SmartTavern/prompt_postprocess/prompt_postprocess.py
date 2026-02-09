@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 SmartTavern Prompt Post-Process Workflow Registration (prompt_postprocess.py)
 
@@ -15,7 +14,8 @@ SmartTavern Prompt Post-Process Workflow Registration (prompt_postprocess.py)
 - 输出:
   - {"message":[...], "variables": {"initial":{}, "final":{}}}
 """
-from typing import Any, Dict, List, Optional
+
+from typing import Any
 
 import core  # type: ignore
 
@@ -40,18 +40,18 @@ from .impl import apply as _apply
                     "properties": {
                         "role": {"type": "string", "enum": ["system", "user", "assistant", "thinking"]},
                         "content": {"type": "string"},
-                        "source": {"type": "object", "additionalProperties": True}
+                        "source": {"type": "object", "additionalProperties": True},
                     },
                     "required": ["role", "content"],
-                    "additionalProperties": True
-                }
+                    "additionalProperties": True,
+                },
             },
             "regex_rules": {"type": ["array", "object"]},
             "view": {"type": "string", "enum": ["user_view", "assistant_view"]},
-            "variables": {"type": "object", "additionalProperties": True}
+            "variables": {"type": "object", "additionalProperties": True},
         },
         "required": ["messages", "regex_rules", "view"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -63,32 +63,32 @@ from .impl import apply as _apply
                     "properties": {
                         "role": {"type": "string", "enum": ["system", "user", "assistant", "thinking"]},
                         "content": {"type": "string"},
-                        "source": {"type": "object", "additionalProperties": True}
+                        "source": {"type": "object", "additionalProperties": True},
                     },
                     "required": ["role", "content"],
-                    "additionalProperties": True
-                }
+                    "additionalProperties": True,
+                },
             },
             "variables": {
                 "type": "object",
                 "properties": {
                     "initial": {"type": "object", "additionalProperties": True},
-                    "final": {"type": "object", "additionalProperties": True}
+                    "final": {"type": "object", "additionalProperties": True},
                 },
                 "required": ["initial", "final"],
-                "additionalProperties": False
-            }
+                "additionalProperties": False,
+            },
         },
         "required": ["message", "variables"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
 )
 async def apply(
-    messages: List[Dict[str, Any]],
+    messages: list[dict[str, Any]],
     regex_rules: Any,
     view: str,
-    variables: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    variables: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """
     适配器：转发到实现层（impl.py），遵循 "API 优先 / 解耦" 原则。
     """
@@ -97,6 +97,12 @@ async def apply(
 
 if __name__ == "__main__":
     import json
-    print(json.dumps({
-        "message": "This file registers the Post-Process workflow API (single-view). Please run the API gateway or call the API instead."
-    }, ensure_ascii=False))
+
+    print(
+        json.dumps(
+            {
+                "message": "This file registers the Post-Process workflow API (single-view). Please run the API gateway or call the API instead."
+            },
+            ensure_ascii=False,
+        )
+    )

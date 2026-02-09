@@ -1,12 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { usePresetStore } from '../store'
-import type {
-  PromptItem,
-  PromptItemInChat,
-  PromptItemRelative,
-  Role,
-} from '../types'
+import type { PromptItem, PromptItemInChat, PromptItemRelative, Role } from '../types'
 import { SPECIAL_RELATIVE_TEMPLATES } from '../types'
 
 const props = defineProps<{
@@ -28,10 +23,11 @@ const hasContent = computed((): boolean => 'content' in props.item)
 const isSpecialRel = computed(
   (): boolean =>
     props.item.position === 'relative' &&
-    SPECIAL_RELATIVE_TEMPLATES.some(t => t.identifier === props.item.identifier)
+    SPECIAL_RELATIVE_TEMPLATES.some((t) => t.identifier === props.item.identifier),
 )
 
-const enabledLabel = (v: boolean | null) => (v === true ? '已启用' : v === false ? '未启用' : '未设置')
+const enabledLabel = (v: boolean | null) =>
+  v === true ? '已启用' : v === false ? '未启用' : '未设置'
 
 // draft fields
 const draftName = ref(props.item.name)
@@ -60,7 +56,7 @@ watch(
   () => {
     if (!editing.value) resetDraft()
   },
-  { deep: false }
+  { deep: false },
 )
 
 function onEdit() {
@@ -102,7 +98,9 @@ function onSave() {
       position: 'relative',
     }
     // Relative：除一次性组件外，必须包含 content 字段
-    const out = isSpecialRel.value ? base : ({ ...base, content: draftContent.value } as PromptItemRelative)
+    const out = isSpecialRel.value
+      ? base
+      : ({ ...base, content: draftContent.value } as PromptItemRelative)
     store.replacePrompt(out)
   }
   editing.value = false
@@ -110,18 +108,32 @@ function onSave() {
 </script>
 
 <template>
-  <div class="border border-gray-200 rounded-4 p-3 bg-white transition-all duration-200 ease-soft hover:shadow-elevate">
+  <div
+    class="border border-gray-200 rounded-4 p-3 bg-white transition-all duration-200 ease-soft hover:shadow-elevate"
+  >
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div class="text-sm flex items-center gap-2">
         <span class="font-medium">{{ props.item.name }}</span>
-        <span v-if="isInChat" class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black">depth: {{ (props.item as any).depth }}</span>
-        <span v-if="isInChat" class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black">order: {{ (props.item as any).order }}</span>
+        <span
+          v-if="isInChat"
+          class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black"
+          >depth: {{ (props.item as any).depth }}</span
+        >
+        <span
+          v-if="isInChat"
+          class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black"
+          >order: {{ (props.item as any).order }}</span
+        >
       </div>
 
       <div class="flex items-center gap-2">
-        <span class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black">{{ props.item.role }}</span>
-        <span class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black">{{ enabledLabel(props.item.enabled) }}</span>
+        <span class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black">{{
+          props.item.role
+        }}</span>
+        <span class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black">{{
+          enabledLabel(props.item.enabled)
+        }}</span>
         <!-- 非编辑态：删除 + 编辑（删除在左） -->
         <button
           v-if="!editing"

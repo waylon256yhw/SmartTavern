@@ -7,21 +7,23 @@
 - 不再维护项目列表/当前项目/项目配置的读写，相关接口已删除。
 """
 
-import os
 import importlib
-from typing import Any, Dict, List, Optional, Callable
-from pathlib import Path
-from dataclasses import dataclass, field
+import os
 import threading
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
 
 
 @dataclass
 class ServiceRegistry:
     """服务注册表"""
-    globals_services: Dict[str, Any] = field(default_factory=dict)
-    module_services: Dict[str, Any] = field(default_factory=dict)
-    function_services: Dict[str, Callable] = field(default_factory=dict)
-    workflow_services: Dict[str, Callable] = field(default_factory=dict)
+
+    globals_services: dict[str, Any] = field(default_factory=dict)
+    module_services: dict[str, Any] = field(default_factory=dict)
+    function_services: dict[str, Callable] = field(default_factory=dict)
+    workflow_services: dict[str, Callable] = field(default_factory=dict)
 
 
 class UnifiedServiceManager:
@@ -59,23 +61,23 @@ class UnifiedServiceManager:
 
     # ========== 动态模块发现与加载 ==========
 
-    def discover_modules(self) -> List[str]:
+    def discover_modules(self) -> list[str]:
         """
         在框架根目录下仅扫描 api/*，发现每个子包的“实现文件”并返回可导入路径。
-        
+
         规则：
         - 任意包含 __init__.py 的目录，若其中存在与目录同名的 .py 实现文件，则加入导入列表
         - 例如：
             api/modules/web_server/web_server.py         -> api.modules.web_server.web_server
             api/workflow/image_binding/image_binding.py  -> api.workflow.image_binding.image_binding
         """
-        module_paths: List[str] = []
-        
+        module_paths: list[str] = []
+
         for root_name in ("api",):
             root_dir = self._base_path / root_name
             if not root_dir.exists():
                 continue
-            
+
             # 递归查找：任意包含 __init__.py 的目录，若其中存在同名实现文件，则加入导入列表
             for init_file in root_dir.rglob("__init__.py"):
                 package_dir = init_file.parent
@@ -92,7 +94,7 @@ class UnifiedServiceManager:
                     except ValueError:
                         # 不是在当前工程根下，跳过
                         continue
-        
+
         return module_paths
 
     def load_project_modules(self) -> int:
@@ -119,36 +121,36 @@ class UnifiedServiceManager:
                 print(f"  ✗ 模块加载失败 {module_path}: {e}")
 
         return total_loaded_count
-    
+
     def initialize_plugins(self) -> int:
         """
         初始化后端插件系统
-        
+
         自动加载所有启用的插件及其 Hook
-        
+
         返回：
             成功加载的插件数量
         """
         try:
             from api.plugins.SmartTavern import initialize_plugins
-            
+
             loader = initialize_plugins(auto_load=True)
             loaded_plugins = loader.get_loaded_plugins()
-            
+
             successful_count = sum(1 for info in loaded_plugins.values() if info.loaded)
-            
+
             if self._verbose:
                 print(f"  ✓ 插件系统初始化完成: {successful_count}/{len(loaded_plugins)} 个插件成功加载")
-            
+
             return successful_count
-        
+
         except Exception as e:
             print(f"  ✗ 插件系统初始化失败: {e}")
             return 0
 
     # ========== 共享资源访问（占位，可扩展） ==========
 
-    def get_globals(self) -> Optional[Any]:
+    def get_globals(self) -> Any | None:
         """
         获取全局共享的 globals 模块（如有需要可扩展动态发现逻辑）。
         当前返回 None；保留接口以兼容调用方。
@@ -168,27 +170,23 @@ class UnifiedServiceManager:
         elif service_type == "globals":
             self.services.globals_services[name] = service
 
-    def get_service(self, name: str, service_type: Optional[str] = None) -> Optional[Any]:
+    def get_service(self, name: str, service_type: str | None = None) -> Any | None:
         """按类型与名称获取服务"""
-        if service_type == "function" or service_type is None:
-            if name in self.services.function_services:
-                return self.services.function_services[name]
+        if (service_type == "function" or service_type is None) and name in self.services.function_services:
+            return self.services.function_services[name]
 
-        if service_type == "workflow" or service_type is None:
-            if name in self.services.workflow_services:
-                return self.services.workflow_services[name]
+        if (service_type == "workflow" or service_type is None) and name in self.services.workflow_services:
+            return self.services.workflow_services[name]
 
-        if service_type == "module" or service_type is None:
-            if name in self.services.module_services:
-                return self.services.module_services[name]
+        if (service_type == "module" or service_type is None) and name in self.services.module_services:
+            return self.services.module_services[name]
 
-        if service_type == "globals" or service_type is None:
-            if name in self.services.globals_services:
-                return self.services.globals_services[name]
+        if (service_type == "globals" or service_type is None) and name in self.services.globals_services:
+            return self.services.globals_services[name]
 
         return None
 
-    def list_services(self, service_type: Optional[str] = None) -> Dict[str, List[str]]:
+    def list_services(self, service_type: str | None = None) -> dict[str, list[str]]:
         """列出所有已注册服务"""
         if service_type:
             if service_type == "function":
@@ -249,6 +247,7 @@ def get_legacy_globals():
 
         # 历史后备方案（如不存在将捕获 ImportError）
         from shared.SmartTavern import globals as legacy_g  # type: ignore
+
         return legacy_g
     except ImportError:
         print("⚠️ 无法访问globals模块")

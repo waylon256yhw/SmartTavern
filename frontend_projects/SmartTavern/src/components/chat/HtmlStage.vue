@@ -37,14 +37,14 @@ const { t } = useI18n()
 
 const props = defineProps({
   before: { type: String, default: '' },
-  html:   { type: String, default: '' },
-  after:  { type: String, default: '' },
+  html: { type: String, default: '' },
+  after: { type: String, default: '' },
   /**
    * 显示模式：
    * - 'auto' 自适应高度（默认）
    * - 'fixed' 固定容器（使用 CSS aspect-ratio）
    */
-  displayMode: { type: String, default: 'auto', validator: (v) => ['auto','fixed'].includes(v) },
+  displayMode: { type: String, default: 'auto', validator: (v) => ['auto', 'fixed'].includes(v) },
   // 当允许时，可由 HTML 内联指令覆盖
   preferInlineMode: { type: Boolean, default: false },
   // 是否应该渲染 iframe（用于渲染优化）
@@ -56,7 +56,8 @@ defineEmits(['iframe-loaded'])
 function parseInlineDisplayMode(s) {
   if (!s) return null
   const re = /<!--\s*st:display-mode\s*=\s*(auto|fixed)\s*-->/gi
-  let m, last = null
+  let m,
+    last = null
   while ((m = re.exec(s)) !== null) {
     const v = (m[1] || '').toLowerCase()
     if (v === 'auto' || v === 'fixed') last = v
@@ -71,10 +72,12 @@ function readThreadedDisplayPref() {
     const snap = JSON.parse(raw)
     const sel = String(snap?.threadedDisplayModeSel || '').toLowerCase()
     if (sel === 'inline') return { preferInline: true, displayMode: 'auto' }
-    if (sel === 'fixed')  return { preferInline: false, displayMode: 'fixed' }
-    if (sel === 'auto')   return { preferInline: false, displayMode: 'auto' }
+    if (sel === 'fixed') return { preferInline: false, displayMode: 'fixed' }
+    if (sel === 'auto') return { preferInline: false, displayMode: 'auto' }
     return null
-  } catch { return null }
+  } catch {
+    return null
+  }
 }
 
 const inlineDisplayMode = computed(() => parseInlineDisplayMode(props.html))
@@ -84,13 +87,13 @@ const runtimePref = ref(null)
 const lsPref = computed(() => runtimePref.value ?? readThreadedDisplayPref())
 
 const effectivePreferInline = computed(() => {
-  return (lsPref.value && typeof lsPref.value.preferInline === 'boolean')
+  return lsPref.value && typeof lsPref.value.preferInline === 'boolean'
     ? lsPref.value.preferInline
     : props.preferInlineMode
 })
 
 const baseDisplayMode = computed(() => {
-  return (lsPref.value && lsPref.value.displayMode) ? lsPref.value.displayMode : props.displayMode
+  return lsPref.value && lsPref.value.displayMode ? lsPref.value.displayMode : props.displayMode
 })
 
 const displayModeEffective = computed(() => {
@@ -118,7 +121,9 @@ function onAppearanceThreadedUpdate(e) {
 }
 onMounted(() => window.addEventListener('stAppearanceThreadedUpdate', onAppearanceThreadedUpdate))
 onBeforeUnmount(() => {
-  try { window.removeEventListener('stAppearanceThreadedUpdate', onAppearanceThreadedUpdate) } catch (_) {}
+  try {
+    window.removeEventListener('stAppearanceThreadedUpdate', onAppearanceThreadedUpdate)
+  } catch (_) {}
 })
 </script>
 
@@ -135,7 +140,9 @@ onBeforeUnmount(() => {
   padding: var(--st-threaded-stage-padding, 8px);
   border-radius: var(--st-threaded-stage-radius, 12px);
   border: 1px solid rgba(var(--st-border), 0.6);
-  background: rgb(var(--st-surface) / var(--st-threaded-stage-container-bg-opacity, 0.82)) !important;
+  background: rgb(
+    var(--st-surface) / var(--st-threaded-stage-container-bg-opacity, 0.82)
+  ) !important;
   box-shadow: var(--st-shadow-sm);
   backdrop-filter: blur(var(--st-blur-xs));
   -webkit-backdrop-filter: blur(var(--st-blur-xs));

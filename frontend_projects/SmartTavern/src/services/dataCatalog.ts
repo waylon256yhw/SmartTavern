@@ -112,7 +112,14 @@ interface DeleteDataFolderResponse {
   [key: string]: any
 }
 
-type DataType = 'preset' | 'worldbook' | 'character' | 'persona' | 'regex' | 'conversation' | 'llmconfig'
+type DataType =
+  | 'preset'
+  | 'worldbook'
+  | 'character'
+  | 'persona'
+  | 'regex'
+  | 'conversation'
+  | 'llmconfig'
 
 // 扩展 ImportMeta 接口以支持 env
 declare global {
@@ -125,11 +132,12 @@ declare global {
   }
 }
 
-const DEFAULT_BACKEND = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050')
+const DEFAULT_BACKEND =
+  import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050')
 
 function _readLS(key: string): string | null {
   try {
-    return (typeof window !== 'undefined') ? localStorage.getItem(key) : null
+    return typeof window !== 'undefined' ? localStorage.getItem(key) : null
   } catch (_) {
     return null
   }
@@ -137,7 +145,7 @@ function _readLS(key: string): string | null {
 
 function getBackendBase(): string {
   const fromLS = _readLS('st.backend_base')
-  const fromWin = (typeof window !== 'undefined') ? (window as any).ST_BACKEND_BASE : null
+  const fromWin = typeof window !== 'undefined' ? (window as any).ST_BACKEND_BASE : null
   const base = String(fromLS || fromWin || DEFAULT_BACKEND)
   return base.replace(/\/+$/, '')
 }
@@ -158,7 +166,9 @@ async function postJSON(path: string, body: any = {}): Promise<any> {
       body: JSON.stringify(body || {}),
     })
   } catch (networkError: any) {
-    const err: any = new Error(`[DataCatalog] Network error: ${networkError?.message || networkError}`)
+    const err: any = new Error(
+      `[DataCatalog] Network error: ${networkError?.message || networkError}`,
+    )
     err.cause = networkError
     err.url = url
     throw err
@@ -169,7 +179,9 @@ async function postJSON(path: string, body: any = {}): Promise<any> {
   try {
     data = text ? JSON.parse(text) : null
   } catch (parseError: any) {
-    const err: any = new Error(`[DataCatalog] Invalid JSON response (${resp.status}): ${text?.slice(0, 200)}`)
+    const err: any = new Error(
+      `[DataCatalog] Invalid JSON response (${resp.status}): ${text?.slice(0, 200)}`,
+    )
     err.cause = parseError
     err.status = resp.status
     err.url = url
@@ -177,7 +189,9 @@ async function postJSON(path: string, body: any = {}): Promise<any> {
   }
 
   if (!resp.ok) {
-    const err: any = new Error(`[DataCatalog] HTTP ${resp.status}: ${data && (data.message || data.error) || 'Unknown error'}`)
+    const err: any = new Error(
+      `[DataCatalog] HTTP ${resp.status}: ${(data && (data.message || data.error)) || 'Unknown error'}`,
+    )
     err.status = resp.status
     err.url = url
     err.details = data
@@ -202,7 +216,7 @@ async function _fileToBase64(file: File | Blob): Promise<string> {
     reader.onload = () => {
       const result = reader.result as string
       // Remove data URL prefix (e.g., "data:image/png;base64,")
-      const base64 = result.includes(',') ? (result.split(',')[1] || '') : result
+      const base64 = result.includes(',') ? result.split(',')[1] || '' : result
       resolve(base64)
     }
     reader.onerror = () => reject(reader.error)
@@ -293,7 +307,11 @@ const DataCatalog = {
   },
 
   // Detail fetchers with caching
-  async _getDetail(type: DataType, file: string, opts: { useCache?: boolean; persist?: boolean } = {}): Promise<DataDetailResponse> {
+  async _getDetail(
+    type: DataType,
+    file: string,
+    opts: { useCache?: boolean; persist?: boolean } = {},
+  ): Promise<DataDetailResponse> {
     const useCache = opts.useCache !== false
     if (useCache) {
       const cached = this._getCached(type, file)
@@ -315,54 +333,161 @@ const DataCatalog = {
     return res
   },
 
-  getPresetDetail(file: string, opts?: { useCache?: boolean; persist?: boolean }): Promise<DataDetailResponse> {
+  getPresetDetail(
+    file: string,
+    opts?: { useCache?: boolean; persist?: boolean },
+  ): Promise<DataDetailResponse> {
     return this._getDetail('preset', file, opts)
   },
-  getWorldBookDetail(file: string, opts?: { useCache?: boolean; persist?: boolean }): Promise<DataDetailResponse> {
+  getWorldBookDetail(
+    file: string,
+    opts?: { useCache?: boolean; persist?: boolean },
+  ): Promise<DataDetailResponse> {
     return this._getDetail('worldbook', file, opts)
   },
-  getCharacterDetail(file: string, opts?: { useCache?: boolean; persist?: boolean }): Promise<DataDetailResponse> {
+  getCharacterDetail(
+    file: string,
+    opts?: { useCache?: boolean; persist?: boolean },
+  ): Promise<DataDetailResponse> {
     return this._getDetail('character', file, opts)
   },
-  getPersonaDetail(file: string, opts?: { useCache?: boolean; persist?: boolean }): Promise<DataDetailResponse> {
+  getPersonaDetail(
+    file: string,
+    opts?: { useCache?: boolean; persist?: boolean },
+  ): Promise<DataDetailResponse> {
     return this._getDetail('persona', file, opts)
   },
-  getRegexRuleDetail(file: string, opts?: { useCache?: boolean; persist?: boolean }): Promise<DataDetailResponse> {
+  getRegexRuleDetail(
+    file: string,
+    opts?: { useCache?: boolean; persist?: boolean },
+  ): Promise<DataDetailResponse> {
     return this._getDetail('regex', file, opts)
   },
-  getConversationDetail(file: string, opts?: { useCache?: boolean; persist?: boolean }): Promise<DataDetailResponse> {
+  getConversationDetail(
+    file: string,
+    opts?: { useCache?: boolean; persist?: boolean },
+  ): Promise<DataDetailResponse> {
     return this._getDetail('conversation', file, opts)
   },
-  getLLMConfigDetail(file: string, opts?: { useCache?: boolean; persist?: boolean }): Promise<DataDetailResponse> {
+  getLLMConfigDetail(
+    file: string,
+    opts?: { useCache?: boolean; persist?: boolean },
+  ): Promise<DataDetailResponse> {
     return this._getDetail('llmconfig', file, opts)
   },
-  
+
   // Plugin detail functions
   getPluginDetail(dir: string): Promise<DataDetailResponse> {
     return postJSON('smarttavern/data_catalog/get_plugin_detail', { dir })
   },
 
   // Update APIs (create/update)
-  updatePresetFile(file: string, content: any, name?: string, description?: string, iconBase64?: string): Promise<any> {
-    return postJSON('smarttavern/data_catalog/update_preset_file', { file, content, name, description, icon_base64: iconBase64 })
+  updatePresetFile(
+    file: string,
+    content: any,
+    name?: string,
+    description?: string,
+    iconBase64?: string,
+  ): Promise<any> {
+    return postJSON('smarttavern/data_catalog/update_preset_file', {
+      file,
+      content,
+      name,
+      description,
+      icon_base64: iconBase64,
+    })
   },
-  updateWorldBookFile(file: string, content: any, name?: string, description?: string, iconBase64?: string): Promise<any> {
-    return postJSON('smarttavern/data_catalog/update_world_book_file', { file, content, name, description, icon_base64: iconBase64 })
+  updateWorldBookFile(
+    file: string,
+    content: any,
+    name?: string,
+    description?: string,
+    iconBase64?: string,
+  ): Promise<any> {
+    return postJSON('smarttavern/data_catalog/update_world_book_file', {
+      file,
+      content,
+      name,
+      description,
+      icon_base64: iconBase64,
+    })
   },
-  updateCharacterFile(file: string, content: any, name?: string, description?: string, iconBase64?: string, avatarBase64?: string): Promise<any> {
-    return postJSON('smarttavern/data_catalog/update_character_file', { file, content, name, description, icon_base64: iconBase64, avatar_base64: avatarBase64 })
+  updateCharacterFile(
+    file: string,
+    content: any,
+    name?: string,
+    description?: string,
+    iconBase64?: string,
+    avatarBase64?: string,
+  ): Promise<any> {
+    return postJSON('smarttavern/data_catalog/update_character_file', {
+      file,
+      content,
+      name,
+      description,
+      icon_base64: iconBase64,
+      avatar_base64: avatarBase64,
+    })
   },
-  updatePersonaFile(file: string, content: any, name?: string, description?: string, iconBase64?: string, avatarBase64?: string): Promise<any> {
-    return postJSON('smarttavern/data_catalog/update_persona_file', { file, content, name, description, icon_base64: iconBase64, avatar_base64: avatarBase64 })
+  updatePersonaFile(
+    file: string,
+    content: any,
+    name?: string,
+    description?: string,
+    iconBase64?: string,
+    avatarBase64?: string,
+  ): Promise<any> {
+    return postJSON('smarttavern/data_catalog/update_persona_file', {
+      file,
+      content,
+      name,
+      description,
+      icon_base64: iconBase64,
+      avatar_base64: avatarBase64,
+    })
   },
-  updateRegexRuleFile(file: string, content: any, name?: string, description?: string, iconBase64?: string): Promise<any> {
-    return postJSON('smarttavern/data_catalog/update_regex_rule_file', { file, content, name, description, icon_base64: iconBase64 })
+  updateRegexRuleFile(
+    file: string,
+    content: any,
+    name?: string,
+    description?: string,
+    iconBase64?: string,
+  ): Promise<any> {
+    return postJSON('smarttavern/data_catalog/update_regex_rule_file', {
+      file,
+      content,
+      name,
+      description,
+      icon_base64: iconBase64,
+    })
   },
-  updateLLMConfigFile(file: string, content: any, name?: string, description?: string, iconBase64?: string): Promise<any> {
-    return postJSON('smarttavern/data_catalog/update_llm_config_file', { file, content, name, description, icon_base64: iconBase64 })
+  updateLLMConfigFile(
+    file: string,
+    content: any,
+    name?: string,
+    description?: string,
+    iconBase64?: string,
+  ): Promise<any> {
+    return postJSON('smarttavern/data_catalog/update_llm_config_file', {
+      file,
+      content,
+      name,
+      description,
+      icon_base64: iconBase64,
+    })
   },
-  updatePluginFile(dir: string, name?: string, description?: string, iconBase64?: string): Promise<any> {
-    return postJSON('smarttavern/data_catalog/update_plugin_file', { dir, name, description, icon_base64: iconBase64 })
+  updatePluginFile(
+    dir: string,
+    name?: string,
+    description?: string,
+    iconBase64?: string,
+  ): Promise<any> {
+    return postJSON('smarttavern/data_catalog/update_plugin_file', {
+      dir,
+      name,
+      description,
+      icon_base64: iconBase64,
+    })
   },
 
   // Small helper to map backend items to UI cards (icon per type)
@@ -386,13 +511,13 @@ const DataCatalog = {
       return { ...it, key: file, icon, name, desc, file }
     })
   },
-  
+
   // Asset functions (declared here for TypeScript)
   getPluginsAsset: null as any,
   getPluginsAssetBlob: null as any,
   getDataAsset: null as any,
   getDataAssetBlob: null as any,
-  
+
   // Import/Export functions (declared here for TypeScript)
   importData: null as any,
   importDataFromFile: null as any,
@@ -401,10 +526,10 @@ const DataCatalog = {
   downloadExportedData: null as any,
   getSupportedTypes: null as any,
   checkNameExists: null as any,
-  
+
   // Delete functions (declared here for TypeScript)
   deleteDataFolder: null as any,
-  
+
   // Create functions (declared here for TypeScript)
   createDataFolder: null as any,
 }
@@ -431,7 +556,11 @@ DataCatalog.getPluginsAssetBlob = async function (file: string): Promise<DataAss
   }
   const bytes = _b64ToBytes(res.content_base64)
   const mime = String(res.mime || 'application/octet-stream')
-  return { blob: new Blob([bytes.buffer as ArrayBuffer], { type: mime }), mime, size: Number(res.size || bytes.length) }
+  return {
+    blob: new Blob([bytes.buffer as ArrayBuffer], { type: mime }),
+    mime,
+    size: Number(res.size || bytes.length),
+  }
 }
 
 /**
@@ -456,7 +585,11 @@ DataCatalog.getDataAssetBlob = async function (file: string): Promise<DataAssetB
   }
   const bytes = _b64ToBytes(res.content_base64)
   const mime = String(res.mime || 'application/octet-stream')
-  return { blob: new Blob([bytes.buffer as ArrayBuffer], { type: mime }), mime, size: Number(res.size || bytes.length) }
+  return {
+    blob: new Blob([bytes.buffer as ArrayBuffer], { type: mime }),
+    mime,
+    size: Number(res.size || bytes.length),
+  }
 }
 
 // ==================== 导入/导出 API ====================
@@ -474,7 +607,7 @@ DataCatalog.importData = function (
   fileContentBase64: string,
   filename: string,
   targetName?: string,
-  overwrite: boolean = false
+  overwrite: boolean = false,
 ): Promise<ImportDataResponse> {
   return postJSON('smarttavern/data_import/import_data', {
     data_type: dataType,
@@ -496,7 +629,7 @@ DataCatalog.importDataFromFile = async function (
   dataType: ImportDataType,
   file: File,
   targetName?: string,
-  overwrite: boolean = false
+  overwrite: boolean = false,
 ): Promise<ImportDataResponse> {
   const base64 = await _fileToBase64(file)
   return DataCatalog.importData(dataType, base64, file.name, targetName, overwrite)
@@ -513,7 +646,7 @@ DataCatalog.exportData = function (
   folderPath: string,
   dataType?: ImportDataType,
   embedImageBase64?: string,
-  exportFormat?: 'zip' | 'png' | 'json'
+  exportFormat?: 'zip' | 'png' | 'json',
 ): Promise<ExportDataResponse> {
   return postJSON('smarttavern/data_import/export_data', {
     folder_path: folderPath,
@@ -534,19 +667,21 @@ DataCatalog.exportDataAsBlob = async function (
   folderPath: string,
   dataType?: ImportDataType,
   embedImageBase64?: string,
-  exportFormat?: 'zip' | 'png' | 'json'
+  exportFormat?: 'zip' | 'png' | 'json',
 ): Promise<{ blob: Blob; filename: string; mime: string; size: number }> {
   const res = await DataCatalog.exportData(folderPath, dataType, embedImageBase64, exportFormat)
   if (!res.success || !res.content_base64) {
-    const err: any = new Error(`[DataCatalog] Export failed: ${res.message || res.error || 'Unknown error'}`)
+    const err: any = new Error(
+      `[DataCatalog] Export failed: ${res.message || res.error || 'Unknown error'}`,
+    )
     err.details = res
     throw err
   }
   const bytes = _b64ToBytes(res.content_base64)
   const mimeMap: Record<string, string> = {
-    'png': 'image/png',
-    'json': 'application/json',
-    'zip': 'application/zip',
+    png: 'image/png',
+    json: 'application/json',
+    zip: 'application/zip',
   }
   const mime = mimeMap[res.format || 'zip'] || 'application/zip'
   const filename = res.filename || `export.${res.format || 'zip'}`
@@ -569,10 +704,15 @@ DataCatalog.downloadExportedData = async function (
   folderPath: string,
   dataType?: ImportDataType,
   embedImageBase64?: string,
-  exportFormat?: 'zip' | 'png' | 'json'
+  exportFormat?: 'zip' | 'png' | 'json',
 ): Promise<void> {
-  const { blob, filename } = await DataCatalog.exportDataAsBlob(folderPath, dataType, embedImageBase64, exportFormat)
-  
+  const { blob, filename } = await DataCatalog.exportDataAsBlob(
+    folderPath,
+    dataType,
+    embedImageBase64,
+    exportFormat,
+  )
+
   // 创建下载链接
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -598,7 +738,7 @@ DataCatalog.getSupportedTypes = function (): Promise<SupportedTypesResponse> {
  */
 DataCatalog.checkNameExists = function (
   dataType: ImportDataType,
-  name: string
+  name: string,
 ): Promise<CheckNameExistsResponse> {
   return postJSON('smarttavern/data_import/check_name_exists', {
     data_type: dataType,
@@ -642,7 +782,7 @@ DataCatalog.createDataFolder = function (
   name: string,
   description: string,
   folderName: string,
-  iconBase64?: string | null
+  iconBase64?: string | null,
 ): Promise<any> {
   return postJSON('smarttavern/data_catalog/create_data_folder', {
     data_type: dataType,

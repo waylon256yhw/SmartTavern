@@ -14,7 +14,7 @@ const { t } = useI18n()
 
 const props = defineProps({
   presetData: { type: Object, default: null },
-  file: { type: String, default: '' }
+  file: { type: String, default: '' },
 })
 
 // 图标上传相关
@@ -65,30 +65,42 @@ const SPECIAL_RELATIVE_TEMPLATES = [
   },
 ]
 
- // 默认 API 配置（无演示数据，仅占位，保障表单正常渲染）
- const DEFAULT_API_CONFIG = {
-   enabled: true,
-   temperature: 1.0,
-   top_p: 1.0,
-   top_k: 0,
-   max_context: 4095,
-   max_tokens: 300,
-   stream: true,
-   frequency_penalty: 0,
-   presence_penalty: 0
- }
+// 默认 API 配置（无演示数据，仅占位，保障表单正常渲染）
+const DEFAULT_API_CONFIG = {
+  enabled: true,
+  temperature: 1.0,
+  top_p: 1.0,
+  top_k: 0,
+  max_context: 4095,
+  max_tokens: 300,
+  stream: true,
+  frequency_penalty: 0,
+  presence_penalty: 0,
+}
 
 /** 深拷贝 */
-function deepClone(x) { return JSON.parse(JSON.stringify(x)) }
+function deepClone(x) {
+  return JSON.parse(JSON.stringify(x))
+}
 /** 规范化后端/外部传入的预设结构到本组件内部期望结构 */
 function normalizePresetData(src) {
   if (!src || typeof src !== 'object') return null
   const name = src.name || '预设'
   const description = src.description || ''
-  const api_config = typeof src.api_config === 'object' ? src.api_config : {
-    enabled: true, temperature: 1.0, top_p: 1.0, top_k: 0, max_context: 4095,
-    max_tokens: 300, stream: true, frequency_penalty: 0, presence_penalty: 0
-  }
+  const api_config =
+    typeof src.api_config === 'object'
+      ? src.api_config
+      : {
+          enabled: true,
+          temperature: 1.0,
+          top_p: 1.0,
+          top_k: 0,
+          max_context: 4095,
+          max_tokens: 300,
+          stream: true,
+          frequency_penalty: 0,
+          presence_penalty: 0,
+        }
   const prompts = Array.isArray(src.prompts)
     ? src.prompts
     : Array.isArray(src.templates)
@@ -96,7 +108,9 @@ function normalizePresetData(src) {
       : []
   const regex_rules = Array.isArray(src.regex_rules)
     ? src.regex_rules
-    : (src.find_regex || src.replace_regex || src.id) ? [src] : []
+    : src.find_regex || src.replace_regex || src.id
+      ? [src]
+      : []
   return { name, description, api_config, prompts, regex_rules }
 }
 // 当前编辑的数据（内存中）
@@ -107,42 +121,45 @@ const currentData = ref(
       description: '',
       api_config: DEFAULT_API_CONFIG,
       prompts: [],
-      regex_rules: []
-    }
-  )
+      regex_rules: [],
+    },
+  ),
 )
 
 // 图标预览URL计算属性
 const hasIcon = computed(() => !!iconPreviewUrl.value)
 // 外部数据变更时同步
-watch(() => props.presetData, async (v) => {
-  currentData.value = deepClone(
-    normalizePresetData(v) || {
-      name: '',
-      description: '',
-      api_config: DEFAULT_API_CONFIG,
-      prompts: [],
-      regex_rules: []
-    }
-  )
-  // 同步 per-field 开关
-  syncApiTogglesFromData()
-  // 加载已有图标
-  await loadExistingIcon()
-  await nextTick()
-  window.lucide?.createIcons?.()
-})
+watch(
+  () => props.presetData,
+  async (v) => {
+    currentData.value = deepClone(
+      normalizePresetData(v) || {
+        name: '',
+        description: '',
+        api_config: DEFAULT_API_CONFIG,
+        prompts: [],
+        regex_rules: [],
+      },
+    )
+    // 同步 per-field 开关
+    syncApiTogglesFromData()
+    // 加载已有图标
+    await loadExistingIcon()
+    await nextTick()
+    window.lucide?.createIcons?.()
+  },
+)
 
 // 根据文件路径加载已有图标
 async function loadExistingIcon() {
   // 重置当前图标
   resetIconPreview()
-  
+
   if (!props.file) return
-  
+
   // 构建图标路径：将文件路径的 preset.json 替换为 icon.png
   const iconPath = props.file.replace(/preset\.json$/, 'icon.png')
-  
+
   try {
     // 使用 DataCatalog.getDataAssetBlob 获取图标
     const { blob, mime } = await DataCatalog.getDataAssetBlob(iconPath)
@@ -166,8 +183,17 @@ const relativeOpen = ref(true)
 const inChatOpen = ref(true)
 
 // API 配置：每项启用开关（默认全关；由 enabled_fields 初始化）
-const API_KEYS = ['temperature','top_p','top_k','max_context','max_tokens','stream','frequency_penalty','presence_penalty']
-const apiToggles = ref(Object.fromEntries(API_KEYS.map(k => [k, false])))
+const API_KEYS = [
+  'temperature',
+  'top_p',
+  'top_k',
+  'max_context',
+  'max_tokens',
+  'stream',
+  'frequency_penalty',
+  'presence_penalty',
+]
+const apiToggles = ref(Object.fromEntries(API_KEYS.map((k) => [k, false])))
 function syncApiTogglesFromData() {
   try {
     const ef = Array.isArray(currentData.value?.api_config?.enabled_fields)
@@ -179,7 +205,7 @@ function syncApiTogglesFromData() {
   }
 }
 function computeEnabledFields() {
-  return API_KEYS.filter(k => apiToggles.value[k])
+  return API_KEYS.filter((k) => apiToggles.value[k])
 }
 
 // 保存状态提示
@@ -191,14 +217,14 @@ let __saveTimer = null
 function handleIconSelect(e) {
   const file = e.target.files?.[0]
   if (!file) return
-  
+
   // 验证文件类型
   if (!file.type.startsWith('image/')) {
     return
   }
-  
+
   iconFile.value = file
-  
+
   // 创建预览URL
   if (iconPreviewUrl.value) {
     URL.revokeObjectURL(iconPreviewUrl.value)
@@ -257,11 +283,11 @@ async function fileToBase64(file) {
 }
 
 // 计算属性
-const relativePrompts = computed(() => 
-  (currentData.value.prompts || []).filter(p => p.position === 'relative')
+const relativePrompts = computed(() =>
+  (currentData.value.prompts || []).filter((p) => p.position === 'relative'),
 )
-const inChatPrompts = computed(() => 
-  (currentData.value.prompts || []).filter(p => p.position === 'in-chat')
+const inChatPrompts = computed(() =>
+  (currentData.value.prompts || []).filter((p) => p.position === 'in-chat'),
 )
 
 // 新增 Relative：特殊组件选择
@@ -271,21 +297,21 @@ const newRelName = ref('')
 const relError = ref(null)
 
 const availableSpecials = computed(() =>
-  SPECIAL_RELATIVE_TEMPLATES.filter(t => 
-    !(currentData.value.prompts || []).some(p => p.identifier === t.identifier)
-  )
+  SPECIAL_RELATIVE_TEMPLATES.filter(
+    (t) => !(currentData.value.prompts || []).some((p) => p.identifier === t.identifier),
+  ),
 )
 
-const reservedIdSet = new Set(SPECIAL_RELATIVE_TEMPLATES.map(t => t.identifier))
-const reservedNameSet = new Set(SPECIAL_RELATIVE_TEMPLATES.map(t => t.name))
+const reservedIdSet = new Set(SPECIAL_RELATIVE_TEMPLATES.map((t) => t.identifier))
+const reservedNameSet = new Set(SPECIAL_RELATIVE_TEMPLATES.map((t) => t.name))
 
 async function addSelectedSpecial() {
   relError.value = null
   const sel = specialSelect.value
   if (!sel) return
-  const tpl = SPECIAL_RELATIVE_TEMPLATES.find(tp => tp.identifier === sel)
+  const tpl = SPECIAL_RELATIVE_TEMPLATES.find((tp) => tp.identifier === sel)
   if (!tpl) return
-  if ((currentData.value.prompts || []).some(p => p.identifier === tpl.identifier)) {
+  if ((currentData.value.prompts || []).some((p) => p.identifier === tpl.identifier)) {
     relError.value = t('detail.preset.errors.specialExists')
     return
   }
@@ -312,11 +338,11 @@ async function addCustomRelative() {
     relError.value = t('detail.preset.errors.reservedConflict')
     return
   }
-  if ((currentData.value.prompts || []).some(p => p.identifier === id)) {
+  if ((currentData.value.prompts || []).some((p) => p.identifier === id)) {
     relError.value = t('detail.preset.errors.idExists')
     return
   }
-  if ((currentData.value.prompts || []).some(p => p.name === name)) {
+  if ((currentData.value.prompts || []).some((p) => p.name === name)) {
     relError.value = t('detail.preset.errors.nameExists')
     return
   }
@@ -326,7 +352,7 @@ async function addCustomRelative() {
     enabled: null,
     role: 'system',
     position: 'relative',
-    content: ''
+    content: '',
   }
   currentData.value.prompts.push(item)
   newRelId.value = ''
@@ -352,11 +378,15 @@ async function addCustomInChat() {
     chatError.value = t('detail.preset.errors.nameRequired')
     return
   }
-  if ((currentData.value.prompts || []).some(p => p.identifier === id)) {
+  if ((currentData.value.prompts || []).some((p) => p.identifier === id)) {
     chatError.value = t('detail.preset.errors.idExists')
     return
   }
-  if ((currentData.value.prompts || []).filter(p => p.position === 'in-chat').some(p => p.name === name)) {
+  if (
+    (currentData.value.prompts || [])
+      .filter((p) => p.position === 'in-chat')
+      .some((p) => p.name === name)
+  ) {
     chatError.value = t('detail.preset.errors.nameExists')
     return
   }
@@ -368,7 +398,7 @@ async function addCustomInChat() {
     position: 'in-chat',
     depth: 0,
     order: 0,
-    content: ''
+    content: '',
   }
   currentData.value.prompts.push(item)
   newChatId.value = ''
@@ -395,7 +425,7 @@ async function addCustomRegex() {
     return
   }
   const rules = currentData.value.regex_rules || []
-  if (rules.some(r => r.id === id)) {
+  if (rules.some((r) => r.id === id)) {
     regexError.value = t('detail.preset.errors.idExists')
     return
   }
@@ -419,26 +449,26 @@ async function addCustomRegex() {
 
 // 提示词更新和删除
 function onPromptUpdate(updated) {
-  const idx = currentData.value.prompts.findIndex(p => p.identifier === updated.identifier)
+  const idx = currentData.value.prompts.findIndex((p) => p.identifier === updated.identifier)
   if (idx >= 0) {
     currentData.value.prompts[idx] = updated
   }
 }
 
 function onPromptDelete(id) {
-  currentData.value.prompts = currentData.value.prompts.filter(p => p.identifier !== id)
+  currentData.value.prompts = currentData.value.prompts.filter((p) => p.identifier !== id)
 }
 
 // 正则规则更新和删除
 function onRegexUpdate(updated) {
-  const idx = currentData.value.regex_rules.findIndex(r => r.id === updated.id)
+  const idx = currentData.value.regex_rules.findIndex((r) => r.id === updated.id)
   if (idx >= 0) {
     currentData.value.regex_rules[idx] = updated
   }
 }
 
 function onRegexDelete(id) {
-  currentData.value.regex_rules = currentData.value.regex_rules.filter(r => r.id !== id)
+  currentData.value.regex_rules = currentData.value.regex_rules.filter((r) => r.id !== id)
 }
 
 // 提示词拖拽 - 使用 composable
@@ -453,14 +483,14 @@ const {
   dataAttribute: 'data-identifier',
   onReorder: (draggedId, targetId, insertBefore) => {
     // 获取位置信息
-    const draggedItem = currentData.value.prompts.find(p => p.identifier === draggedId)
+    const draggedItem = currentData.value.prompts.find((p) => p.identifier === draggedId)
     if (!draggedItem) return
-    
+
     const position = draggedItem.position
     const list = position === 'relative' ? [...relativePrompts.value] : [...inChatPrompts.value]
-    let ids = list.map(i => i.identifier)
+    let ids = list.map((i) => i.identifier)
     const fromIdx = ids.indexOf(draggedId)
-    
+
     if (fromIdx >= 0 && targetId !== draggedId) {
       ids.splice(fromIdx, 1)
       if (targetId) {
@@ -472,19 +502,19 @@ const {
       } else {
         ids.push(draggedId)
       }
-      
+
       // 重新排列
       const allPrompts = currentData.value.prompts || []
-      const otherPrompts = allPrompts.filter(p => p.position !== position)
-      const reordered = ids.map(id => allPrompts.find(p => p.identifier === id)).filter(Boolean)
+      const otherPrompts = allPrompts.filter((p) => p.position !== position)
+      const reordered = ids.map((id) => allPrompts.find((p) => p.identifier === id)).filter(Boolean)
       currentData.value.prompts = [...otherPrompts, ...reordered]
       window.lucide?.createIcons?.()
     }
   },
   getTitleForItem: (id) => {
-    const item = currentData.value.prompts.find(p => p.identifier === id)
+    const item = currentData.value.prompts.find((p) => p.identifier === id)
     return item?.name || id
-  }
+  },
 })
 
 // 正则规则拖拽 - 使用 composable
@@ -499,9 +529,9 @@ const {
   dataAttribute: 'data-regex-id',
   onReorder: (draggedId, targetId, insertBefore) => {
     const list = [...(currentData.value.regex_rules || [])]
-    let ids = list.map(i => i.id)
+    let ids = list.map((i) => i.id)
     const fromIdx = ids.indexOf(draggedId)
-    
+
     if (fromIdx >= 0 && targetId !== draggedId) {
       ids.splice(fromIdx, 1)
       if (targetId) {
@@ -513,48 +543,60 @@ const {
       } else {
         ids.push(draggedId)
       }
-      
-      currentData.value.regex_rules = ids.map(id => list.find(r => r.id === id)).filter(Boolean)
+
+      currentData.value.regex_rules = ids.map((id) => list.find((r) => r.id === id)).filter(Boolean)
       window.lucide?.createIcons?.()
     }
   },
   getTitleForItem: (id) => {
-    const rule = currentData.value.regex_rules.find(r => r.id === id)
+    const rule = currentData.value.regex_rules.find((r) => r.id === id)
     return rule?.name || id
-  }
+  },
 })
 
 // 初始化 Lucide 图标
 onMounted(async () => {
   window.lucide?.createIcons?.()
   // 初次挂载时根据当前数据同步 per-field 开关
-  try { syncApiTogglesFromData() } catch {}
+  try {
+    syncApiTogglesFromData()
+  } catch {}
   // 加载已有图标
   await loadExistingIcon()
 })
 
-watch([() => currentData.value.prompts, () => currentData.value.regex_rules], async () => {
-  await nextTick()
-  window.lucide?.createIcons?.()
-}, { flush: 'post' })
+watch(
+  [() => currentData.value.prompts, () => currentData.value.regex_rules],
+  async () => {
+    await nextTick()
+    window.lucide?.createIcons?.()
+  },
+  { flush: 'post' },
+)
 
 const __eventOffs = [] // 事件监听清理器
 
 onBeforeUnmount(() => {
   try {
-    __eventOffs?.forEach(fn => { try { fn?.() } catch (_) {} })
+    __eventOffs?.forEach((fn) => {
+      try {
+        fn?.()
+      } catch (_) {}
+    })
     __eventOffs.length = 0
   } catch (_) {}
 })
 
 /** 保存：将当前编辑内容写回后端文件（事件驱动）
-  * - 在 api_config 中写入 enabled_fields（由各项开关生成）
-  * - 保存期间显示旋转动画；成功后短暂显示"已保存！"
-  */
+ * - 在 api_config 中写入 enabled_fields（由各项开关生成）
+ * - 保存期间显示旋转动画；成功后短暂显示"已保存！"
+ */
 async function save() {
   const file = props.file
   if (!file) {
-    try { alert(t('error.missingFilePath')); } catch (_) {}
+    try {
+      alert(t('error.missingFilePath'))
+    } catch (_) {}
     return
   }
   // 生成 api_config（含 enabled_fields）
@@ -567,7 +609,7 @@ async function save() {
     prompts: Array.isArray(currentData.value.prompts) ? currentData.value.prompts : [],
     regex_rules: Array.isArray(currentData.value.regex_rules) ? currentData.value.regex_rules : [],
   }
-  
+
   // 处理图标：
   // - 用户选择了新图标 -> 转换为 base64
   // - 用户删除了图标 -> 传空字符串 ''（告诉后端删除）
@@ -585,63 +627,86 @@ async function save() {
     iconBase64 = ''
   }
   // 否则 iconBase64 保持 undefined，表示不修改图标
-  
+
   // 可视提示
   saving.value = true
   savedOk.value = false
-  if (__saveTimer) { try { clearTimeout(__saveTimer) } catch {} __saveTimer = null }
-  
+  if (__saveTimer) {
+    try {
+      clearTimeout(__saveTimer)
+    } catch {}
+    __saveTimer = null
+  }
+
   const tag = `preset_save_${Date.now()}`
-  
+
   // 监听保存结果（一次性）
-  const offOk = Host.events.on(Catalog.EVT_CATALOG_PRESET_UPDATE_OK, async ({ file: resFile, tag: resTag }) => {
-    if (resFile !== file || resTag !== tag) return
-    console.log('[PresetDetailView] 保存成功（事件）')
-    savedOk.value = true
-    saving.value = false
-    if (savedOk.value) {
-      __saveTimer = setTimeout(() => { savedOk.value = false }, 1800)
-    }
-    
-    // 保存成功后，刷新侧边栏列表
-    try {
-      console.log('[PresetDetailView] 刷新预设列表')
-      Host.events.emit(Catalog.EVT_CATALOG_PRESETS_REQ, {
-        requestId: Date.now()
-      })
-    } catch (err) {
-      console.warn('[PresetDetailView] 刷新预设列表失败:', err)
-    }
-    
-    // 保存成功后，检查是否是当前使用的预设，如果是则刷新 store
-    try {
-      const chatSettingsStore = useChatSettingsStore()
-      const presetStore = usePresetStore()
-      const currentPresetFile = chatSettingsStore.presetFile
-      if (currentPresetFile && currentPresetFile === file) {
-        console.log('[PresetDetailView] 刷新预设 store')
-        await presetStore.refreshFromPresetFile(file)
+  const offOk = Host.events.on(
+    Catalog.EVT_CATALOG_PRESET_UPDATE_OK,
+    async ({ file: resFile, tag: resTag }) => {
+      if (resFile !== file || resTag !== tag) return
+      console.log('[PresetDetailView] 保存成功（事件）')
+      savedOk.value = true
+      saving.value = false
+      if (savedOk.value) {
+        __saveTimer = setTimeout(() => {
+          savedOk.value = false
+        }, 1800)
       }
-    } catch (err) {
-      console.warn('[PresetDetailView] 刷新预设 store 失败:', err)
-    }
-    
-    try { offOk?.() } catch (_) {}
-    try { offFail?.() } catch (_) {}
-  })
-  
-  const offFail = Host.events.on(Catalog.EVT_CATALOG_PRESET_UPDATE_FAIL, ({ file: resFile, message, tag: resTag }) => {
-    if (resFile && resFile !== file) return
-    if (resTag && resTag !== tag) return
-    console.error('[PresetDetailView] 保存失败（事件）:', message)
-    try { alert(t('detail.preset.saveFailed') + '：' + message) } catch (_) {}
-    saving.value = false
-    try { offOk?.() } catch (_) {}
-    try { offFail?.() } catch (_) {}
-  })
-  
+
+      // 保存成功后，刷新侧边栏列表
+      try {
+        console.log('[PresetDetailView] 刷新预设列表')
+        Host.events.emit(Catalog.EVT_CATALOG_PRESETS_REQ, {
+          requestId: Date.now(),
+        })
+      } catch (err) {
+        console.warn('[PresetDetailView] 刷新预设列表失败:', err)
+      }
+
+      // 保存成功后，检查是否是当前使用的预设，如果是则刷新 store
+      try {
+        const chatSettingsStore = useChatSettingsStore()
+        const presetStore = usePresetStore()
+        const currentPresetFile = chatSettingsStore.presetFile
+        if (currentPresetFile && currentPresetFile === file) {
+          console.log('[PresetDetailView] 刷新预设 store')
+          await presetStore.refreshFromPresetFile(file)
+        }
+      } catch (err) {
+        console.warn('[PresetDetailView] 刷新预设 store 失败:', err)
+      }
+
+      try {
+        offOk?.()
+      } catch (_) {}
+      try {
+        offFail?.()
+      } catch (_) {}
+    },
+  )
+
+  const offFail = Host.events.on(
+    Catalog.EVT_CATALOG_PRESET_UPDATE_FAIL,
+    ({ file: resFile, message, tag: resTag }) => {
+      if (resFile && resFile !== file) return
+      if (resTag && resTag !== tag) return
+      console.error('[PresetDetailView] 保存失败（事件）:', message)
+      try {
+        alert(t('detail.preset.saveFailed') + '：' + message)
+      } catch (_) {}
+      saving.value = false
+      try {
+        offOk?.()
+      } catch (_) {}
+      try {
+        offFail?.()
+      } catch (_) {}
+    },
+  )
+
   __eventOffs.push(offOk, offFail)
-  
+
   // 发送保存请求事件
   Host.events.emit(Catalog.EVT_CATALOG_PRESET_UPDATE_REQ, {
     file,
@@ -649,7 +714,7 @@ async function save() {
     name: payloadContent.name,
     description: payloadContent.description,
     iconBase64,
-    tag
+    tag,
   })
 }
 </script>
@@ -657,17 +722,23 @@ async function save() {
 <template>
   <section class="space-y-6">
     <!-- 页面标题 -->
-    <div class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <i data-lucide="settings-2" class="w-5 h-5 text-black"></i>
-          <h2 class="text-lg font-bold text-black">{{ currentData.name || t('detail.preset.title') }}</h2>
+          <h2 class="text-lg font-bold text-black">
+            {{ currentData.name || t('detail.preset.title') }}
+          </h2>
         </div>
         <div class="flex items-center gap-2">
           <!-- 保存状态：左侧提示区 -->
           <div class="save-indicator min-w-[72px] h-7 flex items-center justify-center">
             <span v-if="saving" class="save-spinner" :aria-label="t('detail.preset.saving')"></span>
-            <span v-else-if="savedOk" class="save-done"><strong>{{ t('detail.preset.saved') }}</strong></span>
+            <span v-else-if="savedOk" class="save-done"
+              ><strong>{{ t('detail.preset.saved') }}</strong></span
+            >
           </div>
           <button
             type="button"
@@ -675,7 +746,9 @@ async function save() {
             :disabled="saving"
             @click="save"
             :title="t('detail.preset.saveToBackend')"
-          >{{ t('common.save') }}</button>
+          >
+            {{ t('common.save') }}
+          </button>
           <div class="px-3 py-1 rounded-4 bg-gray-100 border border-gray-300 text-black text-sm">
             {{ t('detail.preset.editMode') }}
           </div>
@@ -685,7 +758,9 @@ async function save() {
     </div>
 
     <!-- 基本信息（名称/描述/图标） -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center gap-2 mb-3">
         <i data-lucide="id-card" class="w-4 h-4 text-black"></i>
         <h3 class="text-base font-semibold text-black">{{ t('detail.preset.basicInfo') }}</h3>
@@ -693,12 +768,10 @@ async function save() {
       <div class="flex gap-6">
         <!-- 左侧：图标上传区域 -->
         <div class="flex-shrink-0">
-          <label class="block text-sm font-medium text-black mb-2">{{ t('createItem.iconLabel') }}</label>
-          <div
-            class="icon-upload-area"
-            :class="{ 'has-icon': hasIcon }"
-            @click="triggerIconSelect"
-          >
+          <label class="block text-sm font-medium text-black mb-2">{{
+            t('createItem.iconLabel')
+          }}</label>
+          <div class="icon-upload-area" :class="{ 'has-icon': hasIcon }" @click="triggerIconSelect">
             <input
               ref="iconInputRef"
               type="file"
@@ -719,18 +792,30 @@ async function save() {
             </template>
             <template v-else>
               <div class="icon-placeholder">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
-                  <circle cx="9" cy="9" r="2"/>
-                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                  <circle cx="9" cy="9" r="2" />
+                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
                 </svg>
                 <span class="text-xs">{{ t('createItem.uploadIcon') }}</span>
               </div>
             </template>
           </div>
-          <div class="text-xs text-black/50 mt-1 text-center max-w-[120px]">{{ t('createItem.iconHint') }}</div>
+          <div class="text-xs text-black/50 mt-1 text-center max-w-[120px]">
+            {{ t('createItem.iconHint') }}
+          </div>
         </div>
-        
+
         <!-- 右侧：名称和描述 -->
         <div class="flex-1 grid grid-cols-1 gap-4">
           <div>
@@ -741,7 +826,9 @@ async function save() {
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-black mb-2">{{ t('common.description') }}</label>
+            <label class="block text-sm font-medium text-black mb-2">{{
+              t('common.description')
+            }}</label>
             <textarea
               v-model="currentData.description"
               rows="2"
@@ -753,7 +840,9 @@ async function save() {
     </div>
 
     <!-- API 配置 -->
-    <div class="bg-white rounded-4 border border-gray-200 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <button
         type="button"
         class="w-full flex items-center justify-between px-5 py-3 rounded-4"
@@ -761,7 +850,9 @@ async function save() {
       >
         <div class="flex items-center gap-2">
           <i data-lucide="server-cog" class="w-4 h-4 text-black"></i>
-          <span class="text-sm font-medium text-black">{{ t('detail.preset.apiConfig.title') }}</span>
+          <span class="text-sm font-medium text-black">{{
+            t('detail.preset.apiConfig.title')
+          }}</span>
         </div>
         <i
           data-lucide="chevron-down"
@@ -773,14 +864,20 @@ async function save() {
       <div v-show="apiOpen" class="border-t border-gray-200 p-5">
         <!-- 全局启用开关 -->
         <div class="mb-4 flex items-center justify-between">
-          <div class="text-sm font-medium text-black">{{ t('detail.preset.apiConfig.enableTitle') }}</div>
+          <div class="text-sm font-medium text-black">
+            {{ t('detail.preset.apiConfig.enableTitle') }}
+          </div>
           <label class="inline-flex items-center gap-2 select-none">
             <input
               type="checkbox"
               v-model="currentData.api_config.enabled"
               class="w-5 h-5 border border-gray-400 rounded-4 accent-black"
             />
-            <span class="text-sm text-black/80">{{ currentData.api_config.enabled ? t('detail.preset.apiConfig.enabled') : t('detail.preset.apiConfig.notEnabled') }}</span>
+            <span class="text-sm text-black/80">{{
+              currentData.api_config.enabled
+                ? t('detail.preset.apiConfig.enabled')
+                : t('detail.preset.apiConfig.notEnabled')
+            }}</span>
           </label>
         </div>
 
@@ -788,9 +885,15 @@ async function save() {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <div class="flex items-center justify-between mb-2">
-              <label class="text-sm font-medium text-black">{{ t('detail.preset.apiConfig.temperature') }}</label>
+              <label class="text-sm font-medium text-black">{{
+                t('detail.preset.apiConfig.temperature')
+              }}</label>
               <label class="inline-flex items-center gap-2 select-none">
-                <input type="checkbox" v-model="apiToggles.temperature" class="w-4 h-4 border border-gray-400 rounded-4 accent-black" />
+                <input
+                  type="checkbox"
+                  v-model="apiToggles.temperature"
+                  class="w-4 h-4 border border-gray-400 rounded-4 accent-black"
+                />
                 <span class="text-xs text-black/60">{{ t('detail.preset.apiConfig.enable') }}</span>
               </label>
             </div>
@@ -807,9 +910,15 @@ async function save() {
 
           <div>
             <div class="flex items-center justify-between mb-2">
-              <label class="text-sm font-medium text-black">{{ t('detail.preset.apiConfig.topP') }}</label>
+              <label class="text-sm font-medium text-black">{{
+                t('detail.preset.apiConfig.topP')
+              }}</label>
               <label class="inline-flex items-center gap-2 select-none">
-                <input type="checkbox" v-model="apiToggles.top_p" class="w-4 h-4 border border-gray-400 rounded-4 accent-black" />
+                <input
+                  type="checkbox"
+                  v-model="apiToggles.top_p"
+                  class="w-4 h-4 border border-gray-400 rounded-4 accent-black"
+                />
                 <span class="text-xs text-black/60">{{ t('detail.preset.apiConfig.enable') }}</span>
               </label>
             </div>
@@ -826,9 +935,15 @@ async function save() {
 
           <div>
             <div class="flex items-center justify-between mb-2">
-              <label class="text-sm font-medium text-black">{{ t('detail.preset.apiConfig.topK') }}</label>
+              <label class="text-sm font-medium text-black">{{
+                t('detail.preset.apiConfig.topK')
+              }}</label>
               <label class="inline-flex items-center gap-2 select-none">
-                <input type="checkbox" v-model="apiToggles.top_k" class="w-4 h-4 border border-gray-400 rounded-4 accent-black" />
+                <input
+                  type="checkbox"
+                  v-model="apiToggles.top_k"
+                  class="w-4 h-4 border border-gray-400 rounded-4 accent-black"
+                />
                 <span class="text-xs text-black/60">{{ t('detail.preset.apiConfig.enable') }}</span>
               </label>
             </div>
@@ -843,9 +958,15 @@ async function save() {
 
           <div>
             <div class="flex items-center justify-between mb-2">
-              <label class="text-sm font-medium text-black">{{ t('detail.preset.apiConfig.maxContext') }}</label>
+              <label class="text-sm font-medium text-black">{{
+                t('detail.preset.apiConfig.maxContext')
+              }}</label>
               <label class="inline-flex items-center gap-2 select-none">
-                <input type="checkbox" v-model="apiToggles.max_context" class="w-4 h-4 border border-gray-400 rounded-4 accent-black" />
+                <input
+                  type="checkbox"
+                  v-model="apiToggles.max_context"
+                  class="w-4 h-4 border border-gray-400 rounded-4 accent-black"
+                />
                 <span class="text-xs text-black/60">{{ t('detail.preset.apiConfig.enable') }}</span>
               </label>
             </div>
@@ -860,9 +981,15 @@ async function save() {
 
           <div>
             <div class="flex items-center justify-between mb-2">
-              <label class="text-sm font-medium text-black">{{ t('detail.preset.apiConfig.maxTokens') }}</label>
+              <label class="text-sm font-medium text-black">{{
+                t('detail.preset.apiConfig.maxTokens')
+              }}</label>
               <label class="inline-flex items-center gap-2 select-none">
-                <input type="checkbox" v-model="apiToggles.max_tokens" class="w-4 h-4 border border-gray-400 rounded-4 accent-black" />
+                <input
+                  type="checkbox"
+                  v-model="apiToggles.max_tokens"
+                  class="w-4 h-4 border border-gray-400 rounded-4 accent-black"
+                />
                 <span class="text-xs text-black/60">{{ t('detail.preset.apiConfig.enable') }}</span>
               </label>
             </div>
@@ -877,9 +1004,15 @@ async function save() {
 
           <div>
             <div class="flex items-center justify-between mb-2">
-              <label class="text-sm font-medium text-black">{{ t('detail.preset.apiConfig.stream') }}</label>
+              <label class="text-sm font-medium text-black">{{
+                t('detail.preset.apiConfig.stream')
+              }}</label>
               <label class="inline-flex items-center gap-2 select-none">
-                <input type="checkbox" v-model="apiToggles.stream" class="w-4 h-4 border border-gray-400 rounded-4 accent-black" />
+                <input
+                  type="checkbox"
+                  v-model="apiToggles.stream"
+                  class="w-4 h-4 border border-gray-400 rounded-4 accent-black"
+                />
                 <span class="text-xs text-black/60">{{ t('detail.preset.apiConfig.enable') }}</span>
               </label>
             </div>
@@ -896,9 +1029,15 @@ async function save() {
 
           <div>
             <div class="flex items-center justify-between mb-2">
-              <label class="text-sm font-medium text-black">{{ t('detail.preset.apiConfig.frequencyPenalty') }}</label>
+              <label class="text-sm font-medium text-black">{{
+                t('detail.preset.apiConfig.frequencyPenalty')
+              }}</label>
               <label class="inline-flex items-center gap-2 select-none">
-                <input type="checkbox" v-model="apiToggles.frequency_penalty" class="w-4 h-4 border border-gray-400 rounded-4 accent-black" />
+                <input
+                  type="checkbox"
+                  v-model="apiToggles.frequency_penalty"
+                  class="w-4 h-4 border border-gray-400 rounded-4 accent-black"
+                />
                 <span class="text-xs text-black/60">{{ t('detail.preset.apiConfig.enable') }}</span>
               </label>
             </div>
@@ -913,9 +1052,15 @@ async function save() {
 
           <div>
             <div class="flex items-center justify-between mb-2">
-              <label class="text-sm font-medium text-black">{{ t('detail.preset.apiConfig.presencePenalty') }}</label>
+              <label class="text-sm font-medium text-black">{{
+                t('detail.preset.apiConfig.presencePenalty')
+              }}</label>
               <label class="inline-flex items-center gap-2 select-none">
-                <input type="checkbox" v-model="apiToggles.presence_penalty" class="w-4 h-4 border border-gray-400 rounded-4 accent-black" />
+                <input
+                  type="checkbox"
+                  v-model="apiToggles.presence_penalty"
+                  class="w-4 h-4 border border-gray-400 rounded-4 accent-black"
+                />
                 <span class="text-xs text-black/60">{{ t('detail.preset.apiConfig.enable') }}</span>
               </label>
             </div>
@@ -932,7 +1077,9 @@ async function save() {
     </div>
 
     <!-- 提示词编辑 -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <button
         type="button"
         class="w-full flex items-center justify-between mb-4 rounded-4"
@@ -951,11 +1098,15 @@ async function save() {
 
       <div v-show="promptsOpen" class="grid grid-cols-1 gap-6">
         <div class="space-y-4">
-          <div class="border border-gray-200 rounded-4 p-4 transition-all duration-200 ease-soft hover:shadow-elevate">
+          <div
+            class="border border-gray-200 rounded-4 p-4 transition-all duration-200 ease-soft hover:shadow-elevate"
+          >
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center space-x-2">
                 <i data-lucide="list" class="w-4 h-4 text-black"></i>
-                <span class="text-sm font-medium text-black">{{ t('detail.preset.prompts.items') }}</span>
+                <span class="text-sm font-medium text-black">{{
+                  t('detail.preset.prompts.items')
+                }}</span>
               </div>
             </div>
             <div class="space-y-6">
@@ -968,7 +1119,9 @@ async function save() {
                 >
                   <div class="flex items-center gap-2">
                     <i data-lucide="layers" class="w-4 h-4 text-black"></i>
-                    <span class="text-sm font-medium text-black">{{ t('detail.preset.prompts.relative') }}</span>
+                    <span class="text-sm font-medium text-black">{{
+                      t('detail.preset.prompts.relative')
+                    }}</span>
                   </div>
                   <i
                     data-lucide="chevron-down"
@@ -986,7 +1139,9 @@ async function save() {
                         v-model="specialSelect"
                         class="min-w-[220px] px-3 py-2 border border-gray-300 rounded-4 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
                       >
-                        <option value="" disabled>{{ t('detail.preset.prompts.selectSpecial') }}</option>
+                        <option value="" disabled>
+                          {{ t('detail.preset.prompts.selectSpecial') }}
+                        </option>
                         <option
                           v-for="sp in availableSpecials"
                           :key="sp.identifier"
@@ -1036,7 +1191,8 @@ async function save() {
                     :class="{
                       'dragging-item': draggingPrompt?.id === it.identifier,
                       'drag-over-top': dragOverPromptId === it.identifier && dragOverPromptBefore,
-                      'drag-over-bottom': dragOverPromptId === it.identifier && !dragOverPromptBefore
+                      'drag-over-bottom':
+                        dragOverPromptId === it.identifier && !dragOverPromptBefore,
                     }"
                   >
                     <div
@@ -1044,7 +1200,10 @@ async function save() {
                       @mousedown="startPromptDrag(it.identifier, $event)"
                       :title="t('detail.preset.prompts.dragToSort')"
                     >
-                      <i data-lucide="grip-vertical" class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"></i>
+                      <i
+                        data-lucide="grip-vertical"
+                        class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"
+                      ></i>
                     </div>
                     <div class="flex-1" :data-identifier="it.identifier">
                       <PresetPromptCard
@@ -1066,7 +1225,9 @@ async function save() {
                 >
                   <div class="flex items-center gap-2">
                     <i data-lucide="message-square" class="w-4 h-4 text-black"></i>
-                    <span class="text-sm font-medium text-black">{{ t('detail.preset.prompts.inChat') }}</span>
+                    <span class="text-sm font-medium text-black">{{
+                      t('detail.preset.prompts.inChat')
+                    }}</span>
                   </div>
                   <i
                     data-lucide="chevron-down"
@@ -1074,7 +1235,7 @@ async function save() {
                     :class="inChatOpen ? 'rotate-180' : ''"
                   />
                 </button>
-                
+
                 <div v-show="inChatOpen" class="mb-2 flex justify-end">
                   <div class="flex items-center gap-2">
                     <input
@@ -1095,8 +1256,10 @@ async function save() {
                     </button>
                   </div>
                 </div>
-                <p v-show="inChatOpen && chatError" class="text-xs text-red-600 mb-2">* {{ chatError }}</p>
-                
+                <p v-show="inChatOpen && chatError" class="text-xs text-red-600 mb-2">
+                  * {{ chatError }}
+                </p>
+
                 <div v-show="inChatOpen" class="space-y-2">
                   <div
                     v-for="it in inChatPrompts"
@@ -1105,7 +1268,8 @@ async function save() {
                     :class="{
                       'dragging-item': draggingPrompt?.id === it.identifier,
                       'drag-over-top': dragOverPromptId === it.identifier && dragOverPromptBefore,
-                      'drag-over-bottom': dragOverPromptId === it.identifier && !dragOverPromptBefore
+                      'drag-over-bottom':
+                        dragOverPromptId === it.identifier && !dragOverPromptBefore,
                     }"
                   >
                     <div
@@ -1113,7 +1277,10 @@ async function save() {
                       @mousedown="startPromptDrag(it.identifier, $event)"
                       :title="t('detail.preset.prompts.dragToSort')"
                     >
-                      <i data-lucide="grip-vertical" class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"></i>
+                      <i
+                        data-lucide="grip-vertical"
+                        class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"
+                      ></i>
                     </div>
                     <div class="flex-1" :data-identifier="it.identifier">
                       <PresetPromptCard
@@ -1132,7 +1299,9 @@ async function save() {
     </div>
 
     <!-- 正则编辑 -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <button
         type="button"
         class="w-full flex items-center justify-between mb-3 rounded-4"
@@ -1176,13 +1345,13 @@ async function save() {
         <!-- 规则列表（可拖拽排序） -->
         <div class="space-y-2">
           <div
-            v-for="r in (currentData.regex_rules || [])"
+            v-for="r in currentData.regex_rules || []"
             :key="r.id"
             class="flex items-stretch gap-2 group draglist-item-regex"
             :class="{
               'dragging-item': draggingRegex?.id === r.id,
               'drag-over-top': dragOverRegexId === r.id && dragOverRegexBefore,
-              'drag-over-bottom': dragOverRegexId === r.id && !dragOverRegexBefore
+              'drag-over-bottom': dragOverRegexId === r.id && !dragOverRegexBefore,
             }"
           >
             <div
@@ -1190,19 +1359,21 @@ async function save() {
               @mousedown="startRegexDrag(r.id, $event)"
               :title="t('detail.preset.prompts.dragToSort')"
             >
-              <i data-lucide="grip-vertical" class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"></i>
+              <i
+                data-lucide="grip-vertical"
+                class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"
+              ></i>
             </div>
             <div class="flex-1" :data-regex-id="r.id">
-              <RegexRuleCard
-                :rule="r"
-                @update="onRegexUpdate"
-                @delete="onRegexDelete"
-              />
+              <RegexRuleCard :rule="r" @update="onRegexUpdate" @delete="onRegexDelete" />
             </div>
           </div>
         </div>
 
-        <div v-if="(currentData.regex_rules || []).length === 0" class="text-xs text-black/50 px-1 py-1">
+        <div
+          v-if="(currentData.regex_rules || []).length === 0"
+          class="text-xs text-black/50 px-1 py-1"
+        >
           {{ t('detail.preset.regex.empty') }}
         </div>
       </div>

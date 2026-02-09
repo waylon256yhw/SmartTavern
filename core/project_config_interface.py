@@ -17,15 +17,15 @@ ModularFlow 项目配置接口规范
 import json
 import subprocess
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional
 from pathlib import Path
+from typing import Any
 
 
 class ProjectConfigInterface(ABC):
     """项目配置接口基类"""
 
     @abstractmethod
-    def get_project_info(self) -> Dict[str, Any]:
+    def get_project_info(self) -> dict[str, Any]:
         """
         获取项目基本信息
         Returns:
@@ -36,7 +36,7 @@ class ProjectConfigInterface(ABC):
         pass
 
     @abstractmethod
-    def get_runtime_config(self) -> Dict[str, Any]:
+    def get_runtime_config(self) -> dict[str, Any]:
         """
         获取运行时配置
         Returns:
@@ -48,7 +48,7 @@ class ProjectConfigInterface(ABC):
         pass
 
     @abstractmethod
-    def get_dependencies(self) -> Dict[str, Any]:
+    def get_dependencies(self) -> dict[str, Any]:
         """
         获取依赖配置
         Returns:
@@ -59,7 +59,7 @@ class ProjectConfigInterface(ABC):
         pass
 
     @abstractmethod
-    def get_api_config(self) -> Dict[str, Any]:
+    def get_api_config(self) -> dict[str, Any]:
         """
         获取API配置
         Returns:
@@ -69,7 +69,7 @@ class ProjectConfigInterface(ABC):
         """
         pass
 
-    def get_env_config(self) -> Dict[str, Dict[str, str]]:
+    def get_env_config(self) -> dict[str, dict[str, str]]:
         """
         获取环境变量配置（可选）
         Returns:
@@ -80,7 +80,7 @@ class ProjectConfigInterface(ABC):
         """
         return {}
 
-    def check_dependencies(self) -> Dict[str, Any]:
+    def check_dependencies(self) -> dict[str, Any]:
         """
         检查依赖是否满足
         Returns:
@@ -93,12 +93,7 @@ class ProjectConfigInterface(ABC):
 
         for tool in dependencies.get("required_tools", []):
             try:
-                result = subprocess.run(
-                    [tool, "--version"],
-                    capture_output=True,
-                    text=True,
-                    timeout=10
-                )
+                result = subprocess.run([tool, "--version"], capture_output=True, text=True, timeout=10)
                 if result.returncode != 0:
                     results["success"] = False
                     results["missing"].append(tool)
@@ -124,7 +119,7 @@ class ProjectConfigInterface(ABC):
         except subprocess.CalledProcessError:
             return False
 
-    def get_full_config(self) -> Dict[str, Any]:
+    def get_full_config(self) -> dict[str, Any]:
         """
         获取完整的项目配置
         """
@@ -133,7 +128,7 @@ class ProjectConfigInterface(ABC):
             "runtime": self.get_runtime_config(),
             "dependencies": self.get_dependencies(),
             "api": self.get_api_config(),
-            "environment": self.get_env_config()
+            "environment": self.get_env_config(),
         }
 
 
@@ -143,38 +138,38 @@ class IndependentConfigWrapper(ProjectConfigInterface):
     def __init__(self, config_instance):
         self.config = config_instance
 
-    def get_project_info(self) -> Dict[str, Any]:
-        if hasattr(self.config, 'get_project_info'):
+    def get_project_info(self) -> dict[str, Any]:
+        if hasattr(self.config, "get_project_info"):
             return self.config.get_project_info()
         return {}
 
-    def get_runtime_config(self) -> Dict[str, Any]:
-        if hasattr(self.config, 'get_runtime_config'):
+    def get_runtime_config(self) -> dict[str, Any]:
+        if hasattr(self.config, "get_runtime_config"):
             return self.config.get_runtime_config()
         return {}
 
-    def get_dependencies(self) -> Dict[str, Any]:
-        if hasattr(self.config, 'get_dependencies'):
+    def get_dependencies(self) -> dict[str, Any]:
+        if hasattr(self.config, "get_dependencies"):
             return self.config.get_dependencies()
         return {"required_tools": [], "optional_tools": []}
 
-    def get_api_config(self) -> Dict[str, Any]:
-        if hasattr(self.config, 'get_api_config'):
+    def get_api_config(self) -> dict[str, Any]:
+        if hasattr(self.config, "get_api_config"):
             return self.config.get_api_config()
         return {}
 
-    def get_env_config(self) -> Dict[str, Dict[str, str]]:
-        if hasattr(self.config, 'get_env_config'):
+    def get_env_config(self) -> dict[str, dict[str, str]]:
+        if hasattr(self.config, "get_env_config"):
             return self.config.get_env_config()
         return {}
 
-    def check_dependencies(self) -> Dict[str, Any]:
-        if hasattr(self.config, 'check_dependencies'):
+    def check_dependencies(self) -> dict[str, Any]:
+        if hasattr(self.config, "check_dependencies"):
             return self.config.check_dependencies()
         return super().check_dependencies()
 
     def install(self) -> bool:
-        if hasattr(self.config, 'install'):
+        if hasattr(self.config, "install"):
             return self.config.install()
         return super().install()
 
@@ -191,7 +186,7 @@ class DefaultProjectConfig(ProjectConfigInterface):
         """自动检测项目类型"""
         if (self.project_path / "package.json").exists():
             try:
-                with open(self.project_path / "package.json", 'r', encoding='utf-8') as f:
+                with open(self.project_path / "package.json", encoding="utf-8") as f:
                     package_json = json.load(f)
 
                 dependencies = package_json.get("dependencies", {})
@@ -212,18 +207,18 @@ class DefaultProjectConfig(ProjectConfigInterface):
         else:
             self.project_type = "unknown"
 
-    def get_project_info(self) -> Dict[str, Any]:
+    def get_project_info(self) -> dict[str, Any]:
         return {
             "name": self.project_name,
-            "display_name": self.project_name.replace('_', ' ').title(),
+            "display_name": self.project_name.replace("_", " ").title(),
             "version": "1.0.0",
             "description": f"基于{self.project_type}的前端项目",
             "type": self.project_type,
             "author": "Unknown",
-            "license": "MIT"
+            "license": "MIT",
         }
 
-    def get_runtime_config(self) -> Dict[str, Any]:
+    def get_runtime_config(self) -> dict[str, Any]:
         config = {
             "port": 3000,
             "install_command": "",
@@ -232,38 +227,37 @@ class DefaultProjectConfig(ProjectConfigInterface):
         }
 
         if self.project_type in ["react", "nextjs", "vue", "nodejs"]:
-            config.update({
-                "install_command": "npm install",
-                "dev_command": "npm run dev",
-                "build_command": "npm run build",
-                "test_command": "npm test",
-                "lint_command": "npm run lint"
-            })
+            config.update(
+                {
+                    "install_command": "npm install",
+                    "dev_command": "npm run dev",
+                    "build_command": "npm run build",
+                    "test_command": "npm test",
+                    "lint_command": "npm run lint",
+                }
+            )
         elif self.project_type == "html":
             config["port"] = 8080
 
         return config
 
-    def get_dependencies(self) -> Dict[str, Any]:
+    def get_dependencies(self) -> dict[str, Any]:
         if self.project_type in ["react", "nextjs", "vue", "nodejs"]:
             return {
                 "required_tools": ["node", "npm"],
                 "optional_tools": ["yarn", "pnpm"],
                 "node_version": ">=16.0.0",
-                "npm_version": ">=8.0.0"
+                "npm_version": ">=8.0.0",
             }
         else:
-            return {
-                "required_tools": [],
-                "optional_tools": []
-            }
+            return {"required_tools": [], "optional_tools": []}
 
-    def get_api_config(self) -> Dict[str, Any]:
+    def get_api_config(self) -> dict[str, Any]:
         port = self.get_runtime_config()["port"]
         return {
             "api_endpoint": "http://localhost:8050/api",
             "websocket_url": "ws://localhost:8050/ws",
-            "cors_origins": [f"http://localhost:{port}"]
+            "cors_origins": [f"http://localhost:{port}"],
         }
 
 
@@ -290,7 +284,7 @@ class SimpleScriptConfig(ProjectConfigInterface):
         self.DEV_COMMAND = getattr(module, "DEV_COMMAND", "")
         self.BUILD_COMMAND = getattr(module, "BUILD_COMMAND", "")
 
-    def get_project_info(self) -> Dict[str, Any]:
+    def get_project_info(self) -> dict[str, Any]:
         return {
             "name": self.PROJECT_NAME,
             "display_name": self.DISPLAY_NAME,
@@ -298,10 +292,10 @@ class SimpleScriptConfig(ProjectConfigInterface):
             "description": self.DESCRIPTION,
             "type": self.PROJECT_TYPE,
             "author": "ModularFlow Team",
-            "license": "MIT"
+            "license": "MIT",
         }
 
-    def get_runtime_config(self) -> Dict[str, Any]:
+    def get_runtime_config(self) -> dict[str, Any]:
         # dev_command: 若包含 {port} 则格式化，否则按类型给出默认
         dev_cmd = self.DEV_COMMAND or ""
         if "{port}" in dev_cmd:
@@ -316,7 +310,7 @@ class SimpleScriptConfig(ProjectConfigInterface):
             "build_command": self.BUILD_COMMAND,
         }
 
-    def get_dependencies(self) -> Dict[str, Any]:
+    def get_dependencies(self) -> dict[str, Any]:
         # 简化依赖：HTML 仅需 python；其他类型可在项目脚本自行声明
         if self.PROJECT_TYPE == "html":
             return {
@@ -330,11 +324,11 @@ class SimpleScriptConfig(ProjectConfigInterface):
             "optional_tools": [],
         }
 
-    def get_api_config(self) -> Dict[str, Any]:
+    def get_api_config(self) -> dict[str, Any]:
         return {
             "api_endpoint": f"http://localhost:{self.BACKEND_PORT}/api",
             "websocket_url": f"ws://localhost:{self.WEBSOCKET_PORT}/ws",
-            "cors_origins": [f"http://localhost:{self.FRONTEND_PORT}"]
+            "cors_origins": [f"http://localhost:{self.FRONTEND_PORT}"],
         }
 
 
@@ -363,10 +357,12 @@ def load_project_config(project_path: Path) -> ProjectConfigInterface:
             config_class = None
             for attr_name in dir(module):
                 attr = getattr(module, attr_name)
-                if (isinstance(attr, type)
-                    and attr_name.endswith('Config')
-                    and hasattr(attr, 'get_project_info')
-                    and hasattr(attr, 'get_runtime_config')):
+                if (
+                    isinstance(attr, type)
+                    and attr_name.endswith("Config")
+                    and hasattr(attr, "get_project_info")
+                    and hasattr(attr, "get_runtime_config")
+                ):
                     config_class = attr
                     break
 
@@ -385,15 +381,11 @@ def load_project_config(project_path: Path) -> ProjectConfigInterface:
     return DefaultProjectConfig(project_path.name, project_path)
 
 
-def validate_config_script(config_file: Path) -> Dict[str, Any]:
+def validate_config_script(config_file: Path) -> dict[str, Any]:
     """
     验证配置脚本是否符合接口规范
     """
-    result = {
-        "valid": False,
-        "errors": [],
-        "warnings": []
-    }
+    result = {"valid": False, "errors": [], "warnings": []}
 
     if not config_file.exists():
         result["errors"].append("配置文件不存在")
@@ -404,12 +396,7 @@ def validate_config_script(config_file: Path) -> Dict[str, Any]:
         config = load_project_config(config_file.parent)
 
         # 检查必需方法
-        required_methods = [
-            "get_project_info",
-            "get_runtime_config",
-            "get_dependencies",
-            "get_api_config"
-        ]
+        required_methods = ["get_project_info", "get_runtime_config", "get_dependencies", "get_api_config"]
 
         for method in required_methods:
             if not hasattr(config, method):
@@ -418,12 +405,12 @@ def validate_config_script(config_file: Path) -> Dict[str, Any]:
                 try:
                     getattr(config, method)()
                 except Exception as e:
-                    result["errors"].append(f"方法 {method} 执行失败: {str(e)}")
+                    result["errors"].append(f"方法 {method} 执行失败: {e!s}")
 
         if not result["errors"]:
             result["valid"] = True
 
     except Exception as e:
-        result["errors"].append(f"加载配置脚本失败: {str(e)}")
+        result["errors"].append(f"加载配置脚本失败: {e!s}")
 
     return result

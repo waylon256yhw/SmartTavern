@@ -3,8 +3,11 @@ API 封装层：SmartTavern.in_chat_constructor
 - 遵循 DEVELOPMENT_NOTES 新规范：斜杠 path + JSON Schema
 - 通过 @core.register_api 暴露公共 API，内部实现位于 impl.py
 """
-from typing import Any, Dict, List, Optional
+
+from typing import Any
+
 import core
+
 from .impl import construct as _construct
 
 
@@ -21,21 +24,16 @@ from .impl import construct as _construct
                     "type": "object",
                     "properties": {
                         "role": {"type": "string", "enum": ["system", "user", "assistant", "thinking"]},
-                        "content": {"type": "string"}
+                        "content": {"type": "string"},
                     },
-                    "required": ["role", "content"]
-                }
+                    "required": ["role", "content"],
+                },
             },
-            "presets_in_chat": {
-                "type": "array",
-                "items": {"type": "object", "additionalProperties": True}
-            },
-            "world_books": {
-                "type": "object"
-            },
-            "variables": {"type": "object", "additionalProperties": True}
+            "presets_in_chat": {"type": "array", "items": {"type": "object", "additionalProperties": True}},
+            "world_books": {"type": "object"},
+            "variables": {"type": "object", "additionalProperties": True},
         },
-        "required": ["history", "presets_in_chat", "world_books"]
+        "required": ["history", "presets_in_chat", "world_books"],
     },
     output_schema={
         "type": "object",
@@ -47,21 +45,21 @@ from .impl import construct as _construct
                     "properties": {
                         "role": {"type": "string", "enum": ["system", "user", "assistant", "thinking"]},
                         "content": {"type": "string"},
-                        "source": {"type": "object", "additionalProperties": True}
+                        "source": {"type": "object", "additionalProperties": True},
                     },
-                    "required": ["role", "content", "source"]
-                }
+                    "required": ["role", "content", "source"],
+                },
             }
         },
-        "required": ["messages"]
+        "required": ["messages"],
     },
 )
 def construct(
-    history: List[Dict[str, Any]],
-    presets_in_chat: List[Dict[str, Any]],
+    history: list[dict[str, Any]],
+    presets_in_chat: list[dict[str, Any]],
     world_books: Any,
-    variables: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    variables: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     return _construct(
         history=history,
         presets_in_chat=presets_in_chat,

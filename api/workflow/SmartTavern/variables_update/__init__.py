@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 SmartTavern.workflow.smarttavern.variables_update 包初始化
 

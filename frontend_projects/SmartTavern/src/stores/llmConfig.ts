@@ -39,10 +39,10 @@ export interface LLMConfigDetailResponse {
 export const useLlmConfigStore = defineStore('llmConfig', () => {
   // 当前 LLM 配置文件路径
   const currentLlmConfigFile = ref<string | null>(null)
-  
+
   // 当前 LLM 配置元数据（与其他 stores 保持一致的命名）
   const meta = ref<LLMConfigMeta | null>(null)
-  
+
   // 加载状态
   const loading = ref<boolean>(false)
   const error = ref<string | null>(null)
@@ -54,7 +54,7 @@ export const useLlmConfigStore = defineStore('llmConfig', () => {
     // 不再需要手动处理，由 watch 自动监听 chatSettings.llmConfigFile
     return null
   }
-  
+
   // 监听 chatSettings.llmConfigFile 的变化，自动加载 LLM 配置
   const chatSettingsStore = useChatSettingsStore()
   watch(
@@ -69,7 +69,7 @@ export const useLlmConfigStore = defineStore('llmConfig', () => {
 
       loading.value = true
       error.value = null
-      
+
       try {
         await loadLlmConfigFile(newFile)
       } catch (err) {
@@ -79,7 +79,7 @@ export const useLlmConfigStore = defineStore('llmConfig', () => {
         loading.value = false
       }
     },
-    { immediate: true }
+    { immediate: true },
   )
 
   /**
@@ -95,7 +95,7 @@ export const useLlmConfigStore = defineStore('llmConfig', () => {
 
     loading.value = true
     error.value = null
-    
+
     try {
       const result = await dataCatalog.getLLMConfigDetail(llmConfigFile)
 
@@ -105,7 +105,7 @@ export const useLlmConfigStore = defineStore('llmConfig', () => {
 
       currentLlmConfigFile.value = llmConfigFile
       meta.value = result.content as LLMConfigMeta
-      
+
       return meta.value
     } catch (err) {
       error.value = (err as Error).message || 'Failed to load LLM config file'
@@ -160,14 +160,14 @@ export const useLlmConfigStore = defineStore('llmConfig', () => {
     meta,
     loading,
     error,
-    
+
     // 方法
     loadLlmConfigFromConversation,
     loadLlmConfigFile,
     getLlmConfig,
     getLlmConfigField,
     refreshFromConversation,
-    clear
+    clear,
   }
 })
 
@@ -182,7 +182,9 @@ export interface RegisterGlobalFunctionsOptions {
   exposeToWindow?: boolean
 }
 
-export function registerGlobalFunctions({ exposeToWindow = false }: RegisterGlobalFunctionsOptions = {}): void {
+export function registerGlobalFunctions({
+  exposeToWindow = false,
+}: RegisterGlobalFunctionsOptions = {}): void {
   if (!exposeToWindow) return
 
   const store = useLlmConfigStore()
@@ -206,13 +208,13 @@ export function registerGlobalFunctions({ exposeToWindow = false }: RegisterGlob
       Object.defineProperty(window, 'getLlmConfig', {
         value: getLlmConfig,
         writable: false,
-        configurable: true
+        configurable: true,
       })
 
       Object.defineProperty(window, 'getLlmConfigField', {
         value: getLlmConfigField,
         writable: false,
-        configurable: true
+        configurable: true,
       })
     }
   } catch (err) {

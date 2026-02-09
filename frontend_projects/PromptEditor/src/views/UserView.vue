@@ -10,17 +10,24 @@ const fileTitle = ref<string>('Persona.json')
 const renameError = ref<string | null>(null)
 watch(
   () => store.fileName,
-  (v) => { fileTitle.value = v || 'Persona.json' },
-  { immediate: true }
+  (v) => {
+    fileTitle.value = v || 'Persona.json'
+  },
+  { immediate: true },
 )
 function renamePersonaFile() {
   renameError.value = null
   const oldName = store.fileName || 'Persona.json'
   const nn = (fileTitle.value || '').trim()
-  if (!nn) { renameError.value = '文件名不能为空'; return }
+  if (!nn) {
+    renameError.value = '文件名不能为空'
+    return
+  }
   if (nn === oldName) return
   ;(store as any).renameFile?.(nn)
-  try { fm.renameFile('user', oldName, nn) } catch {}
+  try {
+    fm.renameFile('user', oldName, nn)
+  } catch {}
 }
 
 // 本地草稿
@@ -37,11 +44,15 @@ onMounted(() => {
 
 watch(
   () => store.name,
-  (v) => { nameDraft.value = v ?? '' }
+  (v) => {
+    nameDraft.value = v ?? ''
+  },
 )
 watch(
   () => store.description,
-  (v) => { descDraft.value = v ?? '' }
+  (v) => {
+    descDraft.value = v ?? ''
+  },
 )
 
 // 保存（失焦即时保存）
@@ -63,7 +74,9 @@ function resetAll() {
 <template>
   <section class="space-y-6">
     <!-- 概览 -->
-    <div class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between mb-2 gap-3">
         <div class="flex items-center gap-2">
           <i data-lucide="id-card" class="w-5 h-5 text-black"></i>
@@ -80,15 +93,21 @@ function resetAll() {
           <button
             class="px-3 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-sm hover:bg-gray-100 active:bg-gray-200 transition-all duration-200 ease-soft"
             @click="renamePersonaFile"
-          >重命名</button>
+          >
+            重命名
+          </button>
         </div>
       </div>
-      <p class="text-xs text-black/60">结构参考：backend_projects/SmartTavern/data/persona/用户2.json</p>
+      <p class="text-xs text-black/60">
+        结构参考：backend_projects/SmartTavern/data/persona/用户2.json
+      </p>
       <p v-if="renameError" class="text-xs text-red-600 mt-1">* {{ renameError }}</p>
     </div>
 
     <!-- 基本信息（仅 name / description） -->
-    <div class="bg-white rounded-4 border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-2">
           <i data-lucide="user" class="w-4 h-4 text-black"></i>
@@ -130,9 +149,12 @@ function resetAll() {
     </div>
 
     <!-- 说明 -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="text-xs text-black/60">
-        说明：本面板仅维护单个用户信息 JSON（name / description）。导入与导出通过右上角按钮进行，数据仅在本地保存。
+        说明：本面板仅维护单个用户信息 JSON（name /
+        description）。导入与导出通过右上角按钮进行，数据仅在本地保存。
       </div>
     </div>
   </section>

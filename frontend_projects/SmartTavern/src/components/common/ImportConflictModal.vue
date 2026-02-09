@@ -21,13 +21,16 @@ const customNameError = ref('')
 const checkingName = ref(false)
 
 // 当弹窗显示时，初始化自定义名称
-watch(() => props.show, (val) => {
-  if (val) {
-    customName.value = props.suggestedName || ''
-    customNameError.value = ''
-    checkingName.value = false
-  }
-})
+watch(
+  () => props.show,
+  (val) => {
+    if (val) {
+      customName.value = props.suggestedName || ''
+      customNameError.value = ''
+      checkingName.value = false
+    }
+  },
+)
 
 // 处理覆盖
 function handleOverwrite() {
@@ -37,27 +40,29 @@ function handleOverwrite() {
 // 处理重命名
 async function handleRename() {
   const targetName = customName.value.trim()
-  
+
   if (!targetName) {
     customNameError.value = t('importConflict.errors.emptyName')
     return
   }
-  
+
   checkingName.value = true
   customNameError.value = ''
-  
+
   try {
     const checkResult = await DataCatalog.checkNameExists(props.dataType, targetName)
-    
+
     if (checkResult.success && checkResult.exists) {
-      customNameError.value = t('importConflict.errors.nameExists', { name: checkResult.folder_name })
+      customNameError.value = t('importConflict.errors.nameExists', {
+        name: checkResult.folder_name,
+      })
       checkingName.value = false
       return
     }
   } catch (err) {
     console.warn('[ImportConflictModal] Check custom name failed:', err)
   }
-  
+
   checkingName.value = false
   emit('rename', targetName)
 }
@@ -73,44 +78,80 @@ useFocusTrap(modalRef, toRef(props, 'show'))
 <template>
   <Teleport to="body">
     <div v-if="show" class="import-conflict-overlay" @click.self="handleClose">
-      <div ref="modalRef" class="import-conflict-modal" role="dialog" aria-modal="true" aria-labelledby="import-conflict-modal-title">
+      <div
+        ref="modalRef"
+        class="import-conflict-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="import-conflict-modal-title"
+      >
         <header class="import-conflict-header">
           <h3 id="import-conflict-modal-title">{{ t('importConflict.title') }}</h3>
           <button class="import-conflict-close" @click="handleClose">✕</button>
         </header>
-        
+
         <div class="import-conflict-body">
           <p class="import-conflict-message">
             {{ t('importConflict.message', { name: existingName, type: dataTypeName }) }}
           </p>
           <p class="import-conflict-hint">{{ t('importConflict.hint') }}</p>
-          
+
           <div class="import-conflict-options">
             <div class="import-conflict-option" @click="handleOverwrite">
               <div class="import-conflict-option-icon overwrite">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                 </svg>
               </div>
               <div class="import-conflict-option-text">
-                <div class="import-conflict-option-title">{{ t('importConflict.overwrite.title', { type: dataTypeName }) }}</div>
-                <div class="import-conflict-option-desc">{{ t('importConflict.overwrite.desc', { type: dataTypeName }) }}</div>
+                <div class="import-conflict-option-title">
+                  {{ t('importConflict.overwrite.title', { type: dataTypeName }) }}
+                </div>
+                <div class="import-conflict-option-desc">
+                  {{ t('importConflict.overwrite.desc', { type: dataTypeName }) }}
+                </div>
               </div>
             </div>
-            
+
             <div class="import-conflict-option rename-option">
               <div class="import-conflict-option-icon rename">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"
+                  ></path>
                   <polyline points="14 2 14 8 20 8"></polyline>
                   <line x1="12" y1="18" x2="12" y2="12"></line>
                   <line x1="9" y1="15" x2="15" y2="15"></line>
                 </svg>
               </div>
               <div class="import-conflict-option-text">
-                <div class="import-conflict-option-title">{{ t('importConflict.rename.title') }}</div>
-                <div class="import-conflict-option-desc">{{ t('importConflict.rename.desc', { type: dataTypeName }) }}</div>
+                <div class="import-conflict-option-title">
+                  {{ t('importConflict.rename.title') }}
+                </div>
+                <div class="import-conflict-option-desc">
+                  {{ t('importConflict.rename.desc', { type: dataTypeName }) }}
+                </div>
                 <div class="import-conflict-rename-input-row">
                   <input
                     type="text"
@@ -136,9 +177,11 @@ useFocusTrap(modalRef, toRef(props, 'show'))
             </div>
           </div>
         </div>
-        
+
         <footer class="import-conflict-footer">
-          <button class="import-conflict-btn-cancel" @click="handleClose">{{ t('importConflict.cancelButton') }}</button>
+          <button class="import-conflict-btn-cancel" @click="handleClose">
+            {{ t('importConflict.cancelButton') }}
+          </button>
         </footer>
       </div>
     </div>
@@ -232,7 +275,11 @@ useFocusTrap(modalRef, toRef(props, 'show'))
   border: 1px solid rgb(var(--st-border) / var(--st-border-alpha-medium));
   border-radius: var(--st-spacing-md);
   cursor: pointer;
-  transition: background-color var(--st-transition-normal), border-color var(--st-transition-normal), transform var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    background-color var(--st-transition-normal),
+    border-color var(--st-transition-normal),
+    transform var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
   background: rgb(var(--st-surface-2) / 0.3);
 }
 .import-conflict-option:hover {
@@ -300,7 +347,9 @@ useFocusTrap(modalRef, toRef(props, 'show'))
   background: rgb(var(--st-surface) / 0.8);
   color: rgb(var(--st-color-text));
   outline: none;
-  transition: border-color var(--st-transition-normal), background-color var(--st-transition-normal);
+  transition:
+    border-color var(--st-transition-normal),
+    background-color var(--st-transition-normal);
 }
 .import-conflict-rename-input:focus {
   border-color: rgb(var(--st-color-text));
@@ -323,7 +372,9 @@ useFocusTrap(modalRef, toRef(props, 'show'))
   font-size: var(--st-font-base);
   font-weight: 500;
   cursor: pointer;
-  transition: background-color var(--st-transition-normal), opacity var(--st-transition-normal);
+  transition:
+    background-color var(--st-transition-normal),
+    opacity var(--st-transition-normal);
   white-space: nowrap;
 }
 .import-conflict-rename-btn:hover:not(:disabled) {

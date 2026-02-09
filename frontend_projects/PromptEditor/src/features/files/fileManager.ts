@@ -68,7 +68,10 @@ export const useFileManagerStore = defineStore('fileManager', {
     },
     persist() {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ buckets: this.buckets, currentType: this.currentType }))
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({ buckets: this.buckets, currentType: this.currentType }),
+        )
       } catch {}
     },
     setCurrentType(type: TypeKey) {
@@ -88,7 +91,7 @@ export const useFileManagerStore = defineStore('fileManager', {
       this.load()
       const bucket = this.buckets[type]
       if (!bucket) return
-      const idx = bucket.files.findIndex(f => f.name === name)
+      const idx = bucket.files.findIndex((f) => f.name === name)
       const now = Date.now()
       const prev = idx >= 0 ? bucket.files[idx] : undefined
       const rec: FileRecord = {
@@ -106,7 +109,7 @@ export const useFileManagerStore = defineStore('fileManager', {
     setActive(type: TypeKey, name: string) {
       const bucket = this.buckets[type]
       if (!bucket) return
-      if (!bucket.files.some(f => f.name === name)) return
+      if (!bucket.files.some((f) => f.name === name)) return
       bucket.activeName = name
       this.persist()
       this._mirrorToPanels(type, name)
@@ -115,7 +118,7 @@ export const useFileManagerStore = defineStore('fileManager', {
     toggleEnable(type: TypeKey, name: string) {
       const bucket = this.buckets[type]
       if (!bucket) return
-      const rec = bucket.files.find(f => f.name === name)
+      const rec = bucket.files.find((f) => f.name === name)
       if (!rec) return
       rec.enabled = !rec.enabled
       this.persist()
@@ -123,7 +126,7 @@ export const useFileManagerStore = defineStore('fileManager', {
     removeFile(type: TypeKey, name: string) {
       const bucket = this.buckets[type]
       if (!bucket) return
-      const idx = bucket.files.findIndex(f => f.name === name)
+      const idx = bucket.files.findIndex((f) => f.name === name)
       if (idx >= 0) {
         bucket.files.splice(idx, 1)
         if (bucket.activeName === name) {
@@ -143,7 +146,7 @@ export const useFileManagerStore = defineStore('fileManager', {
       const nn = String(newName || '').trim()
       const on = String(oldName || '').trim()
       if (!nn || !on) return false
-      const idx = bucket.files.findIndex(f => f.name === on)
+      const idx = bucket.files.findIndex((f) => f.name === on)
       if (idx < 0) return false
       if (bucket.files.some((f, i) => i !== idx && f.name === nn)) return false
       const rec = bucket.files[idx]
@@ -151,13 +154,15 @@ export const useFileManagerStore = defineStore('fileManager', {
       rec.name = nn
       if (bucket.activeName === on) bucket.activeName = nn
       this.persist()
-      try { this._mirrorToPanels(type, nn) } catch {}
+      try {
+        this._mirrorToPanels(type, nn)
+      } catch {}
       return true
     },
     _mirrorToPanels(type: TypeKey, name: string) {
       try {
         const bucket = this.buckets[type]
-        const found = bucket.files.find(f => f.name === name)
+        const found = bucket.files.find((f) => f.name === name)
         if (!found) return
         const json = found.data
         if (type === 'presets') {
@@ -174,7 +179,11 @@ export const useFileManagerStore = defineStore('fileManager', {
           preset.setWorldBooks(entries as any)
         } else if (type === 'regex') {
           const preset = usePresetStore()
-          const rules: any[] = Array.isArray(json) ? json : (Array.isArray(json?.regex_rules) ? json.regex_rules : [])
+          const rules: any[] = Array.isArray(json)
+            ? json
+            : Array.isArray(json?.regex_rules)
+              ? json.regex_rules
+              : []
           preset.setRegexRules(rules as any)
         } else if (type === 'characters') {
           const chars = useCharacterStore()

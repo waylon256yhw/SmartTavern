@@ -99,16 +99,23 @@ const modalRef = ref(null)
 useFocusTrap(modalRef, toRef(props, 'show'))
 
 // 监听显示状态刷新图标
-watch(() => props.show, (v) => {
-  if (v) {
-    setTimeout(() => {
-      try { window?.lucide?.createIcons?.() } catch (_) {}
-    }, 50)
-  }
-})
+watch(
+  () => props.show,
+  (v) => {
+    if (v) {
+      setTimeout(() => {
+        try {
+          window?.lucide?.createIcons?.()
+        } catch (_) {}
+      }, 50)
+    }
+  },
+)
 
 onMounted(() => {
-  try { window?.lucide?.createIcons?.() } catch (_) {}
+  try {
+    window?.lucide?.createIcons?.()
+  } catch (_) {}
 })
 </script>
 
@@ -116,13 +123,24 @@ onMounted(() => {
   <teleport to="body">
     <transition name="modal-fade">
       <div v-if="show" class="iem-overlay" @click.self="close">
-        <div ref="modalRef" class="iem-modal" role="dialog" aria-modal="true" aria-labelledby="import-error-modal-title">
+        <div
+          ref="modalRef"
+          class="iem-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="import-error-modal-title"
+        >
           <div class="iem-header">
-            <div class="iem-icon-wrap" :class="errorCode === 'TYPE_MISMATCH' ? 'iem-icon-warning' : 'iem-icon-error'">
+            <div
+              class="iem-icon-wrap"
+              :class="errorCode === 'TYPE_MISMATCH' ? 'iem-icon-warning' : 'iem-icon-error'"
+            >
               <i :data-lucide="errorIcon"></i>
             </div>
             <h3 id="import-error-modal-title" class="iem-title">{{ errorTitle }}</h3>
-            <button class="iem-close" type="button" :title="t('common.close')" @click="close">✕</button>
+            <button class="iem-close" type="button" :title="t('common.close')" @click="close">
+              ✕
+            </button>
           </div>
 
           <div class="iem-body">
@@ -250,7 +268,9 @@ onMounted(() => {
   padding: var(--st-spacing-sm) var(--st-spacing-md);
   cursor: pointer;
   color: rgb(var(--st-color-text));
-  transition: background var(--st-transition-normal), transform var(--st-transition-normal);
+  transition:
+    background var(--st-transition-normal),
+    transform var(--st-transition-normal);
 }
 
 .iem-close:hover {
@@ -332,7 +352,10 @@ onMounted(() => {
   font-size: var(--st-font-base);
   font-weight: 600;
   cursor: pointer;
-  transition: transform var(--st-transition-normal), box-shadow var(--st-transition-normal), background var(--st-transition-normal);
+  transition:
+    transform var(--st-transition-normal),
+    box-shadow var(--st-transition-normal),
+    background var(--st-transition-normal);
 }
 
 .iem-btn:hover {

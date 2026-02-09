@@ -29,7 +29,8 @@ function loadFromLocal(): RootStorage {
     if (!raw) return { files: [], activeName: null }
     const obj = JSON.parse(raw)
     const files = Array.isArray(obj?.files) ? obj.files : []
-    const activeName = typeof obj?.activeName === 'string' ? obj.activeName : (files[0]?.name ?? null)
+    const activeName =
+      typeof obj?.activeName === 'string' ? obj.activeName : (files[0]?.name ?? null)
     return { files, activeName }
   } catch {
     return { files: [], activeName: null }
@@ -62,7 +63,7 @@ function readFileAsText(file: File): Promise<string> {
  */
 function isSpecialRelative(id: string): boolean {
   try {
-    return SPECIAL_RELATIVE_TEMPLATES.some(t => t.identifier === id)
+    return SPECIAL_RELATIVE_TEMPLATES.some((t) => t.identifier === id)
   } catch {
     return false
   }
@@ -94,7 +95,8 @@ function normalizeRegexRule(r: any): void {
   if (typeof r.condition !== 'string') r.condition = String(r.condition ?? '')
   if (r.min_depth != null) r.min_depth = Number(r.min_depth)
   if (r.max_depth != null) r.max_depth = Number(r.max_depth)
-  if (r.description != null && typeof r.description !== 'string') r.description = String(r.description)
+  if (r.description != null && typeof r.description !== 'string')
+    r.description = String(r.description)
 }
 
 function normalizeWorldEntry(w: any): void {
@@ -112,12 +114,18 @@ function normalizeWorldEntry(w: any): void {
     if (w.mode === 'conditional' && w.keys != null) {
       const s = String(w.keys)
       // 使用英文分号 ; 分割关键词
-      w.keys = s.split(/;/).map((x: string) => x.trim()).filter(Boolean)
+      w.keys = s
+        .split(/;/)
+        .map((x: string) => x.trim())
+        .filter(Boolean)
     } else {
       w.keys = []
     }
   } else {
-    w.keys = w.keys.map((x: any) => String(x ?? '')).map((x: string) => x.trim()).filter(Boolean)
+    w.keys = w.keys
+      .map((x: any) => String(x ?? ''))
+      .map((x: string) => x.trim())
+      .filter(Boolean)
   }
   if (w.mode !== 'conditional') w.keys = []
 }
@@ -181,7 +189,7 @@ export const usePresetStore = defineStore('preset', {
   getters: {
     activeIndex(state): number {
       if (!state.activeName) return -1
-      return state.files.findIndex(f => f.name === state.activeName)
+      return state.files.findIndex((f) => f.name === state.activeName)
     },
     activeFile(state): PresetFile | null {
       const idx = (this as any).activeIndex as number
@@ -194,18 +202,18 @@ export const usePresetStore = defineStore('preset', {
       return ((this as any).activeData?.prompts ?? []) as PromptItem[]
     },
     relativePrompts(): PromptItemRelative[] {
-      const list = (((this as any).prompts ?? []) as PromptItem[])
+      const list = ((this as any).prompts ?? []) as PromptItem[]
       return list.filter((p: PromptItem) => p.position === 'relative') as PromptItemRelative[]
     },
     inChatPrompts(): PromptItemInChat[] {
-      const list = (((this as any).prompts ?? []) as PromptItem[])
+      const list = ((this as any).prompts ?? []) as PromptItem[]
       return list.filter((p: PromptItem) => p.position === 'in-chat') as PromptItemInChat[]
     },
     regexRules(): RegexRule[] {
-      return (((this as any).activeData?.regex_rules ?? []) as any[]) as RegexRule[]
+      return ((this as any).activeData?.regex_rules ?? []) as any[] as RegexRule[]
     },
     worldBooks(): WorldBookEntry[] {
-      return (((this as any).activeData?.world_books ?? []) as any[]) as WorldBookEntry[]
+      return ((this as any).activeData?.world_books ?? []) as any[] as WorldBookEntry[]
     },
   },
 
@@ -214,7 +222,7 @@ export const usePresetStore = defineStore('preset', {
       if (this.loaded) return
       const { files, activeName } = loadFromLocal()
       // basic shape guard (do not strictly validate every file for performance)
-      this.files = Array.isArray(files) ? files.filter(f => f && f.name && f.data) : []
+      this.files = Array.isArray(files) ? files.filter((f) => f && f.name && f.data) : []
       // normalize content fields for non-special items
       let changed = false
       for (const f of this.files) {
@@ -234,7 +242,7 @@ export const usePresetStore = defineStore('preset', {
     },
 
     setActive(name: string) {
-      if (this.files.some(f => f.name === name)) {
+      if (this.files.some((f) => f.name === name)) {
         this.activeName = name
         this.persist()
       }
@@ -251,7 +259,7 @@ export const usePresetStore = defineStore('preset', {
       const file = this.activeFile
       if (!file) return false
       if (file.name === nn) return true
-      if (this.files.some(f => f.name === nn)) return false
+      if (this.files.some((f) => f.name === nn)) return false
       file.name = nn
       this.activeName = nn
       this.persist()
@@ -259,7 +267,7 @@ export const usePresetStore = defineStore('preset', {
     },
 
     toggleEnable(name: string) {
-      const f = this.files.find(x => x.name === name)
+      const f = this.files.find((x) => x.name === name)
       if (f) {
         f.enabled = !f.enabled
         this.persist()
@@ -267,7 +275,7 @@ export const usePresetStore = defineStore('preset', {
     },
 
     deleteFile(name: string) {
-      const idx = this.files.findIndex(x => x.name === name)
+      const idx = this.files.findIndex((x) => x.name === name)
       if (idx >= 0) {
         this.files.splice(idx, 1)
         if (this.activeName === name) {
@@ -284,8 +292,10 @@ export const usePresetStore = defineStore('preset', {
     },
 
     upsertFile(entry: PresetFile) {
-      try { normalizePresetData(entry.data) } catch {}
-      const idx = this.files.findIndex(f => f.name === entry.name)
+      try {
+        normalizePresetData(entry.data)
+      } catch {}
+      const idx = this.files.findIndex((f) => f.name === entry.name)
       if (idx >= 0) this.files.splice(idx, 1, entry)
       else this.files.unshift(entry)
       this.activeName = entry.name
@@ -302,12 +312,16 @@ export const usePresetStore = defineStore('preset', {
       }
       if (!isPresetData(json)) {
         // 兼容：若直接是 { setting, regex_rules, prompts } 结构，也允许导入
-        if (!(json && typeof json === 'object' && json.setting && json.prompts && json.regex_rules)) {
+        if (
+          !(json && typeof json === 'object' && json.setting && json.prompts && json.regex_rules)
+        ) {
           throw new Error('JSON 结构不符合 PresetData')
         }
       }
       // 规范化导入数据：除一次性 Relative 外，其余条目必须含 content 字段（空则为 ""）
-      try { normalizePresetData(json as PresetData) } catch {}
+      try {
+        normalizePresetData(json as PresetData)
+      } catch {}
       const entry: PresetFile = {
         name: file.name,
         enabled: true,
@@ -331,7 +345,7 @@ export const usePresetStore = defineStore('preset', {
       const data = this.activeData
       if (!data) return
       const fixed = normalizePromptItem(next)
-      const idx = data.prompts.findIndex(p => p.identifier === fixed.identifier)
+      const idx = data.prompts.findIndex((p) => p.identifier === fixed.identifier)
       if (idx >= 0) {
         // replace reference to keep reactivity
         data.prompts.splice(idx, 1, fixed as any)
@@ -361,7 +375,7 @@ export const usePresetStore = defineStore('preset', {
     removePrompt(identifier: string) {
       const data = this.activeData
       if (!data) return
-      const idx = data.prompts.findIndex(p => p.identifier === identifier)
+      const idx = data.prompts.findIndex((p) => p.identifier === identifier)
       if (idx >= 0) {
         data.prompts.splice(idx, 1)
         this.persist()
@@ -375,7 +389,7 @@ export const usePresetStore = defineStore('preset', {
       const data = this.activeData
       if (!data) return
       if (!Array.isArray(data.regex_rules)) data.regex_rules = []
-      const i = data.regex_rules.findIndex(r => r && r.id === rule.id)
+      const i = data.regex_rules.findIndex((r) => r && r.id === rule.id)
       if (i >= 0) {
         data.regex_rules.splice(i, 1, rule as any)
       } else {
@@ -387,7 +401,7 @@ export const usePresetStore = defineStore('preset', {
     replaceRegexRule(updated: RegexRule) {
       const data = this.activeData
       if (!data || !Array.isArray(data.regex_rules)) return
-      const idx = data.regex_rules.findIndex(r => r && r.id === updated.id)
+      const idx = data.regex_rules.findIndex((r) => r && r.id === updated.id)
       if (idx >= 0) {
         data.regex_rules.splice(idx, 1, updated as any)
         this.persist()
@@ -397,7 +411,7 @@ export const usePresetStore = defineStore('preset', {
     removeRegexRule(id: string) {
       const data = this.activeData
       if (!data || !Array.isArray(data.regex_rules)) return
-      const idx = data.regex_rules.findIndex(r => r && r.id === id)
+      const idx = data.regex_rules.findIndex((r) => r && r.id === id)
       if (idx >= 0) {
         data.regex_rules.splice(idx, 1)
         this.persist()
@@ -410,9 +424,11 @@ export const usePresetStore = defineStore('preset', {
     setRegexRules(rules: RegexRule[]) {
       const data = this.activeData
       if (!data) return
-      const list: any[] = Array.isArray(rules) ? rules.map(r => ({ ...(r as any) })) : []
+      const list: any[] = Array.isArray(rules) ? rules.map((r) => ({ ...(r as any) })) : []
       for (const r of list) {
-        try { normalizeRegexRule(r) } catch {}
+        try {
+          normalizeRegexRule(r)
+        } catch {}
       }
       data.regex_rules = list as any
       this.persist()
@@ -425,11 +441,11 @@ export const usePresetStore = defineStore('preset', {
       const data = this.activeData
       if (!data || !Array.isArray(data.regex_rules)) return
       const items = data.regex_rules
-      const idSet = new Set(items.map(i => i.id))
+      const idSet = new Set(items.map((i) => i.id))
       const normalized = (orderedIds || []).filter((id): id is string => !!id && idSet.has(id))
-      const missing = items.map(i => i.id).filter(id => !normalized.includes(id))
+      const missing = items.map((i) => i.id).filter((id) => !normalized.includes(id))
       const finalIds = normalized.concat(missing)
-      const map = new Map<string, RegexRule>(items.map(i => [i.id, i as RegexRule]))
+      const map = new Map<string, RegexRule>(items.map((i) => [i.id, i as RegexRule]))
       const next: RegexRule[] = []
       for (const id of finalIds) {
         const x = map.get(id)
@@ -445,7 +461,7 @@ export const usePresetStore = defineStore('preset', {
     exportRegexRules(): { filename: string; json: string } | null {
       const data = this.activeData
       if (!data) return null
-      const base = (this.activeFile?.name || 'RegexRules')
+      const base = this.activeFile?.name || 'RegexRules'
       const filename = base.endsWith('.json') ? base : `${base}.json`
       const json = JSON.stringify(data.regex_rules ?? [], null, 2)
       return { filename, json }
@@ -459,7 +475,7 @@ export const usePresetStore = defineStore('preset', {
       if (!data) return
       if (!Array.isArray((data as any).world_books)) (data as any).world_books = []
       const list = (data as any).world_books as WorldBookEntry[]
-      const i = list.findIndex(w => w && w.id === entry.id)
+      const i = list.findIndex((w) => w && w.id === entry.id)
       if (i >= 0) list.splice(i, 1, entry as any)
       else list.unshift(entry as any)
       this.persist()
@@ -469,7 +485,7 @@ export const usePresetStore = defineStore('preset', {
       const data = this.activeData
       if (!data || !Array.isArray((data as any).world_books)) return
       const list = (data as any).world_books as WorldBookEntry[]
-      const idx = list.findIndex(w => w && w.id === updated.id)
+      const idx = list.findIndex((w) => w && w.id === updated.id)
       if (idx >= 0) {
         list.splice(idx, 1, updated as any)
         this.persist()
@@ -480,7 +496,7 @@ export const usePresetStore = defineStore('preset', {
       const data = this.activeData
       if (!data || !Array.isArray((data as any).world_books)) return
       const list = (data as any).world_books as WorldBookEntry[]
-      const idx = list.findIndex(w => w && w.id === id)
+      const idx = list.findIndex((w) => w && w.id === id)
       if (idx >= 0) {
         list.splice(idx, 1)
         this.persist()
@@ -496,18 +512,22 @@ export const usePresetStore = defineStore('preset', {
       if (!Array.isArray(data.world_books)) data.world_books = []
       const list = data.world_books as WorldBookEntry[]
       const next: any = { ...(updated as any) }
-      try { normalizeWorldEntry(next) } catch {}
+      try {
+        normalizeWorldEntry(next)
+      } catch {}
 
       const old = (oldId ?? next.id) as string
-      const oldIdx = list.findIndex(w => w && w.id === old)
+      const oldIdx = list.findIndex((w) => w && w.id === old)
 
       // 若发生重命名且新 id 已存在于其他条目，避免覆盖冲突
-      const dupIdx = list.findIndex(w => w && w.id === next.id)
+      const dupIdx = list.findIndex((w) => w && w.id === next.id)
       if (dupIdx >= 0 && dupIdx !== oldIdx) {
         // 回退为不改 id 的替换，保持原位置
         if (oldIdx >= 0) {
           const keep = { ...(list[oldIdx] as any), ...(next as any), id: old } as any
-          try { normalizeWorldEntry(keep) } catch {}
+          try {
+            normalizeWorldEntry(keep)
+          } catch {}
           list.splice(oldIdx, 1, keep)
           this.persist()
         }
@@ -549,9 +569,11 @@ export const usePresetStore = defineStore('preset', {
         data = this.activeData
       }
       if (!data) return
-      const list: any[] = Array.isArray(entries) ? entries.map(e => ({ ...(e as any) })) : []
+      const list: any[] = Array.isArray(entries) ? entries.map((e) => ({ ...(e as any) })) : []
       for (const w of list) {
-        try { normalizeWorldEntry(w) } catch {}
+        try {
+          normalizeWorldEntry(w)
+        } catch {}
       }
       ;(data as any).world_books = list as any
       this.persist()
@@ -565,11 +587,11 @@ export const usePresetStore = defineStore('preset', {
       const list = (data as any)?.world_books
       if (!data || !Array.isArray(list)) return
       const items = list as WorldBookEntry[]
-      const idSet = new Set(items.map(i => i.id))
+      const idSet = new Set(items.map((i) => i.id))
       const normalized = (orderedIds || []).filter((id): id is string => !!id && idSet.has(id))
-      const missing = items.map(i => i.id).filter(id => !normalized.includes(id))
+      const missing = items.map((i) => i.id).filter((id) => !normalized.includes(id))
       const finalIds = normalized.concat(missing)
-      const map = new Map<string, WorldBookEntry>(items.map(i => [i.id, i as WorldBookEntry]))
+      const map = new Map<string, WorldBookEntry>(items.map((i) => [i.id, i as WorldBookEntry]))
       const next: WorldBookEntry[] = []
       for (const id of finalIds) {
         const x = map.get(id)
@@ -585,10 +607,10 @@ export const usePresetStore = defineStore('preset', {
     exportWorldBooks(): { filename: string; json: string } | null {
       const data = this.activeData
       if (!data) return null
-      const baseName = (this.activeFile?.name || 'WorldBook')
+      const baseName = this.activeFile?.name || 'WorldBook'
       const filename = baseName.endsWith('.json') ? baseName : `${baseName}.json`
       const payloadName = baseName.replace(/\.json$/, '')
-      const entries = (((data as any).world_books ?? []) as any[]).map(w => {
+      const entries = (((data as any).world_books ?? []) as any[]).map((w) => {
         const obj: any = { ...(w as any) }
         obj.id = String(obj.id ?? '')
         return obj
@@ -607,16 +629,16 @@ export const usePresetStore = defineStore('preset', {
       if (!data || !Array.isArray(data.prompts)) return
 
       // Current items and identifier set for the target position
-      const items = data.prompts.filter(p => p && p.position === position)
-      const idSet = new Set(items.map(i => i.identifier))
+      const items = data.prompts.filter((p) => p && p.position === position)
+      const idSet = new Set(items.map((i) => i.identifier))
 
       // Normalize provided ids to existing items only and append any missing ids in original order
       const normalized = orderedIds.filter((id): id is string => !!id && idSet.has(id))
-      const missing = items.map(i => i.identifier).filter(id => !normalized.includes(id))
+      const missing = items.map((i) => i.identifier).filter((id) => !normalized.includes(id))
       const finalIds = normalized.concat(missing)
 
       // Map for quick lookup
-      const map = new Map<string, PromptItem>(items.map(i => [i.identifier, i as PromptItem]))
+      const map = new Map<string, PromptItem>(items.map((i) => [i.identifier, i as PromptItem]))
 
       // Write back into original slots to preserve other-position order
       let writeIdx = 0

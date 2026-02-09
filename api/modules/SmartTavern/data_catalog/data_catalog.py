@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 API 封装层：SmartTavern.data_catalog
 
@@ -13,133 +12,30 @@ API 封装层：SmartTavern.data_catalog
 """
 
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
+from typing import Any
+
 import core
+
 from .impl import (
-    list_presets_impl,
-    list_world_books_impl,
     list_characters_impl,
-    list_personas_impl,
-    list_regex_rules_impl,
     list_conversations_impl,
     list_llm_configs_impl,
+    list_personas_impl,
     list_plugins_impl,
+    list_presets_impl,
+    list_regex_rules_impl,
+    list_world_books_impl,
 )
 
-
 # ---------- 预设（presets） ----------
+
 
 @core.register_api(
     path="smarttavern/data_catalog/list_presets",
     name="列出预设清单（名称与描述）",
     description="扫描 backend_projects/SmartTavern/data/presets 下的子目录（每个预设目录包含 preset.json），返回 preset.json 的相对路径与其 name/description 字段（若存在）。",
-    input_schema={
-        "type": "object",
-        "properties": {},
-        "additionalProperties": False
-    },
-    output_schema={
-        "type": "object",
-        "properties": {
-            "folder": {"type": "string"},
-            "total": {"type": "integer"},
-            "items": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "file": {"type": "string"},
-                        "name": {"type": ["string", "null"]},
-                        "description": {"type": ["string", "null"]}
-                    },
-                    "required": ["file"],
-                    "additionalProperties": True
-                }
-            },
-            "errors": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "file": {"type": ["string", "null"]},
-                        "error": {"type": "string"}
-                    },
-                    "required": ["error"]
-                }
-            }
-        },
-        "required": ["folder", "total", "items"],
-        "additionalProperties": False
-    },
-)
-def list_presets(base_dir: Optional[str] = None,
-                 fields: Optional[List[str]] = None) -> Dict[str, Any]:
-    # 忽略入参，统一返回内置目录与全部字段
-    return list_presets_impl()
-
-
-# ---------- 世界书（world_books） ----------
-
-@core.register_api(
-    path="smarttavern/data_catalog/list_world_books",
-    name="列出世界书清单（名称与描述）",
-    description="扫描 backend_projects/SmartTavern/data/world_books 下的子目录（每个世界书目录包含 worldbook.json），返回 worldbook.json 的相对路径与其 name/description 字段（若存在）。",
-    input_schema={
-        "type": "object",
-        "properties": {},
-        "additionalProperties": False
-    },
-    output_schema={
-        "type": "object",
-        "properties": {
-            "folder": {"type": "string"},
-            "total": {"type": "integer"},
-            "items": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "file": {"type": "string"},
-                        "name": {"type": ["string", "null"]},
-                        "description": {"type": ["string", "null"]}
-                    },
-                    "required": ["file"],
-                    "additionalProperties": True
-                }
-            },
-            "errors": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "file": {"type": ["string", "null"]},
-                        "error": {"type": "string"}
-                    },
-                    "required": ["error"]
-                }
-            }
-        },
-        "required": ["folder", "total", "items"],
-        "additionalProperties": False
-    },
-)
-def list_world_books(base_dir: Optional[str] = None,
-                     fields: Optional[List[str]] = None) -> Dict[str, Any]:
-    # 忽略入参，统一返回内置目录与全部字段
-    return list_world_books_impl()
-
-
-# ---------- 角色卡（characters） ----------
-
-@core.register_api(
-    path="smarttavern/data_catalog/list_characters",
-    name="列出角色卡清单（名称、描述与类型）",
-    description="扫描 backend_projects/SmartTavern/data/characters 下的子目录（每个角色目录包含 character.json），返回 character.json 的相对路径与其 name/description/type 字段（若存在）。type 字段支持 'threaded'（楼层对话模式，默认）和 'sandbox'（前端沙盒模式）。",
-    input_schema={
-        "type": "object",
-        "properties": {},
-        "additionalProperties": False
-    },
+    input_schema={"type": "object", "properties": {}, "additionalProperties": False},
     output_schema={
         "type": "object",
         "properties": {
@@ -153,45 +49,126 @@ def list_world_books(base_dir: Optional[str] = None,
                         "file": {"type": "string"},
                         "name": {"type": ["string", "null"]},
                         "description": {"type": ["string", "null"]},
-                        "type": {"type": ["string", "null"], "enum": ["threaded", "sandbox", None]}
                     },
                     "required": ["file"],
-                    "additionalProperties": True
-                }
+                    "additionalProperties": True,
+                },
             },
             "errors": {
                 "type": "array",
                 "items": {
                     "type": "object",
-                    "properties": {
-                        "file": {"type": ["string", "null"]},
-                        "error": {"type": "string"}
-                    },
-                    "required": ["error"]
-                }
-            }
+                    "properties": {"file": {"type": ["string", "null"]}, "error": {"type": "string"}},
+                    "required": ["error"],
+                },
+            },
         },
         "required": ["folder", "total", "items"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
 )
-def list_characters(base_dir: Optional[str] = None,
-                    fields: Optional[List[str]] = None) -> Dict[str, Any]:
+def list_presets(base_dir: str | None = None, fields: list[str] | None = None) -> dict[str, Any]:
+    # 忽略入参，统一返回内置目录与全部字段
+    return list_presets_impl()
+
+
+# ---------- 世界书（world_books） ----------
+
+
+@core.register_api(
+    path="smarttavern/data_catalog/list_world_books",
+    name="列出世界书清单（名称与描述）",
+    description="扫描 backend_projects/SmartTavern/data/world_books 下的子目录（每个世界书目录包含 worldbook.json），返回 worldbook.json 的相对路径与其 name/description 字段（若存在）。",
+    input_schema={"type": "object", "properties": {}, "additionalProperties": False},
+    output_schema={
+        "type": "object",
+        "properties": {
+            "folder": {"type": "string"},
+            "total": {"type": "integer"},
+            "items": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "file": {"type": "string"},
+                        "name": {"type": ["string", "null"]},
+                        "description": {"type": ["string", "null"]},
+                    },
+                    "required": ["file"],
+                    "additionalProperties": True,
+                },
+            },
+            "errors": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {"file": {"type": ["string", "null"]}, "error": {"type": "string"}},
+                    "required": ["error"],
+                },
+            },
+        },
+        "required": ["folder", "total", "items"],
+        "additionalProperties": False,
+    },
+)
+def list_world_books(base_dir: str | None = None, fields: list[str] | None = None) -> dict[str, Any]:
+    # 忽略入参，统一返回内置目录与全部字段
+    return list_world_books_impl()
+
+
+# ---------- 角色卡（characters） ----------
+
+
+@core.register_api(
+    path="smarttavern/data_catalog/list_characters",
+    name="列出角色卡清单（名称、描述与类型）",
+    description="扫描 backend_projects/SmartTavern/data/characters 下的子目录（每个角色目录包含 character.json），返回 character.json 的相对路径与其 name/description/type 字段（若存在）。type 字段支持 'threaded'（楼层对话模式，默认）和 'sandbox'（前端沙盒模式）。",
+    input_schema={"type": "object", "properties": {}, "additionalProperties": False},
+    output_schema={
+        "type": "object",
+        "properties": {
+            "folder": {"type": "string"},
+            "total": {"type": "integer"},
+            "items": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "file": {"type": "string"},
+                        "name": {"type": ["string", "null"]},
+                        "description": {"type": ["string", "null"]},
+                        "type": {"type": ["string", "null"], "enum": ["threaded", "sandbox", None]},
+                    },
+                    "required": ["file"],
+                    "additionalProperties": True,
+                },
+            },
+            "errors": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {"file": {"type": ["string", "null"]}, "error": {"type": "string"}},
+                    "required": ["error"],
+                },
+            },
+        },
+        "required": ["folder", "total", "items"],
+        "additionalProperties": False,
+    },
+)
+def list_characters(base_dir: str | None = None, fields: list[str] | None = None) -> dict[str, Any]:
     # 忽略入参，统一返回内置目录与全部字段
     return list_characters_impl()
 
 
 # ---------- 用户（persona） ----------
 
+
 @core.register_api(
     path="smarttavern/data_catalog/list_personas",
     name="列出用户清单（名称与描述）",
     description="扫描 backend_projects/SmartTavern/data/personas 下的子目录（每个用户目录包含 persona.json），返回 persona.json 的相对路径与其 name/description 字段（若存在）。",
-    input_schema={
-        "type": "object",
-        "properties": {},
-        "additionalProperties": False
-    },
+    input_schema={"type": "object", "properties": {}, "additionalProperties": False},
     output_schema={
         "type": "object",
         "properties": {
@@ -204,45 +181,38 @@ def list_characters(base_dir: Optional[str] = None,
                     "properties": {
                         "file": {"type": "string"},
                         "name": {"type": ["string", "null"]},
-                        "description": {"type": ["string", "null"]}
+                        "description": {"type": ["string", "null"]},
                     },
                     "required": ["file"],
-                    "additionalProperties": True
-                }
+                    "additionalProperties": True,
+                },
             },
             "errors": {
                 "type": "array",
                 "items": {
                     "type": "object",
-                    "properties": {
-                        "file": {"type": ["string", "null"]},
-                        "error": {"type": "string"}
-                    },
-                    "required": ["error"]
-                }
-            }
+                    "properties": {"file": {"type": ["string", "null"]}, "error": {"type": "string"}},
+                    "required": ["error"],
+                },
+            },
         },
         "required": ["folder", "total", "items"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
 )
-def list_personas(base_dir: Optional[str] = None,
-                  fields: Optional[List[str]] = None) -> Dict[str, Any]:
+def list_personas(base_dir: str | None = None, fields: list[str] | None = None) -> dict[str, Any]:
     # 忽略入参，统一返回内置目录与全部字段
     return list_personas_impl()
 
 
 # ---------- 正则规则（regex_rules） ----------
 
+
 @core.register_api(
     path="smarttavern/data_catalog/list_regex_rules",
     name="列出正则规则清单（名称与描述）",
     description="扫描 backend_projects/SmartTavern/data/regex_rules 下的子目录（每个规则目录包含 regex_rule.json），返回 regex_rule.json 的相对路径与其 name/description 字段（若存在）。",
-    input_schema={
-        "type": "object",
-        "properties": {},
-        "additionalProperties": False
-    },
+    input_schema={"type": "object", "properties": {}, "additionalProperties": False},
     output_schema={
         "type": "object",
         "properties": {
@@ -255,43 +225,37 @@ def list_personas(base_dir: Optional[str] = None,
                     "properties": {
                         "file": {"type": "string"},
                         "name": {"type": ["string", "null"]},
-                        "description": {"type": ["string", "null"]}
+                        "description": {"type": ["string", "null"]},
                     },
                     "required": ["file"],
-                    "additionalProperties": True
-                }
+                    "additionalProperties": True,
+                },
             },
             "errors": {
                 "type": "array",
                 "items": {
                     "type": "object",
-                    "properties": {
-                        "file": {"type": ["string", "null"]},
-                        "error": {"type": "string"}
-                    },
-                    "required": ["error"]
-                }
-            }
+                    "properties": {"file": {"type": ["string", "null"]}, "error": {"type": "string"}},
+                    "required": ["error"],
+                },
+            },
         },
         "required": ["folder", "total", "items"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
 )
-def list_regex_rules(base_dir: Optional[str] = None,
-                     fields: Optional[List[str]] = None) -> Dict[str, Any]:
+def list_regex_rules(base_dir: str | None = None, fields: list[str] | None = None) -> dict[str, Any]:
     return list_regex_rules_impl()
 
+
 # ---------- 对话配置（conversations） ----------
+
 
 @core.register_api(
     path="smarttavern/data_catalog/list_conversations",
     name="列出对话配置清单（名称与描述）",
     description="扫描 backend_projects/SmartTavern/data/conversations 下的 JSON 文件，返回文件相对路径与其 name/description 字段（若存在）。",
-    input_schema={
-        "type": "object",
-        "properties": {},
-        "additionalProperties": False
-    },
+    input_schema={"type": "object", "properties": {}, "additionalProperties": False},
     output_schema={
         "type": "object",
         "properties": {
@@ -304,30 +268,26 @@ def list_regex_rules(base_dir: Optional[str] = None,
                     "properties": {
                         "file": {"type": "string"},
                         "name": {"type": ["string", "null"]},
-                        "description": {"type": ["string", "null"]}
+                        "description": {"type": ["string", "null"]},
                     },
                     "required": ["file"],
-                    "additionalProperties": True
-                }
+                    "additionalProperties": True,
+                },
             },
             "errors": {
                 "type": "array",
                 "items": {
                     "type": "object",
-                    "properties": {
-                        "file": {"type": ["string", "null"]},
-                        "error": {"type": "string"}
-                    },
-                    "required": ["error"]
-                }
-            }
+                    "properties": {"file": {"type": ["string", "null"]}, "error": {"type": "string"}},
+                    "required": ["error"],
+                },
+            },
         },
         "required": ["folder", "total", "items"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
 )
-def list_conversations(base_dir: Optional[str] = None,
-                       fields: Optional[List[str]] = None) -> Dict[str, Any]:
+def list_conversations(base_dir: str | None = None, fields: list[str] | None = None) -> dict[str, Any]:
     # 忽略入参，统一返回内置目录与全部字段
     return list_conversations_impl()
 
@@ -342,11 +302,11 @@ def list_conversations(base_dir: Optional[str] = None,
         "properties": {
             "file": {
                 "type": "string",
-                "description": "列表接口返回的 file 相对路径（POSIX 风格），例如 backend_projects/SmartTavern/data/conversations/branch_demo/conversation.json"
+                "description": "列表接口返回的 file 相对路径（POSIX 风格），例如 backend_projects/SmartTavern/data/conversations/branch_demo/conversation.json",
             }
         },
         "required": ["file"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -356,15 +316,17 @@ def list_conversations(base_dir: Optional[str] = None,
             "description": {"type": ["string", "null"]},
             "content": {"type": ["object", "array", "null"]},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def get_conversation_detail(file: str) -> Dict[str, Any]:
+def get_conversation_detail(file: str) -> dict[str, Any]:
     from .impl import get_conversation_detail_impl
+
     return get_conversation_detail_impl(file=file)
+
 
 # ---------- 获取对话中单个消息节点 ----------
 @core.register_api(
@@ -375,10 +337,10 @@ def get_conversation_detail(file: str) -> Dict[str, Any]:
         "type": "object",
         "properties": {
             "file": {"type": "string", "description": "对话文件路径，相对仓库根（POSIX）"},
-            "node_id": {"type": "string", "description": "消息节点ID，如 n_ass..."}
+            "node_id": {"type": "string", "description": "消息节点ID，如 n_ass..."},
         },
         "required": ["file", "node_id"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -388,17 +350,20 @@ def get_conversation_detail(file: str) -> Dict[str, Any]:
             "node_id": {"type": "string"},
             "node": {"type": ["object", "null"], "additionalProperties": True},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": ["success"],
-        "additionalProperties": True
-    }
+        "additionalProperties": True,
+    },
 )
-def get_node_detail(file: str, node_id: str) -> Dict[str, Any]:
+def get_node_detail(file: str, node_id: str) -> dict[str, Any]:
     from .impl import get_node_detail_impl
+
     return get_node_detail_impl(file=file, node_id=node_id)
 
+
 # ---------- 获取预设详情（读取单个文件） ----------
+
 
 @core.register_api(
     path="smarttavern/data_catalog/get_preset_detail",
@@ -409,11 +374,11 @@ def get_node_detail(file: str, node_id: str) -> Dict[str, Any]:
         "properties": {
             "file": {
                 "type": "string",
-                "description": "列表接口返回的 file 相对路径（POSIX 风格），例如 backend_projects/SmartTavern/data/presets/Default/preset.json"
+                "description": "列表接口返回的 file 相对路径（POSIX 风格），例如 backend_projects/SmartTavern/data/presets/Default/preset.json",
             }
         },
         "required": ["file"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -423,18 +388,21 @@ def get_node_detail(file: str, node_id: str) -> Dict[str, Any]:
             "description": {"type": ["string", "null"]},
             "content": {"type": ["object", "array", "null"]},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def get_preset_detail(file: str) -> Dict[str, Any]:
+def get_preset_detail(file: str) -> dict[str, Any]:
     # 延迟导入，避免在顶层修改 import 列表导致潜在循环
     from .impl import get_preset_detail_impl
+
     return get_preset_detail_impl(file=file)
 
+
 # ---------- 获取世界书详情（读取单个文件） ----------
+
 
 @core.register_api(
     path="smarttavern/data_catalog/get_world_book_detail",
@@ -445,11 +413,11 @@ def get_preset_detail(file: str) -> Dict[str, Any]:
         "properties": {
             "file": {
                 "type": "string",
-                "description": "列表接口返回的 file 相对路径（POSIX 风格），例如 backend_projects/SmartTavern/data/world_books/参考用main_world/worldbook.json"
+                "description": "列表接口返回的 file 相对路径（POSIX 风格），例如 backend_projects/SmartTavern/data/world_books/参考用main_world/worldbook.json",
             }
         },
         "required": ["file"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -459,18 +427,20 @@ def get_preset_detail(file: str) -> Dict[str, Any]:
             "description": {"type": ["string", "null"]},
             "content": {"type": ["object", "array", "null"]},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def get_world_book_detail(file: str) -> Dict[str, Any]:
+def get_world_book_detail(file: str) -> dict[str, Any]:
     from .impl import get_world_book_detail_impl
+
     return get_world_book_detail_impl(file=file)
 
 
 # ---------- 获取角色卡详情（读取单个文件） ----------
+
 
 @core.register_api(
     path="smarttavern/data_catalog/get_character_detail",
@@ -481,11 +451,11 @@ def get_world_book_detail(file: str) -> Dict[str, Any]:
         "properties": {
             "file": {
                 "type": "string",
-                "description": "列表接口返回的 file 相对路径（POSIX 风格），例如 backend_projects/SmartTavern/data/characters/许莲笙/character.json"
+                "description": "列表接口返回的 file 相对路径（POSIX 风格），例如 backend_projects/SmartTavern/data/characters/许莲笙/character.json",
             }
         },
         "required": ["file"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -495,18 +465,20 @@ def get_world_book_detail(file: str) -> Dict[str, Any]:
             "description": {"type": ["string", "null"]},
             "content": {"type": ["object", "array", "null"]},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def get_character_detail(file: str) -> Dict[str, Any]:
+def get_character_detail(file: str) -> dict[str, Any]:
     from .impl import get_character_detail_impl
+
     return get_character_detail_impl(file=file)
 
 
 # ---------- 获取用户画像详情（读取单个文件） ----------
+
 
 @core.register_api(
     path="smarttavern/data_catalog/get_persona_detail",
@@ -517,11 +489,11 @@ def get_character_detail(file: str) -> Dict[str, Any]:
         "properties": {
             "file": {
                 "type": "string",
-                "description": "列表接口返回的 file 相对路径（POSIX 风格），例如 backend_projects/SmartTavern/data/personas/用户2/persona.json"
+                "description": "列表接口返回的 file 相对路径（POSIX 风格），例如 backend_projects/SmartTavern/data/personas/用户2/persona.json",
             }
         },
         "required": ["file"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -531,18 +503,20 @@ def get_character_detail(file: str) -> Dict[str, Any]:
             "description": {"type": ["string", "null"]},
             "content": {"type": ["object", "array", "null"]},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def get_persona_detail(file: str) -> Dict[str, Any]:
+def get_persona_detail(file: str) -> dict[str, Any]:
     from .impl import get_persona_detail_impl
+
     return get_persona_detail_impl(file=file)
 
 
 # ---------- 获取正则规则详情（读取单个文件） ----------
+
 
 @core.register_api(
     path="smarttavern/data_catalog/get_regex_rule_detail",
@@ -553,11 +527,11 @@ def get_persona_detail(file: str) -> Dict[str, Any]:
         "properties": {
             "file": {
                 "type": "string",
-                "description": "列表接口返回的 file 相对路径（POSIX 风格），例如 backend_projects/SmartTavern/data/regex_rules/remove_xml_tags/regex_rule.json"
+                "description": "列表接口返回的 file 相对路径（POSIX 风格），例如 backend_projects/SmartTavern/data/regex_rules/remove_xml_tags/regex_rule.json",
             }
         },
         "required": ["file"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -567,18 +541,20 @@ def get_persona_detail(file: str) -> Dict[str, Any]:
             "description": {"type": ["string", "null"]},
             "content": {"type": ["object", "array", "null"]},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def get_regex_rule_detail(file: str) -> Dict[str, Any]:
+def get_regex_rule_detail(file: str) -> dict[str, Any]:
     from .impl import get_regex_rule_detail_impl
+
     return get_regex_rule_detail_impl(file=file)
 
 
 # ---------- 保存（创建/更新）文件接口：按类型 ----------
+
 
 @core.register_api(
     path="smarttavern/data_catalog/update_preset_file",
@@ -587,33 +563,39 @@ def get_regex_rule_detail(file: str) -> Dict[str, Any]:
     input_schema={
         "type": "object",
         "properties": {
-            "file": {"type": "string", "description": "相对仓库根的 POSIX 路径，如 backend_projects/SmartTavern/data/presets/Your.json"},
-            "content": {"type": ["object","array"]},
-            "name": {"type": ["string","null"]},
-            "description": {"type": ["string","null"]},
-            "icon_base64": {"type": ["string","null"], "description": "图标的 Base64 编码（可选，保存为 icon.png）"}
+            "file": {
+                "type": "string",
+                "description": "相对仓库根的 POSIX 路径，如 backend_projects/SmartTavern/data/presets/Your.json",
+            },
+            "content": {"type": ["object", "array"]},
+            "name": {"type": ["string", "null"]},
+            "description": {"type": ["string", "null"]},
+            "icon_base64": {"type": ["string", "null"], "description": "图标的 Base64 编码（可选，保存为 icon.png）"},
         },
         "required": ["file", "content"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
         "properties": {
             "file": {"type": "string"},
-            "name": {"type": ["string","null"]},
-            "description": {"type": ["string","null"]},
-            "content": {"type": ["object","array","null"]},
-            "icon_path": {"type": ["string","null"]},
+            "name": {"type": ["string", "null"]},
+            "description": {"type": ["string", "null"]},
+            "content": {"type": ["object", "array", "null"]},
+            "icon_path": {"type": ["string", "null"]},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def update_preset_file(file: str, content: dict, name: str = None, description: str = None, icon_base64: str = None) -> Dict[str, Any]:
+def update_preset_file(
+    file: str, content: dict, name: str | None = None, description: str | None = None, icon_base64: str | None = None
+) -> dict[str, Any]:
     from .impl import update_preset_file_impl
-    payload: Dict[str, Any] = {"content": content}
+
+    payload: dict[str, Any] = {"content": content}
     if name is not None:
         payload["name"] = name
     if description is not None:
@@ -631,32 +613,35 @@ def update_preset_file(file: str, content: dict, name: str = None, description: 
         "type": "object",
         "properties": {
             "file": {"type": "string"},
-            "content": {"type": ["object","array"]},
-            "name": {"type": ["string","null"]},
-            "description": {"type": ["string","null"]},
-            "icon_base64": {"type": ["string","null"], "description": "图标的 Base64 编码（可选，保存为 icon.png）"}
+            "content": {"type": ["object", "array"]},
+            "name": {"type": ["string", "null"]},
+            "description": {"type": ["string", "null"]},
+            "icon_base64": {"type": ["string", "null"], "description": "图标的 Base64 编码（可选，保存为 icon.png）"},
         },
         "required": ["file", "content"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
         "properties": {
             "file": {"type": "string"},
-            "name": {"type": ["string","null"]},
-            "description": {"type": ["string","null"]},
-            "content": {"type": ["object","array","null"]},
-            "icon_path": {"type": ["string","null"]},
+            "name": {"type": ["string", "null"]},
+            "description": {"type": ["string", "null"]},
+            "content": {"type": ["object", "array", "null"]},
+            "icon_path": {"type": ["string", "null"]},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def update_world_book_file(file: str, content: dict, name: str = None, description: str = None, icon_base64: str = None) -> Dict[str, Any]:
+def update_world_book_file(
+    file: str, content: dict, name: str | None = None, description: str | None = None, icon_base64: str | None = None
+) -> dict[str, Any]:
     from .impl import update_world_book_file_impl
-    payload: Dict[str, Any] = {"content": content}
+
+    payload: dict[str, Any] = {"content": content}
     if name is not None:
         payload["name"] = name
     if description is not None:
@@ -674,34 +659,45 @@ def update_world_book_file(file: str, content: dict, name: str = None, descripti
         "type": "object",
         "properties": {
             "file": {"type": "string"},
-            "content": {"type": ["object","array"]},
-            "name": {"type": ["string","null"]},
-            "description": {"type": ["string","null"]},
-            "icon_base64": {"type": ["string","null"], "description": "图标的 Base64 编码（可选，保存为 icon.png）"},
-            "avatar_base64": {"type": ["string","null"], "description": "头像的 Base64 编码（可选，保存为 character.png）"}
+            "content": {"type": ["object", "array"]},
+            "name": {"type": ["string", "null"]},
+            "description": {"type": ["string", "null"]},
+            "icon_base64": {"type": ["string", "null"], "description": "图标的 Base64 编码（可选，保存为 icon.png）"},
+            "avatar_base64": {
+                "type": ["string", "null"],
+                "description": "头像的 Base64 编码（可选，保存为 character.png）",
+            },
         },
         "required": ["file", "content"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
         "properties": {
             "file": {"type": "string"},
-            "name": {"type": ["string","null"]},
-            "description": {"type": ["string","null"]},
-            "content": {"type": ["object","array","null"]},
-            "icon_path": {"type": ["string","null"]},
-            "avatar_path": {"type": ["string","null"]},
+            "name": {"type": ["string", "null"]},
+            "description": {"type": ["string", "null"]},
+            "content": {"type": ["object", "array", "null"]},
+            "icon_path": {"type": ["string", "null"]},
+            "avatar_path": {"type": ["string", "null"]},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def update_character_file(file: str, content: dict, name: str = None, description: str = None, icon_base64: str = None, avatar_base64: str = None) -> Dict[str, Any]:
+def update_character_file(
+    file: str,
+    content: dict,
+    name: str | None = None,
+    description: str | None = None,
+    icon_base64: str | None = None,
+    avatar_base64: str | None = None,
+) -> dict[str, Any]:
     from .impl import update_character_file_impl
-    payload: Dict[str, Any] = {"content": content}
+
+    payload: dict[str, Any] = {"content": content}
     if name is not None:
         payload["name"] = name
     if description is not None:
@@ -721,34 +717,45 @@ def update_character_file(file: str, content: dict, name: str = None, descriptio
         "type": "object",
         "properties": {
             "file": {"type": "string"},
-            "content": {"type": ["object","array"]},
-            "name": {"type": ["string","null"]},
-            "description": {"type": ["string","null"]},
-            "icon_base64": {"type": ["string","null"], "description": "图标的 Base64 编码（可选，保存为 icon.png）"},
-            "avatar_base64": {"type": ["string","null"], "description": "头像的 Base64 编码（可选，保存为 persona.png）"}
+            "content": {"type": ["object", "array"]},
+            "name": {"type": ["string", "null"]},
+            "description": {"type": ["string", "null"]},
+            "icon_base64": {"type": ["string", "null"], "description": "图标的 Base64 编码（可选，保存为 icon.png）"},
+            "avatar_base64": {
+                "type": ["string", "null"],
+                "description": "头像的 Base64 编码（可选，保存为 persona.png）",
+            },
         },
         "required": ["file", "content"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
         "properties": {
             "file": {"type": "string"},
-            "name": {"type": ["string","null"]},
-            "description": {"type": ["string","null"]},
-            "content": {"type": ["object","array","null"]},
-            "icon_path": {"type": ["string","null"]},
-            "avatar_path": {"type": ["string","null"]},
+            "name": {"type": ["string", "null"]},
+            "description": {"type": ["string", "null"]},
+            "content": {"type": ["object", "array", "null"]},
+            "icon_path": {"type": ["string", "null"]},
+            "avatar_path": {"type": ["string", "null"]},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def update_persona_file(file: str, content: dict, name: str = None, description: str = None, icon_base64: str = None, avatar_base64: str = None) -> Dict[str, Any]:
+def update_persona_file(
+    file: str,
+    content: dict,
+    name: str | None = None,
+    description: str | None = None,
+    icon_base64: str | None = None,
+    avatar_base64: str | None = None,
+) -> dict[str, Any]:
     from .impl import update_persona_file_impl
-    payload: Dict[str, Any] = {"content": content}
+
+    payload: dict[str, Any] = {"content": content}
     if name is not None:
         payload["name"] = name
     if description is not None:
@@ -768,32 +775,35 @@ def update_persona_file(file: str, content: dict, name: str = None, description:
         "type": "object",
         "properties": {
             "file": {"type": "string"},
-            "content": {"type": ["object","array"]},
-            "name": {"type": ["string","null"]},
-            "description": {"type": ["string","null"]},
-            "icon_base64": {"type": ["string","null"], "description": "图标的 Base64 编码（可选，保存为 icon.png）"}
+            "content": {"type": ["object", "array"]},
+            "name": {"type": ["string", "null"]},
+            "description": {"type": ["string", "null"]},
+            "icon_base64": {"type": ["string", "null"], "description": "图标的 Base64 编码（可选，保存为 icon.png）"},
         },
         "required": ["file", "content"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
         "properties": {
             "file": {"type": "string"},
-            "name": {"type": ["string","null"]},
-            "description": {"type": ["string","null"]},
-            "content": {"type": ["object","array","null"]},
-            "icon_path": {"type": ["string","null"]},
+            "name": {"type": ["string", "null"]},
+            "description": {"type": ["string", "null"]},
+            "content": {"type": ["object", "array", "null"]},
+            "icon_path": {"type": ["string", "null"]},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def update_regex_rule_file(file: str, content: dict, name: str = None, description: str = None, icon_base64: str = None) -> Dict[str, Any]:
+def update_regex_rule_file(
+    file: str, content: dict, name: str | None = None, description: str | None = None, icon_base64: str | None = None
+) -> dict[str, Any]:
     from .impl import update_regex_rule_file_impl
-    payload: Dict[str, Any] = {"content": content}
+
+    payload: dict[str, Any] = {"content": content}
     if name is not None:
         payload["name"] = name
     if description is not None:
@@ -805,15 +815,12 @@ def update_regex_rule_file(file: str, content: dict, name: str = None, descripti
 
 # ---------- LLM配置（llm_configs） ----------
 
+
 @core.register_api(
     path="smarttavern/data_catalog/list_llm_configs",
     name="列出LLM配置清单（名称与描述）",
     description="扫描 backend_projects/SmartTavern/data/llm_configs 下的子目录（每个配置目录包含 llm_config.json），返回 llm_config.json 的相对路径与其 name/description 字段（若存在）。",
-    input_schema={
-        "type": "object",
-        "properties": {},
-        "additionalProperties": False
-    },
+    input_schema={"type": "object", "properties": {}, "additionalProperties": False},
     output_schema={
         "type": "object",
         "properties": {
@@ -826,30 +833,26 @@ def update_regex_rule_file(file: str, content: dict, name: str = None, descripti
                     "properties": {
                         "file": {"type": "string"},
                         "name": {"type": ["string", "null"]},
-                        "description": {"type": ["string", "null"]}
+                        "description": {"type": ["string", "null"]},
                     },
                     "required": ["file"],
-                    "additionalProperties": True
-                }
+                    "additionalProperties": True,
+                },
             },
             "errors": {
                 "type": "array",
                 "items": {
                     "type": "object",
-                    "properties": {
-                        "file": {"type": ["string", "null"]},
-                        "error": {"type": "string"}
-                    },
-                    "required": ["error"]
-                }
-            }
+                    "properties": {"file": {"type": ["string", "null"]}, "error": {"type": "string"}},
+                    "required": ["error"],
+                },
+            },
         },
         "required": ["folder", "total", "items"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
 )
-def list_llm_configs(base_dir: Optional[str] = None,
-                     fields: Optional[List[str]] = None) -> Dict[str, Any]:
+def list_llm_configs(base_dir: str | None = None, fields: list[str] | None = None) -> dict[str, Any]:
     return list_llm_configs_impl()
 
 
@@ -862,11 +865,11 @@ def list_llm_configs(base_dir: Optional[str] = None,
         "properties": {
             "file": {
                 "type": "string",
-                "description": "列表接口返回的 file 相对路径（POSIX 风格），例如 backend_projects/SmartTavern/data/llm_configs/openai_gpt4/llm_config.json"
+                "description": "列表接口返回的 file 相对路径（POSIX 风格），例如 backend_projects/SmartTavern/data/llm_configs/openai_gpt4/llm_config.json",
             }
         },
         "required": ["file"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -876,14 +879,15 @@ def list_llm_configs(base_dir: Optional[str] = None,
             "description": {"type": ["string", "null"]},
             "content": {"type": ["object", "array", "null"]},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def get_llm_config_detail(file: str) -> Dict[str, Any]:
+def get_llm_config_detail(file: str) -> dict[str, Any]:
     from .impl import get_llm_config_detail_impl
+
     return get_llm_config_detail_impl(file=file)
 
 
@@ -895,32 +899,35 @@ def get_llm_config_detail(file: str) -> Dict[str, Any]:
         "type": "object",
         "properties": {
             "file": {"type": "string"},
-            "content": {"type": ["object","array"]},
-            "name": {"type": ["string","null"]},
-            "description": {"type": ["string","null"]},
-            "icon_base64": {"type": ["string","null"], "description": "图标的 Base64 编码（可选，保存为 icon.png）"}
+            "content": {"type": ["object", "array"]},
+            "name": {"type": ["string", "null"]},
+            "description": {"type": ["string", "null"]},
+            "icon_base64": {"type": ["string", "null"], "description": "图标的 Base64 编码（可选，保存为 icon.png）"},
         },
         "required": ["file", "content"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
         "properties": {
             "file": {"type": "string"},
-            "name": {"type": ["string","null"]},
-            "description": {"type": ["string","null"]},
-            "content": {"type": ["object","array","null"]},
-            "icon_path": {"type": ["string","null"]},
+            "name": {"type": ["string", "null"]},
+            "description": {"type": ["string", "null"]},
+            "content": {"type": ["object", "array", "null"]},
+            "icon_path": {"type": ["string", "null"]},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def update_llm_config_file(file: str, content: dict, name: str = None, description: str = None, icon_base64: str = None) -> Dict[str, Any]:
+def update_llm_config_file(
+    file: str, content: dict, name: str | None = None, description: str | None = None, icon_base64: str | None = None
+) -> dict[str, Any]:
     from .impl import update_llm_config_file_impl
-    payload: Dict[str, Any] = {"content": content}
+
+    payload: dict[str, Any] = {"content": content}
     if name is not None:
         payload["name"] = name
     if description is not None:
@@ -932,15 +939,12 @@ def update_llm_config_file(file: str, content: dict, name: str = None, descripti
 
 # ---------- 插件（plugins） ----------
 
+
 @core.register_api(
     path="smarttavern/data_catalog/list_plugins",
     name="列出插件清单（名称与描述）",
     description="扫描 backend_projects/SmartTavern/plugins 下的插件目录，仅读取各自 manifest.json 的 name/description。必须存在 plugins_switch.json（位于 plugins 根目录）；接口会根据开关文件中 enabled 与 disabled 两个列表合并出需要扫描的插件集（均需展示），若声明的目录缺失则在 errors 返回提示。",
-    input_schema={
-        "type": "object",
-        "properties": {},
-        "additionalProperties": False
-    },
+    input_schema={"type": "object", "properties": {}, "additionalProperties": False},
     output_schema={
         "type": "object",
         "properties": {
@@ -953,30 +957,26 @@ def update_llm_config_file(file: str, content: dict, name: str = None, descripti
                     "properties": {
                         "dir": {"type": "string"},
                         "name": {"type": ["string", "null"]},
-                        "description": {"type": ["string", "null"]}
+                        "description": {"type": ["string", "null"]},
                     },
                     "required": ["dir"],
-                    "additionalProperties": True
-                }
+                    "additionalProperties": True,
+                },
             },
             "errors": {
                 "type": "array",
                 "items": {
                     "type": "object",
-                    "properties": {
-                        "file": {"type": ["string", "null"]},
-                        "error": {"type": "string"}
-                    },
-                    "required": ["error"]
-                }
-            }
+                    "properties": {"file": {"type": ["string", "null"]}, "error": {"type": "string"}},
+                    "required": ["error"],
+                },
+            },
         },
         "required": ["folder", "total", "items"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
 )
-def list_plugins(base_dir: Optional[str] = None,
-                 fields: Optional[List[str]] = None) -> Dict[str, Any]:
+def list_plugins(base_dir: str | None = None, fields: list[str] | None = None) -> dict[str, Any]:
     return list_plugins_impl()
 
 
@@ -990,18 +990,20 @@ def list_plugins(base_dir: Optional[str] = None,
         "type": "object",
         "properties": {
             "file": {"type": "string"},
-            "enabled": {"type": ["array","null"], "items": {"type": "string"}},
-            "disabled": {"type": ["array","null"], "items": {"type": "string"}},
+            "enabled": {"type": ["array", "null"], "items": {"type": "string"}},
+            "disabled": {"type": ["array", "null"], "items": {"type": "string"}},
             "error": {"type": "string"},
             "message": {"type": "string"},
         },
         "required": ["file"],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def get_plugins_switch() -> Dict[str, Any]:
+def get_plugins_switch() -> dict[str, Any]:
     from .impl import get_plugins_switch_impl
+
     return get_plugins_switch_impl()
+
 
 @core.register_api(
     path="smarttavern/data_catalog/update_plugins_switch",
@@ -1009,28 +1011,28 @@ def get_plugins_switch() -> Dict[str, Any]:
     description="更新 backend_projects/SmartTavern/plugins/plugins_switch.json，结构：{ enabled:string[], disabled?:string[] }",
     input_schema={
         "type": "object",
-        "properties": {
-            "content": {"type": "object"}
-        },
+        "properties": {"content": {"type": "object"}},
         "required": ["content"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
         "properties": {
             "file": {"type": "string"},
-            "enabled": {"type": ["array","null"], "items": {"type": "string"}},
-            "disabled": {"type": ["array","null"], "items": {"type": "string"}},
+            "enabled": {"type": ["array", "null"], "items": {"type": "string"}},
+            "disabled": {"type": ["array", "null"], "items": {"type": "string"}},
             "error": {"type": "string"},
             "message": {"type": "string"},
         },
         "required": ["file"],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def update_plugins_switch(content: Dict[str, Any]) -> Dict[str, Any]:
+def update_plugins_switch(content: dict[str, Any]) -> dict[str, Any]:
     from .impl import update_plugins_switch_impl
+
     return update_plugins_switch_impl(content=content)
+
 
 # ---------- 获取 plugins 资产（二进制） ----------
 @core.register_api(
@@ -1042,11 +1044,11 @@ def update_plugins_switch(content: Dict[str, Any]) -> Dict[str, Any]:
         "properties": {
             "file": {
                 "type": "string",
-                "description": "列表接口返回或手写的相对路径（POSIX 风格），例如 backend_projects/SmartTavern/plugins/my-plugin/logo.png"
+                "description": "列表接口返回或手写的相对路径（POSIX 风格），例如 backend_projects/SmartTavern/plugins/my-plugin/logo.png",
             }
         },
         "required": ["file"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -1056,19 +1058,21 @@ def update_plugins_switch(content: Dict[str, Any]) -> Dict[str, Any]:
             "size": {"type": "integer"},
             "content_base64": {"type": "string"},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def get_plugins_asset(file: str) -> Dict[str, Any]:
+def get_plugins_asset(file: str) -> dict[str, Any]:
     from .impl import get_plugins_asset_impl
+
     return get_plugins_asset_impl(file=file)
 
 
 # ---------- 获取 data 资产（二进制） ----------
 # ---------- 通用删除数据目录接口 ----------
+
 
 @core.register_api(
     path="smarttavern/data_catalog/delete_data_folder",
@@ -1093,11 +1097,11 @@ def get_plugins_asset(file: str) -> Dict[str, Any]:
         "properties": {
             "folder_path": {
                 "type": "string",
-                "description": "要删除的目录路径（POSIX 风格），例如 backend_projects/SmartTavern/data/presets/Default"
+                "description": "要删除的目录路径（POSIX 风格），例如 backend_projects/SmartTavern/data/presets/Default",
             }
         },
         "required": ["folder_path"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -1106,14 +1110,15 @@ def get_plugins_asset(file: str) -> Dict[str, Any]:
             "deleted_path": {"type": "string"},
             "data_type": {"type": "string", "description": "被删除目录的数据类型"},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": ["success"],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def delete_data_folder(folder_path: str) -> Dict[str, Any]:
+def delete_data_folder(folder_path: str) -> dict[str, Any]:
     from .impl import delete_data_folder_impl
+
     return delete_data_folder_impl(folder_path=folder_path)
 
 
@@ -1126,11 +1131,11 @@ def delete_data_folder(folder_path: str) -> Dict[str, Any]:
         "properties": {
             "file": {
                 "type": "string",
-                "description": "相对仓库根的 POSIX 路径，例如 backend_projects/SmartTavern/data/characters/心与露/icon.png"
+                "description": "相对仓库根的 POSIX 路径，例如 backend_projects/SmartTavern/data/characters/心与露/icon.png",
             }
         },
         "required": ["file"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -1140,18 +1145,20 @@ def delete_data_folder(folder_path: str) -> Dict[str, Any]:
             "size": {"type": "integer"},
             "content_base64": {"type": "string"},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def get_data_asset(file: str) -> Dict[str, Any]:
+def get_data_asset(file: str) -> dict[str, Any]:
     from .impl import get_data_asset_impl
+
     return get_data_asset_impl(file=file)
 
 
 # ---------- 获取插件详情（读取单个插件的 manifest.json） ----------
+
 
 @core.register_api(
     path="smarttavern/data_catalog/get_plugin_detail",
@@ -1162,11 +1169,11 @@ def get_data_asset(file: str) -> Dict[str, Any]:
         "properties": {
             "dir": {
                 "type": "string",
-                "description": "插件目录路径（POSIX 风格），例如 backend_projects/SmartTavern/plugins/context-variables"
+                "description": "插件目录路径（POSIX 风格），例如 backend_projects/SmartTavern/plugins/context-variables",
             }
         },
         "required": ["dir"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -1177,18 +1184,20 @@ def get_data_asset(file: str) -> Dict[str, Any]:
             "description": {"type": ["string", "null"]},
             "content": {"type": ["object", "null"]},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def get_plugin_detail(dir: str) -> Dict[str, Any]:
+def get_plugin_detail(dir: str) -> dict[str, Any]:
     from .impl import get_plugin_detail_impl
+
     return get_plugin_detail_impl(dir_path=dir)
 
 
 # ---------- 保存插件文件（更新 manifest.json） ----------
+
 
 @core.register_api(
     path="smarttavern/data_catalog/update_plugin_file",
@@ -1197,13 +1206,19 @@ def get_plugin_detail(dir: str) -> Dict[str, Any]:
     input_schema={
         "type": "object",
         "properties": {
-            "dir": {"type": "string", "description": "插件目录路径（POSIX 风格），例如 backend_projects/SmartTavern/plugins/context-variables"},
+            "dir": {
+                "type": "string",
+                "description": "插件目录路径（POSIX 风格），例如 backend_projects/SmartTavern/plugins/context-variables",
+            },
             "name": {"type": ["string", "null"]},
             "description": {"type": ["string", "null"]},
-            "icon_base64": {"type": ["string", "null"], "description": "图标的 Base64 编码（可选，保存为 icon.png；空字符串表示删除图标）"}
+            "icon_base64": {
+                "type": ["string", "null"],
+                "description": "图标的 Base64 编码（可选，保存为 icon.png；空字符串表示删除图标）",
+            },
         },
         "required": ["dir"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -1216,15 +1231,18 @@ def get_plugin_detail(dir: str) -> Dict[str, Any]:
             "icon_path": {"type": ["string", "null"]},
             "icon_deleted": {"type": ["boolean", "null"]},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def update_plugin_file(dir: str, name: str = None, description: str = None, icon_base64: str = None) -> Dict[str, Any]:
+def update_plugin_file(
+    dir: str, name: str | None = None, description: str | None = None, icon_base64: str | None = None
+) -> dict[str, Any]:
     from .impl import update_plugin_file_impl
-    payload: Dict[str, Any] = {}
+
+    payload: dict[str, Any] = {}
     if name is not None:
         payload["name"] = name
     if description is not None:
@@ -1235,6 +1253,7 @@ def update_plugin_file(dir: str, name: str = None, description: str = None, icon
 
 
 # ---------- 创建数据文件夹 ----------
+
 
 @core.register_api(
     path="smarttavern/data_catalog/create_data_folder",
@@ -1255,27 +1274,15 @@ def update_plugin_file(dir: str, name: str = None, description: str = None, icon
             "data_type": {
                 "type": "string",
                 "enum": ["preset", "worldbook", "character", "persona", "regex_rule", "llm_config"],
-                "description": "数据类型"
+                "description": "数据类型",
             },
-            "name": {
-                "type": "string",
-                "description": "名称（将写入JSON文件的name字段）"
-            },
-            "description": {
-                "type": "string",
-                "description": "描述（可选，将写入JSON文件的description字段）"
-            },
-            "folder_name": {
-                "type": "string",
-                "description": "文件夹名称（目录名）"
-            },
-            "icon_base64": {
-                "type": ["string", "null"],
-                "description": "图标的Base64编码（可选，保存为icon.png）"
-            }
+            "name": {"type": "string", "description": "名称（将写入JSON文件的name字段）"},
+            "description": {"type": "string", "description": "描述（可选，将写入JSON文件的description字段）"},
+            "folder_name": {"type": "string", "description": "文件夹名称（目录名）"},
+            "icon_base64": {"type": ["string", "null"], "description": "图标的Base64编码（可选，保存为icon.png）"},
         },
         "required": ["data_type", "name", "folder_name"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -1288,18 +1295,21 @@ def update_plugin_file(dir: str, name: str = None, description: str = None, icon
             "name": {"type": "string"},
             "description": {"type": ["string", "null"]},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": ["success"],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def create_data_folder(data_type: str, name: str, description: str = None, folder_name: str = None, icon_base64: str = None) -> Dict[str, Any]:
+def create_data_folder(
+    data_type: str,
+    name: str,
+    description: str | None = None,
+    folder_name: str | None = None,
+    icon_base64: str | None = None,
+) -> dict[str, Any]:
     from .impl import create_data_folder_impl
+
     return create_data_folder_impl(
-        data_type=data_type,
-        name=name,
-        description=description,
-        folder_name=folder_name,
-        icon_base64=icon_base64
+        data_type=data_type, name=name, description=description, folder_name=folder_name, icon_base64=icon_base64
     )

@@ -22,8 +22,8 @@ let __tuningHiddenEls = []
 function __hideOverlaysForTuning() {
   const selectors = ['.st-panel-backdrop', '.sd-backdrop', '.sd-fab']
   __tuningHiddenEls = []
-  selectors.forEach(sel => {
-    document.querySelectorAll(sel).forEach(el => {
+  selectors.forEach((sel) => {
+    document.querySelectorAll(sel).forEach((el) => {
       __tuningHiddenEls.push({ el, style: el.getAttribute('style') })
       try {
         el.style.setProperty('display', 'none', 'important')
@@ -73,10 +73,14 @@ const {
 
 // Destructure refs for template parity
 const {
-  sandboxAspectX, sandboxAspectY,
-  sandboxMaxWidth, sandboxMaxWidthLimit,
-  sandboxPadding, sandboxRadius,
-  sandboxBgOpacityPct, sandboxStageBgOpacityPct,
+  sandboxAspectX,
+  sandboxAspectY,
+  sandboxMaxWidth,
+  sandboxMaxWidthLimit,
+  sandboxPadding,
+  sandboxRadius,
+  sandboxBgOpacityPct,
+  sandboxStageBgOpacityPct,
   // 新增：背景图片遮罩模糊（px）
   sandboxBgBlurPx,
   // 新增：沙盒容器显示模式选择（auto/fixed/inline）
@@ -86,13 +90,24 @@ const {
 // 持久化：任意外观变更立即保存到浏览器，避免刷新后丢失
 // 注意：state 是普通对象（包含 ref），需要监听所有 ref 的数组
 watch(
-  [sandboxAspectX, sandboxAspectY, sandboxMaxWidth, sandboxMaxWidthLimit, sandboxPadding, sandboxRadius, sandboxBgOpacityPct, sandboxStageBgOpacityPct, sandboxBgBlurPx, sandboxDisplayModeSel],
+  [
+    sandboxAspectX,
+    sandboxAspectY,
+    sandboxMaxWidth,
+    sandboxMaxWidthLimit,
+    sandboxPadding,
+    sandboxRadius,
+    sandboxBgOpacityPct,
+    sandboxStageBgOpacityPct,
+    sandboxBgBlurPx,
+    sandboxDisplayModeSel,
+  ],
   () => {
     try {
       const snap = buildSnapshot()
       saveSnapshotLS(snap)
     } catch (_) {}
-  }
+  },
 )
 
 // Presets (unchanged)
@@ -217,15 +232,19 @@ onMounted(() => {
   initFromCSS()
   __dispose = startAutoSave({ intervalMs: 1000 })
   // 实时保存并广播：切换显示模式即刻生效
-  watch(sandboxDisplayModeSel, (v) => {
-    try {
-      const snap = buildSnapshot()
-      // 确保写入最新选择
-      snap.sandboxDisplayModeSel = String(v)
-      saveSnapshotLS(snap)
-      window.dispatchEvent(new CustomEvent('stAppearanceSandboxUpdate', { detail: snap }))
-    } catch (_) {}
-  }, { immediate: true })
+  watch(
+    sandboxDisplayModeSel,
+    (v) => {
+      try {
+        const snap = buildSnapshot()
+        // 确保写入最新选择
+        snap.sandboxDisplayModeSel = String(v)
+        saveSnapshotLS(snap)
+        window.dispatchEvent(new CustomEvent('stAppearanceSandboxUpdate', { detail: snap }))
+      } catch (_) {}
+    },
+    { immediate: true },
+  )
 })
 onBeforeUnmount(() => {
   if (typeof __dispose === 'function') __dispose()
@@ -242,7 +261,7 @@ onBeforeUnmount(() => {
       <label class="st-control-label">
         <span class="label-text">{{ t('appearance.sandbox.displayMode') }}</span>
         <div class="value-group">
-          <select class="st-number-input" v-model="sandboxDisplayModeSel" style="width: 200px;">
+          <select class="st-number-input" v-model="sandboxDisplayModeSel" style="width: 200px">
             <option value="auto">{{ t('appearance.sandbox.displayModeAuto') }}</option>
             <option value="fixed">{{ t('appearance.sandbox.displayModeFixed') }}</option>
             <option value="inline">{{ t('appearance.sandbox.displayModeInline') }}</option>
@@ -250,7 +269,7 @@ onBeforeUnmount(() => {
         </div>
       </label>
       <div class="st-control-hint">
-        <span class="muted" style="font-size:12px;">
+        <span class="muted" style="font-size: 12px">
           {{ t('appearance.sandbox.displayModeHint') }}
         </span>
       </div>
@@ -263,15 +282,31 @@ onBeforeUnmount(() => {
         <div class="value-group">
           <select class="st-number-input" @change="onSandboxAspectPreset">
             <option disabled selected value="">{{ t('appearance.sandbox.preset') }}</option>
-            <option v-for="p in aspectPresets" :key="p.label" :value="p.v.join(',')">{{ p.label }}</option>
+            <option v-for="p in aspectPresets" :key="p.label" :value="p.v.join(',')">
+              {{ p.label }}
+            </option>
           </select>
           <span class="unit">{{ t('appearance.sandbox.orCustom') }}</span>
         </div>
       </label>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <input type="number" class="st-number-input" :value="sandboxAspectX" min="1" max="100" @input="onSandboxAspectNumInputX" />
+      <div style="display: flex; gap: 8px; align-items: center">
+        <input
+          type="number"
+          class="st-number-input"
+          :value="sandboxAspectX"
+          min="1"
+          max="100"
+          @input="onSandboxAspectNumInputX"
+        />
         <span>:</span>
-        <input type="number" class="st-number-input" :value="sandboxAspectY" min="1" max="100" @input="onSandboxAspectNumInputY" />
+        <input
+          type="number"
+          class="st-number-input"
+          :value="sandboxAspectY"
+          min="1"
+          max="100"
+          @input="onSandboxAspectNumInputY"
+        />
       </div>
     </div>
 
@@ -280,16 +315,41 @@ onBeforeUnmount(() => {
       <label class="st-control-label">
         <span class="label-text">{{ t('appearance.sandbox.stageMaxWidth') }}</span>
         <div class="value-group">
-          <input type="number" class="st-number-input" :value="sandboxMaxWidth" min="640" :max="sandboxMaxWidthLimit" @input="onSandboxMaxWidthNumberInput" />
+          <input
+            type="number"
+            class="st-number-input"
+            :value="sandboxMaxWidth"
+            min="640"
+            :max="sandboxMaxWidthLimit"
+            @input="onSandboxMaxWidthNumberInput"
+          />
           <span class="unit">px</span>
         </div>
       </label>
-      <input type="range" min="640" :max="sandboxMaxWidthLimit" step="10" :value="sandboxMaxWidth" @pointerdown="onTuningStart('sandboxMaxWidth')" @input="onSandboxMaxWidthRangeInput" />
+      <input
+        type="range"
+        min="640"
+        :max="sandboxMaxWidthLimit"
+        step="10"
+        :value="sandboxMaxWidth"
+        @pointerdown="onTuningStart('sandboxMaxWidth')"
+        @input="onSandboxMaxWidthRangeInput"
+      />
       <div class="st-control-hint">
         <label class="st-control-label">
-          <span class="label-text" style="font-size: 11px; opacity: 0.8;">{{ t('appearance.sandbox.sliderMax') }}</span>
+          <span class="label-text" style="font-size: 11px; opacity: 0.8">{{
+            t('appearance.sandbox.sliderMax')
+          }}</span>
           <div class="value-group">
-            <input type="number" class="st-number-input" :value="sandboxMaxWidthLimit" min="640" max="3840" @input="onSandboxMaxWidthLimitInput" style="width: 60px;" />
+            <input
+              type="number"
+              class="st-number-input"
+              :value="sandboxMaxWidthLimit"
+              min="640"
+              max="3840"
+              @input="onSandboxMaxWidthLimitInput"
+              style="width: 60px"
+            />
             <span class="unit">px</span>
           </div>
         </label>
@@ -301,11 +361,26 @@ onBeforeUnmount(() => {
       <label class="st-control-label">
         <span class="label-text">{{ t('appearance.sandbox.stagePadding') }}</span>
         <div class="value-group">
-          <input type="number" class="st-number-input" :value="sandboxPadding" min="0" max="48" @input="onSandboxPaddingNumberInput" />
+          <input
+            type="number"
+            class="st-number-input"
+            :value="sandboxPadding"
+            min="0"
+            max="48"
+            @input="onSandboxPaddingNumberInput"
+          />
           <span class="unit">px</span>
         </div>
       </label>
-      <input type="range" min="0" max="48" step="1" :value="sandboxPadding" @pointerdown="onTuningStart('sandboxPadding')" @input="onSandboxPaddingRangeInput" />
+      <input
+        type="range"
+        min="0"
+        max="48"
+        step="1"
+        :value="sandboxPadding"
+        @pointerdown="onTuningStart('sandboxPadding')"
+        @input="onSandboxPaddingRangeInput"
+      />
     </div>
 
     <!-- 圆角 -->
@@ -313,11 +388,26 @@ onBeforeUnmount(() => {
       <label class="st-control-label">
         <span class="label-text">{{ t('appearance.sandbox.stageRadius') }}</span>
         <div class="value-group">
-          <input type="number" class="st-number-input" :value="sandboxRadius" min="0" max="32" @input="onSandboxRadiusNumberInput" />
+          <input
+            type="number"
+            class="st-number-input"
+            :value="sandboxRadius"
+            min="0"
+            max="32"
+            @input="onSandboxRadiusNumberInput"
+          />
           <span class="unit">px</span>
         </div>
       </label>
-      <input type="range" min="0" max="32" step="1" :value="sandboxRadius" @pointerdown="onTuningStart('sandboxRadius')" @input="onSandboxRadiusRangeInput" />
+      <input
+        type="range"
+        min="0"
+        max="32"
+        step="1"
+        :value="sandboxRadius"
+        @pointerdown="onTuningStart('sandboxRadius')"
+        @input="onSandboxRadiusRangeInput"
+      />
     </div>
 
     <!-- 背景图片遮罩不透明度 -->
@@ -373,7 +463,9 @@ onBeforeUnmount(() => {
         @input="onSandboxBgBlurRangeInput"
       />
       <div class="st-control-hint">
-        <span class="muted" style="font-size:12px;">{{ t('appearance.sandbox.bgMaskBlurHint') }}</span>
+        <span class="muted" style="font-size: 12px">{{
+          t('appearance.sandbox.bgMaskBlurHint')
+        }}</span>
       </div>
     </div>
 

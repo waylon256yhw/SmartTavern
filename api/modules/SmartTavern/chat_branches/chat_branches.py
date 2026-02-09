@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 API 封装层：SmartTavern.chat_branches（无状态版）
 
@@ -20,21 +19,48 @@ API 封装层：SmartTavern.chat_branches（无状态版）
 - 本模块不再管理任何对话/会话状态（无 create/append/truncate/switch/export/import/list_* 等接口）
 - 外部可直接存储与读取 JSON 文件；此处仅负责计算视图
 """
-from typing import Any, Dict
+
+from typing import Any
+
 import core
+
+from .impl import (
+    append_new_message as _append_new_message,
+)
+from .impl import (
+    branch_table_from_doc as _branch_table_from_doc,
+)
+from .impl import (
+    create_conversation_impl as _create_conversation_impl,
+)
+from .impl import (
+    delete_branch as _delete_branch,
+)
+from .impl import (
+    get_latest_message_from_doc as _get_latest_message_from_doc,
+)
 from .impl import (
     openai_messages_from_doc as _openai_messages_from_doc,
-    branch_table_from_doc as _branch_table_from_doc,
-    get_latest_message_from_doc as _get_latest_message_from_doc,
-    update_message_content as _update_message_content,
-    truncate_after_node as _truncate_after_node,
-    delete_branch as _delete_branch,
-    append_new_message as _append_new_message,
+)
+from .impl import (
     retry_branch as _retry_branch,
+)
+from .impl import (
     retry_user_message as _retry_user_message,
-    switch_branch_impl as _switch_branch_impl,
-    create_conversation_impl as _create_conversation_impl,
+)
+from .impl import (
     settings_impl as _settings_impl,
+)
+from .impl import (
+    switch_branch_impl as _switch_branch_impl,
+)
+from .impl import (
+    truncate_after_node as _truncate_after_node,
+)
+from .impl import (
+    update_message_content as _update_message_content,
+)
+from .impl import (
     variables_impl as _variables_impl,
 )
 
@@ -45,15 +71,9 @@ from .impl import (
     description="从最小分支树文件导出 OpenAI Chat messages 数组。支持传入 doc（JSON 对象）或 file（文件路径）二选一",
     input_schema={
         "type": "object",
-        "properties": {
-            "doc": {"type": "object", "additionalProperties": True},
-            "file": {"type": "string"}
-        },
+        "properties": {"doc": {"type": "object", "additionalProperties": True}, "file": {"type": "string"}},
         "additionalProperties": False,
-        "oneOf": [
-            {"required": ["doc"]},
-            {"required": ["file"]}
-        ]
+        "oneOf": [{"required": ["doc"]}, {"required": ["file"]}],
     },
     output_schema={
         "type": "object",
@@ -72,7 +92,7 @@ from .impl import (
         "additionalProperties": True,
     },
 )
-def openai_messages(doc: Dict[str, Any] = None, file: str = None) -> Dict[str, Any]:
+def openai_messages(doc: dict[str, Any] | None = None, file: str | None = None) -> dict[str, Any]:
     return _openai_messages_from_doc(doc=doc, file=file)
 
 
@@ -82,15 +102,9 @@ def openai_messages(doc: Dict[str, Any] = None, file: str = None) -> Dict[str, A
     description="从最小分支树文件计算分支情况表（含最新层 j/n）。支持传入 doc（JSON 对象）或 file（文件路径）二选一",
     input_schema={
         "type": "object",
-        "properties": {
-            "doc": {"type": "object", "additionalProperties": True},
-            "file": {"type": "string"}
-        },
+        "properties": {"doc": {"type": "object", "additionalProperties": True}, "file": {"type": "string"}},
         "additionalProperties": False,
-        "oneOf": [
-            {"required": ["doc"]},
-            {"required": ["file"]}
-        ]
+        "oneOf": [{"required": ["doc"]}, {"required": ["file"]}],
     },
     output_schema={
         "type": "object",
@@ -102,7 +116,7 @@ def openai_messages(doc: Dict[str, Any] = None, file: str = None) -> Dict[str, A
         "additionalProperties": True,
     },
 )
-def branch_table(doc: Dict[str, Any] = None, file: str = None) -> Dict[str, Any]:
+def branch_table(doc: dict[str, Any] | None = None, file: str | None = None) -> dict[str, Any]:
     return _branch_table_from_doc(doc=doc, file=file)
 
 
@@ -112,15 +126,9 @@ def branch_table(doc: Dict[str, Any] = None, file: str = None) -> Dict[str, Any]
     description="根据 active_path 提取最后一条消息。支持传入 doc（JSON 对象）或 file（文件路径）二选一",
     input_schema={
         "type": "object",
-        "properties": {
-            "doc": {"type": "object", "additionalProperties": True},
-            "file": {"type": "string"}
-        },
+        "properties": {"doc": {"type": "object", "additionalProperties": True}, "file": {"type": "string"}},
         "additionalProperties": False,
-        "oneOf": [
-            {"required": ["doc"]},
-            {"required": ["file"]}
-        ]
+        "oneOf": [{"required": ["doc"]}, {"required": ["file"]}],
     },
     output_schema={
         "type": "object",
@@ -128,13 +136,13 @@ def branch_table(doc: Dict[str, Any] = None, file: str = None) -> Dict[str, Any]
             "node_id": {"type": "string"},
             "role": {"type": "string", "enum": ["system", "user", "assistant"]},
             "content": {"type": "string"},
-            "depth": {"type": "integer"}
+            "depth": {"type": "integer"},
         },
         "required": ["node_id", "role", "content", "depth"],
         "additionalProperties": False,
     },
 )
-def get_latest_message(doc: Dict[str, Any] = None, file: str = None) -> Dict[str, Any]:
+def get_latest_message(doc: dict[str, Any] | None = None, file: str | None = None) -> dict[str, Any]:
     return _get_latest_message_from_doc(doc=doc, file=file)
 
 
@@ -149,21 +157,17 @@ def get_latest_message(doc: Dict[str, Any] = None, file: str = None) -> Dict[str
             "content": {"type": "string"},
             "doc": {"type": "object", "additionalProperties": True},
             "file": {"type": "string"},
-            "return_mode": {"type": "string", "enum": ["doc", "node", "none"]}
+            "return_mode": {"type": "string", "enum": ["doc", "node", "none"]},
         },
         "required": ["node_id", "content"],
         "additionalProperties": False,
-        "oneOf": [
-            {"required": ["node_id", "content", "doc"]},
-            {"required": ["node_id", "content", "file"]}
-        ]
+        "oneOf": [{"required": ["node_id", "content", "doc"]}, {"required": ["node_id", "content", "file"]}],
     },
-    output_schema={
-        "type": "object",
-        "additionalProperties": True
-    },
+    output_schema={"type": "object", "additionalProperties": True},
 )
-def update_message(node_id: str, content: str, doc: Dict[str, Any] = None, file: str = None, return_mode: str = "doc") -> Dict[str, Any]:
+def update_message(
+    node_id: str, content: str, doc: dict[str, Any] | None = None, file: str | None = None, return_mode: str = "doc"
+) -> dict[str, Any]:
     return _update_message_content(node_id=node_id, content=content, doc=doc, file=file, return_mode=return_mode)
 
 
@@ -176,21 +180,15 @@ def update_message(node_id: str, content: str, doc: Dict[str, Any] = None, file:
         "properties": {
             "node_id": {"type": "string"},
             "doc": {"type": "object", "additionalProperties": True},
-            "file": {"type": "string"}
+            "file": {"type": "string"},
         },
         "required": ["node_id"],
         "additionalProperties": False,
-        "oneOf": [
-            {"required": ["node_id", "doc"]},
-            {"required": ["node_id", "file"]}
-        ]
+        "oneOf": [{"required": ["node_id", "doc"]}, {"required": ["node_id", "file"]}],
     },
-    output_schema={
-        "type": "object",
-        "additionalProperties": True
-    },
+    output_schema={"type": "object", "additionalProperties": True},
 )
-def truncate_after(node_id: str, doc: Dict[str, Any] = None, file: str = None) -> Dict[str, Any]:
+def truncate_after(node_id: str, doc: dict[str, Any] | None = None, file: str | None = None) -> dict[str, Any]:
     return _truncate_after_node(node_id=node_id, doc=doc, file=file)
 
 
@@ -207,22 +205,29 @@ def truncate_after(node_id: str, doc: Dict[str, Any] = None, file: str = None) -
             "content": {"type": "string"},
             "doc": {"type": "object", "additionalProperties": True},
             "file": {"type": "string"},
-            "return_mode": {"type": "string", "enum": ["doc", "node", "path", "none"]}
+            "return_mode": {"type": "string", "enum": ["doc", "node", "path", "none"]},
         },
         "required": ["node_id", "pid", "role", "content"],
         "additionalProperties": False,
         "oneOf": [
             {"required": ["node_id", "pid", "role", "content", "doc"]},
-            {"required": ["node_id", "pid", "role", "content", "file"]}
-        ]
+            {"required": ["node_id", "pid", "role", "content", "file"]},
+        ],
     },
-    output_schema={
-        "type": "object",
-        "additionalProperties": True
-    },
+    output_schema={"type": "object", "additionalProperties": True},
 )
-def append_message(node_id: str, pid: str, role: str, content: str, doc: Dict[str, Any] = None, file: str = None, return_mode: str = "doc") -> Dict[str, Any]:
-    return _append_new_message(node_id=node_id, pid=pid, role=role, content=content, doc=doc, file=file, return_mode=return_mode)
+def append_message(
+    node_id: str,
+    pid: str,
+    role: str,
+    content: str,
+    doc: dict[str, Any] | None = None,
+    file: str | None = None,
+    return_mode: str = "doc",
+) -> dict[str, Any]:
+    return _append_new_message(
+        node_id=node_id, pid=pid, role=role, content=content, doc=doc, file=file, return_mode=return_mode
+    )
 
 
 @core.register_api(
@@ -235,21 +240,17 @@ def append_message(node_id: str, pid: str, role: str, content: str, doc: Dict[st
             "node_id": {"type": "string"},
             "doc": {"type": "object", "additionalProperties": True},
             "file": {"type": "string"},
-            "return_mode": {"type": "string", "enum": ["doc", "path", "none"]}
+            "return_mode": {"type": "string", "enum": ["doc", "path", "none"]},
         },
         "required": ["node_id"],
         "additionalProperties": False,
-        "oneOf": [
-            {"required": ["node_id", "doc"]},
-            {"required": ["node_id", "file"]}
-        ]
+        "oneOf": [{"required": ["node_id", "doc"]}, {"required": ["node_id", "file"]}],
     },
-    output_schema={
-        "type": "object",
-        "additionalProperties": True
-    },
+    output_schema={"type": "object", "additionalProperties": True},
 )
-def delete_branch(node_id: str, doc: Dict[str, Any] = None, file: str = None, return_mode: str = "doc") -> Dict[str, Any]:
+def delete_branch(
+    node_id: str, doc: dict[str, Any] | None = None, file: str | None = None, return_mode: str = "doc"
+) -> dict[str, Any]:
     return _delete_branch(node_id=node_id, doc=doc, file=file, return_mode=return_mode)
 
 
@@ -266,22 +267,35 @@ def delete_branch(node_id: str, doc: Dict[str, Any] = None, file: str = None, re
             "content": {"type": "string"},
             "doc": {"type": "object", "additionalProperties": True},
             "file": {"type": "string"},
-            "return_mode": {"type": "string", "enum": ["doc", "path", "none"]}
+            "return_mode": {"type": "string", "enum": ["doc", "path", "none"]},
         },
         "required": ["new_node_id", "retry_node_id", "role", "content"],
         "additionalProperties": False,
         "oneOf": [
             {"required": ["new_node_id", "retry_node_id", "role", "content", "doc"]},
-            {"required": ["new_node_id", "retry_node_id", "role", "content", "file"]}
-        ]
+            {"required": ["new_node_id", "retry_node_id", "role", "content", "file"]},
+        ],
     },
-    output_schema={
-        "type": "object",
-        "additionalProperties": True
-    },
+    output_schema={"type": "object", "additionalProperties": True},
 )
-def retry_branch(new_node_id: str, retry_node_id: str, role: str, content: str, doc: Dict[str, Any] = None, file: str = None, return_mode: str = "doc") -> Dict[str, Any]:
-    return _retry_branch(new_node_id=new_node_id, retry_node_id=retry_node_id, role=role, content=content, doc=doc, file=file, return_mode=return_mode)
+def retry_branch(
+    new_node_id: str,
+    retry_node_id: str,
+    role: str,
+    content: str,
+    doc: dict[str, Any] | None = None,
+    file: str | None = None,
+    return_mode: str = "doc",
+) -> dict[str, Any]:
+    return _retry_branch(
+        new_node_id=new_node_id,
+        retry_node_id=retry_node_id,
+        role=role,
+        content=content,
+        doc=doc,
+        file=file,
+        return_mode=return_mode,
+    )
 
 
 @core.register_api(
@@ -293,14 +307,11 @@ def retry_branch(new_node_id: str, retry_node_id: str, role: str, content: str, 
         "properties": {
             "user_node_id": {"type": "string"},
             "doc": {"type": "object", "additionalProperties": True},
-            "file": {"type": "string"}
+            "file": {"type": "string"},
         },
         "required": ["user_node_id"],
         "additionalProperties": False,
-        "oneOf": [
-            {"required": ["user_node_id", "doc"]},
-            {"required": ["user_node_id", "file"]}
-        ]
+        "oneOf": [{"required": ["user_node_id", "doc"]}, {"required": ["user_node_id", "file"]}],
     },
     output_schema={
         "type": "object",
@@ -308,13 +319,13 @@ def retry_branch(new_node_id: str, retry_node_id: str, role: str, content: str, 
             "action": {"type": "string", "enum": ["retry_assistant", "create_assistant"]},
             "assistant_node_id": {"type": "string"},
             "user_node_id": {"type": "string"},
-            "pid": {"type": "string"}
+            "pid": {"type": "string"},
         },
         "required": ["action", "user_node_id"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
 )
-def retry_user_message(user_node_id: str, doc: Dict[str, Any] = None, file: str = None) -> Dict[str, Any]:
+def retry_user_message(user_node_id: str, doc: dict[str, Any] | None = None, file: str | None = None) -> dict[str, Any]:
     return _retry_user_message(user_node_id=user_node_id, doc=doc, file=file)
 
 
@@ -328,18 +339,17 @@ def retry_user_message(user_node_id: str, doc: Dict[str, Any] = None, file: str 
             "target_j": {"type": "integer", "minimum": 1},
             "doc": {"type": "object", "additionalProperties": True},
             "file": {"type": "string"},
-            "return_mode": {"type": "string", "enum": ["doc", "node", "path", "none"]}
+            "return_mode": {"type": "string", "enum": ["doc", "node", "path", "none"]},
         },
         "required": ["target_j"],
         "additionalProperties": False,
-        "oneOf": [
-            {"required": ["target_j", "doc"]},
-            {"required": ["target_j", "file"]}
-        ]
+        "oneOf": [{"required": ["target_j", "doc"]}, {"required": ["target_j", "file"]}],
     },
     output_schema={"type": "object", "additionalProperties": True},
 )
-def switch_branch(target_j: int, doc: Dict[str, Any] = None, file: str = None, return_mode: str = "doc") -> Dict[str, Any]:
+def switch_branch(
+    target_j: int, doc: dict[str, Any] | None = None, file: str | None = None, return_mode: str = "doc"
+) -> dict[str, Any]:
     return _switch_branch_impl(target_j=target_j, doc=doc, file=file, return_mode=return_mode)
 
 
@@ -380,7 +390,17 @@ def switch_branch(target_j: int, doc: Dict[str, Any] = None, file: str = None, r
             "updated_at": {"type": "string"},
             "slug": {"type": "string"},
         },
-        "required": ["file", "settings_file", "variables_file", "name", "type", "root_node_id", "nodes_count", "updated_at", "slug"],
+        "required": [
+            "file",
+            "settings_file",
+            "variables_file",
+            "name",
+            "type",
+            "root_node_id",
+            "nodes_count",
+            "updated_at",
+            "slug",
+        ],
         "additionalProperties": True,
     },
 )
@@ -390,11 +410,11 @@ def create_conversation(
     character_file: str,
     preset_file: str,
     persona_file: str,
-    regex_file: str = None,
-    worldbook_file: str = None,
-    llm_config_file: str = None,
+    regex_file: str | None = None,
+    worldbook_file: str | None = None,
+    llm_config_file: str | None = None,
     type: str = "threaded",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     return _create_conversation_impl(
         name=name,
         description=description,
@@ -430,19 +450,16 @@ def create_conversation(
                     "persona": {"type": "string"},
                     "regex_rules": {"type": "array", "items": {"type": "string"}},
                     "world_books": {"type": "array", "items": {"type": "string"}},
-                    "llm_config": {"type": "string"}
+                    "llm_config": {"type": "string"},
                 },
-                "additionalProperties": False
+                "additionalProperties": False,
             },
             "file": {"type": "string"},
-            "slug": {"type": "string"}
+            "slug": {"type": "string"},
         },
         "required": ["action"],
         "additionalProperties": False,
-        "oneOf": [
-            {"required": ["action", "file"]},
-            {"required": ["action", "slug"]}
-        ]
+        "oneOf": [{"required": ["action", "file"]}, {"required": ["action", "slug"]}],
     },
     output_schema={
         "type": "object",
@@ -455,7 +472,9 @@ def create_conversation(
         "additionalProperties": False,
     },
 )
-def settings(action: str, file: str = None, slug: str = None, patch: Dict[str, Any] = None) -> Dict[str, Any]:
+def settings(
+    action: str, file: str | None = None, slug: str | None = None, patch: dict[str, Any] | None = None
+) -> dict[str, Any]:
     return _settings_impl(action=action, file=file, slug=slug, patch=patch)
 
 
@@ -469,14 +488,11 @@ def settings(action: str, file: str = None, slug: str = None, patch: Dict[str, A
             "action": {"type": "string", "enum": ["get", "set", "merge", "reset"]},
             "data": {"type": "object"},
             "file": {"type": "string"},
-            "slug": {"type": "string"}
+            "slug": {"type": "string"},
         },
         "required": ["action"],
         "additionalProperties": False,
-        "oneOf": [
-            {"required": ["action", "file"]},
-            {"required": ["action", "slug"]}
-        ]
+        "oneOf": [{"required": ["action", "file"]}, {"required": ["action", "slug"]}],
     },
     output_schema={
         "type": "object",
@@ -489,9 +505,7 @@ def settings(action: str, file: str = None, slug: str = None, patch: Dict[str, A
         "additionalProperties": False,
     },
 )
-def variables(action: str, file: str = None, slug: str = None, data: Dict[str, Any] = None) -> Dict[str, Any]:
+def variables(
+    action: str, file: str | None = None, slug: str | None = None, data: dict[str, Any] | None = None
+) -> dict[str, Any]:
     return _variables_impl(action=action, file=file, slug=slug, data=data)
-
-
-
-

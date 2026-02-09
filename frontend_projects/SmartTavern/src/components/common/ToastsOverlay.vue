@@ -9,16 +9,22 @@ const toasts = computed(() => store.list)
 
 /** 手动关闭 */
 function closeToast(id) {
-  try { store.remove(id) } catch (_) {}
+  try {
+    store.remove(id)
+  } catch (_) {}
 }
 
 /** 友好标题 */
 function typeTitle(type) {
   switch (type) {
-    case 'success': return t('components.toasts.success')
-    case 'warning': return t('components.toasts.warning')
-    case 'error': return t('components.toasts.error')
-    default: return t('components.toasts.info')
+    case 'success':
+      return t('components.toasts.success')
+    case 'warning':
+      return t('components.toasts.warning')
+    case 'error':
+      return t('components.toasts.error')
+    default:
+      return t('components.toasts.info')
   }
 }
 </script>
@@ -38,7 +44,14 @@ function typeTitle(type) {
           <div class="st-toast__title">{{ typeTitle(toast.type) }}</div>
           <div class="st-toast__message">{{ toast.message }}</div>
         </div>
-        <button class="st-toast__close" type="button" @click="closeToast(toast.id)" :aria-label="t('components.toasts.close')">×</button>
+        <button
+          class="st-toast__close"
+          type="button"
+          @click="closeToast(toast.id)"
+          :aria-label="t('components.toasts.close')"
+        >
+          ×
+        </button>
       </div>
     </transition-group>
   </div>
@@ -72,9 +85,10 @@ function typeTitle(type) {
   border-radius: var(--st-radius-xl);
   background: var(--st-toast-bg);
   color: var(--st-toast-text);
-  box-shadow: 0 var(--st-spacing-md) var(--st-btn-md) rgba(0,0,0,.3),
-              0 var(--st-spacing-xs) var(--st-gap-lg) rgba(0,0,0,.2),
-              0 0 0 1px var(--st-toast-border);
+  box-shadow:
+    0 var(--st-spacing-md) var(--st-btn-md) rgba(0, 0, 0, 0.3),
+    0 var(--st-spacing-xs) var(--st-gap-lg) rgba(0, 0, 0, 0.2),
+    0 0 0 1px var(--st-toast-border);
   backdrop-filter: blur(var(--st-backdrop-blur-lg));
   -webkit-backdrop-filter: blur(var(--st-backdrop-blur-lg));
   pointer-events: auto;
@@ -86,27 +100,30 @@ function typeTitle(type) {
   width: var(--st-spacing-xs);
   height: 100%;
   border-radius: var(--st-radius-xl) 0 0 var(--st-radius-xl);
-  background: linear-gradient(180deg,
+  background: linear-gradient(
+    180deg,
     var(--st-toast-color-light, #94a3b8) 0%,
-    var(--st-toast-color, #6b7280) 100%);
-  box-shadow: var(--st-spacing-xs) 0 var(--st-spacing-md) rgba(var(--st-toast-color-rgb, 107 114 128), 0.3);
+    var(--st-toast-color, #6b7280) 100%
+  );
+  box-shadow: var(--st-spacing-xs) 0 var(--st-spacing-md)
+    rgba(var(--st-toast-color-rgb, 107 114 128), 0.3);
 }
-.st-toast__bar[data-type="success"] {
+.st-toast__bar[data-type='success'] {
   --st-toast-color: var(--st-toast-success-color);
   --st-toast-color-light: var(--st-toast-success-light);
   --st-toast-color-rgb: var(--st-toast-success-rgb);
 }
-.st-toast__bar[data-type="warning"] {
+.st-toast__bar[data-type='warning'] {
   --st-toast-color: var(--st-toast-warning-color);
   --st-toast-color-light: var(--st-toast-warning-light);
   --st-toast-color-rgb: var(--st-toast-warning-rgb);
 }
-.st-toast__bar[data-type="error"] {
+.st-toast__bar[data-type='error'] {
   --st-toast-color: var(--st-toast-error-color);
   --st-toast-color-light: var(--st-toast-error-light);
   --st-toast-color-rgb: var(--st-toast-error-rgb);
 }
-.st-toast__bar[data-type="info"] {
+.st-toast__bar[data-type='info'] {
   --st-toast-color: var(--st-toast-info-color);
   --st-toast-color-light: var(--st-toast-info-light);
   --st-toast-color-rgb: var(--st-toast-info-rgb);
@@ -144,7 +161,9 @@ function typeTitle(type) {
   margin: 0;
   border-radius: var(--st-spacing-sm);
   cursor: pointer;
-  transition: background-color var(--st-transition-normal), color var(--st-transition-normal);
+  transition:
+    background-color var(--st-transition-normal),
+    color var(--st-transition-normal);
   height: fit-content;
 }
 .st-toast__close:hover {
@@ -159,16 +178,19 @@ function typeTitle(type) {
 /* 进出场动画 */
 .st-toast-enter-from {
   opacity: 0;
-  transform: translateY(calc(-1 * var(--st-spacing-md))) scale(.98);
+  transform: translateY(calc(-1 * var(--st-spacing-md))) scale(0.98);
   filter: blur(var(--st-blur-xs));
 }
 .st-toast-leave-to {
   opacity: 0;
-  transform: translateY(calc(-1 * var(--st-spacing-sm))) scale(.98);
+  transform: translateY(calc(-1 * var(--st-spacing-sm))) scale(0.98);
   filter: blur(var(--st-blur-xs));
 }
 .st-toast-enter-active,
 .st-toast-leave-active {
-  transition: opacity var(--st-transition-fast), transform var(--st-transition-normal), filter var(--st-transition-normal);
+  transition:
+    opacity var(--st-transition-fast),
+    transform var(--st-transition-normal),
+    filter var(--st-transition-normal);
 }
 </style>

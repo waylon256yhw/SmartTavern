@@ -24,7 +24,7 @@ const props = defineProps({
   conversationFile: { type: String, default: null },
 })
 
-const emit = defineEmits(['close','use','view','delete','import','export','create'])
+const emit = defineEmits(['close', 'use', 'view', 'delete', 'import', 'export', 'create'])
 
 const panelStyle = computed(() => ({
   position: 'fixed',
@@ -69,15 +69,17 @@ const showCreateModal = ref(false)
 
 // 使用通道响应式状态
 const characters = CatalogChannel.characters
-const loading = computed(() =>
-  CatalogChannel.loadingStates.value.characters ||
-  (props.conversationFile ? SettingsChannel.isLoading(props.conversationFile) : false) ||
-  importing.value
+const loading = computed(
+  () =>
+    CatalogChannel.loadingStates.value.characters ||
+    (props.conversationFile ? SettingsChannel.isLoading(props.conversationFile) : false) ||
+    importing.value,
 )
-const error = computed(() =>
-  importError.value ||
-  CatalogChannel.errorStates.value.characters ||
-  (props.conversationFile ? SettingsChannel.getError(props.conversationFile) : null)
+const error = computed(
+  () =>
+    importError.value ||
+    CatalogChannel.errorStates.value.characters ||
+    (props.conversationFile ? SettingsChannel.getError(props.conversationFile) : null),
 )
 
 let unsubscribeCharacters = null
@@ -85,15 +87,15 @@ let unsubscribeSettings = null
 
 function loadData() {
   if (settingsLoaded.value) return
-  
+
   Host.events.emit(CatalogChannel.EVT_CATALOG_CHARACTERS_REQ, {
-    requestId: Date.now()
+    requestId: Date.now(),
   })
-  
+
   if (props.conversationFile) {
     Host.events.emit(SettingsChannel.EVT_SETTINGS_GET_REQ, {
       conversationFile: props.conversationFile,
-      requestId: Date.now()
+      requestId: Date.now(),
     })
   } else {
     settingsLoaded.value = true
@@ -105,7 +107,7 @@ function loadData() {
 
 function refreshCharacters() {
   Host.events.emit(CatalogChannel.EVT_CATALOG_CHARACTERS_REQ, {
-    requestId: Date.now()
+    requestId: Date.now(),
   })
 }
 
@@ -124,7 +126,7 @@ onMounted(() => {
       }
     }
   })
-  
+
   unsubscribeSettings = Host.events.on(SettingsChannel.EVT_SETTINGS_GET_RES, (payload) => {
     if (payload?.success && payload?.conversationFile === props.conversationFile) {
       const settings = payload.settings || {}
@@ -143,13 +145,19 @@ onUnmounted(() => {
   if (unsubscribeSettings) unsubscribeSettings()
 })
 
-watch(() => props.conversationFile, (v) => {
-  if (v && !settingsLoaded.value) {
-    loadData()
-  }
-}, { immediate: true })
+watch(
+  () => props.conversationFile,
+  (v) => {
+    if (v && !settingsLoaded.value) {
+      loadData()
+    }
+  },
+  { immediate: true },
+)
 
-function close(){ emit('close') }
+function close() {
+  emit('close')
+}
 
 function onUse(k) {
   if (!props.conversationFile) {
@@ -157,13 +165,13 @@ function onUse(k) {
     emit('use', k)
     return
   }
-  
+
   Host.events.emit(SettingsChannel.EVT_SETTINGS_UPDATE_REQ, {
     conversationFile: props.conversationFile,
     patch: { character: k },
-    requestId: Date.now()
+    requestId: Date.now(),
   })
-  
+
   const unsubUpdate = Host.events.on(SettingsChannel.EVT_SETTINGS_UPDATE_RES, (payload) => {
     if (payload?.conversationFile === props.conversationFile) {
       if (payload.success) {
@@ -175,14 +183,16 @@ function onUse(k) {
   })
 }
 
-function onView(k){ emit('view', k) }
+function onView(k) {
+  emit('view', k)
+}
 
 // ==================== 删除功能 ====================
 
 function onDelete(k) {
-  const item = characters.value.find(p => p.key === k)
+  const item = characters.value.find((p) => p.key === k)
   if (!item) return
-  
+
   deleteTarget.value = {
     key: k,
     name: item.name || getFolderName(k),
@@ -198,7 +208,7 @@ function closeDeleteConfirmModal() {
 
 async function handleDeleteConfirm() {
   if (!deleteTarget.value) return
-  
+
   deleting.value = true
   try {
     const result = await DataCatalog.deleteDataFolder(deleteTarget.value.folderPath)
@@ -257,7 +267,7 @@ function extractCharacterName(filename) {
 async function handleFileSelect(event) {
   const files = event.target.files
   if (!files || files.length === 0) return
-  
+
   const file = files[0]
   const validTypes = ['.json', '.zip', '.png']
   const ext = '.' + (file.name.split('.').pop() || '').toLowerCase()
@@ -266,7 +276,7 @@ async function handleFileSelect(event) {
     event.target.value = ''
     return
   }
-  
+
   // 直接调用导入，后端会处理名称冲突检测
   await doImport(file, false)
   event.target.value = ''
@@ -275,7 +285,7 @@ async function handleFileSelect(event) {
 async function doImport(file, overwrite = false, targetName = null) {
   importing.value = true
   importError.value = null
-  
+
   try {
     const result = await DataCatalog.importDataFromFile('character', file, targetName, overwrite)
     if (result.success) {
@@ -287,7 +297,11 @@ async function doImport(file, overwrite = false, targetName = null) {
       if (errorCode === 'NAME_EXISTS') {
         // 名称冲突，显示冲突弹窗
         openImportConflictModal(file, result.folder_name, result.suggested_name)
-      } else if (errorCode === 'TYPE_MISMATCH' || errorCode === 'NO_TYPE_INFO' || errorCode === 'NO_TYPE_IN_FILENAME') {
+      } else if (
+        errorCode === 'TYPE_MISMATCH' ||
+        errorCode === 'NO_TYPE_INFO' ||
+        errorCode === 'NO_TYPE_IN_FILENAME'
+      ) {
         openImportErrorModal(errorCode, result.message, result.expected_type, result.actual_type)
       } else {
         importError.value = result.message || result.error || t('error.importFailed')
@@ -374,56 +388,71 @@ function handleCreated(result) {
 </script>
 
 <template>
-  <div
-    data-scope="characters-view"
-    class="ch-panel"
-    :style="panelStyle"
-  >
-      <header class="ch-header">
-        <div class="ch-title st-panel-title">
-          <span class="ch-icon"><i data-lucide="users"></i></span>
-          {{ t('panel.characters.title') }}
-        </div>
-        <div class="ch-header-actions">
-          <button class="ch-action-btn st-btn-shrinkable" type="button" :title="t('panel.characters.createTitle')" @click="openCreateModal">
-            <i data-lucide="plus"></i>
-            <span class="st-btn-text">{{ t('common.create') }}</span>
-          </button>
-          <button class="ch-action-btn st-btn-shrinkable" type="button" :title="t('panel.characters.importTitle')" @click="triggerImport" :disabled="importing">
-            <i data-lucide="download"></i>
-            <span class="st-btn-text">{{ t('common.import') }}</span>
-          </button>
-          <button class="ch-action-btn st-btn-shrinkable" type="button" :title="t('panel.characters.exportTitle')" @click="openExportModal" :disabled="characters.length === 0">
-            <i data-lucide="upload"></i>
-            <span class="st-btn-text">{{ t('common.export') }}</span>
-          </button>
-          <button class="ch-close" type="button" :title="t('common.close')" @click="close">✕</button>
-        </div>
-      </header>
+  <div data-scope="characters-view" class="ch-panel" :style="panelStyle">
+    <header class="ch-header">
+      <div class="ch-title st-panel-title">
+        <span class="ch-icon"><i data-lucide="users"></i></span>
+        {{ t('panel.characters.title') }}
+      </div>
+      <div class="ch-header-actions">
+        <button
+          class="ch-action-btn st-btn-shrinkable"
+          type="button"
+          :title="t('panel.characters.createTitle')"
+          @click="openCreateModal"
+        >
+          <i data-lucide="plus"></i>
+          <span class="st-btn-text">{{ t('common.create') }}</span>
+        </button>
+        <button
+          class="ch-action-btn st-btn-shrinkable"
+          type="button"
+          :title="t('panel.characters.importTitle')"
+          @click="triggerImport"
+          :disabled="importing"
+        >
+          <i data-lucide="download"></i>
+          <span class="st-btn-text">{{ t('common.import') }}</span>
+        </button>
+        <button
+          class="ch-action-btn st-btn-shrinkable"
+          type="button"
+          :title="t('panel.characters.exportTitle')"
+          @click="openExportModal"
+          :disabled="characters.length === 0"
+        >
+          <i data-lucide="upload"></i>
+          <span class="st-btn-text">{{ t('common.export') }}</span>
+        </button>
+        <button class="ch-close" type="button" :title="t('common.close')" @click="close">✕</button>
+      </div>
+    </header>
 
-      <input ref="fileInputRef" type="file" accept=".json,.zip,.png" style="display: none;" @change="handleFileSelect" />
+    <input
+      ref="fileInputRef"
+      type="file"
+      accept=".json,.zip,.png"
+      style="display: none"
+      @change="handleFileSelect"
+    />
 
-      <CustomScrollbar2 class="ch-body">
-        <!-- 面板内容区域 - 始终存在，通过 transition 控制显示 -->
-        <transition name="ch-content" mode="out-in" @after-enter="handleTransitionComplete">
-          <!-- 加载状态 -->
-          <div v-if="loading" key="loading" class="ch-loading">
-            {{ importing ? t('common.importing') : t('common.loading') }}
-          </div>
-          
-          <!-- 错误状态 -->
-          <div v-else-if="error" key="error" class="ch-error">
-            {{ importError ? importError : t('error.loadFailed', { error }) }}
-            <button v-if="importError" class="ch-error-dismiss" @click="importError = null">×</button>
-          </div>
-          
-          <!-- 内容列表 -->
-          <div v-else key="content" class="ch-list">
-            <div
-              v-for="it in characters"
-              :key="it.key"
-              class="ch-card"
-            >
+    <CustomScrollbar2 class="ch-body">
+      <!-- 面板内容区域 - 始终存在，通过 transition 控制显示 -->
+      <transition name="ch-content" mode="out-in" @after-enter="handleTransitionComplete">
+        <!-- 加载状态 -->
+        <div v-if="loading" key="loading" class="ch-loading">
+          {{ importing ? t('common.importing') : t('common.loading') }}
+        </div>
+
+        <!-- 错误状态 -->
+        <div v-else-if="error" key="error" class="ch-error">
+          {{ importError ? importError : t('error.loadFailed', { error }) }}
+          <button v-if="importError" class="ch-error-dismiss" @click="importError = null">×</button>
+        </div>
+
+        <!-- 内容列表 -->
+        <div v-else key="content" class="ch-list">
+          <div v-for="it in characters" :key="it.key" class="ch-card">
             <div class="ch-main">
               <div class="ch-avatar-container">
                 <div class="ch-icon">
@@ -438,13 +467,36 @@ function handleCreated(result) {
               <div class="ch-texts">
                 <div class="ch-name-row">
                   <div class="ch-name">{{ it.name }}</div>
-                  <span v-if="it.type" :class="['ch-type-badge', it.type === 'sandbox' ? 'type-sandbox' : 'type-threaded']">
-                    {{ it.type === 'sandbox' ? t('panel.character.type.sandbox') : t('panel.character.type.threaded') }}
+                  <span
+                    v-if="it.type"
+                    :class="[
+                      'ch-type-badge',
+                      it.type === 'sandbox' ? 'type-sandbox' : 'type-threaded',
+                    ]"
+                  >
+                    {{
+                      it.type === 'sandbox'
+                        ? t('panel.character.type.sandbox')
+                        : t('panel.character.type.threaded')
+                    }}
                   </span>
                 </div>
                 <div class="ch-folder">
-                  <svg class="ch-folder-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  <svg
+                    class="ch-folder-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                    ></path>
                   </svg>
                   <span>{{ getFolderName(it.key) }}</span>
                 </div>
@@ -459,70 +511,80 @@ function handleCreated(result) {
                 type="button"
                 @click="onUse(it.key)"
                 :aria-pressed="usingKey === it.key"
-              >{{ usingKey === it.key ? t('common.using') : t('common.use') }}</button>
+              >
+                {{ usingKey === it.key ? t('common.using') : t('common.use') }}
+              </button>
 
-              <button class="ch-btn st-btn-shrinkable" type="button" @click="onView(it.key)">{{ t('common.view') }}</button>
+              <button class="ch-btn st-btn-shrinkable" type="button" @click="onView(it.key)">
+                {{ t('common.view') }}
+              </button>
 
-              <button class="ch-btn ch-danger st-btn-shrinkable" type="button" @click="onDelete(it.key)">{{ t('common.delete') }}</button>
-            </div>
+              <button
+                class="ch-btn ch-danger st-btn-shrinkable"
+                type="button"
+                @click="onDelete(it.key)"
+              >
+                {{ t('common.delete') }}
+              </button>
             </div>
           </div>
-        </transition>
-      </CustomScrollbar2>
+        </div>
+      </transition>
+    </CustomScrollbar2>
 
-      <!-- 使用可复用的导入冲突弹窗组件 -->
-      <ImportConflictModal
-        :show="showImportConflictModal"
-        data-type="character"
-        :data-type-name="t('panel.characters.typeName')"
-        :existing-name="importConflictExistingName"
-        :suggested-name="importConflictSuggestedName"
-        @close="closeImportConflictModal"
-        @overwrite="handleConflictOverwrite"
-        @rename="handleConflictRename"
-      />
+    <!-- 使用可复用的导入冲突弹窗组件 -->
+    <ImportConflictModal
+      :show="showImportConflictModal"
+      data-type="character"
+      :data-type-name="t('panel.characters.typeName')"
+      :existing-name="importConflictExistingName"
+      :suggested-name="importConflictSuggestedName"
+      @close="closeImportConflictModal"
+      @overwrite="handleConflictOverwrite"
+      @rename="handleConflictRename"
+    />
 
-      <!-- 使用可复用的导出弹窗组件 -->
-      <ExportModal
-        :show="showExportModal"
-        data-type="character"
-        :data-type-name="t('panel.characters.typeName')"
-        :items="characters"
-        default-icon="users"
-        @close="closeExportModal"
-        @export="handleExportComplete"
-      />
+    <!-- 使用可复用的导出弹窗组件 -->
+    <ExportModal
+      :show="showExportModal"
+      data-type="character"
+      :data-type-name="t('panel.characters.typeName')"
+      :items="characters"
+      default-icon="users"
+      @close="closeExportModal"
+      @export="handleExportComplete"
+    />
 
-      <!-- 导入错误弹窗 -->
-      <ImportErrorModal
-        :show="showImportErrorModal"
-        :error-code="importErrorCode"
-        :error-message="importErrorMessage"
-        :data-type-name="t('panel.characters.typeName')"
-        :expected-type="importExpectedType"
-        :actual-type="importActualType"
-        @close="closeImportErrorModal"
-      />
+    <!-- 导入错误弹窗 -->
+    <ImportErrorModal
+      :show="showImportErrorModal"
+      :error-code="importErrorCode"
+      :error-message="importErrorMessage"
+      :data-type-name="t('panel.characters.typeName')"
+      :expected-type="importExpectedType"
+      :actual-type="importActualType"
+      @close="closeImportErrorModal"
+    />
 
-      <!-- 删除确认弹窗 -->
-      <DeleteConfirmModal
-        :show="showDeleteConfirmModal"
-        :item-name="deleteTarget?.name || ''"
-        :data-type-name="t('panel.characters.typeName')"
-        :loading="deleting"
-        @close="closeDeleteConfirmModal"
-        @confirm="handleDeleteConfirm"
-      />
+    <!-- 删除确认弹窗 -->
+    <DeleteConfirmModal
+      :show="showDeleteConfirmModal"
+      :item-name="deleteTarget?.name || ''"
+      :data-type-name="t('panel.characters.typeName')"
+      :loading="deleting"
+      @close="closeDeleteConfirmModal"
+      @confirm="handleDeleteConfirm"
+    />
 
-      <!-- 新建弹窗 -->
-      <CreateItemModal
-        :show="showCreateModal"
-        data-type="character"
-        :data-type-name="t('panel.characters.typeName')"
-        @close="closeCreateModal"
-        @created="handleCreated"
-      />
-    </div>
+    <!-- 新建弹窗 -->
+    <CreateItemModal
+      :show="showCreateModal"
+      data-type="character"
+      :data-type-name="t('panel.characters.typeName')"
+      @close="closeCreateModal"
+      @created="handleCreated"
+    />
+  </div>
 </template>
 
 <style scoped>
@@ -552,7 +614,11 @@ function handleCreated(result) {
   font-weight: 700;
   color: rgb(var(--st-color-text));
 }
-.ch-icon i { width: var(--st-icon-md); height: var(--st-icon-md); display: inline-block; }
+.ch-icon i {
+  width: var(--st-icon-md);
+  height: var(--st-icon-md);
+  display: inline-block;
+}
 
 .ch-header-actions {
   display: flex;
@@ -572,9 +638,16 @@ function handleCreated(result) {
   padding: var(--st-btn-padding-sm);
   font-size: var(--st-font-sm);
   cursor: pointer;
-  transition: transform var(--st-transition-normal), background var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    transform var(--st-transition-normal),
+    background var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
-.ch-action-btn i { width: var(--st-icon-sm); height: var(--st-icon-sm); display: inline-block; }
+.ch-action-btn i {
+  width: var(--st-icon-sm);
+  height: var(--st-icon-sm);
+  display: inline-block;
+}
 .ch-action-btn:hover:not(:disabled) {
   background: rgba(var(--st-primary), 0.15);
   transform: translateY(-1px);
@@ -592,7 +665,10 @@ function handleCreated(result) {
   border-radius: var(--st-radius-lg);
   padding: var(--st-spacing-sm) var(--st-spacing-md);
   cursor: pointer;
-  transition: transform var(--st-transition-normal), background var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    transform var(--st-transition-normal),
+    background var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
 .ch-close:hover {
   background: rgb(var(--st-surface));
@@ -620,7 +696,11 @@ function handleCreated(result) {
   background: rgb(var(--st-surface));
   padding: var(--st-spacing-xl);
   min-height: var(--st-preview-height-sm);
-  transition: background var(--st-transition-normal), border-color var(--st-transition-normal), transform var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    background var(--st-transition-normal),
+    border-color var(--st-transition-normal),
+    transform var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
 .ch-card:hover {
   transform: translateY(-1px);
@@ -628,14 +708,18 @@ function handleCreated(result) {
 }
 .ch-main {
   display: grid;
-  grid-template-columns: calc(var(--st-avatar-md) + var(--st-spacing-xs) + var(--st-avatar-sm) + var(--st-spacing-xs)) 1fr;
+  grid-template-columns:
+    calc(var(--st-avatar-md) + var(--st-spacing-xs) + var(--st-avatar-sm) + var(--st-spacing-xs))
+    1fr;
   gap: var(--st-spacing-md);
   align-items: center;
 }
 
 .ch-avatar-container {
   position: relative;
-  width: calc(var(--st-avatar-md) + var(--st-spacing-xs) + var(--st-avatar-sm) + var(--st-spacing-xs));
+  width: calc(
+    var(--st-avatar-md) + var(--st-spacing-xs) + var(--st-avatar-sm) + var(--st-spacing-xs)
+  );
   height: var(--st-avatar-md);
 }
 .ch-icon {
@@ -646,11 +730,20 @@ function handleCreated(result) {
   align-items: center;
   justify-content: center;
   font-size: var(--st-font-xl);
-  background: linear-gradient(135deg, var(--st-panel-avatar-gradient-start, rgba(var(--st-primary),0.12)), var(--st-panel-avatar-gradient-end, rgba(var(--st-accent),0.12)));
+  background: linear-gradient(
+    135deg,
+    var(--st-panel-avatar-gradient-start, rgba(var(--st-primary), 0.12)),
+    var(--st-panel-avatar-gradient-end, rgba(var(--st-accent), 0.12))
+  );
   border: 1px solid rgba(var(--st-border), 0.9);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
-.ch-icon-img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--st-radius-lg); }
+.ch-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--st-radius-lg);
+}
 .ch-avatar-badge {
   position: absolute;
   left: calc(var(--st-avatar-md) + var(--st-spacing-xs));
@@ -668,7 +761,9 @@ function handleCreated(result) {
   height: 100%;
   object-fit: cover;
 }
-.ch-texts { min-width: 0; }
+.ch-texts {
+  min-width: 0;
+}
 .ch-name-row {
   display: flex;
   align-items: center;
@@ -705,14 +800,14 @@ function handleCreated(result) {
   color: var(--st-preview-badge-sandbox-color, rgb(168, 85, 247));
   border: 1px solid rgba(168, 85, 247, 0.3);
 }
-[data-theme="dark"] .type-threaded,
-:root[data-theme="dark"] .type-threaded {
+[data-theme='dark'] .type-threaded,
+:root[data-theme='dark'] .type-threaded {
   background: var(--st-preview-badge-threaded-bg-dark, rgba(96, 165, 250, 0.2));
   color: var(--st-preview-badge-threaded-color-dark, rgb(147, 197, 253));
   border-color: rgba(96, 165, 250, 0.4);
 }
-[data-theme="dark"] .type-sandbox,
-:root[data-theme="dark"] .type-sandbox {
+[data-theme='dark'] .type-sandbox,
+:root[data-theme='dark'] .type-sandbox {
   background: var(--st-preview-badge-sandbox-bg-dark, rgba(192, 132, 252, 0.2));
   color: var(--st-preview-badge-sandbox-color-dark, rgb(216, 180, 254));
   border-color: rgba(192, 132, 252, 0.4);
@@ -761,7 +856,11 @@ function handleCreated(result) {
   border-radius: var(--st-radius-lg);
   font-size: var(--st-font-sm);
   cursor: pointer;
-  transition: transform var(--st-transition-normal), box-shadow var(--st-transition-normal), background var(--st-transition-normal), border-color var(--st-transition-normal);
+  transition:
+    transform var(--st-transition-normal),
+    box-shadow var(--st-transition-normal),
+    background var(--st-transition-normal),
+    border-color var(--st-transition-normal);
   min-width: var(--st-btn-min-width);
   text-align: center;
 }
@@ -814,12 +913,16 @@ function handleCreated(result) {
   font-size: var(--st-font-md);
   line-height: 1;
 }
-.ch-error-dismiss:hover { background: rgba(220, 38, 38, 0.2); }
+.ch-error-dismiss:hover {
+  background: rgba(220, 38, 38, 0.2);
+}
 
 /* 内容过渡动画 */
 .ch-content-enter-active,
 .ch-content-leave-active {
-  transition: opacity var(--st-transition-medium), transform var(--st-transition-medium);
+  transition:
+    opacity var(--st-transition-medium),
+    transform var(--st-transition-medium);
 }
 
 .ch-content-enter-from {
@@ -833,7 +936,11 @@ function handleCreated(result) {
 }
 
 @media (max-width: 640px) {
-  .ch-card { grid-template-columns: 1fr; }
-  .ch-actions { flex-direction: row; }
+  .ch-card {
+    grid-template-columns: 1fr;
+  }
+  .ch-actions {
+    flex-direction: row;
+  }
 }
 </style>

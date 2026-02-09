@@ -9,13 +9,16 @@
 
 from dataclasses import dataclass
 
+
 @dataclass(frozen=True)
 class APIConfig:
     base_url: str
     api_prefix: str
 
+
 DEFAULT_BASE_URL: str = "http://localhost:8050"
 DEFAULT_API_PREFIX: str = "/api"
+
 
 def _normalize_prefix(prefix: str) -> str:
     """
@@ -25,6 +28,7 @@ def _normalize_prefix(prefix: str) -> str:
     if not s.startswith("/"):
         s = "/" + s
     return s.rstrip("/")
+
 
 def get_api_config() -> APIConfig:
     """

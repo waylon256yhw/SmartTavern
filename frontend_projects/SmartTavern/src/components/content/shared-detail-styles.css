@@ -41,7 +41,7 @@
   color: var(--st-drag-grip-color-light);
 }
 
-[data-theme="dark"] .icon-grip::before {
+[data-theme='dark'] .icon-grip::before {
   color: var(--st-drag-grip-color-dark);
 }
 
@@ -64,7 +64,7 @@
   pointer-events: none;
 }
 
-[data-theme="dark"] .drag-over-top::before {
+[data-theme='dark'] .drag-over-top::before {
   background: var(--st-drag-indicator-color-dark);
 }
 
@@ -82,7 +82,7 @@
   pointer-events: none;
 }
 
-[data-theme="dark"] .drag-over-bottom::after {
+[data-theme='dark'] .drag-over-bottom::after {
   background: var(--st-drag-indicator-color-dark);
 }
 
@@ -92,7 +92,7 @@
   box-shadow: var(--st-drag-item-shadow);
   opacity: var(--st-drag-item-opacity);
   z-index: var(--st-drag-item-z-index);
-  transition: 
+  transition:
     transform var(--st-drag-transition-duration) var(--st-drag-transition-easing),
     box-shadow var(--st-drag-transition-duration) var(--st-drag-transition-easing),
     opacity var(--st-drag-transition-duration) var(--st-drag-transition-easing);
@@ -114,7 +114,7 @@
   border-radius: var(--st-radius-xs);
 }
 
-[data-theme="dark"] .drag-over-end::after {
+[data-theme='dark'] .drag-over-end::after {
   background: var(--st-drag-indicator-color-dark);
 }
 
@@ -136,7 +136,7 @@
   animation: st-spin var(--st-save-spinner-duration) linear infinite;
 }
 
-[data-theme="dark"] .save-spinner {
+[data-theme='dark'] .save-spinner {
   border: var(--st-save-spinner-border-width) solid var(--st-save-spinner-border-dark);
   border-top-color: var(--st-save-spinner-top-dark);
 }
@@ -146,7 +146,7 @@
   color: var(--st-save-done-color-light);
 }
 
-[data-theme="dark"] .save-done {
+[data-theme='dark'] .save-done {
   color: var(--st-save-done-color-dark);
 }
 
@@ -160,63 +160,63 @@
    暗色主题适配 - 使用中性灰色
    ============================ */
 
-[data-theme="dark"] .bg-white {
+[data-theme='dark'] .bg-white {
   background-color: var(--st-card-bg-dark) !important;
 }
 
-[data-theme="dark"] .bg-gray-50 {
+[data-theme='dark'] .bg-gray-50 {
   background-color: var(--st-card-bg-gray-50-dark) !important;
 }
 
-[data-theme="dark"] .bg-gray-100 {
+[data-theme='dark'] .bg-gray-100 {
   background-color: var(--st-card-hover-bg-dark) !important;
 }
 
-[data-theme="dark"] .text-black {
+[data-theme='dark'] .text-black {
   color: var(--st-card-text-dark) !important;
 }
 
-[data-theme="dark"] .text-black\/50 {
+[data-theme='dark'] .text-black\/50 {
   color: var(--st-card-text-dark-50) !important;
 }
 
-[data-theme="dark"] .text-black\/60 {
+[data-theme='dark'] .text-black\/60 {
   color: var(--st-card-text-dark-60) !important;
 }
 
-[data-theme="dark"] .text-black\/70 {
+[data-theme='dark'] .text-black\/70 {
   color: var(--st-card-text-dark-70) !important;
 }
 
-[data-theme="dark"] .text-black\/80 {
+[data-theme='dark'] .text-black\/80 {
   color: var(--st-card-text-dark-80) !important;
 }
 
-[data-theme="dark"] .border-gray-200 {
+[data-theme='dark'] .border-gray-200 {
   border-color: var(--st-card-border-200-dark) !important;
 }
 
-[data-theme="dark"] .border-gray-300 {
+[data-theme='dark'] .border-gray-300 {
   border-color: var(--st-card-border-300-dark) !important;
 }
 
-[data-theme="dark"] .border-gray-400 {
+[data-theme='dark'] .border-gray-400 {
   border-color: var(--st-card-border-400-dark) !important;
 }
 
-[data-theme="dark"] .border-gray-800 {
+[data-theme='dark'] .border-gray-800 {
   border-color: var(--st-card-border-800-dark) !important;
 }
 
-[data-theme="dark"] .border-gray-900 {
+[data-theme='dark'] .border-gray-900 {
   border-color: var(--st-card-border-900-dark) !important;
 }
 
-[data-theme="dark"] .hover\:bg-gray-100:hover {
+[data-theme='dark'] .hover\:bg-gray-100:hover {
   background-color: var(--st-card-hover-bg-dark) !important;
 }
 
-[data-theme="dark"] .text-red-600 {
+[data-theme='dark'] .text-red-600 {
   color: var(--st-card-error-text-dark) !important;
 }
 
@@ -224,34 +224,34 @@
    暗色主题 - 输入框适配
    ============================ */
 
-[data-theme="dark"] input,
-[data-theme="dark"] textarea,
-[data-theme="dark"] select {
+[data-theme='dark'] input,
+[data-theme='dark'] textarea,
+[data-theme='dark'] select {
   background-color: var(--st-card-input-bg-dark) !important;
   color: var(--st-card-input-text-dark) !important;
   border-color: var(--st-card-input-border-dark) !important;
 }
 
-[data-theme="dark"] input::placeholder,
-[data-theme="dark"] textarea::placeholder {
+[data-theme='dark'] input::placeholder,
+[data-theme='dark'] textarea::placeholder {
   color: var(--st-card-input-placeholder-dark) !important;
 }
 
-[data-theme="dark"] input:focus,
-[data-theme="dark"] textarea:focus,
-[data-theme="dark"] select:focus {
+[data-theme='dark'] input:focus,
+[data-theme='dark'] textarea:focus,
+[data-theme='dark'] select:focus {
   border-color: var(--st-card-input-focus-border-dark) !important;
   box-shadow: 0 0 0 2px var(--st-card-input-focus-shadow-dark) !important;
 }
 
-[data-theme="dark"] input:disabled,
-[data-theme="dark"] textarea:disabled,
-[data-theme="dark"] select:disabled {
+[data-theme='dark'] input:disabled,
+[data-theme='dark'] textarea:disabled,
+[data-theme='dark'] select:disabled {
   background-color: var(--st-card-bg-dark) !important;
   color: var(--st-card-disabled-text-dark) !important;
 }
 
-[data-theme="dark"] select option {
+[data-theme='dark'] select option {
   background-color: var(--st-card-select-option-bg-dark) !important;
   color: var(--st-card-select-option-text-dark) !important;
 }
@@ -271,7 +271,10 @@
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  transition: border-color var(--st-transition-normal), color var(--st-transition-normal), background-color var(--st-transition-normal);
+  transition:
+    border-color var(--st-transition-normal),
+    color var(--st-transition-normal),
+    background-color var(--st-transition-normal);
   background: rgb(var(--st-surface));
   color: rgba(var(--st-color-text), 0.3);
 }

@@ -23,7 +23,7 @@ const ChatCompletion = {
    */
   async completeAuto(
     { conversationFile, llmConfigFile = null }: CompletionParams,
-    callbacks: CompletionCallbacks = {}
+    callbacks: CompletionCallbacks = {},
   ): Promise<any> {
     return RouterClient.completeAuto({ conversationFile, llmConfigFile }, callbacks)
   },
@@ -33,7 +33,7 @@ const ChatCompletion = {
    */
   async complete(
     { conversationFile, llmConfigFile }: CompletionParams,
-    callbacks: CompletionCallbacks = {}
+    callbacks: CompletionCallbacks = {},
   ): Promise<any> {
     return RouterClient.completeSingle({ conversationFile, llmConfigFile }, callbacks)
   },
@@ -43,10 +43,10 @@ const ChatCompletion = {
    */
   completeStream(
     { conversationFile, llmConfigFile }: CompletionParams,
-    callbacks: CompletionCallbacks = {}
+    callbacks: CompletionCallbacks = {},
   ): Promise<any> {
     return RouterClient.completeStream({ conversationFile, llmConfigFile }, callbacks)
-  }
+  },
 }
 
 export default ChatCompletion

@@ -18,10 +18,10 @@ const draftReplace = ref<string>(props.rule.replace_regex)
 const draftMode = ref<string>((props.rule as any).mode ?? 'always')
 const draftCondition = ref<string>(String((props.rule as any).condition ?? ''))
 /* 选项枚举（与后端实现保持一致） */
-const TARGET_PREFIXES = ['preset','world_book','history','char','persona'] as const
-type TargetPrefix = typeof TARGET_PREFIXES[number]
-const VIEWS = ['user_view','assistant_view'] as const
-type ViewKey = typeof VIEWS[number]
+const TARGET_PREFIXES = ['preset', 'world_book', 'history', 'char', 'persona'] as const
+type TargetPrefix = (typeof TARGET_PREFIXES)[number]
+const VIEWS = ['user_view', 'assistant_view'] as const
+type ViewKey = (typeof VIEWS)[number]
 
 /* 细粒度来源类型（与后端各模块输出的 source.type 对齐） */
 const SOURCE_TYPES = [
@@ -40,7 +40,7 @@ const SOURCE_TYPES = [
   'char.description',
   'persona.description',
 ] as const
-type SourceTypeKey = typeof SOURCE_TYPES[number]
+type SourceTypeKey = (typeof SOURCE_TYPES)[number]
 
 /* 勾选框选择状态 */
 const selectedTargets = ref<Record<TargetPrefix, boolean>>({
@@ -78,7 +78,7 @@ function resetDraft() {
   draftReplace.value = props.rule.replace_regex
   draftMode.value = (props.rule as any).mode ?? 'always'
   draftCondition.value = String((props.rule as any).condition ?? '')
-  const arrT = (props.rule.targets || []).map(x => String(x))
+  const arrT = (props.rule.targets || []).map((x) => String(x))
   selectedTargets.value = {
     preset: arrT.includes('preset'),
     world_book: arrT.includes('world_book'),
@@ -86,7 +86,7 @@ function resetDraft() {
     char: arrT.includes('char'),
     persona: arrT.includes('persona'),
   }
-  const arrV = (props.rule.views || []).map(x => String(x))
+  const arrV = (props.rule.views || []).map((x) => String(x))
   selectedViews.value = {
     user_view: arrV.includes('user_view'),
     assistant_view: arrV.includes('assistant_view'),
@@ -114,7 +114,7 @@ watch(
   () => {
     if (!editing.value) resetDraft()
   },
-  { deep: false }
+  { deep: false },
 )
 
 function onEdit() {
@@ -149,13 +149,16 @@ async function onSave() {
     replace_regex: draftReplace.value,
     // 勾选框 → 数组
     targets: [
-      ...TARGET_PREFIXES.filter(k => selectedTargets.value[k]),
-      ...SOURCE_TYPES.filter(s => selectedSourceTypes.value[s]),
+      ...TARGET_PREFIXES.filter((k) => selectedTargets.value[k]),
+      ...SOURCE_TYPES.filter((s) => selectedSourceTypes.value[s]),
     ],
-    placement: (draftPlacement.value === 'before_macro' || draftPlacement.value === 'after_macro') ? draftPlacement.value : 'after_macro',
-    views: VIEWS.filter(v => selectedViews.value[v]),
-    mode: (draftMode.value === 'conditional') ? 'conditional' : 'always',
-    condition: (draftMode.value === 'conditional') ? draftCondition.value : ''
+    placement:
+      draftPlacement.value === 'before_macro' || draftPlacement.value === 'after_macro'
+        ? draftPlacement.value
+        : 'after_macro',
+    views: VIEWS.filter((v) => selectedViews.value[v]),
+    mode: draftMode.value === 'conditional' ? 'conditional' : 'always',
+    condition: draftMode.value === 'conditional' ? draftCondition.value : '',
   }
   const minD = toNumOrUndef(draftMinDepth.value)
   const maxD = toNumOrUndef(draftMaxDepth.value)
@@ -172,7 +175,9 @@ async function onSave() {
 </script>
 
 <template>
-  <div class="border border-gray-200 rounded-4 p-3 bg-white transition-all duration-200 ease-soft hover:shadow-elevate">
+  <div
+    class="border border-gray-200 rounded-4 p-3 bg-white transition-all duration-200 ease-soft hover:shadow-elevate"
+  >
     <div class="flex items-start justify-between">
       <div class="text-sm space-y-2">
         <!-- 第一行仅显示名称与 ID，避免过多参数挤在一行 -->
@@ -184,34 +189,60 @@ async function onSave() {
         <!-- 第二行：阶段与深度信息 -->
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-xs text-black/60">阶段</span>
-          <span class="text-xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent">{{ props.rule.placement || '—' }}</span>
-          <span v-if="props.rule.min_depth !== undefined" class="text-xs text-black/60">min: {{ props.rule.min_depth }}</span>
-          <span v-if="props.rule.max_depth !== undefined" class="text-xs text-black/60">max: {{ props.rule.max_depth }}</span>
+          <span
+            class="text-xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent"
+            >{{ props.rule.placement || '—' }}</span
+          >
+          <span v-if="props.rule.min_depth !== undefined" class="text-xs text-black/60"
+            >min: {{ props.rule.min_depth }}</span
+          >
+          <span v-if="props.rule.max_depth !== undefined" class="text-xs text-black/60"
+            >max: {{ props.rule.max_depth }}</span
+          >
         </div>
 
         <!-- 第三行：targets -->
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-xs text-black/60">targets</span>
-          <span v-for="t in props.rule.targets || []" :key="t" class="text-xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent">{{ t }}</span>
+          <span
+            v-for="t in props.rule.targets || []"
+            :key="t"
+            class="text-xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent"
+            >{{ t }}</span
+          >
         </div>
 
         <!-- 第四行：views -->
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-xs text-black/60">views</span>
-          <span v-for="v in props.rule.views || []" :key="v" class="text-xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent">{{ v }}</span>
+          <span
+            v-for="v in props.rule.views || []"
+            :key="v"
+            class="text-xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent"
+            >{{ v }}</span
+          >
         </div>
 
         <!-- 条件 -->
-        <div v-if="(props.rule as any).mode === 'conditional' && (props.rule as any).condition" class="flex flex-wrap items-center gap-2">
+        <div
+          v-if="(props.rule as any).mode === 'conditional' && (props.rule as any).condition"
+          class="flex flex-wrap items-center gap-2"
+        >
           <span class="text-xs text-black/60">condition</span>
-          <span class="text-xs text-black/70 font-mono break-all whitespace-pre-wrap">{{ (props.rule as any).condition }}</span>
+          <span class="text-xs text-black/70 font-mono break-all whitespace-pre-wrap">{{
+            (props.rule as any).condition
+          }}</span>
         </div>
 
         <!-- 描述 -->
-        <p v-if="props.rule.description" class="text-xs text-black/60">{{ props.rule.description }}</p>
+        <p v-if="props.rule.description" class="text-xs text-black/60">
+          {{ props.rule.description }}
+        </p>
       </div>
       <div class="flex items-center gap-2">
-        <span class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black">{{ enabledLabel(props.rule.enabled) }}</span>
+        <span class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black">{{
+          enabledLabel(props.rule.enabled)
+        }}</span>
         <button
           v-if="!editing"
           class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black hover:bg-gray-100 active:bg-gray-200 transition-all duration-200 ease-soft text-xs"
@@ -227,8 +258,18 @@ async function onSave() {
           编辑
         </button>
         <div v-else class="flex items-center gap-2">
-          <button class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs" @click="onSave">保存</button>
-          <button class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs" @click="onCancel">取消</button>
+          <button
+            class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs"
+            @click="onSave"
+          >
+            保存
+          </button>
+          <button
+            class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs"
+            @click="onCancel"
+          >
+            取消
+          </button>
         </div>
       </div>
     </div>
@@ -237,11 +278,15 @@ async function onSave() {
     <div v-if="!editing" class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
       <div class="border border-gray-200 rounded-4 p-3">
         <div class="text-xs font-medium text-black mb-2">find_regex</div>
-        <div class="text-xs text-black/70 font-mono break-all whitespace-pre-wrap">{{ props.rule.find_regex }}</div>
+        <div class="text-xs text-black/70 font-mono break-all whitespace-pre-wrap">
+          {{ props.rule.find_regex }}
+        </div>
       </div>
       <div class="border border-gray-200 rounded-4 p-3">
         <div class="text-xs font-medium text-black mb-2">replace_regex</div>
-        <div class="text-xs text-black/70 font-mono break-all whitespace-pre-wrap">{{ props.rule.replace_regex }}</div>
+        <div class="text-xs text-black/70 font-mono break-all whitespace-pre-wrap">
+          {{ props.rule.replace_regex }}
+        </div>
       </div>
     </div>
 
@@ -295,7 +340,11 @@ async function onSave() {
             <!-- 大类前缀 -->
             <div class="flex flex-wrap items-center gap-3">
               <span class="text-xs text-black/60">大类</span>
-              <label class="inline-flex items-center gap-2 text-xs" v-for="k in TARGET_PREFIXES" :key="k">
+              <label
+                class="inline-flex items-center gap-2 text-xs"
+                v-for="k in TARGET_PREFIXES"
+                :key="k"
+              >
                 <input
                   type="checkbox"
                   v-model="selectedTargets[k]"
@@ -307,7 +356,11 @@ async function onSave() {
             <!-- 细粒度来源类型 -->
             <div class="flex flex-wrap items-center gap-3">
               <span class="text-xs text-black/60">细项</span>
-              <label class="inline-flex items-center gap-2 text-xs" v-for="s in SOURCE_TYPES" :key="s">
+              <label
+                class="inline-flex items-center gap-2 text-xs"
+                v-for="s in SOURCE_TYPES"
+                :key="s"
+              >
                 <input
                   type="checkbox"
                   v-model="selectedSourceTypes[s]"
@@ -392,5 +445,4 @@ async function onSave() {
   </div>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

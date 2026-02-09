@@ -13,28 +13,28 @@ const props = defineProps({
   /** 滚动条宽度（px） */
   width: {
     type: Number,
-    default: 6
+    default: 6,
   },
   /** 导轨颜色 */
   trackColor: {
     type: String,
-    default: ''
+    default: '',
   },
   /** 可选：强制指定滑块颜色（不设置则由 CSS 主题控制） */
   thumbColor: {
     type: String,
-    default: ''
+    default: '',
   },
   /** 可选：滑块 hover 颜色（不设置则由 CSS 主题控制） */
   thumbHoverColor: {
     type: String,
-    default: ''
+    default: '',
   },
   /** 滚动条与边缘的距离（px） */
   offset: {
     type: Number,
-    default: 2
-  }
+    default: 2,
+  },
 })
 
 const scrollContainer = ref(null)
@@ -61,7 +61,7 @@ function updateScrollbar() {
 
   // 判断是否需要显示滚动条
   showScrollbar.value = scrollHeight > clientHeight
-  
+
   if (!showScrollbar.value) return
 
   // 计算滑块高度（最小24px）
@@ -84,24 +84,24 @@ function handleThumbMouseDown(e) {
   isDragging = true
   startY = e.clientY
   startScrollTop = scrollContainer.value.scrollTop
-  
+
   document.addEventListener('mousemove', handleMouseMove)
   document.addEventListener('mouseup', handleMouseUp)
-  
+
   e.preventDefault()
 }
 
 // 鼠标移动
 function handleMouseMove(e) {
   if (!isDragging || !scrollContainer.value) return
-  
+
   const container = scrollContainer.value
   const deltaY = e.clientY - startY
   const scrollHeight = container.scrollHeight
   const clientHeight = container.clientHeight
   const maxScrollTop = scrollHeight - clientHeight
   const maxThumbTop = clientHeight - thumbHeight.value
-  
+
   // 计算新的滚动位置
   const scrollDelta = (deltaY / maxThumbTop) * maxScrollTop
   container.scrollTop = startScrollTop + scrollDelta
@@ -117,20 +117,20 @@ function handleMouseUp() {
 // 点击轨道跳转
 function handleTrackClick(e) {
   if (e.target !== scrollTrack.value) return
-  
+
   const container = scrollContainer.value
   const trackRect = scrollTrack.value.getBoundingClientRect()
   const clickY = e.clientY - trackRect.top
-  
+
   const scrollHeight = container.scrollHeight
   const clientHeight = container.clientHeight
   const maxScrollTop = scrollHeight - clientHeight
-  
+
   // 计算目标滚动位置（点击位置居中）
   const targetThumbTop = clickY - thumbHeight.value / 2
   const maxThumbTop = clientHeight - thumbHeight.value
   const ratio = Math.max(0, Math.min(1, targetThumbTop / maxThumbTop))
-  
+
   container.scrollTop = ratio * maxScrollTop
 }
 
@@ -155,7 +155,6 @@ const thumbStyle = computed(() => {
   return style
 })
 
-
 // 组件挂载
 onMounted(() => {
   nextTick(() => {
@@ -163,11 +162,11 @@ onMounted(() => {
     setTimeout(() => {
       updateScrollbar()
     }, 100)
-    
+
     if (scrollContainer.value) {
       scrollContainer.value.addEventListener('scroll', handleScroll, { passive: true })
     }
-    
+
     // 监听窗口大小变化
     window.addEventListener('resize', updateScrollbar)
 
@@ -178,7 +177,7 @@ onMounted(() => {
       })
       resizeObserver.observe(scrollContainer.value)
     }
-    
+
     // 使用 MutationObserver 监听内容变化
     if (scrollContainer.value) {
       const observer = new MutationObserver(() => {
@@ -187,7 +186,7 @@ onMounted(() => {
       observer.observe(scrollContainer.value, {
         childList: true,
         subtree: true,
-        characterData: true
+        characterData: true,
       })
     }
   })
@@ -200,7 +199,9 @@ onBeforeUnmount(() => {
   }
   window.removeEventListener('resize', updateScrollbar)
   if (resizeObserver) {
-    try { resizeObserver.disconnect() } catch (_) {}
+    try {
+      resizeObserver.disconnect()
+    } catch (_) {}
     resizeObserver = null
   }
   document.removeEventListener('mousemove', handleMouseMove)
@@ -209,20 +210,17 @@ onBeforeUnmount(() => {
 
 // 暴露更新方法（用于外部触发内容变化后更新滚动条）
 defineExpose({
-  update: updateScrollbar
+  update: updateScrollbar,
 })
 </script>
 
 <template>
   <div class="custom-scrollbar2-wrapper">
     <!-- 滚动内容容器 -->
-    <div 
-      ref="scrollContainer" 
-      class="scroll-container2"
-    >
+    <div ref="scrollContainer" class="scroll-container2">
       <slot />
     </div>
-    
+
     <!-- 自定义滚动条 - 始终可见 -->
     <div
       v-show="showScrollbar"
@@ -286,7 +284,9 @@ defineExpose({
   /* 方角 */
   border-radius: 0;
   cursor: grab;
-  transition: background 0.18s ease, top 0.06s linear;
+  transition:
+    background 0.18s ease,
+    top 0.06s linear;
   will-change: top;
   /* 浅色主题：深色滑块 - 使用固定颜色确保可见 */
   background: rgba(60, 60, 60, 0.45);
@@ -297,13 +297,13 @@ defineExpose({
 }
 
 /* 深色主题 */
-[data-theme="dark"] .scroll-thumb2,
-:root[data-theme="dark"] .scroll-thumb2 {
+[data-theme='dark'] .scroll-thumb2,
+:root[data-theme='dark'] .scroll-thumb2 {
   background: rgba(200, 200, 200, 0.4);
 }
 
-[data-theme="dark"] .scroll-thumb2:hover,
-:root[data-theme="dark"] .scroll-thumb2:hover {
+[data-theme='dark'] .scroll-thumb2:hover,
+:root[data-theme='dark'] .scroll-thumb2:hover {
   background: rgba(200, 200, 200, 0.55);
 }
 
@@ -312,8 +312,8 @@ defineExpose({
   background: rgba(60, 60, 60, 0.7);
 }
 
-[data-theme="dark"] .scroll-thumb2:active,
-:root[data-theme="dark"] .scroll-thumb2:active {
+[data-theme='dark'] .scroll-thumb2:active,
+:root[data-theme='dark'] .scroll-thumb2:active {
   background: rgba(200, 200, 200, 0.65);
 }
 

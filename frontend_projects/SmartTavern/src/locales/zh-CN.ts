@@ -1,6 +1,6 @@
 /**
  * SmartTavern 简体中文语言包
- * 
+ *
  * 结构说明：
  * - common: 通用文字（按钮、状态等）
  * - panel: 面板相关
@@ -36,7 +36,7 @@ const zhCN = {
     enabled: '已启用',
     disabled: '已禁用',
     create: '新建',
-    
+
     // 状态
     loading: '加载中…',
     importing: '正在导入…',
@@ -45,7 +45,7 @@ const zhCN = {
     saved: '已保存！',
     checking: '检查中…',
     processing: '处理中…',
-    
+
     // 表单
     name: '名称',
     description: '描述',
@@ -55,11 +55,11 @@ const zhCN = {
     type: '类型',
     content: '内容',
     value: '值',
-    
+
     // 时间
     am: '上午',
     pm: '下午',
-    
+
     // 其他
     noDescription: '无描述',
     noData: '暂无数据',
@@ -134,7 +134,7 @@ const zhCN = {
       hint: '用于管理插件（后端 plugins 目录）：加载 / 卸载。导入新插件后将自动启用。',
       detailTitle: '插件详情',
     },
-    
+
     themes: {
       title: '主题',
       detailTitle: '主题详情',
@@ -152,7 +152,7 @@ const zhCN = {
     title: '⚠️ 名称冲突',
     message: '已存在名为 {name} 的{type}文件目录（非{type}名冲突）。',
     hint: '请选择处理方式：',
-    
+
     overwrite: {
       title: '覆盖原有{type}',
       desc: '删除旧{type}，使用新导入的内容替换',
@@ -163,9 +163,9 @@ const zhCN = {
       placeholder: '输入新名称',
       button: '确认',
     },
-    
+
     cancelButton: '取消导入',
-    
+
     errors: {
       emptyName: '请输入名称',
       nameExists: '名称 "{name}" 已存在，请使用其他名称',
@@ -176,7 +176,7 @@ const zhCN = {
   exportModal: {
     title: '导出{type}',
     selectItem: '选择{type}',
-    
+
     format: {
       title: '导出格式',
       zip: {
@@ -192,18 +192,18 @@ const zhCN = {
         desc: '数据嵌入图片中，可直接预览',
       },
     },
-    
+
     embedImage: {
       title: '嵌入图片（可选）',
       hint: '选择一张 PNG 图片作为载体，数据将嵌入其中',
       dropzone: '点击选择或拖动图片到此处',
       note: '仅支持 PNG 格式，如不选择将使用{type}的 icon',
     },
-    
+
     cancelButton: '取消',
     confirmButton: '确认导出',
     exportSuccess: '导出成功！',
-    
+
     errors: {
       noSelection: '请选择要导出的{type}',
       noPath: '无法获取{type}路径',
@@ -270,20 +270,22 @@ const zhCN = {
       invalidZip: '无效的压缩包',
       invalidFormat: '不支持的格式',
       importFailed: '导入失败',
-      
+
       // 错误描述
       typeMismatchDesc: '您选择的文件包含的数据类型与当前面板不匹配。',
       noTypeInfoDesc: '此文件缺少类型标记信息，无法验证是否为正确的数据类型。',
-      noTypeInFilenameDesc: 'JSON 文件名中未包含类型标识。请确保文件名以类型前缀开头，如 "preset_名称.json"。',
+      noTypeInFilenameDesc:
+        'JSON 文件名中未包含类型标识。请确保文件名以类型前缀开头，如 "preset_名称.json"。',
       genericDesc: '导入过程中发生错误，请检查文件格式是否正确。',
-      
+
       // 类型信息
       fileContains: '文件包含',
       panelExpects: '当前面板期望',
-      
+
       // 提示
       typeMismatchHint: '请确保在正确的面板中导入对应类型的文件，或选择其他文件。',
-      noTypeInfoHint: '此文件可能是旧版本导出的，或不是从本系统导出的。如需导入，请手动确认数据格式。',
+      noTypeInfoHint:
+        '此文件可能是旧版本导出的，或不是从本系统导出的。如需导入，请手动确认数据格式。',
       noTypeInFilenameHint: '本系统导出的 JSON 文件会自动包含类型前缀，请使用正确命名的文件。',
     },
   },
@@ -296,12 +298,12 @@ const zhCN = {
     configPreview: '配置预览',
     configPreviewHint: '在聊天页面右侧展示的配置入口（预览占位）',
     backToHome: '回到主页',
-    
+
     viewMode: {
       threaded: '楼层',
       sandbox: '前端',
     },
-    
+
     theme: {
       dark: '深色',
       light: '浅色',
@@ -319,9 +321,9 @@ const zhCN = {
       saving: '保存中',
       saved: '已保存！',
       saveFailed: '保存失败',
-      
+
       basicInfo: '基本信息',
-      
+
       apiConfig: {
         title: 'API 配置',
         enableTitle: '启用 API 配置',
@@ -338,7 +340,7 @@ const zhCN = {
         presencePenalty: 'Presence Penalty',
         on: '开启',
       },
-      
+
       prompts: {
         title: '提示词编辑',
         items: '提示词条目',
@@ -348,12 +350,12 @@ const zhCN = {
         addSpecial: '添加特殊',
         dragToSort: '拖拽排序',
       },
-      
+
       regex: {
         title: '正则编辑',
         empty: '暂无规则，请在右上角输入后点击添加',
       },
-      
+
       errors: {
         idRequired: '请填写 id',
         nameRequired: '请填写名称',
@@ -363,13 +365,13 @@ const zhCN = {
         specialExists: '该一次性组件已存在',
       },
     },
-    
+
     character: {
       title: '角色详情',
       pageTitle: '角色卡编辑',
       editMode: '编辑模式',
       editHint: '此页面支持编辑角色的基本信息、初始消息、内嵌世界书和正则规则',
-      
+
       basicInfo: '基本设定',
       characterName: '角色卡名称',
       characterDesc: '角色卡描述',
@@ -380,7 +382,7 @@ const zhCN = {
       avatarLabel: '头像',
       uploadAvatar: '上传头像',
       removeAvatar: '移除头像',
-      
+
       messages: {
         title: '初始消息',
         addNew: '新增消息',
@@ -388,7 +390,7 @@ const zhCN = {
         messageNum: '消息 #{num}',
         charCount: '字符数',
       },
-      
+
       worldBook: {
         title: '内嵌世界书',
         empty: '暂无世界书条目',
@@ -396,14 +398,14 @@ const zhCN = {
         namePlaceholder: '名称',
         defaultName: '角色世界书',
       },
-      
+
       regexRules: {
         title: '正则规则',
         empty: '暂无正则规则',
         idPlaceholder: '规则 id',
         namePlaceholder: '规则名称',
       },
-      
+
       errors: {
         wbIdRequired: '请填写世界书 ID',
         wbNameRequired: '请填写世界书名称',
@@ -413,13 +415,13 @@ const zhCN = {
         ruleIdExists: '该 id 已存在',
       },
     },
-    
+
     persona: {
       title: '用户信息详情',
       pageTitle: '用户信息编辑',
       editMode: '编辑模式',
       editHint: '此页面用于编辑用户的基本信息，包括名称和描述',
-      
+
       basicInfo: '基本信息',
       personaInfoName: '用户信息名称',
       personaInfoNamePlaceholder: '输入用户信息名称',
@@ -435,49 +437,49 @@ const zhCN = {
       avatarLabel: '头像',
       uploadAvatar: '上传头像',
       removeAvatar: '移除头像',
-      
+
       notes: {
         title: '说明',
         line1: '用户信息（Persona）用于定义用户的身份、偏好和对话风格',
         line2: '输入框失焦时会自动保存',
         line3: '点击"重置"按钮可以恢复到当前保存的内容',
       },
-      
+
       preview: {
         title: '当前保存的数据',
       },
     },
-    
+
     worldBook: {
       title: '世界书详情',
       entries: '条目列表',
       addEntry: '添加条目',
-      
+
       pageTitle: '世界书详情',
       editMode: '编辑模式',
       editHint: '此页面支持完整编辑、新增、删除和拖拽排序功能',
       saveFailed: '保存失败',
-      
+
       basicInfo: '基本信息',
-      
+
       toolbar: {
         entryCount: '条目数量',
         idPlaceholder: 'id',
         namePlaceholder: '名称',
       },
-      
+
       editor: {
         title: '世界书编辑',
         empty: '暂无世界书条目，请在右上角输入后点击添加',
       },
-      
+
       errors: {
         idRequired: '请填写 id',
         nameRequired: '请填写 名称',
         idExists: 'id 已存在',
       },
     },
-    
+
     regexRule: {
       title: '正则规则详情',
       findRegex: '查找正则',
@@ -485,25 +487,25 @@ const zhCN = {
       targets: '目标',
       placement: '位置',
       views: '视图',
-      
+
       pageTitle: '正则规则编辑',
       editMode: '编辑模式',
       editHint: '此页面用于编辑独立的正则规则集，支持新增、编辑、删除和拖拽排序',
       saveFailed: '保存失败',
-      
+
       basicInfo: '基本信息',
-      
+
       toolbar: {
         ruleCount: '规则数量',
         idPlaceholder: 'id',
         namePlaceholder: '名称',
       },
-      
+
       list: {
         title: '正则规则列表',
         empty: '暂无正则规则，请在右上角输入后点击添加',
       },
-      
+
       notes: {
         title: '使用说明',
         line1: '正则规则用于文本后处理，支持查找和替换操作',
@@ -512,23 +514,23 @@ const zhCN = {
         line4: '点击"编辑"按钮展开完整的编辑表单',
         line5: '使用左侧握把图标拖拽可以调整规则执行顺序',
       },
-      
+
       errors: {
         idRequired: '请填写 id',
         nameRequired: '请填写 名称',
         idExists: 'id 已存在',
       },
     },
-    
+
     llmConfig: {
       title: 'AI配置详情',
       editMode: '编辑模式',
       editHint: '此页面支持完整编辑AI配置参数',
       saveFailed: '保存失败',
-      
+
       basicInfo: '基本信息',
       baseConfig: '基础配置',
-      
+
       provider: 'Provider',
       baseUrl: 'Base URL',
       apiKey: 'API Key',
@@ -536,7 +538,7 @@ const zhCN = {
       modelPlaceholder: '如 gpt-4o-mini',
       selectModel: '选择模型',
       modelListPlaceholder: '选择模型（占位）',
-      
+
       requestParams: {
         title: '请求参数',
         maxTokens: 'max_tokens',
@@ -547,39 +549,39 @@ const zhCN = {
         stream: '流式输出',
         on: '开启',
       },
-      
+
       network: {
         title: '网络与日志',
         connectTimeout: '连接超时（秒）',
         requestTimeout: '请求超时（秒）',
         enableLogging: '启用日志',
       },
-      
+
       customParams: {
         title: '自定义参数（JSON）',
         hint: '输入 JSON 格式的自定义参数，将合并到请求中',
       },
-      
+
       gemini: {
         title: 'Gemini 高级配置',
         stopSequences: 'stopSequences (逗号分隔)',
         safetySettings: 'safetySettings (JSON)',
         customParams: 'customParams (JSON)',
       },
-      
+
       anthropic: {
         title: 'Anthropic 高级配置',
         stopSequences: 'stop_sequences (逗号分隔)',
         enableThinking: 'enable_thinking',
         thinkingBudget: 'thinking_budget',
       },
-      
+
       errors: {
         jsonFormatError: 'JSON 格式错误',
         fixJsonErrors: '请修正 JSON 格式错误后再保存',
       },
     },
-    
+
     plugin: {
       title: '插件详情',
       pageTitle: '插件信息编辑',
@@ -587,13 +589,13 @@ const zhCN = {
       editHint: '此页面用于编辑插件的基本信息，包括名称和描述',
       saveFailed: '保存失败',
       saved: '保存成功',
-      
+
       basicInfo: '基本信息',
       pluginName: '插件名称',
       pluginNamePlaceholder: '输入插件名称',
       pluginDesc: '插件描述',
       pluginDescPlaceholder: '输入插件描述，可以包含插件的功能、用法等…',
-      
+
       notes: {
         title: '说明',
         line1: '插件信息仅包含名称和描述，保存到 manifest.json',
@@ -601,7 +603,7 @@ const zhCN = {
         line3: '点击"保存"按钮将修改写入到后端文件',
       },
     },
-    
+
     theme: {
       title: '主题详情',
       pageTitle: '主题信息编辑',
@@ -609,13 +611,13 @@ const zhCN = {
       editHint: '此页面用于编辑主题的基本信息，包括名称和描述',
       saveFailed: '保存失败',
       saved: '保存成功',
-      
+
       basicInfo: '基本信息',
       themeName: '主题名称',
       themeNamePlaceholder: '输入主题名称',
       themeDesc: '主题描述',
       themeDescPlaceholder: '输入主题描述，可以包含主题的风格、特点等…',
-      
+
       notes: {
         title: '说明',
         line1: '主题信息仅包含名称和描述，保存到 manifest.json',
@@ -637,7 +639,7 @@ const zhCN = {
     },
     unknownTab: '未知页签',
     placeholderContent: '占位内容',
-    
+
     // 背景图片管理
     backgrounds: {
       title: '背景图片',
@@ -652,7 +654,7 @@ const zhCN = {
       noImage: '暂无图片',
       uploading: '上传中…',
     },
-    
+
     // 沙盒外观
     sandbox: {
       title: '前端沙盒外观',
@@ -661,7 +663,8 @@ const zhCN = {
       displayModeAuto: '自适应高度（默认）',
       displayModeFixed: '固定容器（使用宽高比）',
       displayModeInline: '由沙盒内代码决定（缺省则自适应）',
-      displayModeHint: '使用"由沙盒内代码决定"时，可在 HTML 中加入注释：<!-- st:display-mode=auto|fixed --> 若无声明则回退为自适应高度。',
+      displayModeHint:
+        '使用"由沙盒内代码决定"时，可在 HTML 中加入注释：<!-- st:display-mode=auto|fixed --> 若无声明则回退为自适应高度。',
       aspectRatio: '画面宽高比',
       preset: '预设',
       orCustom: '或 自定义',
@@ -675,7 +678,7 @@ const zhCN = {
       stageBgOpacity: '舞台背景不透明度',
       tip: '提示：上述设定实时作用于页面上的"全局沙盒"舞台，并以 CSS 变量方式保存，便于主题或脚本统一接管。',
     },
-    
+
     // 主题管理
     theme: {
       title: '主题管理',
@@ -699,16 +702,18 @@ const zhCN = {
       resetDefault: '重置为默认主题',
       // 多主题叠加
       multiThemeInfo: '多主题叠加',
-      multiThemeHint: '支持同时启用多个主题。排序靠前的主题优先级更高，会覆盖后面主题的相同样式。拖拽可调整顺序。',
+      multiThemeHint:
+        '支持同时启用多个主题。排序靠前的主题优先级更高，会覆盖后面主题的相同样式。拖拽可调整顺序。',
     },
-    
+
     // 其他外观设置
     others: {
       title: '其他外观设置',
       desc: '配置浮标吸附边距，控制侧边栏浮标吸附到屏幕边缘时的距离。',
       fabMargin: '浮标吸附边距',
       fabMarginHint: '控制侧边栏浮标吸附到屏幕边缘时的距离，数值越大，浮标距离边缘越远',
-      tuningTip: '提示：拖拽滑条时，页面会自动变透明，仅保留本面板不透明，便于实时查看边距调整效果。',
+      tuningTip:
+        '提示：拖拽滑条时，页面会自动变透明，仅保留本面板不透明，便于实时查看边距调整效果。',
       timezone: '时区设置',
       timezoneHint: '选择消息时间戳的显示时区',
       dateTimeFormat: '日期时间格式',
@@ -734,7 +739,7 @@ const zhCN = {
       formatCN24: '中文 24小时 (2025年12月01日 14:30)',
       formatCN12: '中文 12小时 (2025年12月01日 02:30 下午)',
     },
-    
+
     // 楼层对话外观
     threaded: {
       title: '楼层对话外观',
@@ -761,7 +766,8 @@ const zhCN = {
       displayModeAuto: '自适应高度（默认）',
       displayModeFixed: '固定容器（使用宽高比）',
       displayModeInline: '由沙盒内代码决定（缺省则自适应）',
-      displayModeHint: '使用"由沙盒内代码决定"时，可在 HTML 中加入注释：<!-- st:display-mode=auto|fixed --> 若无声明则回退为自适应高度。',
+      displayModeHint:
+        '使用"由沙盒内代码决定"时，可在 HTML 中加入注释：<!-- st:display-mode=auto|fixed --> 若无声明则回退为自适应高度。',
       aspectRatio: '画面宽高比',
       preset: '预设',
       orCustom: '或 自定义',
@@ -776,7 +782,8 @@ const zhCN = {
       iframeRenderModeAll: '全部渲染',
       iframeRenderModeTrackLatest: '追踪最新消息',
       iframeRenderModeTrackViewport: '追踪视图中的消息',
-      iframeRenderModeHint: '选择渲染策略以优化内存使用。"全部渲染"会渲染所有HTML；"追踪最新消息"仅渲染最新N层；"追踪视图"仅渲染视口附近的消息',
+      iframeRenderModeHint:
+        '选择渲染策略以优化内存使用。"全部渲染"会渲染所有HTML；"追踪最新消息"仅渲染最新N层；"追踪视图"仅渲染视口附近的消息',
       iframeRenderRange: '渲染层数范围',
       layers: '层',
       iframeRenderRangeHint: '设置渲染的楼层数量。数值越小，内存占用越低，但滚动时可能需要重新渲染',
@@ -789,24 +796,24 @@ const zhCN = {
     title: '应用设置 App Settings',
     optionsTitle: '选项',
     optionsDesc: '与主页 Options 完全一致的设置项：主题切换为"系统/浅色/深色"。',
-    
+
     language: {
       label: '语言',
       zhCN: '简体中文',
       enUS: 'English',
       jaJP: '日本語',
     },
-    
+
     theme: {
       label: '主题',
       current: '正在使用',
     },
-    
+
     backend: {
       label: '后端 API 地址',
       placeholder: 'http://localhost:8050',
     },
-    
+
     uiScale: {
       label: 'UI 缩放',
       placeholder: '1.0',
@@ -830,17 +837,17 @@ const zhCN = {
       imported: '已导入插件：{name}',
       importAutoLoadFailed: '插件已导入，但自动加载失败：{error}',
     },
-    
+
     save: {
       success: '保存成功',
       failed: '保存失败：{error}',
     },
-    
+
     import: {
       success: '导入成功',
       failed: '导入失败：{error}',
     },
-    
+
     export: {
       success: '导出成功',
       failed: '导出失败：{error}',
@@ -852,7 +859,7 @@ const zhCN = {
     title: '语言设置',
     current: '当前语言',
     select: '选择语言',
-    
+
     // 语言名称
     zhCN: '简体中文',
     zhTW: '繁體中文',
@@ -1024,7 +1031,7 @@ const zhCN = {
       options: '选项',
     },
   },
-  
+
   // ==================== 首页组件 ====================
   home: {
     // 主页菜单按钮
@@ -1065,7 +1072,8 @@ const zhCN = {
       creating: '正在创建…',
       nameLabel: '新对话名称',
       namePlaceholder: '请输入对话名称',
-      nameHelp: '允许字符：中文、字母、数字、空格、-、_；特殊字符（/ \\ : * ? " < > |）将被直接替换为"-"。',
+      nameHelp:
+        '允许字符：中文、字母、数字、空格、-、_；特殊字符（/ \\ : * ? " < > |）将被直接替换为"-"。',
       nameReplaced: '已替换不允许的字符为"-"以确保文件名安全。',
       nameDupFile: '文件名已占用：{name}.json 已存在，请更换名称。',
       nameDupTitle: '内部名称已占用：已有对话的 name 与"{name}"重复，请更换名称。',
@@ -1083,7 +1091,8 @@ const zhCN = {
       worldbookLabel: '世界书（可选）',
       optional: '（可不选）',
       configPanelTitle: '对话配置',
-      configPanelSubtitle: '预设（必选） · 角色卡（必选） · 用户信息（必选） · 正则（可选） · 世界书（可选） · AI配置（可选）',
+      configPanelSubtitle:
+        '预设（必选） · 角色卡（必选） · 用户信息（必选） · 正则（可选） · 世界书（可选） · AI配置（可选）',
       typeLabel: '对话类型',
       typeThreaded: '对话楼层',
       typeThreadedSub: 'Threaded Chat',
@@ -1257,7 +1266,7 @@ const zhCN = {
       placeholder: '输入消息… (Enter 发送，Shift+Enter 换行)',
       sendShortcut: '发送 (Enter)',
     },
-    
+
     message: {
       avatarAlt: '{name}的头像',
       floorIndex: '楼层序号',
@@ -1269,7 +1278,7 @@ const zhCN = {
       editPlaceholder: '输入消息内容…',
       saveShortcut: '保存 (Ctrl+Enter)',
       cancelShortcut: '取消 (Esc)',
-      
+
       // 状态
       waiting: '等待中…{seconds}s',
       waitingAI: '等待AI响应（{seconds}s）',
@@ -1282,7 +1291,7 @@ const zhCN = {
       saveSuccess: '保存成功',
       saveFailed: '保存失败',
     },
-    
+
     branch: {
       switching: '切换中…',
       switched: '已切换',
@@ -1290,7 +1299,7 @@ const zhCN = {
       nextBranch: '切换到下一个分支',
       createNew: '创建新分支（重试）',
     },
-    
+
     errors: {
       aiCallFailed: 'AI调用失败',
       noConversationFile: '无对话文件，跳过分支信息加载',

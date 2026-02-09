@@ -27,13 +27,17 @@ export function useSidebar(): UseSidebarAPI {
   })
 
   // 监听：状态变化即写回浏览器
-  watch(drawerOpen, (v) => {
-    try { 
-      localStorage.setItem(LS_KEY, v ? '1' : '0') 
-    } catch (_) {
-      // Ignore errors
-    }
-  }, { immediate: false })
+  watch(
+    drawerOpen,
+    (v) => {
+      try {
+        localStorage.setItem(LS_KEY, v ? '1' : '0')
+      } catch (_) {
+        // Ignore errors
+      }
+    },
+    { immediate: false },
+  )
 
   return {
     drawerOpen,

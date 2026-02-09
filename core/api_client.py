@@ -22,29 +22,31 @@
     resp = client.call("project_manager/get_status", {"project_name": "ProjectManager"}, method="GET", namespace="modules")
 """
 
-from typing import Any, Dict, Optional, Union, Tuple, List
-import os
-import inspect
 import asyncio
-import requests
+import inspect
+import os
+from typing import Any
 from urllib.parse import urljoin
+
+import requests
+
 from core.config.api_config import get_api_config
 
 
 class ApiClient:
     def __init__(
         self,
-        base_url: Optional[str] = None,
-        api_prefix: Optional[str] = None,
-        timeout: Union[int, float] = 15,
-        default_headers: Optional[Dict[str, str]] = None,
+        base_url: str | None = None,
+        api_prefix: str | None = None,
+        timeout: int | float = 15,
+        default_headers: dict[str, str] | None = None,
     ):
         """
         初始化 API 客户端
         """
         cfg = get_api_config()
         self.base_url = (base_url or cfg.base_url).rstrip("/")
-        _prefix = (api_prefix or cfg.api_prefix)
+        _prefix = api_prefix or cfg.api_prefix
         self.api_prefix = _prefix if _prefix.startswith("/") else f"/{_prefix}"
         self.timeout = timeout
         self.session = requests.Session()
@@ -53,7 +55,7 @@ class ApiClient:
             "Content-Type": "application/json",
         }
 
-    def set_auth(self, token: Optional[str]) -> None:
+    def set_auth(self, token: str | None) -> None:
         """
         设置鉴权头（Bearer Token）
         """
@@ -62,7 +64,7 @@ class ApiClient:
         else:
             self.default_headers.pop("Authorization", None)
 
-    def _paths_for(self, name: str, namespace: Optional[str]) -> List[str]:
+    def _paths_for(self, name: str, namespace: str | None) -> list[str]:
         """
         根据斜杠路径与命名空间生成可能的请求路径
         - name 必须为斜杠风格（不含点号与反斜杠）
@@ -88,7 +90,7 @@ class ApiClient:
             ]
         return [f"{self.api_prefix}/{ns}/{name_path}"]
 
-    def _merge_headers(self, headers: Optional[Dict[str, str]]) -> Dict[str, str]:
+    def _merge_headers(self, headers: dict[str, str] | None) -> dict[str, str]:
         h = dict(self.default_headers or {})
         if headers:
             h.update(headers)
@@ -98,11 +100,11 @@ class ApiClient:
         self,
         method: str,
         path: str,
-        json: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None,
-        files: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
-    ) -> Tuple[int, Any]:
+        json: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        files: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> tuple[int, Any]:
         """
         统一请求入口，返回 (status_code, parsed_body)
         优先解析为 JSON，不可解析时返回文本
@@ -142,11 +144,11 @@ class ApiClient:
     def call(
         self,
         name: str,
-        payload: Optional[Dict[str, Any]] = None,
+        payload: dict[str, Any] | None = None,
         method: str = "POST",
-        headers: Optional[Dict[str, str]] = None,
-        files: Optional[Dict[str, Any]] = None,
-        namespace: Optional[str] = None,
+        headers: dict[str, str] | None = None,
+        files: dict[str, Any] | None = None,
+        namespace: str | None = None,
     ) -> Any:
         """
         通过函数名调用 API
@@ -159,7 +161,6 @@ class ApiClient:
                 return inproc
 
         paths = self._paths_for(name, namespace)
-        last_status = None
         last_body = None
         for path in paths:
             if method.upper() == "GET":
@@ -169,7 +170,7 @@ class ApiClient:
             # 成功，或非 404 错误则直接返回
             if status and status < 400:
                 return body
-            last_status, last_body = status, body
+            _last_status, last_body = status, body
             # 仅在 404 时尝试下一个命名空间
             if status != 404:
                 break
@@ -178,18 +179,17 @@ class ApiClient:
     def call_get(
         self,
         name: str,
-        params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
-        namespace: Optional[str] = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+        namespace: str | None = None,
     ) -> Any:
         paths = self._paths_for(name, namespace)
-        last_status = None
         last_body = None
         for path in paths:
             status, body = self.request("GET", path, params=params, headers=headers)
             if status and status < 400:
                 return body
-            last_status, last_body = status, body
+            _last_status, last_body = status, body
             if status != 404:
                 break
         return last_body
@@ -197,10 +197,10 @@ class ApiClient:
     def call_post(
         self,
         name: str,
-        payload: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
-        files: Optional[Dict[str, Any]] = None,
-        namespace: Optional[str] = None,
+        payload: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+        files: dict[str, Any] | None = None,
+        namespace: str | None = None,
     ) -> Any:
         # 优先尝试“进程内直调”（可配置），避免本机 HTTP 往返
         inproc = self._call_inproc_if_allowed(name=name, payload=payload, namespace=namespace)
@@ -208,13 +208,12 @@ class ApiClient:
             return inproc
 
         paths = self._paths_for(name, namespace)
-        last_status = None
         last_body = None
         for path in paths:
             status, body = self.request("POST", path, json=payload, headers=headers, files=files)
             if status and status < 400:
                 return body
-            last_status, last_body = status, body
+            _last_status, last_body = status, body
             if status != 404:
                 break
         return last_body
@@ -225,7 +224,7 @@ class ApiClient:
         val = os.getenv("MF_INPROC", "0").strip().lower()
         return val in ("1", "true", "yes", "on")
 
-    def _inproc_ns_allowed(self, ns: Optional[str]) -> bool:
+    def _inproc_ns_allowed(self, ns: str | None) -> bool:
         allowed = os.getenv("MF_INPROC_NS", "modules").strip().lower().split(",")
         allowed = [s.strip() for s in allowed if s.strip()]
         if not allowed:
@@ -233,12 +232,13 @@ class ApiClient:
         n = (ns or "").strip().lower()
         return (n in allowed) or (not n and ("modules" in allowed))
 
-    def _call_inproc_if_allowed(self, name: str, payload: Optional[Dict[str, Any]], namespace: Optional[str]) -> Any:
+    def _call_inproc_if_allowed(self, name: str, payload: dict[str, Any] | None, namespace: str | None) -> Any:
         """若允许，直接通过注册中心进程内调用；否则返回 _Sentinel 表示走 HTTP。"""
         try:
             if not self._inproc_enabled():
                 return _Sentinel
             from core.api_registry import get_registry
+
             reg = get_registry()
             path_key = name.lstrip("/")
             spec = reg.get_spec(path_key)
@@ -276,14 +276,14 @@ class _SentinelClass:
 _Sentinel = _SentinelClass()
 
 
-
 # 全局默认客户端
-_default_client: Optional[ApiClient] = None
+_default_client: ApiClient | None = None
+
 
 def get_client(
-    base_url: Optional[str] = None,
-    api_prefix: Optional[str] = None,
-    timeout: Optional[Union[int, float]] = None,
+    base_url: str | None = None,
+    api_prefix: str | None = None,
+    timeout: int | float | None = None,
 ) -> ApiClient:
     """
     获取或创建全局默认客户端
@@ -298,13 +298,14 @@ def get_client(
         )
     return _default_client
 
+
 def call_api(
     name: str,
-    payload: Optional[Dict[str, Any]] = None,
+    payload: dict[str, Any] | None = None,
     method: str = "POST",
-    headers: Optional[Dict[str, str]] = None,
-    files: Optional[Dict[str, Any]] = None,
-    namespace: Optional[str] = None,
+    headers: dict[str, str] | None = None,
+    files: dict[str, Any] | None = None,
+    namespace: str | None = None,
 ) -> Any:
     """
     使用全局客户端按函数名调用 API

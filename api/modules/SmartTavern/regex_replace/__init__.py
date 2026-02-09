@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 SmartTavern.regex_replace 包
 - 正则替换模块（before_macro/after_macro）

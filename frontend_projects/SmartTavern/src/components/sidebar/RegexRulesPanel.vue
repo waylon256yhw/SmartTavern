@@ -22,7 +22,7 @@ const props = defineProps({
   conversationFile: { type: String, default: null },
 })
 
-const emit = defineEmits(['close','use','view','delete','import','export','create'])
+const emit = defineEmits(['close', 'use', 'view', 'delete', 'import', 'export', 'create'])
 
 const panelStyle = computed(() => ({
   position: 'fixed',
@@ -67,15 +67,17 @@ const showCreateModal = ref(false)
 
 // 使用通道响应式状态
 const regexRules = CatalogChannel.regexRules
-const loading = computed(() =>
-  CatalogChannel.loadingStates.value.regex ||
-  (props.conversationFile ? SettingsChannel.isLoading(props.conversationFile) : false) ||
-  importing.value
+const loading = computed(
+  () =>
+    CatalogChannel.loadingStates.value.regex ||
+    (props.conversationFile ? SettingsChannel.isLoading(props.conversationFile) : false) ||
+    importing.value,
 )
-const error = computed(() =>
-  importError.value ||
-  CatalogChannel.errorStates.value.regex ||
-  (props.conversationFile ? SettingsChannel.getError(props.conversationFile) : null)
+const error = computed(
+  () =>
+    importError.value ||
+    CatalogChannel.errorStates.value.regex ||
+    (props.conversationFile ? SettingsChannel.getError(props.conversationFile) : null),
 )
 
 // 监听事件响应
@@ -84,17 +86,17 @@ let unsubscribeSettings = null
 
 function loadData() {
   if (settingsLoaded.value) return
-  
+
   // 请求正则规则列表
   Host.events.emit(CatalogChannel.EVT_CATALOG_REGEX_REQ, {
-    requestId: Date.now()
+    requestId: Date.now(),
   })
-  
+
   // 请求设置（如果有对话文件）
   if (props.conversationFile) {
     Host.events.emit(SettingsChannel.EVT_SETTINGS_GET_REQ, {
       conversationFile: props.conversationFile,
-      requestId: Date.now()
+      requestId: Date.now(),
     })
   } else {
     settingsLoaded.value = true
@@ -119,7 +121,7 @@ onMounted(() => {
       // 数据更新成功，等待 transition 完成后初始化图标
     }
   })
-  
+
   // 监听设置响应
   unsubscribeSettings = Host.events.on(SettingsChannel.EVT_SETTINGS_GET_RES, (payload) => {
     if (payload?.success && payload?.conversationFile === props.conversationFile) {
@@ -138,13 +140,19 @@ onUnmounted(() => {
   if (unsubscribeSettings) unsubscribeSettings()
 })
 
-watch(() => props.conversationFile, (v) => {
-  if (v && !settingsLoaded.value) {
-    loadData()
-  }
-}, { immediate: true })
+watch(
+  () => props.conversationFile,
+  (v) => {
+    if (v && !settingsLoaded.value) {
+      loadData()
+    }
+  },
+  { immediate: true },
+)
 
-function close(){ emit('close') }
+function close() {
+  emit('close')
+}
 
 // 多选逻辑：切换选中状态
 function onUse(k) {
@@ -158,7 +166,7 @@ function onUse(k) {
     emit('use', k)
     return
   }
-  
+
   // 计算新的选中列表
   const newKeys = [...usingKeys.value]
   const idx = newKeys.indexOf(k)
@@ -167,14 +175,14 @@ function onUse(k) {
   } else {
     newKeys.push(k)
   }
-  
+
   // 通过事件请求更新设置
   Host.events.emit(SettingsChannel.EVT_SETTINGS_UPDATE_REQ, {
     conversationFile: props.conversationFile,
     patch: { regex_rules: newKeys },
-    requestId: Date.now()
+    requestId: Date.now(),
   })
-  
+
   // 监听更新响应（一次性）
   const unsubUpdate = Host.events.on(SettingsChannel.EVT_SETTINGS_UPDATE_RES, (payload) => {
     if (payload?.conversationFile === props.conversationFile) {
@@ -187,14 +195,16 @@ function onUse(k) {
   })
 }
 
-function onView(k){ emit('view', k) }
+function onView(k) {
+  emit('view', k)
+}
 
 // ==================== 删除功能 ====================
 
 function onDelete(k) {
-  const item = regexRules.value.find(p => p.key === k)
+  const item = regexRules.value.find((p) => p.key === k)
   if (!item) return
-  
+
   deleteTarget.value = {
     key: k,
     name: item.name || getFolderName(k),
@@ -210,7 +220,7 @@ function closeDeleteConfirmModal() {
 
 async function handleDeleteConfirm() {
   if (!deleteTarget.value) return
-  
+
   deleting.value = true
   try {
     const result = await DataCatalog.deleteDataFolder(deleteTarget.value.folderPath)
@@ -262,7 +272,7 @@ function extractRegexName(filename) {
 async function handleFileSelect(event) {
   const files = event.target.files
   if (!files || files.length === 0) return
-  
+
   const file = files[0]
   const validTypes = ['.json', '.zip', '.png']
   const ext = '.' + (file.name.split('.').pop() || '').toLowerCase()
@@ -271,7 +281,7 @@ async function handleFileSelect(event) {
     event.target.value = ''
     return
   }
-  
+
   // 直接调用导入，后端会处理名称冲突检测
   await doImport(file, false)
   event.target.value = ''
@@ -280,7 +290,7 @@ async function handleFileSelect(event) {
 async function doImport(file, overwrite = false, targetName = null) {
   importing.value = true
   importError.value = null
-  
+
   try {
     const result = await DataCatalog.importDataFromFile('regex_rule', file, targetName, overwrite)
     if (result.success) {
@@ -292,7 +302,11 @@ async function doImport(file, overwrite = false, targetName = null) {
       if (errorCode === 'NAME_EXISTS') {
         // 名称冲突，显示冲突弹窗
         openImportConflictModal(file, result.folder_name, result.suggested_name)
-      } else if (errorCode === 'TYPE_MISMATCH' || errorCode === 'NO_TYPE_INFO' || errorCode === 'NO_TYPE_IN_FILENAME') {
+      } else if (
+        errorCode === 'TYPE_MISMATCH' ||
+        errorCode === 'NO_TYPE_INFO' ||
+        errorCode === 'NO_TYPE_IN_FILENAME'
+      ) {
         openImportErrorModal(errorCode, result.message, result.expected_type, result.actual_type)
       } else {
         importError.value = result.message || result.error || t('error.importFailed')
@@ -375,48 +389,63 @@ function handleCreated(result) {
 </script>
 
 <template>
-  <div
-    data-scope="regex-view"
-    class="rg-panel"
-    :style="panelStyle"
-  >
-      <header class="rg-header">
-        <div class="rg-title st-panel-title">
-          <span class="rg-icon"><i data-lucide="scan-text"></i></span>
-          {{ t('panel.regexRules.title') }}
-        </div>
-        <div class="rg-header-actions">
-          <button class="rg-action-btn st-btn-shrinkable" type="button" :title="t('panel.regexRules.createTitle')" @click="openCreateModal">
-            <i data-lucide="plus"></i><span class="st-btn-text">{{ t('common.create') }}</span>
-          </button>
-          <button class="rg-action-btn st-btn-shrinkable" type="button" :title="t('panel.regexRules.importTitle')" @click="triggerImport" :disabled="importing">
-            <i data-lucide="download"></i><span class="st-btn-text">{{ t('common.import') }}</span>
-          </button>
-          <button class="rg-action-btn st-btn-shrinkable" type="button" :title="t('panel.regexRules.exportTitle')" @click="openExportModal" :disabled="regexRules.length === 0">
-            <i data-lucide="upload"></i><span class="st-btn-text">{{ t('common.export') }}</span>
-          </button>
-          <button class="rg-close" type="button" :title="t('common.close')" @click="close">✕</button>
-        </div>
-      </header>
-      <input ref="fileInputRef" type="file" accept=".json,.zip,.png" style="display: none;" @change="handleFileSelect" />
+  <div data-scope="regex-view" class="rg-panel" :style="panelStyle">
+    <header class="rg-header">
+      <div class="rg-title st-panel-title">
+        <span class="rg-icon"><i data-lucide="scan-text"></i></span>
+        {{ t('panel.regexRules.title') }}
+      </div>
+      <div class="rg-header-actions">
+        <button
+          class="rg-action-btn st-btn-shrinkable"
+          type="button"
+          :title="t('panel.regexRules.createTitle')"
+          @click="openCreateModal"
+        >
+          <i data-lucide="plus"></i><span class="st-btn-text">{{ t('common.create') }}</span>
+        </button>
+        <button
+          class="rg-action-btn st-btn-shrinkable"
+          type="button"
+          :title="t('panel.regexRules.importTitle')"
+          @click="triggerImport"
+          :disabled="importing"
+        >
+          <i data-lucide="download"></i><span class="st-btn-text">{{ t('common.import') }}</span>
+        </button>
+        <button
+          class="rg-action-btn st-btn-shrinkable"
+          type="button"
+          :title="t('panel.regexRules.exportTitle')"
+          @click="openExportModal"
+          :disabled="regexRules.length === 0"
+        >
+          <i data-lucide="upload"></i><span class="st-btn-text">{{ t('common.export') }}</span>
+        </button>
+        <button class="rg-close" type="button" :title="t('common.close')" @click="close">✕</button>
+      </div>
+    </header>
+    <input
+      ref="fileInputRef"
+      type="file"
+      accept=".json,.zip,.png"
+      style="display: none"
+      @change="handleFileSelect"
+    />
 
-      <CustomScrollbar2 class="rg-body">
-        <transition name="rg-content" mode="out-in" @after-enter="handleTransitionComplete">
-          <div v-if="loading" key="loading" class="rg-loading">
-            {{ importing ? t('common.importing') : t('common.loading') }}
-          </div>
-          
-          <div v-else-if="error" key="error" class="rg-error">
-            {{ importError ? importError : t('error.loadFailed', { error }) }}
-            <button v-if="importError" class="rg-error-dismiss" @click="importError = null">×</button>
-          </div>
-          
-          <div v-else key="content" class="rg-list">
-          <div
-            v-for="it in regexRules"
-            :key="it.key"
-            class="rg-card"
-          >
+    <CustomScrollbar2 class="rg-body">
+      <transition name="rg-content" mode="out-in" @after-enter="handleTransitionComplete">
+        <div v-if="loading" key="loading" class="rg-loading">
+          {{ importing ? t('common.importing') : t('common.loading') }}
+        </div>
+
+        <div v-else-if="error" key="error" class="rg-error">
+          {{ importError ? importError : t('error.loadFailed', { error }) }}
+          <button v-if="importError" class="rg-error-dismiss" @click="importError = null">×</button>
+        </div>
+
+        <div v-else key="content" class="rg-list">
+          <div v-for="it in regexRules" :key="it.key" class="rg-card">
             <div class="rg-main">
               <div class="rg-avatar">
                 <img v-if="it.avatarUrl" :src="it.avatarUrl" alt="" class="rg-avatar-img" />
@@ -426,8 +455,21 @@ function handleCreated(result) {
               <div class="rg-texts">
                 <div class="rg-name">{{ it.name }}</div>
                 <div class="rg-folder">
-                  <svg class="rg-folder-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  <svg
+                    class="rg-folder-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                    ></path>
                   </svg>
                   <span>{{ getFolderName(it.key) }}</span>
                 </div>
@@ -441,70 +483,80 @@ function handleCreated(result) {
                 type="button"
                 @click="onUse(it.key)"
                 :aria-pressed="isUsing(it.key)"
-              >{{ isUsing(it.key) ? t('common.using') : t('common.use') }}</button>
+              >
+                {{ isUsing(it.key) ? t('common.using') : t('common.use') }}
+              </button>
 
-              <button class="rg-btn st-btn-shrinkable" type="button" @click="onView(it.key)">{{ t('common.view') }}</button>
+              <button class="rg-btn st-btn-shrinkable" type="button" @click="onView(it.key)">
+                {{ t('common.view') }}
+              </button>
 
-              <button class="rg-btn rg-danger st-btn-shrinkable" type="button" @click="onDelete(it.key)">{{ t('common.delete') }}</button>
+              <button
+                class="rg-btn rg-danger st-btn-shrinkable"
+                type="button"
+                @click="onDelete(it.key)"
+              >
+                {{ t('common.delete') }}
+              </button>
             </div>
           </div>
-          </div>
-        </transition>
-      </CustomScrollbar2>
+        </div>
+      </transition>
+    </CustomScrollbar2>
 
-      <!-- 使用可复用的导入冲突弹窗组件 -->
-      <ImportConflictModal
-        :show="showImportConflictModal"
-        data-type="regex"
-        :data-type-name="t('panel.regexRules.typeName')"
-        :existing-name="importConflictExistingName"
-        :suggested-name="importConflictSuggestedName"
-        @close="closeImportConflictModal"
-        @overwrite="handleConflictOverwrite"
-        @rename="handleConflictRename"
-      />
+    <!-- 使用可复用的导入冲突弹窗组件 -->
+    <ImportConflictModal
+      :show="showImportConflictModal"
+      data-type="regex"
+      :data-type-name="t('panel.regexRules.typeName')"
+      :existing-name="importConflictExistingName"
+      :suggested-name="importConflictSuggestedName"
+      @close="closeImportConflictModal"
+      @overwrite="handleConflictOverwrite"
+      @rename="handleConflictRename"
+    />
 
-      <!-- 使用可复用的导出弹窗组件 -->
-      <ExportModal
-        :show="showExportModal"
-        data-type="regex"
-        :data-type-name="t('panel.regexRules.typeName')"
-        :items="regexRules"
-        default-icon="scan-text"
-        @close="closeExportModal"
-        @export="handleExportComplete"
-      />
+    <!-- 使用可复用的导出弹窗组件 -->
+    <ExportModal
+      :show="showExportModal"
+      data-type="regex"
+      :data-type-name="t('panel.regexRules.typeName')"
+      :items="regexRules"
+      default-icon="scan-text"
+      @close="closeExportModal"
+      @export="handleExportComplete"
+    />
 
-      <!-- 导入错误弹窗 -->
-      <ImportErrorModal
-        :show="showImportErrorModal"
-        :error-code="importErrorCode"
-        :error-message="importErrorMessage"
-        :data-type-name="t('panel.regexRules.typeName')"
-        :expected-type="importExpectedType"
-        :actual-type="importActualType"
-        @close="closeImportErrorModal"
-      />
+    <!-- 导入错误弹窗 -->
+    <ImportErrorModal
+      :show="showImportErrorModal"
+      :error-code="importErrorCode"
+      :error-message="importErrorMessage"
+      :data-type-name="t('panel.regexRules.typeName')"
+      :expected-type="importExpectedType"
+      :actual-type="importActualType"
+      @close="closeImportErrorModal"
+    />
 
-      <!-- 删除确认弹窗 -->
-      <DeleteConfirmModal
-        :show="showDeleteConfirmModal"
-        :item-name="deleteTarget?.name || ''"
-        :data-type-name="t('panel.regexRules.typeName')"
-        :loading="deleting"
-        @close="closeDeleteConfirmModal"
-        @confirm="handleDeleteConfirm"
-      />
+    <!-- 删除确认弹窗 -->
+    <DeleteConfirmModal
+      :show="showDeleteConfirmModal"
+      :item-name="deleteTarget?.name || ''"
+      :data-type-name="t('panel.regexRules.typeName')"
+      :loading="deleting"
+      @close="closeDeleteConfirmModal"
+      @confirm="handleDeleteConfirm"
+    />
 
-      <!-- 新建弹窗 -->
-      <CreateItemModal
-        :show="showCreateModal"
-        data-type="regex_rule"
-        :data-type-name="t('panel.regexRules.typeName')"
-        @close="closeCreateModal"
-        @created="handleCreated"
-      />
-    </div>
+    <!-- 新建弹窗 -->
+    <CreateItemModal
+      :show="showCreateModal"
+      data-type="regex_rule"
+      :data-type-name="t('panel.regexRules.typeName')"
+      @close="closeCreateModal"
+      @created="handleCreated"
+    />
+  </div>
 </template>
 
 <style scoped>
@@ -535,13 +587,48 @@ function handleCreated(result) {
   font-weight: 700;
   color: rgb(var(--st-color-text));
 }
-.rg-icon i { width: var(--st-icon-md); height: var(--st-icon-md); display: inline-block; }
+.rg-icon i {
+  width: var(--st-icon-md);
+  height: var(--st-icon-md);
+  display: inline-block;
+}
 
-.rg-header-actions { display: flex; align-items: center; gap: var(--st-spacing-md); }
-.rg-action-btn { appearance: none; display: inline-flex; align-items: center; gap: var(--st-spacing-xs); border: 1px solid rgba(var(--st-primary), 0.5); background: rgba(var(--st-primary), 0.08); color: rgb(var(--st-color-text)); border-radius: var(--st-radius-lg); padding: var(--st-btn-padding-sm); font-size: var(--st-font-sm); cursor: pointer; transition: transform var(--st-transition-normal), background var(--st-transition-normal), box-shadow var(--st-transition-normal); }
-.rg-action-btn i { width: var(--st-icon-sm); height: var(--st-icon-sm); display: inline-block; }
-.rg-action-btn:hover:not(:disabled) { background: rgba(var(--st-primary), 0.15); transform: translateY(-1px); box-shadow: var(--st-shadow-sm); }
-.rg-action-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.rg-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--st-spacing-md);
+}
+.rg-action-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--st-spacing-xs);
+  border: 1px solid rgba(var(--st-primary), 0.5);
+  background: rgba(var(--st-primary), 0.08);
+  color: rgb(var(--st-color-text));
+  border-radius: var(--st-radius-lg);
+  padding: var(--st-btn-padding-sm);
+  font-size: var(--st-font-sm);
+  cursor: pointer;
+  transition:
+    transform var(--st-transition-normal),
+    background var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
+}
+.rg-action-btn i {
+  width: var(--st-icon-sm);
+  height: var(--st-icon-sm);
+  display: inline-block;
+}
+.rg-action-btn:hover:not(:disabled) {
+  background: rgba(var(--st-primary), 0.15);
+  transform: translateY(-1px);
+  box-shadow: var(--st-shadow-sm);
+}
+.rg-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 .rg-close {
   appearance: none;
@@ -550,7 +637,10 @@ function handleCreated(result) {
   border-radius: var(--st-radius-lg);
   padding: var(--st-spacing-sm) var(--st-spacing-md);
   cursor: pointer;
-  transition: transform var(--st-transition-normal), background var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    transform var(--st-transition-normal),
+    background var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
 .rg-close:hover {
   background: rgb(var(--st-surface));
@@ -580,7 +670,11 @@ function handleCreated(result) {
   background: rgb(var(--st-surface));
   padding: var(--st-spacing-xl);
   min-height: var(--st-preview-height-sm);
-  transition: background var(--st-transition-normal), border-color var(--st-transition-normal), transform var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    background var(--st-transition-normal),
+    border-color var(--st-transition-normal),
+    transform var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
 .rg-card:hover {
   transform: translateY(-1px);
@@ -602,13 +696,28 @@ function handleCreated(result) {
   align-items: center;
   justify-content: center;
   font-size: var(--st-font-xl);
-  background: linear-gradient(135deg, var(--st-panel-avatar-gradient-start, rgba(var(--st-primary),0.12)), var(--st-panel-avatar-gradient-end, rgba(var(--st-accent),0.12)));
+  background: linear-gradient(
+    135deg,
+    var(--st-panel-avatar-gradient-start, rgba(var(--st-primary), 0.12)),
+    var(--st-panel-avatar-gradient-end, rgba(var(--st-accent), 0.12))
+  );
   border: 1px solid rgba(var(--st-border), 0.9);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
-.rg-avatar i { width: var(--st-icon-md); height: var(--st-icon-md); display: inline-block; }
-.rg-avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--st-radius-lg); }
-.rg-texts { min-width: 0; }
+.rg-avatar i {
+  width: var(--st-icon-md);
+  height: var(--st-icon-md);
+  display: inline-block;
+}
+.rg-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--st-radius-lg);
+}
+.rg-texts {
+  min-width: 0;
+}
 .rg-name {
   font-weight: 700;
   color: rgb(var(--st-color-text));
@@ -661,7 +770,11 @@ function handleCreated(result) {
   border-radius: var(--st-radius-lg);
   font-size: var(--st-font-sm);
   cursor: pointer;
-  transition: transform var(--st-transition-normal), box-shadow var(--st-transition-normal), background var(--st-transition-normal), border-color var(--st-transition-normal);
+  transition:
+    transform var(--st-transition-normal),
+    box-shadow var(--st-transition-normal),
+    background var(--st-transition-normal),
+    border-color var(--st-transition-normal);
   min-width: var(--st-btn-min-width);
   text-align: center;
 }
@@ -717,12 +830,16 @@ function handleCreated(result) {
   line-height: 1;
 }
 
-.rg-error-dismiss:hover { background: rgba(220, 38, 38, 0.2); }
+.rg-error-dismiss:hover {
+  background: rgba(220, 38, 38, 0.2);
+}
 
 /* 内容过渡动画 */
 .rg-content-enter-active,
 .rg-content-leave-active {
-  transition: opacity var(--st-transition-medium), transform var(--st-transition-medium);
+  transition:
+    opacity var(--st-transition-medium),
+    transform var(--st-transition-medium);
 }
 
 .rg-content-enter-from {
@@ -736,7 +853,11 @@ function handleCreated(result) {
 }
 
 @media (max-width: 640px) {
-  .rg-card { grid-template-columns: 1fr; }
-  .rg-actions { flex-direction: row; }
+  .rg-card {
+    grid-template-columns: 1fr;
+  }
+  .rg-actions {
+    flex-direction: row;
+  }
 }
 </style>

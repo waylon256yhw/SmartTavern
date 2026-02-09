@@ -28,8 +28,8 @@ let __tuningHiddenEls = []
 function __hideOverlaysForTuning() {
   const selectors = ['.st-panel-backdrop', '.sd-backdrop', '.sd-fab']
   __tuningHiddenEls = []
-  selectors.forEach(sel => {
-    document.querySelectorAll(sel).forEach(el => {
+  selectors.forEach((sel) => {
+    document.querySelectorAll(sel).forEach((el) => {
       __tuningHiddenEls.push({ el, style: el.getAttribute('style') })
       try {
         el.style.setProperty('display', 'none', 'important')
@@ -67,14 +67,8 @@ function onTuningEndOnce() {
 }
 
 // Composable: state + helpers
-const {
-  state,
-  initFromCSS,
-  startAutoSave,
-  setRootVar,
-  buildSnapshot,
-  saveSnapshotLS,
-} = useAppearanceOthers()
+const { state, initFromCSS, startAutoSave, setRootVar, buildSnapshot, saveSnapshotLS } =
+  useAppearanceOthers()
 
 // Destructure refs for template parity
 const { fabMargin } = state
@@ -192,16 +186,8 @@ onBeforeUnmount(() => {
       <label class="st-control-label">
         <span class="label-text">{{ t('appearance.others.timezone') }}</span>
       </label>
-      <select
-        class="st-select-input"
-        :value="timezone"
-        @change="onTimezoneChange"
-      >
-        <option
-          v-for="tz in timezoneOptions"
-          :key="tz.value"
-          :value="tz.value"
-        >
+      <select class="st-select-input" :value="timezone" @change="onTimezoneChange">
+        <option v-for="tz in timezoneOptions" :key="tz.value" :value="tz.value">
           {{ t(tz.labelKey) }}
         </option>
       </select>
@@ -215,16 +201,8 @@ onBeforeUnmount(() => {
       <label class="st-control-label">
         <span class="label-text">{{ t('appearance.others.dateTimeFormat') }}</span>
       </label>
-      <select
-        class="st-select-input"
-        :value="dateTimeFormat"
-        @change="onDateTimeFormatChange"
-      >
-        <option
-          v-for="fmt in dateTimeFormatOptions"
-          :key="fmt.value"
-          :value="fmt.value"
-        >
+      <select class="st-select-input" :value="dateTimeFormat" @change="onDateTimeFormatChange">
+        <option v-for="fmt in dateTimeFormatOptions" :key="fmt.value" :value="fmt.value">
           {{ t(fmt.labelKey) }}
         </option>
       </select>

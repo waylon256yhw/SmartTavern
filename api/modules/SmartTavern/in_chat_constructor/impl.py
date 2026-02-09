@@ -6,8 +6,9 @@ from __future__ import annotations
  - 不合并相邻同角色；不再返回 trace（include_trace 参数被忽略）
 """
 
-from typing import Any, Dict, List, Optional, Union
 from collections import defaultdict
+from typing import Any
+
 import core  # type: ignore
 
 # 默认参数（合并自旧模块 variables.py）
@@ -18,7 +19,7 @@ ALLOWED_ROLES = {"user", "assistant", "system", "thinking"}
 
 def _is_enabled(val: Any) -> bool:
     """将 None 视为启用，仅 False 视为禁用。"""
-    return False if val is False else True
+    return val is not False
 
 
 def _role_priority(role: str) -> int:
@@ -35,9 +36,9 @@ def _map_wb_pos_to_role(position: str) -> str:
     return "system"
 
 
-def _flatten_world_books(items: Any) -> List[Dict[str, Any]]:
+def _flatten_world_books(items: Any) -> list[dict[str, Any]]:
     """展平成新世界书格式：仅支持 {entries:[...]} 或 {world_book:{entries:[...]}}"""
-    out: List[Dict[str, Any]] = []
+    out: list[dict[str, Any]] = []
     if not isinstance(items, dict):
         return out
 
@@ -56,7 +57,7 @@ def _flatten_world_books(items: Any) -> List[Dict[str, Any]]:
     return out
 
 
-def _sort_sources(entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _sort_sources(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """按 order 升序 → 角色优先级 → internal_order 稳定排序"""
     return sorted(
         entries,
@@ -67,10 +68,11 @@ def _sort_sources(entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         ),
     )
 
-def _collect_history_text(history: List[Dict[str, Any]]) -> str:
+
+def _collect_history_text(history: list[dict[str, Any]]) -> str:
     """将原始 history 的 content 拼接为文本（区分大小写）用于关键词匹配。"""
-    texts: List[str] = []
-    for msg in (history or []):
+    texts: list[str] = []
+    for msg in history or []:
         try:
             c = (msg or {}).get("content")
         except Exception:
@@ -78,6 +80,7 @@ def _collect_history_text(history: List[Dict[str, Any]]) -> str:
         if isinstance(c, str):
             texts.append(c)
     return "\n".join(texts)
+
 
 def _is_triggered_by_keys(history_text: str, keys: Any) -> bool:
     """
@@ -87,7 +90,7 @@ def _is_triggered_by_keys(history_text: str, keys: Any) -> bool:
     """
     if keys == 0:
         return False
-    key_list: List[str] = []
+    key_list: list[str] = []
     if isinstance(keys, str):
         key_list = [keys]
     elif isinstance(keys, list):
@@ -98,13 +101,10 @@ def _is_triggered_by_keys(history_text: str, keys: Any) -> bool:
     if not key_list:
         return False
     text = history_text or ""
-    for k in key_list:
-        if k in text:
-            return True
-    return False
+    return any(k in text for k in key_list)
 
 
-def _build_source_for_history(index: int, role: str) -> Dict[str, Any]:
+def _build_source_for_history(index: int, role: str) -> dict[str, Any]:
     """历史消息来源字段，规范化 type 为 history.user/history.assistant/history.thinking"""
     r = (role or "").lower()
     if r == "user":
@@ -123,35 +123,35 @@ def _build_source_for_history(index: int, role: str) -> Dict[str, Any]:
     }
 
 
-def _build_source_for_preset(p: Dict[str, Any], source_id: str) -> Dict[str, Any]:
+def _build_source_for_preset(p: dict[str, Any], source_id: str) -> dict[str, Any]:
     """
     构造预设来源字段：
     - 先放置 type 与 id（为来源标识），随后按原条目字段出现的顺序复制到 source 中
     - 原条目字段顺序来自 JSON 加载的插入顺序（Python 3.7+ dict 保序）
     """
-    src: Dict[str, Any] = {
+    src: dict[str, Any] = {
         "type": "preset.in-chat",
         "id": source_id,
     }
     # 按来源字段顺序复制
-    for k in p.keys():
+    for k in p:
         src[k] = p.get(k)
     # 如预设缺少 role/depth/order 等字段，则不强制添加，保持与来源一致；UI 可通过消息顶层 role 使用
     return src
 
 
-def _build_source_for_wb(wb: Dict[str, Any], source_id: str, derived_role: str) -> Dict[str, Any]:
+def _build_source_for_wb(wb: dict[str, Any], source_id: str, derived_role: str) -> dict[str, Any]:
     """
     构造世界书来源字段：
     - 先放置 type 与 id（为来源标识）
     - 按原条目字段顺序复制；当遇到原始 'id' 字段时，改名为 'wb_id' 以避免同键冲突
     - 追加 derived_role（源条目通常只有 position，没有 role），追加在末尾以不打破原字段顺序
     """
-    src: Dict[str, Any] = {
+    src: dict[str, Any] = {
         "type": "world_book.in-chat",
         "id": source_id,
     }
-    for k in wb.keys():
+    for k in wb:
         if k == "id":
             src["wb_id"] = wb.get(k)
         else:
@@ -169,7 +169,7 @@ def _cond_to_bool(s: Any) -> bool:
         return False
 
 
-def _eval_condition_text(cond: Any, variables: Optional[Dict[str, Any]]) -> bool:
+def _eval_condition_text(cond: Any, variables: dict[str, Any] | None) -> bool:
     if not isinstance(cond, str) or not cond.strip():
         return False
     payload = {"text": cond, "variables": dict(variables or {})}
@@ -186,10 +186,10 @@ def _eval_condition_text(cond: Any, variables: Optional[Dict[str, Any]]) -> bool
         return False
 
 
-def _eval_condition_texts_batch(conds: List[Any], variables: Optional[Dict[str, Any]]) -> List[bool]:
+def _eval_condition_texts_batch(conds: list[Any], variables: dict[str, Any] | None) -> list[bool]:
     """批量评估条件文本，内部走宏文本批量接口，失败时回退逐条。"""
-    texts: List[str] = []
-    index_map: List[int] = []
+    texts: list[str] = []
+    index_map: list[int] = []
     for idx, c in enumerate(conds or []):
         if isinstance(c, str) and c.strip():
             texts.append(c)
@@ -197,7 +197,7 @@ def _eval_condition_texts_batch(conds: List[Any], variables: Optional[Dict[str, 
     if not texts:
         return [False] * len(conds)
     payload = {"texts": texts, "variables": dict(variables or {})}
-    out_texts: List[str]
+    out_texts: list[str]
     try:
         res = core.call_api(
             "smarttavern/macro/process_text_batch",
@@ -221,18 +221,18 @@ def _eval_condition_texts_batch(conds: List[Any], variables: Optional[Dict[str, 
             except Exception:
                 out_texts.append("")
     results = [False] * len(conds)
-    for pos, txt in zip(index_map, out_texts):
+    for pos, txt in zip(index_map, out_texts, strict=False):
         results[pos] = _cond_to_bool(txt)
     return results
 
 
 def construct(
-    history: List[Dict[str, Any]],
-    presets_in_chat: List[Dict[str, Any]],
-    world_books: Union[List[Any], Dict[str, Any]],
+    history: list[dict[str, Any]],
+    presets_in_chat: list[dict[str, Any]],
+    world_books: list[Any] | dict[str, Any],
     include_trace: bool = False,  # 入参保留以兼容封装层，但在实现中忽略
-    variables: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    variables: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """
     组合对话：在 history 基础上按 depth/order 规则注入 in-chat 预设与命中的世界书。
     输出的每条消息字段顺序为：role → content → source
@@ -243,12 +243,12 @@ def construct(
     flat_wb = _flatten_world_books(world_books)
     history_text = _collect_history_text(history)
     # 条件变量上下文：合并调用方 variables，并注入 chat_history_text
-    cond_vars: Dict[str, Any] = dict(variables or {})
+    cond_vars: dict[str, Any] = dict(variables or {})
     if "chat_history_text" not in cond_vars:
         cond_vars["chat_history_text"] = history_text
 
     # 1) 基于 history 初始化消息列表（为每条消息打来源；字段顺序为 role, content, source）
-    constructed: List[Dict[str, Any]] = []
+    constructed: list[dict[str, Any]] = []
     for i, msg in enumerate(history):
         role = str(msg.get("role", "")).lower()
         content = msg.get("content", "")
@@ -266,17 +266,19 @@ def construct(
                 _src["source_id"] = _hid
         except Exception:
             pass
-        constructed.append({
-            "role": role,
-            "content": content,
-            "source": _src,
-        })
+        constructed.append(
+            {
+                "role": role,
+                "content": content,
+                "source": _src,
+            }
+        )
 
     # 2) 收集 in-chat 预设与世界书候选
-    candidates: List[Dict[str, Any]] = []
+    candidates: list[dict[str, Any]] = []
     # 批量收集需要条件判断的 preset
-    preset_cond_indices: List[int] = []
-    preset_cond_texts: List[str] = []
+    preset_cond_indices: list[int] = []
+    preset_cond_texts: list[str] = []
     for i, p in enumerate(presets_in_chat):
         try:
             if str(p.get("position")) != "in-chat":
@@ -292,7 +294,7 @@ def construct(
                 preset_cond_texts.append(str(p.get("condition", "")))
         except Exception:
             continue
-    preset_cond_bools: Dict[int, bool] = {}
+    preset_cond_bools: dict[int, bool] = {}
     if preset_cond_indices:
         bools = _eval_condition_texts_batch(preset_cond_texts, cond_vars)
         for j, idx in enumerate(preset_cond_indices):
@@ -314,20 +316,22 @@ def construct(
             order = int(p.get("order", DEFAULT_ORDER) or DEFAULT_ORDER)
             role = str(p.get("role", "user")).lower()
             role = role if role in ALLOWED_ROLES else "user"
-            candidates.append({
-                "kind": "preset",
-                "data": p,
-                "depth": depth,
-                "order": order,
-                "role": role,
-                "internal_order": i,
-            })
+            candidates.append(
+                {
+                    "kind": "preset",
+                    "data": p,
+                    "depth": depth,
+                    "order": order,
+                    "role": role,
+                    "internal_order": i,
+                }
+            )
         except Exception:
             continue
 
     # 批量收集需要条件判断的 world_book（仅 in-chat 段）
-    wb_cond_indices: List[int] = []
-    wb_cond_texts: List[str] = []
+    wb_cond_indices: list[int] = []
+    wb_cond_texts: list[str] = []
     for i, wb in enumerate(flat_wb):
         if not isinstance(wb, dict):
             continue
@@ -346,7 +350,7 @@ def construct(
                 wb_cond_texts.append(str(wb.get("condition", "")))
         except Exception:
             continue
-    wb_cond_bools: Dict[int, bool] = {}
+    wb_cond_bools: dict[int, bool] = {}
     if wb_cond_indices:
         bools2 = _eval_condition_texts_batch(wb_cond_texts, cond_vars)
         for j, idx in enumerate(wb_cond_indices):
@@ -369,20 +373,22 @@ def construct(
             depth = int(wb.get("depth", DEFAULT_DEPTH) or DEFAULT_DEPTH)
             order = int(wb.get("order", DEFAULT_ORDER) or DEFAULT_ORDER)
             role = _map_wb_pos_to_role(pos)
-            candidates.append({
-                "kind": "world",
-                "data": wb,
-                "depth": depth,
-                "order": order,
-                "role": role,
-                "internal_order": len(presets_in_chat) + i,
-            })
+            candidates.append(
+                {
+                    "kind": "world",
+                    "data": wb,
+                    "depth": depth,
+                    "order": order,
+                    "role": role,
+                    "internal_order": len(presets_in_chat) + i,
+                }
+            )
         except Exception:
             continue
 
     # 3) 排序并按 depth 注入
     sorted_entries = _sort_sources(candidates)
-    depth_groups: Dict[int, List[Dict[str, Any]]] = defaultdict(list)
+    depth_groups: dict[int, list[dict[str, Any]]] = defaultdict(list)
     for e in sorted_entries:
         depth_groups[int(e.get("depth", DEFAULT_DEPTH) or DEFAULT_DEPTH)].append(e)
 
@@ -409,20 +415,23 @@ def construct(
                     pass
             else:
                 wid = data.get("id")
-                src = _build_source_for_wb(data, source_id=f"wb_{wid if wid is not None else e.get('internal_order', 0)}", derived_role=role)
+                src = _build_source_for_wb(
+                    data, source_id=f"wb_{wid if wid is not None else e.get('internal_order', 0)}", derived_role=role
+                )
                 try:
                     if "source_id" not in src and src.get("id") is not None:
                         src["source_id"] = src.get("id")
                 except Exception:
                     pass
 
-            constructed.insert(insertion_index, {
-                "role": role,
-                "content": content,
-                "source": src,
-            })
+            constructed.insert(
+                insertion_index,
+                {
+                    "role": role,
+                    "content": content,
+                    "source": src,
+                },
+            )
 
     # 不再返回 trace，仅返回一套“带来源”的消息序列
-    return {
-        "messages": constructed
-    }
+    return {"messages": constructed}

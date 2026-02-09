@@ -15,9 +15,9 @@ useFocusTrap(panelRef, isActive)
 /** 处理选项选择 */
 function handleSelect(value) {
   if (!currentOption.value) return
-  
+
   const type = currentOption.value.type
-  
+
   if (type === 'single') {
     // 单选：直接确认
     store.confirm(value)
@@ -51,13 +51,9 @@ function handleCancel() {
 
 <template>
   <transition name="st-options-backdrop">
-    <div
-      v-if="currentOption"
-      class="st-options-backdrop"
-      @click="handleCancel"
-    ></div>
+    <div v-if="currentOption" class="st-options-backdrop" @click="handleCancel"></div>
   </transition>
-  
+
   <transition name="st-options-panel">
     <div
       v-if="currentOption"
@@ -72,17 +68,17 @@ function handleCancel() {
         <div v-if="currentOption.title" id="options-panel-title" class="st-options-title">
           {{ currentOption.title }}
         </div>
-        
+
         <!-- 副标题 -->
         <div v-if="currentOption.subtitle" class="st-options-subtitle">
           {{ currentOption.subtitle }}
         </div>
-        
+
         <!-- 内容 -->
         <div v-if="currentOption.message" class="st-options-message">
           {{ currentOption.message }}
         </div>
-        
+
         <!-- 选项列表 -->
         <div class="st-options-list">
           <button
@@ -103,29 +99,22 @@ function handleCancel() {
                 v-else
                 class="st-checkbox-check"
                 :class="{ 'is-active': isSelected(option.value) }"
-              >✓</span>
+                >✓</span
+              >
             </span>
             <span class="st-option-label">{{ option.label }}</span>
           </button>
         </div>
-        
+
         <!-- 操作按钮（仅多选和不定项显示） -->
         <div
           v-if="currentOption.type === 'multiple' || currentOption.type === 'any'"
           class="st-options-actions"
         >
-          <button
-            type="button"
-            class="st-action-button st-action-cancel"
-            @click="handleCancel"
-          >
+          <button type="button" class="st-action-button st-action-cancel" @click="handleCancel">
             {{ t('components.optionsPanel.cancel') }}
           </button>
-          <button
-            type="button"
-            class="st-action-button st-action-confirm"
-            @click="handleConfirm"
-          >
+          <button type="button" class="st-action-button st-action-confirm" @click="handleConfirm">
             {{ t('components.optionsPanel.confirm') }}
           </button>
         </div>
@@ -162,8 +151,9 @@ function handleCancel() {
   color: var(--st-options-text);
   border-radius: var(--st-radius-sm);
   padding: var(--st-spacing-4xl);
-  box-shadow: 0 var(--st-spacing-md) var(--st-gap-2xl) rgba(0,0,0,.15),
-              0 var(--st-spacing-xs) var(--st-spacing-md) rgba(0,0,0,.1);
+  box-shadow:
+    0 var(--st-spacing-md) var(--st-gap-2xl) rgba(0, 0, 0, 0.15),
+    0 var(--st-spacing-xs) var(--st-spacing-md) rgba(0, 0, 0, 0.1);
   border: 1px solid var(--st-options-border);
   backdrop-filter: blur(var(--st-backdrop-blur-md));
   -webkit-backdrop-filter: blur(var(--st-backdrop-blur-md));
@@ -231,7 +221,11 @@ function handleCancel() {
   font-size: var(--st-font-base);
   font-weight: 500;
   cursor: pointer;
-  transition: background-color var(--st-transition-fast), border-color var(--st-transition-fast), color var(--st-transition-fast), transform var(--st-transition-fast);
+  transition:
+    background-color var(--st-transition-fast),
+    border-color var(--st-transition-fast),
+    color var(--st-transition-fast),
+    transform var(--st-transition-fast);
   display: flex;
   align-items: center;
   gap: var(--st-spacing-md);
@@ -275,7 +269,9 @@ function handleCancel() {
   border-radius: var(--st-radius-circle);
   background: var(--st-options-bg);
   position: relative;
-  transition: border-color var(--st-transition-fast), background-color var(--st-transition-fast);
+  transition:
+    border-color var(--st-transition-fast),
+    background-color var(--st-transition-fast);
 }
 
 .st-radio-dot.is-active {
@@ -307,7 +303,10 @@ function handleCancel() {
   font-size: var(--st-font-xs);
   font-weight: 700;
   color: transparent;
-  transition: border-color var(--st-transition-fast), color var(--st-transition-fast), background-color var(--st-transition-fast);
+  transition:
+    border-color var(--st-transition-fast),
+    color var(--st-transition-fast),
+    background-color var(--st-transition-fast);
 }
 
 .st-checkbox-check.is-active {
@@ -340,7 +339,10 @@ function handleCancel() {
   font-size: var(--st-font-base);
   font-weight: 500;
   cursor: pointer;
-  transition: background-color var(--st-transition-fast), border-color var(--st-transition-fast), color var(--st-transition-fast);
+  transition:
+    background-color var(--st-transition-fast),
+    border-color var(--st-transition-fast),
+    color var(--st-transition-fast);
   min-width: var(--st-btn-min-width);
 }
 
@@ -383,6 +385,8 @@ function handleCancel() {
 
 .st-options-panel-enter-active,
 .st-options-panel-leave-active {
-  transition: opacity var(--st-transition-slow), transform var(--st-transition-slow);
+  transition:
+    opacity var(--st-transition-slow),
+    transform var(--st-transition-slow);
 }
 </style>

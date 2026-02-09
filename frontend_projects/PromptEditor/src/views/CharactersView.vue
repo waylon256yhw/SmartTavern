@@ -13,17 +13,24 @@ const fileTitle = ref<string>('Character.json')
 const renameError = ref<string | null>(null)
 watch(
   () => store.fileName,
-  (v) => { fileTitle.value = v || 'Character.json' },
-  { immediate: true }
+  (v) => {
+    fileTitle.value = v || 'Character.json'
+  },
+  { immediate: true },
 )
 function renameCharacterFile() {
   renameError.value = null
   const oldName = store.fileName || 'Character.json'
   const nn = (fileTitle.value || '').trim()
-  if (!nn) { renameError.value = '文件名不能为空'; return }
+  if (!nn) {
+    renameError.value = '文件名不能为空'
+    return
+  }
   if (nn === oldName) return
   ;(store as any).renameFile?.(nn)
-  try { fm.renameFile('characters', oldName, nn) } catch {}
+  try {
+    fm.renameFile('characters', oldName, nn)
+  } catch {}
 }
 
 onMounted(() => {
@@ -37,7 +44,7 @@ watch(
     await nextTick()
     ;(window as any).lucide?.createIcons?.()
   },
-  { deep: false }
+  { deep: false },
 )
 
 /* 基本信息编辑 */
@@ -48,13 +55,17 @@ const hasDoc = computed(() => store.hasDoc)
 
 watch(
   () => store.name,
-  (v) => { nameDraft.value = v ?? '' },
-  { immediate: true }
+  (v) => {
+    nameDraft.value = v ?? ''
+  },
+  { immediate: true },
 )
 watch(
   () => store.description,
-  (v) => { descDraft.value = v ?? '' },
-  { immediate: true }
+  (v) => {
+    descDraft.value = v ?? ''
+  },
+  { immediate: true },
 )
 
 function saveMeta() {
@@ -71,9 +82,9 @@ const messages = computed(() => store.messages)
 watch(
   messages,
   (arr) => {
-    messageEdits.value = (arr || []).map(x => String(x ?? ''))
+    messageEdits.value = (arr || []).map((x) => String(x ?? ''))
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 function onEditMsg(i: number) {
@@ -112,7 +123,9 @@ function onDragStartWb(id: string, ev: DragEvent) {
   try {
     ev.dataTransfer?.setData('text/plain', id)
     ev.dataTransfer!.effectAllowed = 'move'
-    const canvas = document.createElement('canvas'); canvas.width = 1; canvas.height = 1
+    const canvas = document.createElement('canvas')
+    canvas.width = 1
+    canvas.height = 1
     ev.dataTransfer?.setDragImage(canvas, 0, 0)
   } catch {}
 }
@@ -136,7 +149,7 @@ function onDropWb(overId: string | null, ev: DragEvent) {
   ev.preventDefault()
   const dId = draggingWb.value
   const list = [...(store.worldEntries || [])]
-  let ids = list.map(i => (i as any).id)
+  let ids = list.map((i) => (i as any).id)
   const fromIdx = ids.indexOf(dId)
   if (fromIdx < 0) return
   ids.splice(fromIdx, 1)
@@ -154,8 +167,13 @@ function onDropWb(overId: string | null, ev: DragEvent) {
   dragOverWbId.value = null
   ;(window as any).lucide?.createIcons?.()
 }
-function onDropEndWb(ev: DragEvent) { onDropWb(null, ev) }
-function onDragEndWb() { draggingWb.value = null; dragOverWbId.value = null }
+function onDropEndWb(ev: DragEvent) {
+  onDropWb(null, ev)
+}
+function onDragEndWb() {
+  draggingWb.value = null
+  dragOverWbId.value = null
+}
 
 // 拖拽：正则
 const draggingRx = ref<string | null>(null)
@@ -167,7 +185,9 @@ function onDragStartRx(id: string, ev: DragEvent) {
   try {
     ev.dataTransfer?.setData('text/plain', id)
     ev.dataTransfer!.effectAllowed = 'move'
-    const canvas = document.createElement('canvas'); canvas.width = 1; canvas.height = 1
+    const canvas = document.createElement('canvas')
+    canvas.width = 1
+    canvas.height = 1
     ev.dataTransfer?.setDragImage(canvas, 0, 0)
   } catch {}
 }
@@ -191,7 +211,7 @@ function onDropRx(overId: string | null, ev: DragEvent) {
   ev.preventDefault()
   const dId = draggingRx.value
   const list = [...(store.regexRules || [])]
-  let ids = list.map(i => i.id)
+  let ids = list.map((i) => i.id)
   const fromIdx = ids.indexOf(dId)
   if (fromIdx < 0) return
   ids.splice(fromIdx, 1)
@@ -209,16 +229,30 @@ function onDropRx(overId: string | null, ev: DragEvent) {
   dragOverRxId.value = null
   ;(window as any).lucide?.createIcons?.()
 }
-function onDropEndRx(ev: DragEvent) { onDropRx(null, ev) }
-function onDragEndRx() { draggingRx.value = null; dragOverRxId.value = null }
+function onDropEndRx(ev: DragEvent) {
+  onDropRx(null, ev)
+}
+function onDragEndRx() {
+  draggingRx.value = null
+  dragOverRxId.value = null
+}
 
 function addWorldEntry() {
   const id = newWbId.value.trim()
   const name = newWbName.value.trim()
-  if (!id) { alert('请填写世界书 ID'); return }
-  if (!name) { alert('请填写 世界书名称'); return }
+  if (!id) {
+    alert('请填写世界书 ID')
+    return
+  }
+  if (!name) {
+    alert('请填写 世界书名称')
+    return
+  }
   const list = store.worldEntries
-  if (list.some(e => (e as any)?.id === id)) { alert('ID 已存在'); return }
+  if (list.some((e) => (e as any)?.id === id)) {
+    alert('ID 已存在')
+    return
+  }
   const entry: WorldBookEntry = {
     id,
     name,
@@ -245,14 +279,28 @@ function addRegexRule() {
   ruleError.value = null
   const id = newRuleId.value.trim()
   const name = newRuleName.value.trim()
-  if (!id) { ruleError.value = '请填写 规则 id'; return }
-  if (!name) { ruleError.value = '请填写 规则名称'; return }
+  if (!id) {
+    ruleError.value = '请填写 规则 id'
+    return
+  }
+  if (!name) {
+    ruleError.value = '请填写 规则名称'
+    return
+  }
   const rules = store.regexRules || []
-  if (rules.some(r => r.id === id)) { ruleError.value = '该 id 已存在'; return }
+  if (rules.some((r) => r.id === id)) {
+    ruleError.value = '该 id 已存在'
+    return
+  }
   const rule: RegexRule = {
-    id, name, enabled: true,
-    find_regex: '', replace_regex: '',
-    targets: [], placement: 'after_macro', views: [],
+    id,
+    name,
+    enabled: true,
+    find_regex: '',
+    replace_regex: '',
+    targets: [],
+    placement: 'after_macro',
+    views: [],
   }
   store.addRegexRule(rule)
   newRuleId.value = ''
@@ -264,7 +312,9 @@ function addRegexRule() {
 <template>
   <section class="space-y-6">
     <!-- 顶部卡片：角色卡编辑入口 -->
-    <div class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <i data-lucide="user" class="w-5 h-5 text-black"></i>
@@ -281,16 +331,21 @@ function addRegexRule() {
           <button
             class="px-3 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-sm hover:bg-gray-100 active:bg-gray-200 transition-all duration-200 ease-soft"
             @click="renameCharacterFile"
-          >重命名</button>
+          >
+            重命名
+          </button>
         </div>
       </div>
       <p class="mt-2 text-xs text-black/60">
-        使用右上角导入按钮选择单个角色卡 JSON（结构参考：backend_projects/SmartTavern/data/characters/*/character.json）。导出也在右上角完成。
+        使用右上角导入按钮选择单个角色卡
+        JSON（结构参考：backend_projects/SmartTavern/data/characters/*/character.json）。导出也在右上角完成。
       </p>
     </div>
 
     <!-- 基本设定 -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center gap-2 mb-3">
         <i data-lucide="id-card" class="w-4 h-4 text-black"></i>
         <h3 class="text-base font-semibold text-black">基本设定</h3>
@@ -303,25 +358,40 @@ function addRegexRule() {
       <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-black mb-2">名称</label>
-          <input v-model="nameDraft" @blur="saveMeta" class="w-full px-3 py-2 border border-gray-300 rounded-4 focus:outline-none focus:ring-2 focus:ring-gray-800" />
+          <input
+            v-model="nameDraft"
+            @blur="saveMeta"
+            class="w-full px-3 py-2 border border-gray-300 rounded-4 focus:outline-none focus:ring-2 focus:ring-gray-800"
+          />
         </div>
         <div class="md:col-span-2">
           <label class="block text-sm font-medium text-black mb-2">描述</label>
-          <textarea v-model="descDraft" @blur="saveMeta" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-4 focus:outline-none focus:ring-2 focus:ring-gray-800" />
+          <textarea
+            v-model="descDraft"
+            @blur="saveMeta"
+            rows="3"
+            class="w-full px-3 py-2 border border-gray-300 rounded-4 focus:outline-none focus:ring-2 focus:ring-gray-800"
+          />
         </div>
       </div>
     </div>
 
     <!-- 初始消息（message[]） -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
           <i data-lucide="message-square" class="w-4 h-4 text-black"></i>
           <h3 class="text-base font-semibold text-black">初始消息（message）</h3>
         </div>
         <div class="flex items-center gap-2">
-          <button class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
-                  @click="addMessage">新增</button>
+          <button
+            class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
+            @click="addMessage"
+          >
+            新增
+          </button>
         </div>
       </div>
 
@@ -333,21 +403,41 @@ function addRegexRule() {
             <div class="text-xs text-black/60">#{{ i + 1 }} · 长度：{{ (m || '').length }}</div>
             <div class="flex items-center gap-2">
               <template v-if="editingMsgIndex === i">
-                <button class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
-                        @click="onSaveMsg(i)">保存</button>
-                <button class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
-                        @click="onCancelMsg(i)">取消</button>
+                <button
+                  class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
+                  @click="onSaveMsg(i)"
+                >
+                  保存
+                </button>
+                <button
+                  class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
+                  @click="onCancelMsg(i)"
+                >
+                  取消
+                </button>
               </template>
               <template v-else>
-                <button class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
-                        @click="onEditMsg(i)">编辑</button>
-                <button class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
-                        @click="removeMessage(i)">删除</button>
+                <button
+                  class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
+                  @click="onEditMsg(i)"
+                >
+                  编辑
+                </button>
+                <button
+                  class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
+                  @click="removeMessage(i)"
+                >
+                  删除
+                </button>
               </template>
             </div>
           </div>
           <template v-if="editingMsgIndex === i">
-            <textarea v-model="messageEdits[i]" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-4 focus:outline-none focus:ring-2 focus:ring-gray-800" />
+            <textarea
+              v-model="messageEdits[i]"
+              rows="3"
+              class="w-full px-3 py-2 border border-gray-300 rounded-4 focus:outline-none focus:ring-2 focus:ring-gray-800"
+            />
           </template>
           <template v-else>
             <div class="text-sm text-black/70 whitespace-pre-wrap">{{ m }}</div>
@@ -357,17 +447,31 @@ function addRegexRule() {
     </div>
 
     <!-- 内嵌 · 世界书 -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2 mb-3">
           <i data-lucide="book-open" class="w-4 h-4 text-black"></i>
           <h3 class="text-base font-semibold text-black">世界书编辑</h3>
         </div>
         <div class="flex items-center gap-2">
-          <input v-model="newWbId" placeholder="id" class="w-32 px-3 py-2 border border-gray-300 rounded-4 text-xs focus:outline-none focus:ring-2 focus:ring-gray-800" />
-          <input v-model="newWbName" placeholder="名称" class="w-40 px-3 py-2 border border-gray-300 rounded-4 text-xs focus:outline-none focus:ring-2 focus:ring-gray-800" />
-          <button class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
-                  @click="addWorldEntry">添加</button>
+          <input
+            v-model="newWbId"
+            placeholder="id"
+            class="w-32 px-3 py-2 border border-gray-300 rounded-4 text-xs focus:outline-none focus:ring-2 focus:ring-gray-800"
+          />
+          <input
+            v-model="newWbName"
+            placeholder="名称"
+            class="w-40 px-3 py-2 border border-gray-300 rounded-4 text-xs focus:outline-none focus:ring-2 focus:ring-gray-800"
+          />
+          <button
+            class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
+            @click="addWorldEntry"
+          >
+            添加
+          </button>
         </div>
       </div>
 
@@ -381,7 +485,7 @@ function addRegexRule() {
           :class="{
             'dragging-item': draggingWb && draggingWb === (w as any).id,
             'drag-over-top': draggingWb && dragOverWbId === (w as any).id && dragOverWbBefore,
-            'drag-over-bottom': draggingWb && dragOverWbId === (w as any).id && !dragOverWbBefore
+            'drag-over-bottom': draggingWb && dragOverWbId === (w as any).id && !dragOverWbBefore,
           }"
           @dragover.prevent="onDragOverWb((w as any).id, $event)"
           @drop.prevent="onDropWb((w as any).id, $event)"
@@ -393,7 +497,10 @@ function addRegexRule() {
             @dragend="onDragEndWb"
             title="拖拽排序"
           >
-            <i data-lucide="grip-vertical" class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"></i>
+            <i
+              data-lucide="grip-vertical"
+              class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"
+            ></i>
           </div>
           <div class="flex-1">
             <CharWorldBookCard :entry="w" />
@@ -409,17 +516,31 @@ function addRegexRule() {
     </div>
 
     <!-- 内嵌 · 正则 -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2 mb-3">
           <i data-lucide="code" class="w-4 h-4 text-black"></i>
           <h3 class="text-base font-semibold text-black">正则编辑</h3>
         </div>
         <div class="flex items-center gap-2">
-          <input v-model="newRuleId" placeholder="规则 id" class="w-32 px-3 py-2 border border-gray-300 rounded-4 text-xs focus:outline-none focus:ring-2 focus:ring-gray-800" />
-          <input v-model="newRuleName" placeholder="规则名称" class="w-40 px-3 py-2 border border-gray-300 rounded-4 text-xs focus:outline-none focus:ring-2 focus:ring-gray-800" />
-          <button class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
-                  @click="addRegexRule">添加</button>
+          <input
+            v-model="newRuleId"
+            placeholder="规则 id"
+            class="w-32 px-3 py-2 border border-gray-300 rounded-4 text-xs focus:outline-none focus:ring-2 focus:ring-gray-800"
+          />
+          <input
+            v-model="newRuleName"
+            placeholder="规则名称"
+            class="w-40 px-3 py-2 border border-gray-300 rounded-4 text-xs focus:outline-none focus:ring-2 focus:ring-gray-800"
+          />
+          <button
+            class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
+            @click="addRegexRule"
+          >
+            添加
+          </button>
         </div>
       </div>
       <p v-if="ruleError" class="text-xs text-red-600 mb-2">* {{ ruleError }}</p>
@@ -434,7 +555,7 @@ function addRegexRule() {
           :class="{
             'dragging-item': draggingRx && draggingRx === r.id,
             'drag-over-top': draggingRx && dragOverRxId === r.id && dragOverRxBefore,
-            'drag-over-bottom': draggingRx && dragOverRxId === r.id && !dragOverRxBefore
+            'drag-over-bottom': draggingRx && dragOverRxId === r.id && !dragOverRxBefore,
           }"
           @dragover.prevent="onDragOverRx(r.id, $event)"
           @drop.prevent="onDropRx(r.id, $event)"
@@ -446,7 +567,10 @@ function addRegexRule() {
             @dragend="onDragEndRx"
             title="拖拽排序"
           >
-            <i data-lucide="grip-vertical" class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"></i>
+            <i
+              data-lucide="grip-vertical"
+              class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"
+            ></i>
           </div>
           <div class="flex-1">
             <CharRegexRuleCard :rule="r" />
@@ -474,7 +598,9 @@ function addRegexRule() {
 }
 
 /* 拖拽动效与黑线插入预览（与独立页面一致） */
-.draglist-item { position: relative; }
+.draglist-item {
+  position: relative;
+}
 .drag-over-top::before {
   content: '';
   position: absolute;
@@ -497,12 +623,17 @@ function addRegexRule() {
 }
 .dragging-item {
   transform: scale(0.98);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.18);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
   opacity: 0.92;
   z-index: 1;
-  transition: transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    opacity 150ms ease;
 }
-.draglist-end { position: relative; }
+.draglist-end {
+  position: relative;
+}
 .drag-over-end::after {
   content: '';
   position: absolute;

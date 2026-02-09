@@ -16,9 +16,12 @@ const emit = defineEmits(['close', 'confirm'])
 
 const visible = ref(props.show)
 
-watch(() => props.show, (v) => {
-  visible.value = v
-})
+watch(
+  () => props.show,
+  (v) => {
+    visible.value = v
+  },
+)
 
 function close() {
   if (props.loading) return
@@ -41,13 +44,17 @@ function handleKeydown(e) {
 }
 
 // 监听键盘事件
-watch(visible, (v) => {
-  if (v) {
-    window.addEventListener('keydown', handleKeydown)
-  } else {
-    window.removeEventListener('keydown', handleKeydown)
-  }
-}, { immediate: true })
+watch(
+  visible,
+  (v) => {
+    if (v) {
+      window.addEventListener('keydown', handleKeydown)
+    } else {
+      window.removeEventListener('keydown', handleKeydown)
+    }
+  },
+  { immediate: true },
+)
 
 const modalRef = ref(null)
 useFocusTrap(modalRef, visible)
@@ -57,10 +64,26 @@ useFocusTrap(modalRef, visible)
   <Teleport to="body">
     <transition name="modal-fade">
       <div v-if="visible" class="dcm-overlay" @click.self="close">
-        <div ref="modalRef" class="dcm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-confirm-modal-title">
+        <div
+          ref="modalRef"
+          class="dcm-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-confirm-modal-title"
+        >
           <header class="dcm-header">
             <div class="dcm-icon dcm-icon-warning">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
                 <path d="M3 6h18"></path>
                 <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
                 <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
@@ -68,7 +91,9 @@ useFocusTrap(modalRef, visible)
                 <line x1="14" y1="11" x2="14" y2="17"></line>
               </svg>
             </div>
-            <h3 id="delete-confirm-modal-title" class="dcm-title">{{ t('deleteConfirm.title') }}</h3>
+            <h3 id="delete-confirm-modal-title" class="dcm-title">
+              {{ t('deleteConfirm.title') }}
+            </h3>
           </header>
 
           <div class="dcm-body">
@@ -81,12 +106,7 @@ useFocusTrap(modalRef, visible)
           </div>
 
           <footer class="dcm-footer">
-            <button
-              class="dcm-btn dcm-btn-cancel"
-              type="button"
-              :disabled="loading"
-              @click="close"
-            >
+            <button class="dcm-btn dcm-btn-cancel" type="button" :disabled="loading" @click="close">
               {{ t('common.cancel') }}
             </button>
             <button
@@ -199,7 +219,11 @@ useFocusTrap(modalRef, visible)
   font-weight: 500;
   border-radius: var(--st-radius-md);
   cursor: pointer;
-  transition: background-color var(--st-transition-normal), border-color var(--st-transition-normal), box-shadow var(--st-transition-normal), color var(--st-transition-normal);
+  transition:
+    background-color var(--st-transition-normal),
+    border-color var(--st-transition-normal),
+    box-shadow var(--st-transition-normal),
+    color var(--st-transition-normal);
 }
 
 .dcm-btn:disabled {
@@ -242,7 +266,9 @@ useFocusTrap(modalRef, visible)
 }
 
 @keyframes dcm-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* 模态框动画 */

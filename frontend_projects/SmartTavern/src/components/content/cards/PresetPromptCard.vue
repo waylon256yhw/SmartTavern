@@ -5,7 +5,7 @@ import { useI18n } from '@/locales'
 const { t } = useI18n()
 
 const props = defineProps({
-  item: { type: Object, required: true }
+  item: { type: Object, required: true },
 })
 
 const emit = defineEmits(['update', 'delete'])
@@ -20,7 +20,12 @@ const fromTri = (s) => (s === 'true' ? true : s === 'false' ? false : null)
 const isInChat = computed(() => props.item.position === 'in-chat')
 const hasContent = computed(() => 'content' in props.item)
 
-const enabledLabel = (v) => (v === true ? t('cards.common.enabled') : v === false ? t('cards.common.disabled') : t('cards.common.notSet'))
+const enabledLabel = (v) =>
+  v === true
+    ? t('cards.common.enabled')
+    : v === false
+      ? t('cards.common.disabled')
+      : t('cards.common.notSet')
 
 // draft fields
 const draftName = ref(props.item.name)
@@ -49,7 +54,7 @@ watch(
   () => {
     if (!editing.value) resetDraft()
   },
-  { deep: false }
+  { deep: false },
 )
 
 function onEdit() {
@@ -94,18 +99,32 @@ function onSave() {
 </script>
 
 <template>
-  <div class="border border-gray-200 rounded-4 p-3 bg-white transition-all duration-200 ease-soft hover:shadow-elevate">
+  <div
+    class="border border-gray-200 rounded-4 p-3 bg-white transition-all duration-200 ease-soft hover:shadow-elevate"
+  >
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div class="text-sm flex items-center gap-2">
         <span class="font-medium text-black">{{ props.item.name }}</span>
-        <span v-if="isInChat" class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black">depth: {{ props.item.depth }}</span>
-        <span v-if="isInChat" class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black">order: {{ props.item.order }}</span>
+        <span
+          v-if="isInChat"
+          class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black"
+          >depth: {{ props.item.depth }}</span
+        >
+        <span
+          v-if="isInChat"
+          class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black"
+          >order: {{ props.item.order }}</span
+        >
       </div>
 
       <div class="flex items-center gap-2">
-        <span class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black">{{ props.item.role }}</span>
-        <span class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black">{{ enabledLabel(props.item.enabled) }}</span>
+        <span class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black">{{
+          props.item.role
+        }}</span>
+        <span class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black">{{
+          enabledLabel(props.item.enabled)
+        }}</span>
         <!-- 非编辑态：删除 + 编辑 -->
         <button
           v-if="!editing"
@@ -166,7 +185,9 @@ function onSave() {
         </div>
 
         <div>
-          <label class="block text-xs text-black/60 mb-1">{{ t('cards.presetPrompt.enabledStatus') }}</label>
+          <label class="block text-xs text-black/60 mb-1">{{
+            t('cards.presetPrompt.enabledStatus')
+          }}</label>
           <select
             v-model="draftEnabled"
             class="w-full px-3 py-2 border border-gray-300 rounded-4 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
@@ -190,7 +211,9 @@ function onSave() {
         </div>
 
         <div v-if="isInChat">
-          <label class="block text-xs text-black/60 mb-1">{{ t('cards.presetPrompt.depth') }}</label>
+          <label class="block text-xs text-black/60 mb-1">{{
+            t('cards.presetPrompt.depth')
+          }}</label>
           <input
             type="number"
             v-model.number="draftDepth"
@@ -199,7 +222,9 @@ function onSave() {
         </div>
 
         <div v-if="isInChat">
-          <label class="block text-xs text-black/60 mb-1">{{ t('cards.presetPrompt.order') }}</label>
+          <label class="block text-xs text-black/60 mb-1">{{
+            t('cards.presetPrompt.order')
+          }}</label>
           <input
             type="number"
             v-model.number="draftOrder"
@@ -209,7 +234,9 @@ function onSave() {
       </div>
 
       <div v-if="hasContent">
-        <label class="block text-xs text-black/60 mb-1">{{ t('cards.presetPrompt.content') }}</label>
+        <label class="block text-xs text-black/60 mb-1">{{
+          t('cards.presetPrompt.content')
+        }}</label>
         <textarea
           v-model="draftContent"
           rows="4"

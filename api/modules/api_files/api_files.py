@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 API 封装层：通用模块/工作流 API 文件管理 (api/modules)
 - 列出已注册 API 对应的脚本所在文件夹（按命名空间 modules/workflow 归类）
@@ -6,15 +5,15 @@ API 封装层：通用模块/工作流 API 文件管理 (api/modules)
 新规范：斜杠 path + JSON Schema。
 """
 
-from typing import Any, Dict, List, Tuple
-from pathlib import Path
 import os
 import shutil
+from pathlib import Path
+from typing import Any
 
 import core
 
 
-def _collect_api_folders() -> Tuple[Dict[str, Dict[str, Any]], Dict[str, Dict[str, Any]]]:
+def _collect_api_folders() -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
     """
     从注册表中收集 API 所在文件夹（通过函数 __module__ 推断路径）
     返回:
@@ -29,10 +28,10 @@ def _collect_api_folders() -> Tuple[Dict[str, Dict[str, Any]], Dict[str, Dict[st
         }
     """
     reg = core.get_registry()
-    modules_map: Dict[str, Dict[str, Any]] = {}
-    workflow_map: Dict[str, Dict[str, Any]] = {}
+    modules_map: dict[str, dict[str, Any]] = {}
+    workflow_map: dict[str, dict[str, Any]] = {}
 
-    def ensure_item(ns: str, rel_path_parts: List[str]) -> Dict[str, Any]:
+    def ensure_item(ns: str, rel_path_parts: list[str]) -> dict[str, Any]:
         """创建或返回文件夹项"""
         if not rel_path_parts:
             return {}
@@ -40,24 +39,30 @@ def _collect_api_folders() -> Tuple[Dict[str, Dict[str, Any]], Dict[str, Dict[st
         if ns == "modules":
             base = Path("api/modules")
             abs_path = (base / rel).resolve()
-            item = modules_map.setdefault(rel, {
-                "relative_path": rel,
-                "abs_path": str(abs_path),
-                "api_count": 0,
-                "name": rel_path_parts[-1],
-                "apis": []
-            })
+            item = modules_map.setdefault(
+                rel,
+                {
+                    "relative_path": rel,
+                    "abs_path": str(abs_path),
+                    "api_count": 0,
+                    "name": rel_path_parts[-1],
+                    "apis": [],
+                },
+            )
             return item
         elif ns == "workflow":
             base = Path("api/workflow")
             abs_path = (base / rel).resolve()
-            item = workflow_map.setdefault(rel, {
-                "relative_path": rel,
-                "abs_path": str(abs_path),
-                "api_count": 0,
-                "name": rel_path_parts[-1],
-                "apis": []
-            })
+            item = workflow_map.setdefault(
+                rel,
+                {
+                    "relative_path": rel,
+                    "abs_path": str(abs_path),
+                    "api_count": 0,
+                    "name": rel_path_parts[-1],
+                    "apis": [],
+                },
+            )
             return item
         return {}
 
@@ -84,31 +89,35 @@ def _collect_api_folders() -> Tuple[Dict[str, Dict[str, Any]], Dict[str, Dict[st
                 if item is not None:
                     item["api_count"] = int(item.get("api_count", 0)) + 1
                     if spec:
-                        item["apis"].append({
-                            "name": getattr(spec, "name", "") or "",
-                            "description": getattr(spec, "description", "") or "",
-                            "path": getattr(spec, "path", "") or "",
-                            "namespace": getattr(spec, "namespace", "") or "modules"
-                        })
+                        item["apis"].append(
+                            {
+                                "name": getattr(spec, "name", "") or "",
+                                "description": getattr(spec, "description", "") or "",
+                                "path": getattr(spec, "path", "") or "",
+                                "namespace": getattr(spec, "namespace", "") or "modules",
+                            }
+                        )
             elif len(parts) >= 4 and parts[1] == "workflow":
                 rel_parts = parts[2:-1]
                 item = ensure_item("workflow", rel_parts)
                 if item is not None:
                     item["api_count"] = int(item.get("api_count", 0)) + 1
                     if spec:
-                        item["apis"].append({
-                            "name": getattr(spec, "name", "") or "",
-                            "description": getattr(spec, "description", "") or "",
-                            "path": getattr(spec, "path", "") or "",
-                            "namespace": getattr(spec, "namespace", "") or "workflow"
-                        })
+                        item["apis"].append(
+                            {
+                                "name": getattr(spec, "name", "") or "",
+                                "description": getattr(spec, "description", "") or "",
+                                "path": getattr(spec, "path", "") or "",
+                                "namespace": getattr(spec, "namespace", "") or "workflow",
+                            }
+                        )
         except Exception:
             # 忽略异常，继续其他函数
             continue
 
     # 过滤：仅保留存在的目录
-    def filter_existing(map_in: Dict[str, Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
-        out: Dict[str, Dict[str, Any]] = {}
+    def filter_existing(map_in: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+        out: dict[str, dict[str, Any]] = {}
         for k, v in map_in.items():
             abs_p = v.get("abs_path")
             if abs_p and Path(abs_p).exists():
@@ -130,20 +139,17 @@ def _collect_api_folders() -> Tuple[Dict[str, Dict[str, Any]], Dict[str, Dict[st
             "workflow": {"type": "array", "items": {"type": "object", "additionalProperties": True}},
             "totals": {
                 "type": "object",
-                "properties": {
-                    "modules": {"type": "integer"},
-                    "workflow": {"type": "integer"}
-                },
-                "required": ["modules", "workflow"]
-            }
+                "properties": {"modules": {"type": "integer"}, "workflow": {"type": "integer"}},
+                "required": ["modules", "workflow"],
+            },
         },
-        "required": ["modules", "workflow"]
-    }
+        "required": ["modules", "workflow"],
+    },
 )
-def list_api_folders() -> Dict[str, Any]:
+def list_api_folders() -> dict[str, Any]:
     modules_map, workflow_map = _collect_api_folders()
 
-    def to_list(d: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def to_list(d: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
         items = list(d.values())
         # 排序：先按名称，再按相对路径
         items.sort(key=lambda x: (str(x.get("name", "")).lower(), str(x.get("relative_path", "")).lower()))
@@ -163,7 +169,7 @@ def list_api_folders() -> Dict[str, Any]:
         "totals": {
             "modules": len(modules_list),
             "workflow": len(workflow_list),
-        }
+        },
     }
 
 
@@ -175,21 +181,21 @@ def list_api_folders() -> Dict[str, Any]:
         "type": "object",
         "properties": {
             "namespace": {"type": "string", "enum": ["modules", "workflow"]},
-            "relative_path": {"type": "string"}
+            "relative_path": {"type": "string"},
         },
-        "required": ["namespace", "relative_path"]
+        "required": ["namespace", "relative_path"],
     },
     output_schema={
         "type": "object",
         "properties": {
             "success": {"type": "boolean"},
             "message": {"type": "string"},
-            "deleted_path": {"type": "string"}
+            "deleted_path": {"type": "string"},
         },
-        "required": ["success"]
-    }
+        "required": ["success"],
+    },
 )
-def delete_api_folder(namespace: str, relative_path: str) -> Dict[str, Any]:
+def delete_api_folder(namespace: str, relative_path: str) -> dict[str, Any]:
     try:
         ns = (namespace or "").strip().lower()
         if ns not in ("modules", "workflow"):
@@ -214,29 +220,28 @@ def delete_api_folder(namespace: str, relative_path: str) -> Dict[str, Any]:
         # 执行删除
         shutil.rmtree(str(target), ignore_errors=False)
 
-        return {
-            "success": True,
-            "message": "目录已删除",
-            "deleted_path": str(target)
-        }
+        return {"success": True, "message": "目录已删除", "deleted_path": str(target)}
     except Exception as e:
-        return {"success": False, "message": f"删除失败: {str(e)}"}
+        return {"success": False, "message": f"删除失败: {e!s}"}
+
+
 # 新增：导入模块/工作流脚本（zip 或 PNG 图片内嵌 zip）
 
-import zipfile
 import tempfile
-from typing import Optional
+import zipfile
+
 
 def _read_upload(obj):
     """读取上传对象统一为 (bytes, filename)"""
-    if hasattr(obj, 'file'):
-        return obj.file.read(), getattr(obj, 'filename', None)
-    elif hasattr(obj, 'read'):
-        return obj.read(), getattr(obj, 'name', None)
+    if hasattr(obj, "file"):
+        return obj.file.read(), getattr(obj, "filename", None)
+    elif hasattr(obj, "read"):
+        return obj.read(), getattr(obj, "name", None)
     elif isinstance(obj, (bytes, bytearray)):
         return obj, None
     else:
         raise ValueError("无效的上传对象")
+
 
 def _validate_member_path(member: str, ns: str) -> bool:
     """
@@ -253,6 +258,7 @@ def _validate_member_path(member: str, ns: str) -> bool:
     if ns == "modules":
         return m.startswith("api/modules/")
     return False
+
 
 def _safe_extract_member(zip_ref: zipfile.ZipFile, member: str, dest_root: Path) -> str:
     """
@@ -271,21 +277,19 @@ def _safe_extract_member(zip_ref: zipfile.ZipFile, member: str, dest_root: Path)
         dst.write(src.read())
     return str(target_path)
 
+
 @core.register_api(
     name="导入API脚本（zip）",
     description="导入单个模块或工作流脚本（zip包内仅包含一个 .py 文件，且路径以 api/modules 或 api/workflow 开头）",
     path="api_files/import_script",
     input_schema={
         "type": "object",
-        "properties": {
-            "archive": {"type": "string"},
-            "namespace": {"type": "string", "enum": ["modules", "workflow"]}
-        },
-        "required": ["archive", "namespace"]
+        "properties": {"archive": {"type": "string"}, "namespace": {"type": "string", "enum": ["modules", "workflow"]}},
+        "required": ["archive", "namespace"],
     },
-    output_schema={"type": "object", "additionalProperties": True}
+    output_schema={"type": "object", "additionalProperties": True},
 )
-def import_api_script(archive, namespace: str) -> Dict[str, Any]:
+def import_api_script(archive, namespace: str) -> dict[str, Any]:
     temp_dir = None
     try:
         ns = (namespace or "").strip().lower()
@@ -323,18 +327,27 @@ def import_api_script(archive, namespace: str) -> Dict[str, Any]:
         module_name = rel_path[:-3].replace("/", ".")
         imported = False
         try:
-            import importlib.util, sys
+            import importlib.util
+            import sys
+
             spec = importlib.util.spec_from_file_location(module_name, written_path)
             mod = importlib.util.module_from_spec(spec)
             sys.modules[module_name] = mod
             spec.loader.exec_module(mod)
             imported = True
-        except Exception as ie:
+        except Exception:
             imported = False
 
-        return {"success": True, "message": "API脚本导入成功", "written_path": written_path, "namespace": ns, "module": module_name, "imported": imported}
+        return {
+            "success": True,
+            "message": "API脚本导入成功",
+            "written_path": written_path,
+            "namespace": ns,
+            "module": module_name,
+            "imported": imported,
+        }
     except Exception as e:
-        return {"success": False, "message": f"导入失败: {str(e)}"}
+        return {"success": False, "message": f"导入失败: {e!s}"}
     finally:
         try:
             if temp_dir and os.path.isdir(temp_dir):
@@ -342,22 +355,19 @@ def import_api_script(archive, namespace: str) -> Dict[str, Any]:
         except Exception:
             pass
 
+
 @core.register_api(
     name="从图片导入API脚本",
     description="从PNG图片中反嵌入zip，并将其中的单个 .py API脚本导入到 api/modules 或 api/workflow 下",
     path="api_files/import_script_from_image",
     input_schema={
         "type": "object",
-        "properties": {
-            "image": {"type": "string"},
-            "namespace": {"type": "string", "enum": ["modules", "workflow"]}
-        },
-        "required": ["image", "namespace"]
+        "properties": {"image": {"type": "string"}, "namespace": {"type": "string", "enum": ["modules", "workflow"]}},
+        "required": ["image", "namespace"],
     },
-    output_schema={"type": "object", "additionalProperties": True}
+    output_schema={"type": "object", "additionalProperties": True},
 )
-def import_api_script_from_image(image, namespace: str) -> Dict[str, Any]:
-    temp_dir = None
+def import_api_script_from_image(image, namespace: str) -> dict[str, Any]:
     try:
         ns = (namespace or "").strip().lower()
         if ns not in ("modules", "workflow"):
@@ -368,7 +378,10 @@ def import_api_script_from_image(image, namespace: str) -> Dict[str, Any]:
 
         result = _extract_zip_from_image(image)
         if not isinstance(result, dict) or not result.get("success"):
-            return {"success": False, "message": f"图片解析失败: {result if not isinstance(result, dict) else result.get('error')}"}
+            return {
+                "success": False,
+                "message": f"图片解析失败: {result if not isinstance(result, dict) else result.get('error')}",
+            }
 
         zip_path = result.get("zip_path")
         if not zip_path or not os.path.exists(zip_path):
@@ -390,4 +403,4 @@ def import_api_script_from_image(image, namespace: str) -> Dict[str, Any]:
 
         return {"success": True, "message": "已从图片导入API脚本", "written_path": written_path, "namespace": ns}
     except Exception as e:
-        return {"success": False, "message": f"导入失败: {str(e)}"}
+        return {"success": False, "message": f"导入失败: {e!s}"}

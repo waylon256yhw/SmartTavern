@@ -27,7 +27,10 @@ function loadLocal(): { fileName: string | null; doc: PersonaDoc | null } {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return { fileName: null, doc: null }
     const obj = JSON.parse(raw)
-    return { fileName: typeof obj?.fileName === 'string' ? obj.fileName : null, doc: obj?.doc ?? null }
+    return {
+      fileName: typeof obj?.fileName === 'string' ? obj.fileName : null,
+      doc: obj?.doc ?? null,
+    }
   } catch {
     return { fileName: null, doc: null }
   }
@@ -68,9 +71,13 @@ export const usePersonaStore = defineStore('persona', {
     setPersona(json: any, fileName?: string) {
       const d: PersonaDoc = clone(json || {})
       if (d.name != null && typeof d.name !== 'string') d.name = String(d.name)
-      if (d.description != null && typeof d.description !== 'string') d.description = String(d.description)
+      if (d.description != null && typeof d.description !== 'string')
+        d.description = String(d.description)
       // 仅保留 name/description 两字段，避免污染
-      const cleaned: PersonaDoc = { name: String(d.name ?? ''), description: String(d.description ?? '') }
+      const cleaned: PersonaDoc = {
+        name: String(d.name ?? ''),
+        description: String(d.description ?? ''),
+      }
       this.doc = cleaned
       this.fileName = fileName ?? 'Persona.json'
       saveLocal(this)
@@ -92,7 +99,9 @@ export const usePersonaStore = defineStore('persona', {
     clearAll() {
       this.fileName = null
       this.doc = { name: '', description: '' }
-      try { localStorage.removeItem('prompt_editor_persona_active') } catch {}
+      try {
+        localStorage.removeItem('prompt_editor_persona_active')
+      } catch {}
     },
 
     /** 重命名当前用户信息文件名（仅本面板与导出名） */
@@ -105,7 +114,10 @@ export const usePersonaStore = defineStore('persona', {
 
     exportPersona(): { filename: string; json: string } | null {
       const out = clone(this.doc || { name: '', description: '' })
-      const filename = (this.fileName?.endsWith('.json') ? this.fileName : `${this.fileName ?? (out.name || 'Persona')}.json`) || 'Persona.json'
+      const filename =
+        (this.fileName?.endsWith('.json')
+          ? this.fileName
+          : `${this.fileName ?? (out.name || 'Persona')}.json`) || 'Persona.json'
       return { filename, json: JSON.stringify(out, null, 2) }
     },
   },

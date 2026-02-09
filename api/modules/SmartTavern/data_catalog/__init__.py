@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 SmartTavern.data_catalog 包初始化
 
@@ -12,4 +11,4 @@ SmartTavern.data_catalog 包初始化
 """
 
 # 注册入口：导入以触发 @core.register_api 装饰器
-from .data_catalog import list_presets  # noqa: F401
+from .data_catalog import list_presets

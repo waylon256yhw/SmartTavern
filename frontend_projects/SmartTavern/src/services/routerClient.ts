@@ -47,19 +47,28 @@ function getRouter(): STPromptRouter | null {
 
 // ===== Backend base helpers (match other services) =====
 declare global {
-  interface Window { ST_BACKEND_BASE?: string }
-  interface ImportMetaEnv { VITE_API_BASE?: string }
+  interface Window {
+    ST_BACKEND_BASE?: string
+  }
+  interface ImportMetaEnv {
+    VITE_API_BASE?: string
+  }
 }
 
-const DEFAULT_BACKEND: string = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050')
+const DEFAULT_BACKEND: string =
+  import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050')
 
 function _readLS(key: string): string | null {
-  try { return (typeof window !== 'undefined') ? window.localStorage.getItem(key) : null } catch (_) { return null }
+  try {
+    return typeof window !== 'undefined' ? window.localStorage.getItem(key) : null
+  } catch (_) {
+    return null
+  }
 }
 
 function getBackendBase(): string {
   const fromLS = _readLS('st.backend_base')
-  const fromWin = (typeof window !== 'undefined') ? (window as any).ST_BACKEND_BASE : null
+  const fromWin = typeof window !== 'undefined' ? (window as any).ST_BACKEND_BASE : null
   const base = String(fromLS || fromWin || DEFAULT_BACKEND)
   return base.replace(/\/+$/, '')
 }
@@ -79,21 +88,21 @@ const RouterClient = {
 
   async completeAuto(
     { conversationFile, llmConfigFile = null }: CompletionPayload,
-    callbacks: RouterCallbacks = {}
+    callbacks: RouterCallbacks = {},
   ): Promise<any> {
     return this.call('completion.auto', { conversationFile, llmConfigFile }, callbacks)
   },
 
   async completeSingle(
     { conversationFile, llmConfigFile }: CompletionPayload,
-    callbacks: RouterCallbacks = {}
+    callbacks: RouterCallbacks = {},
   ): Promise<any> {
     return this.call('completion.single', { conversationFile, llmConfigFile }, callbacks)
   },
 
   completeStream(
     { conversationFile, llmConfigFile }: CompletionPayload,
-    callbacks: RouterCallbacks = {}
+    callbacks: RouterCallbacks = {},
   ): Promise<any> {
     return this.call('completion.stream', { conversationFile, llmConfigFile }, callbacks)
   },
@@ -101,13 +110,13 @@ const RouterClient = {
   async processMessagesView({
     conversationFile,
     view = 'user_view',
-    output = 'full'
+    output = 'full',
   }: ProcessMessagesViewPayload): Promise<any> {
     return this.call('prompt.process_view', { conversationFile, view, output }, {})
   },
 
   // === 新增：后端路由方法（推荐使用） ===
-  
+
   /**
    * 使用后端路由处理视图（带 Hook 执行）
    *
@@ -123,20 +132,20 @@ const RouterClient = {
   async routeWithHooksBackend({
     conversationFile,
     view = 'user_view',
-    output = 'full'
+    output = 'full',
   }: ProcessMessagesViewPayload): Promise<any> {
     const API_BASE = ensureWorkflowBase()
     const response = await fetch(`${API_BASE}/smarttavern/prompt_router/route_with_hooks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ conversation_file: conversationFile, view, output })
+      body: JSON.stringify({ conversation_file: conversationFile, view, output }),
     })
-    
+
     if (!response.ok) {
       const error = await response.json().catch(() => ({}))
       throw new Error(error.error || `HTTP ${response.status}`)
     }
-    
+
     return await response.json()
   },
 
@@ -159,7 +168,10 @@ const RouterClient = {
       view,
       output: 'delta',
       router_id: ((): string => {
-        const sid = typeof routerSessionId === 'string' && routerSessionId ? routerSessionId : `s_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`
+        const sid =
+          typeof routerSessionId === 'string' && routerSessionId
+            ? routerSessionId
+            : `s_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`
         return sid
       })(),
     }
@@ -191,22 +203,22 @@ const RouterClient = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        conversation_file: conversationFile
-      })
+        conversation_file: conversationFile,
+      }),
     })
-    
+
     if (!response.ok) {
       const error = await response.json().catch(() => ({}))
       throw new Error(error.error || `HTTP ${response.status}`)
     }
-    
+
     const result = await response.json()
-    
+
     // 检查返回的 success 字段
     if (result && typeof result.success === 'boolean' && !result.success) {
       throw new Error(result.error || 'AI 调用失败')
     }
-    
+
     return result
   },
 
@@ -218,14 +230,14 @@ const RouterClient = {
     const response = await fetch(`${API_BASE}/smarttavern/prompt_router/reload_plugins`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
+      body: JSON.stringify({}),
     })
-    
+
     if (!response.ok) {
       const error = await response.json().catch(() => ({}))
       throw new Error(error.error || `HTTP ${response.status}`)
     }
-    
+
     return await response.json()
   },
 
@@ -237,16 +249,16 @@ const RouterClient = {
     const response = await fetch(`${API_BASE}/smarttavern/prompt_router/list_plugins`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
+      body: JSON.stringify({}),
     })
-    
+
     if (!response.ok) {
       const error = await response.json().catch(() => ({}))
       throw new Error(error.error || `HTTP ${response.status}`)
     }
-    
+
     return await response.json()
-  }
+  },
 }
 
 export default RouterClient

@@ -32,7 +32,14 @@ interface BranchTable {
 interface PathView {
   session_id: string
   status: string
-  path: { id: string; depth: number; role: MsgRole; content: string | null; branch_j: number | null; branch_n: number | null }[]
+  path: {
+    id: string
+    depth: number
+    role: MsgRole
+    content: string | null
+    branch_j: number | null
+    branch_n: number | null
+  }[]
 }
 interface OpenAIView {
   conversation_id: string
@@ -54,7 +61,9 @@ history.load()
 
 const sourceAny = computed<any>(() => history.activeData)
 
-const messages = computed<{ role: MsgRole; content: string }[]>(() => deriveMessagesFromHistory(sourceAny.value))
+const messages = computed<{ role: MsgRole; content: string }[]>(() =>
+  deriveMessagesFromHistory(sourceAny.value),
+)
 
 const doc = computed<BranchDoc>(() => {
   const v: any = sourceAny.value
@@ -74,7 +83,7 @@ const doc = computed<BranchDoc>(() => {
   for (const m of msgs) {
     const id = `n_${++i}`
     nodes[id] = { pid: prev, role: m.role, content: m.content }
-    const arr = (children[prev] ?? (children[prev] = []))
+    const arr = children[prev] ?? (children[prev] = [])
     arr.push(id)
     prev = id
     active_path.push(id)
@@ -91,13 +100,17 @@ const doc = computed<BranchDoc>(() => {
 
 // 原始 JSON 文本编辑（保持与 Store 同步）
 const jsonText = ref('')
-watch(sourceAny, (v) => {
-  try {
-    jsonText.value = JSON.stringify(v ?? {}, null, 2)
-  } catch {
-    jsonText.value = ''
-  }
-}, { immediate: true })
+watch(
+  sourceAny,
+  (v) => {
+    try {
+      jsonText.value = JSON.stringify(v ?? {}, null, 2)
+    } catch {
+      jsonText.value = ''
+    }
+  },
+  { immediate: true },
+)
 
 function handleFormat() {
   try {
@@ -175,7 +188,9 @@ function jnOf(d: BranchDoc, nid: string): { j: number | null; n: number | null }
   return { j, n }
 }
 
-function branchLevelsFromDoc(d: BranchDoc): { depth: number; node_id: string; j: number | null; n: number | null }[] {
+function branchLevelsFromDoc(
+  d: BranchDoc,
+): { depth: number; node_id: string; j: number | null; n: number | null }[] {
   const ap: string[] = activePath.value
   const levels: { depth: number; node_id: string; j: number | null; n: number | null }[] = []
   for (let depth = 2; depth <= ap.length; depth++) {
@@ -201,7 +216,8 @@ const latest = computed(() => {
   const ap: string[] = activePath.value
   const depth = ap.length
   const node_id = ap.length ? ap[ap.length - 1] : null
-  if (depth < 2 || !node_id) return { depth, j: null as number | null, n: null as number | null, node_id }
+  if (depth < 2 || !node_id)
+    return { depth, j: null as number | null, n: null as number | null, node_id }
   const jn = jnOf(doc.value, node_id)
   return { depth, j: jn.j, n: jn.n, node_id }
 })
@@ -295,14 +311,22 @@ const fm = useFileManagerStore()
 const hasDoc = computed(() => !!history.activeData)
 
 const fileTitle = ref<string>('')
-watch(() => history.activeName, (v) => { fileTitle.value = v ?? '' }, { immediate: true })
+watch(
+  () => history.activeName,
+  (v) => {
+    fileTitle.value = v ?? ''
+  },
+  { immediate: true },
+)
 function renameHistoryFile() {
   const oldName = history.activeName || ''
   const nn = (fileTitle.value || '').trim()
   if (!nn || !oldName || nn === oldName) return
   const ok = (history as any).renameActive?.(nn)
   if (ok) {
-    try { fm.renameFile('history', oldName, nn) } catch {}
+    try {
+      fm.renameFile('history', oldName, nn)
+    } catch {}
   }
 }
 
@@ -322,7 +346,9 @@ void handleExportBranches
 <template>
   <section class="space-y-6">
     <!-- 顶部：标题与统计 -->
-    <div class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
           <i data-lucide="git-branch" class="w-6 h-6 text-black"></i>
@@ -339,13 +365,20 @@ void handleExportBranches
           <button
             class="px-3 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-sm hover:bg-gray-100 active:bg-gray-200 transition-all duration-200 ease-soft"
             @click="renameHistoryFile"
-          >重命名</button>
+          >
+            重命名
+          </button>
         </div>
       </div>
 
       <div class="mt-3 flex flex-wrap items-center gap-2">
         <span class="text-xs text-black/60">Active Path:</span>
-        <span v-for="nid in activePath" :key="nid" class="text-xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent">{{ nid }}</span>
+        <span
+          v-for="nid in activePath"
+          :key="nid"
+          class="text-xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent"
+          >{{ nid }}</span
+        >
       </div>
 
       <div class="mt-2 flex flex-wrap items-center gap-2">
@@ -367,7 +400,9 @@ void handleExportBranches
         </div>
         <div class="text-xs text-black/70 leading-6">
           <div class="flex flex-wrap items-center gap-2 mb-1">
-            <span class="px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent">j/n</span>
+            <span class="px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent"
+              >j/n</span
+            >
             <span>同一父节点下的兄弟序号/总数（1 开始）</span>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -380,15 +415,28 @@ void handleExportBranches
           </div>
           <div class="mt-2 flex flex-wrap items-center gap-2 text-black/70">
             <span class="text-black/60">当前末层：</span>
-            <span class="px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent">d{{ latest.depth }}</span>
-            <span class="px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent">j={{ latest.j ?? '—' }}/n={{ latest.n ?? '—' }}</span>
-            <span class="px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent" v-if="(latest.j ?? 0) > 1">
+            <span class="px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent"
+              >d{{ latest.depth }}</span
+            >
+            <span class="px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent"
+              >j={{ latest.j ?? '—' }}/n={{ latest.n ?? '—' }}</span
+            >
+            <span
+              class="px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent"
+              v-if="(latest.j ?? 0) > 1"
+            >
               ← 可切左 (j-1)
             </span>
-            <span class="px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent" v-if="latest.j !== null && latest.n !== null && latest.j < latest.n">
+            <span
+              class="px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent"
+              v-if="latest.j !== null && latest.n !== null && latest.j < latest.n"
+            >
               → 可切右 (j+1)
             </span>
-            <span class="px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent" v-if="latest.j !== null && latest.n !== null && latest.j === latest.n">
+            <span
+              class="px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent"
+              v-if="latest.j !== null && latest.n !== null && latest.j === latest.n"
+            >
               → 新建 (n+1)
             </span>
           </div>
@@ -397,12 +445,18 @@ void handleExportBranches
     </div>
 
     <!-- 空状态提示 -->
-    <div v-if="!hasDoc" class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      v-if="!hasDoc"
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="text-sm text-black/70">当前无对话 JSON，请使用右上角“新建”或“导入”。</div>
     </div>
 
     <!-- 本地分支编辑工具栏（前端缓存 json） -->
-    <div v-if="hasDoc" class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      v-if="hasDoc"
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center gap-3 mb-3">
         <i data-lucide="hammer" class="w-4 h-4 text-black"></i>
         <span class="text-sm font-medium text-black">本地分支编辑（前端缓存 json）</span>
@@ -412,7 +466,10 @@ void handleExportBranches
         <!-- 追加消息（多行输入 + Ctrl+Enter 发送） -->
         <div class="md:col-span-2">
           <div class="flex gap-2">
-            <select v-model="appendRole" class="h-10 px-2 border border-gray-900 rounded-4 bg-white text-black">
+            <select
+              v-model="appendRole"
+              class="h-10 px-2 border border-gray-900 rounded-4 bg-white text-black"
+            >
               <option value="user">user</option>
               <option value="assistant">assistant</option>
               <option value="system">system</option>
@@ -426,17 +483,26 @@ void handleExportBranches
             <button
               class="px-3 h-10 rounded-4 border border-gray-900 text-black bg-white hover:bg-gray-100 transition"
               @click="onAppend"
-            >追加</button>
+            >
+              追加
+            </button>
           </div>
         </div>
 
         <!-- 修剪 -->
         <div class="flex gap-2">
-          <input v-model.number="trimDepth" type="number" min="1" class="w-24 h-10 px-2 border border-gray-200 rounded-4 bg-white text-black" />
+          <input
+            v-model.number="trimDepth"
+            type="number"
+            min="1"
+            class="w-24 h-10 px-2 border border-gray-200 rounded-4 bg-white text-black"
+          />
           <button
             class="px-3 h-10 rounded-4 border border-gray-900 text-black bg-white hover:bg-gray-100 transition"
             @click="onTrim"
-          >修剪到深度</button>
+          >
+            修剪到深度
+          </button>
         </div>
       </div>
 
@@ -444,16 +510,23 @@ void handleExportBranches
         <button
           class="px-3 h-10 rounded-4 border border-gray-900 text-black bg-white hover:bg-gray-100 transition"
           @click="onSwitch('left')"
-        >左切换</button>
+        >
+          左切换
+        </button>
         <button
           class="px-3 h-10 rounded-4 border border-gray-900 text-black bg-white hover:bg-gray-100 transition"
           @click="onSwitch('right')"
-        >右切换/新建</button>
+        >
+          右切换/新建
+        </button>
       </div>
     </div>
 
     <!-- 树视图 -->
-    <div v-if="hasDoc" class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      v-if="hasDoc"
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
           <i data-lucide="tree-deciduous" class="w-4 h-4 text-black"></i>
@@ -477,10 +550,18 @@ void handleExportBranches
           :style="{ paddingLeft: `${Math.max(0, depthOf(doc, nid)) * 16}px` }"
         >
           <div class="flex items-center gap-2 relative">
-            <span class="text-xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent">{{ nid }}</span>
-            <span class="text-2xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent">{{ doc.nodes[nid]?.role || 'unknown' }}</span>
-            <span class="text-2xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent">
-              d{{ (depthOf(doc, nid) + 1) }}
+            <span
+              class="text-xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent"
+              >{{ nid }}</span
+            >
+            <span
+              class="text-2xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent"
+              >{{ doc.nodes[nid]?.role || 'unknown' }}</span
+            >
+            <span
+              class="text-2xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent"
+            >
+              d{{ depthOf(doc, nid) + 1 }}
             </span>
             <span
               v-if="jnOf(doc, nid).j !== null"
@@ -491,11 +572,12 @@ void handleExportBranches
             <span
               v-if="isInActivePath(nid)"
               class="text-2xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-gray-100"
-            >active</span>
+              >active</span
+            >
 
             <button
               class="ml-auto p-1 rounded-4 border border-gray-200 hover:bg-gray-50"
-              @click="menuFor = (menuFor === nid ? null : nid)"
+              @click="menuFor = menuFor === nid ? null : nid"
               title="更多操作"
             >
               <i data-lucide="more-horizontal" class="w-4 h-4 text-black"></i>
@@ -508,30 +590,44 @@ void handleExportBranches
             >
               <button
                 class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
-                @click="inlineFor = nid; menuFor = null"
-              >追加子节点…</button>
+                @click="
+                  inlineFor = nid
+                  menuFor = null
+                "
+              >
+                追加子节点…
+              </button>
               <button
                 class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
                 :disabled="!isInActivePath(nid)"
                 @click="pruneToHere(nid)"
-              >修剪至此</button>
+              >
+                修剪至此
+              </button>
               <button
                 class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
                 :disabled="!isInActivePath(nid) || (jnOf(doc, nid).j ?? 0) <= 1"
                 @click="switchAtHere(nid, 'left')"
-              >从此层向左切换</button>
+              >
+                从此层向左切换
+              </button>
               <button
                 class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
                 :disabled="!isInActivePath(nid)"
                 @click="switchAtHere(nid, 'right')"
-              >从此层向右切换/新建</button>
+              >
+                从此层向右切换/新建
+              </button>
             </div>
           </div>
 
           <!-- 内联追加输入 -->
           <div v-if="inlineFor === nid" class="mt-2">
             <div class="flex gap-2">
-              <select v-model="inlineRole" class="h-10 px-2 border border-gray-900 rounded-4 bg-white text-black">
+              <select
+                v-model="inlineRole"
+                class="h-10 px-2 border border-gray-900 rounded-4 bg-white text-black"
+              >
                 <option value="user">user</option>
                 <option value="assistant">assistant</option>
                 <option value="system">system</option>
@@ -547,11 +643,18 @@ void handleExportBranches
               <button
                 class="px-3 h-10 rounded-4 border border-gray-900 text-black bg-white hover:bg-gray-100 transition"
                 @click="submitInline"
-              >添加</button>
+              >
+                添加
+              </button>
               <button
                 class="px-3 h-10 rounded-4 border border-gray-900 text-black bg-white hover:bg-gray-100 transition"
-                @click="inlineFor = null; inlineText = ''"
-              >取消</button>
+                @click="
+                  inlineFor = null
+                  inlineText = ''
+                "
+              >
+                取消
+              </button>
             </div>
           </div>
 
@@ -563,7 +666,10 @@ void handleExportBranches
     </div>
 
     <!-- OpenAI messages 预览 -->
-    <div v-if="hasDoc" class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      v-if="hasDoc"
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center gap-2 mb-2">
         <i data-lucide="messages-square" class="w-4 h-4 text-black"></i>
         <span class="text-sm font-medium text-black">OpenAI 消息视图（按活动路径）</span>
@@ -571,7 +677,10 @@ void handleExportBranches
       <div class="space-y-2">
         <div v-for="(m, idx) in messages" :key="idx" class="border border-gray-200 rounded-4 p-3">
           <div class="flex items-center gap-2 mb-1">
-            <span class="text-xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent">{{ m.role }}</span>
+            <span
+              class="text-xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent"
+              >{{ m.role }}</span
+            >
             <span class="text-xs text-black/60">#{{ idx + 1 }}</span>
           </div>
           <div class="text-sm text-black/70 leading-6 break-words">{{ m.content }}</div>

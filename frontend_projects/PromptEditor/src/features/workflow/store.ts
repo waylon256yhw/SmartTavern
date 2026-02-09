@@ -7,7 +7,7 @@ import { useHistoryStore, type OpenAIMessage } from '@/features/history/store'
 import type { PresetData, WorldBookEntry, RegexRule } from '@/features/presets/types'
 
 function clone<T>(x: T): T {
-  return x == null ? x as any : JSON.parse(JSON.stringify(x))
+  return x == null ? (x as any) : JSON.parse(JSON.stringify(x))
 }
 
 /**
@@ -51,8 +51,7 @@ export const useEditorContextStore = defineStore('editorContext', {
       // 约定：世界书由 presetStore.activeData.world_books 提供
       const entries = clone(preset.worldBooks ?? [])
       // 取活动预设文件名作为关联名（若为空，则使用 'WorldBook' 作为占位）
-      const name =
-        (preset.activeFile?.name?.replace(/\.json$/, '') ?? 'WorldBook')
+      const name = preset.activeFile?.name?.replace(/\.json$/, '') ?? 'WorldBook'
       return { name, entries }
     },
 

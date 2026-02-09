@@ -34,12 +34,18 @@ function normalizeWorldEntry(w: any): void {
     if (!Array.isArray(w.keys)) {
       if (w.keys != null) {
         const s = String(w.keys)
-        w.keys = s.split(/;/).map((x: string) => x.trim()).filter(Boolean)
+        w.keys = s
+          .split(/;/)
+          .map((x: string) => x.trim())
+          .filter(Boolean)
       } else {
         w.keys = []
       }
     } else {
-      w.keys = w.keys.map((x: any) => String(x ?? '')).map((x: string) => x.trim()).filter(Boolean)
+      w.keys = w.keys
+        .map((x: any) => String(x ?? ''))
+        .map((x: string) => x.trim())
+        .filter(Boolean)
     }
   } else {
     w.keys = []
@@ -60,7 +66,8 @@ function normalizeRegexRule(r: any): void {
   if (typeof r.condition !== 'string') r.condition = String(r.condition ?? '')
   if (r.min_depth != null) r.min_depth = Number(r.min_depth)
   if (r.max_depth != null) r.max_depth = Number(r.max_depth)
-  if (r.description != null && typeof r.description !== 'string') r.description = String(r.description)
+  if (r.description != null && typeof r.description !== 'string')
+    r.description = String(r.description)
 }
 
 function saveLocal(state: any) {
@@ -78,7 +85,10 @@ function loadLocal(): { fileName: string | null; doc: CharacterDoc | null } {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return { fileName: null, doc: null }
     const obj = JSON.parse(raw)
-    return { fileName: typeof obj?.fileName === 'string' ? obj.fileName : null, doc: obj?.doc ?? null }
+    return {
+      fileName: typeof obj?.fileName === 'string' ? obj.fileName : null,
+      doc: obj?.doc ?? null,
+    }
   } catch {
     return { fileName: null, doc: null }
   }
@@ -104,7 +114,7 @@ export const useCharacterStore = defineStore('character', {
     messages(state): string[] {
       const arr = state.doc?.message
       if (!Array.isArray(arr)) return []
-      return arr.map(x => (typeof x === 'string' ? x : String(x ?? '')))
+      return arr.map((x) => (typeof x === 'string' ? x : String(x ?? '')))
     },
     worldEntries(state): WorldBookEntry[] {
       const entries = state.doc?.world_book?.entries
@@ -133,7 +143,8 @@ export const useCharacterStore = defineStore('character', {
       const d: CharacterDoc = clone(json || {})
       // name/description
       if (d.name != null && typeof d.name !== 'string') d.name = String(d.name)
-      if (d.description != null && typeof d.description !== 'string') d.description = String(d.description)
+      if (d.description != null && typeof d.description !== 'string')
+        d.description = String(d.description)
 
       // message
       if (!Array.isArray(d.message)) d.message = []
@@ -193,7 +204,7 @@ export const useCharacterStore = defineStore('character', {
     addWorldBook(entry: WorldBookEntry) {
       if (!this.doc) return
       const list = (this.doc.world_book?.entries ?? []) as WorldBookEntry[]
-      const i = list.findIndex(w => w && (w as any).id === (entry as any).id)
+      const i = list.findIndex((w) => w && (w as any).id === (entry as any).id)
       if (i >= 0) list.splice(i, 1, entry as any)
       else list.unshift(entry as any)
       if (!this.doc.world_book) this.doc.world_book = { entries: [] }
@@ -203,7 +214,7 @@ export const useCharacterStore = defineStore('character', {
     replaceWorldBook(updated: WorldBookEntry) {
       if (!this.doc || !Array.isArray(this.doc.world_book?.entries)) return
       const list = this.doc.world_book!.entries as WorldBookEntry[]
-      const idx = list.findIndex(w => w && (w as any).id === (updated as any).id)
+      const idx = list.findIndex((w) => w && (w as any).id === (updated as any).id)
       if (idx >= 0) {
         list.splice(idx, 1, updated as any)
         saveLocal(this)
@@ -212,7 +223,7 @@ export const useCharacterStore = defineStore('character', {
     removeWorldBook(id: string) {
       if (!this.doc || !Array.isArray(this.doc.world_book?.entries)) return
       const list = this.doc.world_book!.entries as WorldBookEntry[]
-      const idx = list.findIndex(w => w && (w as any).id === id)
+      const idx = list.findIndex((w) => w && (w as any).id === id)
       if (idx >= 0) {
         list.splice(idx, 1)
         saveLocal(this)
@@ -224,16 +235,20 @@ export const useCharacterStore = defineStore('character', {
       if (!Array.isArray(this.doc.world_book.entries)) this.doc.world_book.entries = []
       const list = this.doc.world_book.entries as WorldBookEntry[]
       const next: any = { ...(updated as any) }
-      try { normalizeWorldEntry(next) } catch {}
+      try {
+        normalizeWorldEntry(next)
+      } catch {}
 
       const old = (oldId ?? next.id) as string
-      const oldIdx = list.findIndex(w => w && (w as any).id === old)
+      const oldIdx = list.findIndex((w) => w && (w as any).id === old)
 
-      const dupIdx = list.findIndex(w => w && (w as any).id === next.id)
+      const dupIdx = list.findIndex((w) => w && (w as any).id === next.id)
       if (dupIdx >= 0 && dupIdx !== oldIdx) {
         if (oldIdx >= 0) {
           const keep = { ...(list[oldIdx] as any), ...(next as any), id: old } as any
-          try { normalizeWorldEntry(keep) } catch {}
+          try {
+            normalizeWorldEntry(keep)
+          } catch {}
           list.splice(oldIdx, 1, keep)
           saveLocal(this)
         }
@@ -249,14 +264,14 @@ export const useCharacterStore = defineStore('character', {
     addRegexRule(rule: RegexRule) {
       if (!this.doc) return
       if (!Array.isArray(this.doc.regex_rules)) this.doc.regex_rules = []
-      const i = this.doc.regex_rules.findIndex(r => r && (r as any).id === (rule as any).id)
+      const i = this.doc.regex_rules.findIndex((r) => r && (r as any).id === (rule as any).id)
       if (i >= 0) this.doc.regex_rules.splice(i, 1, rule as any)
       else this.doc.regex_rules.unshift(rule as any)
       saveLocal(this)
     },
     replaceRegexRule(updated: RegexRule) {
       if (!this.doc || !Array.isArray(this.doc.regex_rules)) return
-      const idx = this.doc.regex_rules.findIndex(r => r && (r as any).id === (updated as any).id)
+      const idx = this.doc.regex_rules.findIndex((r) => r && (r as any).id === (updated as any).id)
       if (idx >= 0) {
         this.doc.regex_rules.splice(idx, 1, updated as any)
         saveLocal(this)
@@ -264,7 +279,7 @@ export const useCharacterStore = defineStore('character', {
     },
     removeRegexRule(id: string) {
       if (!this.doc || !Array.isArray(this.doc.regex_rules)) return
-      const idx = this.doc.regex_rules.findIndex(r => r && (r as any).id === id)
+      const idx = this.doc.regex_rules.findIndex((r) => r && (r as any).id === id)
       if (idx >= 0) {
         this.doc.regex_rules.splice(idx, 1)
         saveLocal(this)
@@ -275,11 +290,11 @@ export const useCharacterStore = defineStore('character', {
     reorderWorldBooks(orderedIds: string[]) {
       if (!this.doc || !Array.isArray(this.doc.world_book?.entries)) return
       const items = (this.doc.world_book!.entries || []) as WorldBookEntry[]
-      const idSet = new Set(items.map(i => (i as any).id))
+      const idSet = new Set(items.map((i) => (i as any).id))
       const normalized = (orderedIds || []).filter((id): id is string => !!id && idSet.has(id))
-      const missing = items.map(i => (i as any).id).filter(id => !normalized.includes(id))
+      const missing = items.map((i) => (i as any).id).filter((id) => !normalized.includes(id))
       const finalIds = normalized.concat(missing)
-      const map = new Map<string, WorldBookEntry>(items.map(i => [(i as any).id, i]))
+      const map = new Map<string, WorldBookEntry>(items.map((i) => [(i as any).id, i]))
       const next: WorldBookEntry[] = []
       for (const id of finalIds) {
         const x = map.get(id)
@@ -293,11 +308,11 @@ export const useCharacterStore = defineStore('character', {
     reorderRegexRules(orderedIds: string[]) {
       if (!this.doc || !Array.isArray(this.doc.regex_rules)) return
       const items = this.doc.regex_rules as RegexRule[]
-      const idSet = new Set(items.map(i => (i as any).id))
+      const idSet = new Set(items.map((i) => (i as any).id))
       const normalized = (orderedIds || []).filter((id): id is string => !!id && idSet.has(id))
-      const missing = items.map(i => (i as any).id).filter(id => !normalized.includes(id))
+      const missing = items.map((i) => (i as any).id).filter((id) => !normalized.includes(id))
       const finalIds = normalized.concat(missing)
-      const map = new Map<string, RegexRule>(items.map(i => [(i as any).id, i]))
+      const map = new Map<string, RegexRule>(items.map((i) => [(i as any).id, i]))
       const next: RegexRule[] = []
       for (const id of finalIds) {
         const x = map.get(id)
@@ -310,7 +325,9 @@ export const useCharacterStore = defineStore('character', {
     clearAll() {
       this.fileName = null
       this.doc = null
-      try { localStorage.removeItem('prompt_editor_character_active') } catch {}
+      try {
+        localStorage.removeItem('prompt_editor_character_active')
+      } catch {}
     },
 
     /** 重命名当前角色卡文件名（仅本面板与导出名） */
@@ -330,7 +347,10 @@ export const useCharacterStore = defineStore('character', {
           e.id = String(e.id ?? '')
         }
       }
-      const filename = (this.fileName?.endsWith('.json') ? this.fileName : `${this.fileName ?? (out.name || 'Character')}.json`) || 'Character.json'
+      const filename =
+        (this.fileName?.endsWith('.json')
+          ? this.fileName
+          : `${this.fileName ?? (out.name || 'Character')}.json`) || 'Character.json'
       return { filename, json: JSON.stringify(out, null, 2) }
     },
   },

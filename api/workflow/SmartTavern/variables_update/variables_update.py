@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Workflow 封装层：smarttavern.variables_update
 
@@ -13,7 +12,9 @@ Workflow 封装层：smarttavern.variables_update
 - [python.function(core.call_api)](core/api_client.py:234)
 - [python.function(apply_to_conversation())](api/workflow/smarttavern/variables_update/impl.py:19)
 """
-from typing import Any, Dict, Optional
+
+from typing import Any
+
 import core  # type: ignore
 
 from .impl import apply_to_conversation as _apply_to_conversation
@@ -32,43 +33,46 @@ from .impl import apply_to_conversation as _apply_to_conversation
         "properties": {
             "file": {
                 "type": "string",
-                "description": "对话主文件路径（仓库根相对），例：backend_projects/SmartTavern/data/conversations/branch_demo/conversation.json"
+                "description": "对话主文件路径（仓库根相对），例：backend_projects/SmartTavern/data/conversations/branch_demo/conversation.json",
             },
             "overrides": {"type": "object", "additionalProperties": True},
             "operation": {
                 "type": "string",
                 "enum": ["replace", "shallow_merge", "merge", "deep_merge", "append", "union", "remove"],
-                "description": "默认 merge"
+                "description": "默认 merge",
             },
             "options": {
                 "type": "object",
                 "properties": {
-                    "array_strategy": {"type": "string", "enum": ["replace", "concat", "union", "prepend", "union_by_key"]},
+                    "array_strategy": {
+                        "type": "string",
+                        "enum": ["replace", "concat", "union", "prepend", "union_by_key"],
+                    },
                     "array_key": {"type": "string"},
-                    "remove_paths": {"type": "array", "items": {"type": ["string","integer"]}}
+                    "remove_paths": {"type": "array", "items": {"type": ["string", "integer"]}},
                 },
-                "additionalProperties": True
-            }
+                "additionalProperties": True,
+            },
         },
         "required": ["file", "overrides"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
         "properties": {
             "variables": {"type": "object", "additionalProperties": True},
-            "variables_file": {"type": ["string", "null"]}
+            "variables_file": {"type": ["string", "null"]},
         },
         "required": ["variables"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
 )
 def apply(
     file: str,
-    overrides: Dict[str, Any],
-    options: Optional[Dict[str, Any]] = None,
+    overrides: dict[str, Any],
+    options: dict[str, Any] | None = None,
     operation: str = "merge",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     读取 conversations/{name}/variables.json 与 overrides 按 operation 策略处理，返回结果（不写回文件）。
     """

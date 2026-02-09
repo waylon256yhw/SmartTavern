@@ -14,43 +14,43 @@
 
 /** 创建对话请求 Payload */
 export interface ChatCreateRequestPayload {
-  type?: 'threaded' | 'sandbox';
-  meta?: any;
-  preset?: any;
-  persona?: any;
-  ui?: boolean;
-  [key: string]: any;
+  type?: 'threaded' | 'sandbox'
+  meta?: any
+  preset?: any
+  persona?: any
+  ui?: boolean
+  [key: string]: any
 }
 
 /** 创建对话成功 Payload */
 export interface ChatCreateSuccessPayload {
-  file?: string;
-  doc?: any;
-  meta?: any;
+  file?: string
+  doc?: any
+  meta?: any
 }
 
 /** 创建对话失败 Payload */
 export interface ChatCreateFailurePayload {
-  error: string;
-  detail?: any;
+  error: string
+  detail?: any
 }
 
 /** 加载对话请求 Payload */
 export interface ChatLoadRequestPayload {
-  file?: string;
+  file?: string
 }
 
 /** 加载对话成功 Payload */
 export interface ChatLoadSuccessPayload {
-  file: string;
-  doc?: any;
-  meta?: any;
+  file: string
+  doc?: any
+  meta?: any
 }
 
 /** 加载对话失败 Payload */
 export interface ChatLoadFailurePayload {
-  error: string;
-  detail?: any;
+  error: string
+  detail?: any
 }
 
 // ============ Event Constants ============

@@ -22,7 +22,7 @@ const props = defineProps({
   conversationFile: { type: String, default: null },
 })
 
-const emit = defineEmits(['close','use','delete','import','export'])
+const emit = defineEmits(['close', 'use', 'delete', 'import', 'export'])
 
 const panelStyle = computed(() => ({
   position: 'fixed',
@@ -102,7 +102,11 @@ async function onUse(dir) {
     Host.pushToast?.({ type: 'error', message: `加载失败：${e?.message || e}`, timeout: 2200 })
   } finally {
     delete pending.value[id]
-    nextTick(() => { try { window?.lucide?.createIcons?.() } catch (_) {} })
+    nextTick(() => {
+      try {
+        window?.lucide?.createIcons?.()
+      } catch (_) {}
+    })
   }
 }
 
@@ -123,19 +127,24 @@ async function onUnload(dir) {
     Host.pushToast?.({ type: 'error', message: `卸载失败：${e?.message || e}`, timeout: 2200 })
   } finally {
     delete pending.value[realId]
-    nextTick(() => { try { window?.lucide?.createIcons?.() } catch (_) {} })
+    nextTick(() => {
+      try {
+        window?.lucide?.createIcons?.()
+      } catch (_) {}
+    })
   }
 }
 
-
-function close(){ emit('close') }
+function close() {
+  emit('close')
+}
 
 // ==================== 删除功能 ====================
 
 function onDeletePlugin(it) {
   const dir = String(it?.dir || it?.key || '')
   if (!dir) return
-  
+
   deleteTarget.value = {
     key: dir,
     name: it.name || getFolderName(dir),
@@ -151,10 +160,10 @@ function closeDeleteConfirmModal() {
 
 async function handleDeleteConfirm() {
   if (!deleteTarget.value) return
-  
+
   const dir = deleteTarget.value.key
   const id = mkId(dir)
-  
+
   deleting.value = true
   try {
     // 先卸载插件（如果已加载）
@@ -163,20 +172,32 @@ async function handleDeleteConfirm() {
     } catch (_) {
       // 忽略卸载错误
     }
-    
+
     // 删除插件目录
     const result = await DataCatalog.deleteDataFolder(deleteTarget.value.folderPath)
     if (result.success) {
       // 刷新列表
       await loadPlugins()
       emit('delete', dir)
-      Host.pushToast?.({ type: 'success', message: `已删除插件：${deleteTarget.value.name}`, timeout: 1800 })
+      Host.pushToast?.({
+        type: 'success',
+        message: `已删除插件：${deleteTarget.value.name}`,
+        timeout: 1800,
+      })
     } else {
-      Host.pushToast?.({ type: 'error', message: result.message || t('error.deleteFailed', { error: result.error || '' }), timeout: 2200 })
+      Host.pushToast?.({
+        type: 'error',
+        message: result.message || t('error.deleteFailed', { error: result.error || '' }),
+        timeout: 2200,
+      })
     }
   } catch (err) {
     console.error('[PluginsPanel] Delete error:', err)
-    Host.pushToast?.({ type: 'error', message: t('error.deleteFailed', { error: err.message || '' }), timeout: 2200 })
+    Host.pushToast?.({
+      type: 'error',
+      message: t('error.deleteFailed', { error: err.message || '' }),
+      timeout: 2200,
+    })
   } finally {
     deleting.value = false
     closeDeleteConfirmModal()
@@ -199,52 +220,66 @@ async function loadPlugins() {
   try {
     const sw = await DataCatalog.getPluginsSwitch()
     if (!Array.isArray(sw?.enabled)) {
-      Host.pushToast?.({ type: 'error', message: '缺失插件开关文件（plugins_switch.json）', timeout: 2800 })
+      Host.pushToast?.({
+        type: 'error',
+        message: '缺失插件开关文件（plugins_switch.json）',
+        timeout: 2800,
+      })
       plugins.value = []
       return
     }
-    const enabledArr = sw.enabled.map(x => String(x))
+    const enabledArr = sw.enabled.map((x) => String(x))
     const enabledSet = new Set(enabledArr)
 
     const res = await DataCatalog.listPlugins() // backend: smarttavern/data_catalog/list_plugins
     const arr = Array.isArray(res?.items) ? res.items : []
     const errs = Array.isArray(res?.errors) ? res.errors : []
     for (const er of errs) {
-      Host.pushToast?.({ type: 'warning', message: `插件目录缺失：${er?.file || ''}`, timeout: 2600 })
+      Host.pushToast?.({
+        type: 'warning',
+        message: `插件目录缺失：${er?.file || ''}`,
+        timeout: 2600,
+      })
     }
 
-    const items = await Promise.all(arr.map(async (it) => {
-      const dir = String(it.dir || '')
-      const name = it.name || (dir.split('/').pop() || '未命名')
-      const desc = it.description || ''
-      const plugName = dir.split('/').pop() || dir
-      const obj = {
-        key: dir,
-        icon: 'puzzle',
-        name,
-        desc,
-        dir,
-        enabled: (enabledSet === null ? true : enabledSet.has(plugName)),
-        avatarUrl: null,
-      }
-      // 目录 -> icon.png
-      const iconPath = dir ? `${dir}/icon.png` : ''
-      if (iconPath) {
-        try {
-          const { blob } = await DataCatalog.getPluginsAssetBlob(iconPath)
-          obj.avatarUrl = URL.createObjectURL(blob)
-        } catch (_) {
-          // ignore; fallback emoji/lucide
+    const items = await Promise.all(
+      arr.map(async (it) => {
+        const dir = String(it.dir || '')
+        const name = it.name || dir.split('/').pop() || '未命名'
+        const desc = it.description || ''
+        const plugName = dir.split('/').pop() || dir
+        const obj = {
+          key: dir,
+          icon: 'puzzle',
+          name,
+          desc,
+          dir,
+          enabled: enabledSet === null ? true : enabledSet.has(plugName),
+          avatarUrl: null,
         }
-      }
-      return obj
-    }))
+        // 目录 -> icon.png
+        const iconPath = dir ? `${dir}/icon.png` : ''
+        if (iconPath) {
+          try {
+            const { blob } = await DataCatalog.getPluginsAssetBlob(iconPath)
+            obj.avatarUrl = URL.createObjectURL(blob)
+          } catch (_) {
+            // ignore; fallback emoji/lucide
+          }
+        }
+        return obj
+      }),
+    )
     plugins.value = items
   } catch (e) {
     console.warn('[PluginsPanel] loadPlugins failed:', e)
   } finally {
     loading.value = false
-    nextTick(() => { try { window?.lucide?.createIcons?.() } catch (_) {} })
+    nextTick(() => {
+      try {
+        window?.lucide?.createIcons?.()
+      } catch (_) {}
+    })
   }
 }
 
@@ -258,7 +293,11 @@ function handleTransitionComplete() {
 onMounted(async () => {
   await loadPlugins()
   // 初次渲染后刷新图标
-  setTimeout(() => { try { window?.lucide?.createIcons?.() } catch (_) {} }, 50)
+  setTimeout(() => {
+    try {
+      window?.lucide?.createIcons?.()
+    } catch (_) {}
+  }, 50)
 })
 onUnmounted(() => {})
 async function onToggle(it) {
@@ -269,22 +308,33 @@ async function onToggle(it) {
   pending.value[id] = true
 
   const name = dir.split('/').pop() || dir
-  const allNames = (plugins.value || []).map(x => (String(x.dir || x.key || '').split('/').pop() || x.name || ''))
+  const allNames = (plugins.value || []).map(
+    (x) =>
+      String(x.dir || x.key || '')
+        .split('/')
+        .pop() ||
+      x.name ||
+      '',
+  )
   try {
     // 严格开关模式：必须存在并返回 enabled 数组
     const sw = await DataCatalog.getPluginsSwitch()
     if (!Array.isArray(sw?.enabled)) {
-      Host.pushToast?.({ type: 'error', message: '缺失插件开关文件（plugins_switch.json）', timeout: 2800 })
+      Host.pushToast?.({
+        type: 'error',
+        message: '缺失插件开关文件（plugins_switch.json）',
+        timeout: 2800,
+      })
       return
     }
-    const set = new Set(sw.enabled.map(x => String(x)))
+    const set = new Set(sw.enabled.map((x) => String(x)))
 
     let nextEnabled = []
     if (it.enabled) {
       // 禁用：从 enabled 删除
       set.delete(name)
       nextEnabled = Array.from(set)
-      const nextDisabled = allNames.filter(n => nextEnabled.indexOf(n) === -1)
+      const nextDisabled = allNames.filter((n) => nextEnabled.indexOf(n) === -1)
       await DataCatalog.updatePluginsSwitch({ enabled: nextEnabled, disabled: nextDisabled })
       await PluginLoader.unload(id)
       it.enabled = false
@@ -293,7 +343,7 @@ async function onToggle(it) {
       // 启用：添加到 enabled
       set.add(name)
       nextEnabled = Array.from(set)
-      const nextDisabled = allNames.filter(n => nextEnabled.indexOf(n) === -1)
+      const nextDisabled = allNames.filter((n) => nextEnabled.indexOf(n) === -1)
       await DataCatalog.updatePluginsSwitch({ enabled: nextEnabled, disabled: nextDisabled })
       await PluginLoader.loadPluginByDir(dir, { id, replace: true })
       it.enabled = true
@@ -304,7 +354,11 @@ async function onToggle(it) {
     Host.pushToast?.({ type: 'error', message: `操作失败：${e?.message || e}`, timeout: 2200 })
   } finally {
     delete pending.value[id]
-    nextTick(() => { try { window?.lucide?.createIcons?.() } catch (_) {} })
+    nextTick(() => {
+      try {
+        window?.lucide?.createIcons?.()
+      } catch (_) {}
+    })
   }
 }
 
@@ -322,7 +376,7 @@ function extractPluginName(filename) {
 async function handleFileSelect(event) {
   const files = event.target.files
   if (!files || files.length === 0) return
-  
+
   const file = files[0]
   const validTypes = ['.json', '.zip', '.png']
   const ext = '.' + (file.name.split('.').pop() || '').toLowerCase()
@@ -331,7 +385,7 @@ async function handleFileSelect(event) {
     event.target.value = ''
     return
   }
-  
+
   // 直接调用导入，后端会处理名称冲突检测
   await doImport(file, false)
   event.target.value = ''
@@ -340,28 +394,40 @@ async function handleFileSelect(event) {
 async function doImport(file, overwrite = false, targetName = null) {
   importing.value = true
   importError.value = null
-  
+
   try {
     const result = await DataCatalog.importDataFromFile('plugin', file, targetName, overwrite)
     if (result.success) {
       // 刷新插件列表
       await loadPlugins()
-      
+
       // 如果插件已注册，自动加载
       if (result.registered) {
         const pluginDir = `backend_projects/SmartTavern/plugins/${result.folder}`
         const id = mkId(pluginDir)
         try {
           await PluginLoader.loadPluginByDir(pluginDir, { id, replace: true })
-          Host.pushToast?.({ type: 'success', message: t('toast.plugin.importedAndEnabled', { name: result.name }), timeout: 2000 })
+          Host.pushToast?.({
+            type: 'success',
+            message: t('toast.plugin.importedAndEnabled', { name: result.name }),
+            timeout: 2000,
+          })
         } catch (e) {
           console.warn('[PluginsPanel] Auto load plugin failed:', e)
-          Host.pushToast?.({ type: 'warning', message: t('toast.plugin.importAutoLoadFailed', { error: e?.message || e }), timeout: 2800 })
+          Host.pushToast?.({
+            type: 'warning',
+            message: t('toast.plugin.importAutoLoadFailed', { error: e?.message || e }),
+            timeout: 2800,
+          })
         }
       } else {
-        Host.pushToast?.({ type: 'success', message: t('toast.plugin.imported', { name: result.name }), timeout: 1800 })
+        Host.pushToast?.({
+          type: 'success',
+          message: t('toast.plugin.imported', { name: result.name }),
+          timeout: 1800,
+        })
       }
-      
+
       emit('import', result)
     } else {
       // 检查是否是需要显示专用弹窗的错误
@@ -369,7 +435,11 @@ async function doImport(file, overwrite = false, targetName = null) {
       if (errorCode === 'NAME_EXISTS') {
         // 名称冲突，显示冲突弹窗
         openImportConflictModal(file, result.folder_name, result.suggested_name)
-      } else if (errorCode === 'TYPE_MISMATCH' || errorCode === 'NO_TYPE_INFO' || errorCode === 'NO_TYPE_IN_FILENAME') {
+      } else if (
+        errorCode === 'TYPE_MISMATCH' ||
+        errorCode === 'NO_TYPE_INFO' ||
+        errorCode === 'NO_TYPE_IN_FILENAME'
+      ) {
         openImportErrorModal(errorCode, result.message, result.expected_type, result.actual_type)
       } else {
         importError.value = result.message || result.error || t('error.importFailed')
@@ -440,20 +510,28 @@ function handleExportComplete(result) {
 async function onViewPlugin(it) {
   const dir = String(it?.dir || it?.key || '')
   if (!dir) return
-  
+
   try {
     const result = await DataCatalog.getPluginDetail(dir)
     if (result.error) {
-      Host.pushToast?.({ type: 'error', message: `获取插件详情失败：${result.message || result.error}`, timeout: 2200 })
+      Host.pushToast?.({
+        type: 'error',
+        message: `获取插件详情失败：${result.message || result.error}`,
+        timeout: 2200,
+      })
       return
     }
-    
+
     detailPlugin.value = result.content || {}
     detailPluginDir.value = dir
     showDetailModal.value = true
   } catch (err) {
     console.error('[PluginsPanel] Get plugin detail error:', err)
-    Host.pushToast?.({ type: 'error', message: `获取插件详情失败：${err.message || err}`, timeout: 2200 })
+    Host.pushToast?.({
+      type: 'error',
+      message: `获取插件详情失败：${err.message || err}`,
+      timeout: 2200,
+    })
   }
 }
 
@@ -470,95 +548,117 @@ function handlePluginSaved(payload) {
 </script>
 
 <template>
-  <div
-    data-scope="plugins-view"
-    class="wf-panel"
-    :style="panelStyle"
-  >
+  <div data-scope="plugins-view" class="wf-panel" :style="panelStyle">
     <header class="wf-header">
       <div class="wf-title st-panel-title">
         <span class="wf-icon"><i data-lucide="puzzle"></i></span>
         {{ t('panel.plugins.title') }}
       </div>
       <div class="wf-header-actions">
-        <button class="wf-action-btn st-btn-shrinkable" type="button" :title="t('panel.plugins.importTitle')" @click="triggerImport" :disabled="importing">
+        <button
+          class="wf-action-btn st-btn-shrinkable"
+          type="button"
+          :title="t('panel.plugins.importTitle')"
+          @click="triggerImport"
+          :disabled="importing"
+        >
           <i data-lucide="download"></i><span class="st-btn-text">{{ t('common.import') }}</span>
         </button>
-        <button class="wf-action-btn st-btn-shrinkable" type="button" :title="t('panel.plugins.exportTitle')" @click="openExportModal" :disabled="plugins.length === 0">
+        <button
+          class="wf-action-btn st-btn-shrinkable"
+          type="button"
+          :title="t('panel.plugins.exportTitle')"
+          @click="openExportModal"
+          :disabled="plugins.length === 0"
+        >
           <i data-lucide="upload"></i><span class="st-btn-text">{{ t('common.export') }}</span>
         </button>
         <button class="wf-close" type="button" :title="t('common.close')" @click="close">✕</button>
       </div>
     </header>
-    <input ref="fileInputRef" type="file" accept=".json,.zip,.png" style="display: none;" @change="handleFileSelect" />
+    <input
+      ref="fileInputRef"
+      type="file"
+      accept=".json,.zip,.png"
+      style="display: none"
+      @change="handleFileSelect"
+    />
 
     <CustomScrollbar2 class="wf-body">
       <transition name="wf-content" mode="out-in" @after-enter="handleTransitionComplete">
         <div v-if="loading || importing" key="loading" class="wf-loading">
           {{ importing ? t('common.importing') : t('common.loading') }}
         </div>
-        
+
         <div v-else-if="importError" key="error" class="wf-error">
           {{ importError }}
           <button class="wf-error-dismiss" @click="importError = null">×</button>
         </div>
-        
+
         <div v-else key="content" class="wf-content">
           <div class="wf-hint">{{ t('panel.plugins.hint') }}</div>
 
           <div class="wf-list">
-        <div
-          v-for="it in plugins"
-          :key="it.key"
-          class="wf-card"
-        >
-          <div class="wf-main">
-            <div class="wf-avatar">
-              <img v-if="it.avatarUrl" :src="it.avatarUrl" alt="" class="wf-avatar-img" />
-              <i v-else-if="isLucide(it.icon)" :data-lucide="it.icon"></i>
-              <span v-else>{{ it.icon }}</span>
-            </div>
-            <div class="wf-texts">
-              <div class="wf-name">{{ it.name }}</div>
-              <div class="wf-folder">
-                <svg class="wf-folder-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                </svg>
-                <span>{{ getFolderName(it.dir) }}</span>
+            <div v-for="it in plugins" :key="it.key" class="wf-card">
+              <div class="wf-main">
+                <div class="wf-avatar">
+                  <img v-if="it.avatarUrl" :src="it.avatarUrl" alt="" class="wf-avatar-img" />
+                  <i v-else-if="isLucide(it.icon)" :data-lucide="it.icon"></i>
+                  <span v-else>{{ it.icon }}</span>
+                </div>
+                <div class="wf-texts">
+                  <div class="wf-name">{{ it.name }}</div>
+                  <div class="wf-folder">
+                    <svg
+                      class="wf-folder-icon"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                      ></path>
+                    </svg>
+                    <span>{{ getFolderName(it.dir) }}</span>
+                  </div>
+                  <div class="wf-desc">{{ it.desc }}</div>
+                </div>
               </div>
-              <div class="wf-desc">{{ it.desc }}</div>
+
+              <div class="wf-actions">
+                <button
+                  class="wf-btn st-btn-shrinkable"
+                  :class="{ active: it.enabled }"
+                  type="button"
+                  :disabled="pending[mkId(it.key)]"
+                  @click="onToggle(it)"
+                >
+                  {{ it.enabled ? t('common.enabled') : t('common.enable') }}
+                </button>
+                <button
+                  class="wf-btn st-btn-shrinkable"
+                  type="button"
+                  :disabled="pending[mkId(it.key)]"
+                  @click="onViewPlugin(it)"
+                >
+                  {{ t('common.view') }}
+                </button>
+                <button
+                  class="wf-btn wf-danger st-btn-shrinkable"
+                  type="button"
+                  :disabled="pending[mkId(it.key)]"
+                  @click="onDeletePlugin(it)"
+                >
+                  {{ t('common.delete') }}
+                </button>
+              </div>
             </div>
-          </div>
-
-
-          <div class="wf-actions">
-            <button
-              class="wf-btn st-btn-shrinkable"
-              :class="{ active: it.enabled }"
-              type="button"
-              :disabled="pending[mkId(it.key)]"
-              @click="onToggle(it)"
-            >
-              {{ it.enabled ? t('common.enabled') : t('common.enable') }}
-            </button>
-            <button
-              class="wf-btn st-btn-shrinkable"
-              type="button"
-              :disabled="pending[mkId(it.key)]"
-              @click="onViewPlugin(it)"
-            >
-              {{ t('common.view') }}
-            </button>
-            <button
-              class="wf-btn wf-danger st-btn-shrinkable"
-              type="button"
-              :disabled="pending[mkId(it.key)]"
-              @click="onDeletePlugin(it)"
-            >
-              {{ t('common.delete') }}
-            </button>
-          </div>
-        </div>
           </div>
         </div>
       </transition>
@@ -653,13 +753,48 @@ function handlePluginSaved(payload) {
   font-weight: 700;
   color: rgb(var(--st-color-text));
 }
-.wf-icon i { width: var(--st-icon-md); height: var(--st-icon-md); display: inline-block; }
+.wf-icon i {
+  width: var(--st-icon-md);
+  height: var(--st-icon-md);
+  display: inline-block;
+}
 
-.wf-header-actions { display: flex; align-items: center; gap: var(--st-spacing-md); }
-.wf-action-btn { appearance: none; display: inline-flex; align-items: center; gap: var(--st-spacing-xs); border: 1px solid rgba(var(--st-primary), 0.5); background: rgba(var(--st-primary), 0.08); color: rgb(var(--st-color-text)); border-radius: var(--st-radius-lg); padding: var(--st-btn-padding-sm); font-size: var(--st-font-sm); cursor: pointer; transition: transform var(--st-transition-normal), background var(--st-transition-normal), box-shadow var(--st-transition-normal); }
-.wf-action-btn i { width: var(--st-icon-sm); height: var(--st-icon-sm); display: inline-block; }
-.wf-action-btn:hover:not(:disabled) { background: rgba(var(--st-primary), 0.15); transform: translateY(-1px); box-shadow: var(--st-shadow-sm); }
-.wf-action-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.wf-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--st-spacing-md);
+}
+.wf-action-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--st-spacing-xs);
+  border: 1px solid rgba(var(--st-primary), 0.5);
+  background: rgba(var(--st-primary), 0.08);
+  color: rgb(var(--st-color-text));
+  border-radius: var(--st-radius-lg);
+  padding: var(--st-btn-padding-sm);
+  font-size: var(--st-font-sm);
+  cursor: pointer;
+  transition:
+    transform var(--st-transition-normal),
+    background var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
+}
+.wf-action-btn i {
+  width: var(--st-icon-sm);
+  height: var(--st-icon-sm);
+  display: inline-block;
+}
+.wf-action-btn:hover:not(:disabled) {
+  background: rgba(var(--st-primary), 0.15);
+  transform: translateY(-1px);
+  box-shadow: var(--st-shadow-sm);
+}
+.wf-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 .wf-close {
   appearance: none;
@@ -668,7 +803,10 @@ function handlePluginSaved(payload) {
   border-radius: var(--st-radius-lg);
   padding: var(--st-spacing-sm) var(--st-spacing-md);
   cursor: pointer;
-  transition: transform var(--st-transition-normal), background var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    transform var(--st-transition-normal),
+    background var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
 .wf-close:hover {
   background: rgb(var(--st-surface));
@@ -704,7 +842,11 @@ function handlePluginSaved(payload) {
   padding: var(--st-spacing-xl);
   min-height: var(--st-preview-height-sm);
   overflow: hidden;
-  transition: background var(--st-transition-normal), border-color var(--st-transition-normal), transform var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    background var(--st-transition-normal),
+    border-color var(--st-transition-normal),
+    transform var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
 .wf-card:hover {
   transform: translateY(-1px);
@@ -726,12 +868,25 @@ function handlePluginSaved(payload) {
   align-items: center;
   justify-content: center;
   font-size: var(--st-font-xl);
-  background: linear-gradient(135deg, var(--st-panel-avatar-gradient-start, rgba(var(--st-primary),0.12)), var(--st-panel-avatar-gradient-end, rgba(var(--st-accent),0.12)));
+  background: linear-gradient(
+    135deg,
+    var(--st-panel-avatar-gradient-start, rgba(var(--st-primary), 0.12)),
+    var(--st-panel-avatar-gradient-end, rgba(var(--st-accent), 0.12))
+  );
   border: 1px solid rgba(var(--st-border), 0.9);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
-.wf-avatar i { width: var(--st-icon-md); height: var(--st-icon-md); display: inline-block; }
-.wf-avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--st-radius-lg); }
+.wf-avatar i {
+  width: var(--st-icon-md);
+  height: var(--st-icon-md);
+  display: inline-block;
+}
+.wf-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--st-radius-lg);
+}
 .wf-texts {
   min-width: 0;
   overflow: hidden;
@@ -775,7 +930,18 @@ function handlePluginSaved(payload) {
 }
 .wf-url {
   margin-top: var(--st-spacing-xs);
-  font-family: var(--st-font-mono, 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  font-family: var(
+    --st-font-mono,
+    'JetBrains Mono',
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    'Liberation Mono',
+    'Courier New',
+    monospace
+  );
   font-size: var(--st-font-xs);
   color: rgba(var(--st-color-text), 0.6);
   word-break: break-all;
@@ -797,7 +963,11 @@ function handlePluginSaved(payload) {
   border-radius: var(--st-radius-lg);
   font-size: var(--st-font-sm);
   cursor: pointer;
-  transition: transform var(--st-transition-normal), box-shadow var(--st-transition-normal), background var(--st-transition-normal), border-color var(--st-transition-normal);
+  transition:
+    transform var(--st-transition-normal),
+    box-shadow var(--st-transition-normal),
+    background var(--st-transition-normal),
+    border-color var(--st-transition-normal);
   min-width: var(--st-btn-min-width);
   text-align: center;
 }
@@ -850,12 +1020,16 @@ function handlePluginSaved(payload) {
   line-height: 1;
 }
 
-.wf-error-dismiss:hover { background: rgba(220, 38, 38, 0.2); }
+.wf-error-dismiss:hover {
+  background: rgba(220, 38, 38, 0.2);
+}
 
 /* 内容过渡动画 */
 .wf-content-enter-active,
 .wf-content-leave-active {
-  transition: opacity var(--st-transition-medium), transform var(--st-transition-medium);
+  transition:
+    opacity var(--st-transition-medium),
+    transform var(--st-transition-medium);
 }
 
 .wf-content-enter-from {
@@ -869,7 +1043,11 @@ function handlePluginSaved(payload) {
 }
 
 @media (max-width: 640px) {
-  .wf-card { grid-template-columns: 1fr; }
-  .wf-actions { flex-direction: row; }
+  .wf-card {
+    grid-template-columns: 1fr;
+  }
+  .wf-actions {
+    flex-direction: row;
+  }
 }
 </style>

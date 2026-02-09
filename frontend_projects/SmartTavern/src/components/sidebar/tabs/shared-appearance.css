@@ -161,7 +161,7 @@ select.st-number-input {
   outline-offset: var(--st-outline-offset);
 }
 
-.bg-upload input[type="file"] {
+.bg-upload input[type='file'] {
   display: none;
 }
 
@@ -191,7 +191,9 @@ select.st-number-input {
   color: rgb(var(--st-color-text));
   font-size: var(--st-font-base);
   cursor: pointer;
-  transition: border-color var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    border-color var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
 
 .st-select-input:hover {
@@ -221,7 +223,10 @@ select.st-number-input {
   border-radius: var(--st-radius-lg);
   background: rgb(var(--st-surface));
   cursor: pointer;
-  transition: border-color var(--st-transition-normal), background-color var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    border-color var(--st-transition-normal),
+    background-color var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
 
 .st-radio-label:hover {
@@ -229,19 +234,19 @@ select.st-number-input {
   background: rgba(var(--st-surface-2), var(--st-opacity-50));
 }
 
-.st-radio-label input[type="radio"] {
+.st-radio-label input[type='radio'] {
   width: 18px;
   height: 18px;
   cursor: pointer;
   accent-color: rgb(var(--st-primary));
 }
 
-.st-radio-label input[type="radio"]:checked + span {
+.st-radio-label input[type='radio']:checked + span {
   font-weight: 600;
   color: rgb(var(--st-primary));
 }
 
-.st-radio-label:has(input[type="radio"]:checked) {
+.st-radio-label:has(input[type='radio']:checked) {
   border-color: rgba(var(--st-primary), var(--st-opacity-60));
   background: rgba(var(--st-primary), var(--st-opacity-08));
   box-shadow: var(--st-shadow-focus-sm) rgba(var(--st-primary), var(--st-opacity-10));

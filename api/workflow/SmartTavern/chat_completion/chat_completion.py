@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 SmartTavern AI 对话补全工作流 - API 封装层
 
@@ -7,15 +6,25 @@ SmartTavern AI 对话补全工作流 - API 封装层
 - 使用LLM配置调用AI
 - 保存响应到对话文件
 """
-from typing import Any, Dict, List
+
+from typing import Any
+
 import core
 
 from .impl import (
     chat_completion_non_streaming as _chat_completion_non_streaming,
+)
+from .impl import (
     chat_completion_streaming as _chat_completion_streaming,
-    process_messages_view_impl as _process_messages_view_impl,
+)
+from .impl import (
     chat_with_config_non_streaming as _chat_with_config_non_streaming,
+)
+from .impl import (
     chat_with_config_streaming as _chat_with_config_streaming,
+)
+from .impl import (
+    process_messages_view_impl as _process_messages_view_impl,
 )
 
 
@@ -50,8 +59,8 @@ from .impl import (
 )
 def complete(
     conversation_file: str,
-    llm_config_file: str = None,
-) -> Dict[str, Any]:
+    llm_config_file: str | None = None,
+) -> dict[str, Any]:
     return _chat_completion_non_streaming(
         conversation_file=conversation_file,
         llm_config_file=llm_config_file,
@@ -67,7 +76,7 @@ def complete(
         "properties": {
             "conversation_file": {"type": "string"},
             "view": {"type": "string", "enum": ["user_view", "assistant_view"]},
-            "output": {"type": "string", "enum": ["full", "history"], "default": "full"}
+            "output": {"type": "string", "enum": ["full", "history"], "default": "full"},
         },
         "required": ["conversation_file", "view"],
         "additionalProperties": False,
@@ -76,10 +85,7 @@ def complete(
         "type": "object",
         "properties": {
             "success": {"type": "boolean"},
-            "messages": {
-                "type": "array",
-                "items": {"type": "object", "additionalProperties": True}
-            },
+            "messages": {"type": "array", "items": {"type": "object", "additionalProperties": True}},
             "variables": {"type": "object", "additionalProperties": True},
             "error": {"type": "string"},
         },
@@ -91,7 +97,7 @@ def process_messages_view(
     conversation_file: str,
     view: str,
     output: str = "full",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     处理对话消息的指定视图（一体化）
 
@@ -130,10 +136,10 @@ def process_messages_view(
                     "type": "object",
                     "properties": {
                         "role": {"type": "string", "enum": ["system", "user", "assistant"]},
-                        "content": {"type": "string"}
+                        "content": {"type": "string"},
                     },
-                    "required": ["role", "content"]
-                }
+                    "required": ["role", "content"],
+                },
             },
             "stream": {"type": "boolean", "default": False},
             "custom_params": {"type": "object"},
@@ -142,7 +148,7 @@ def process_messages_view(
             "apply_regex": {"type": "boolean", "default": True},
             "save_result": {"type": "boolean", "default": False},
             "view": {"type": "string", "enum": ["user_view", "assistant_view"], "default": "assistant_view"},
-            "variables": {"type": "object"}
+            "variables": {"type": "object"},
         },
         "required": ["conversation_file", "messages"],
         "additionalProperties": False,
@@ -156,7 +162,7 @@ def process_messages_view(
             "response_time": {"type": "number"},
             "model_used": {"type": "string"},
             "finish_reason": {"type": "string"},
-            "error": {"type": "string"}
+            "error": {"type": "string"},
         },
         "required": ["success"],
         "additionalProperties": True,
@@ -164,15 +170,15 @@ def process_messages_view(
 )
 def chat_with_config(
     conversation_file: str,
-    messages: List[Dict[str, str]],
-    stream: bool = None,
-    custom_params: Dict[str, Any] = None,
+    messages: list[dict[str, str]],
+    stream: bool | None = None,
+    custom_params: dict[str, Any] | None = None,
     apply_preset: bool = True,
     apply_world_book: bool = True,
     apply_regex: bool = True,
     save_result: bool = False,
     view: str = "assistant_view",
-    variables: Dict[str, Any] = None,
+    variables: dict[str, Any] | None = None,
 ) -> Any:
     """
     使用当前对话配置进行AI调用
@@ -215,14 +221,11 @@ def chat_with_config(
     try:
         from fastapi.responses import StreamingResponse
     except Exception as e:
-        return {
-            "success": False,
-            "error": f"SSE不可用（依赖fastapi未就绪）: {str(e)}"
-        }
+        return {"success": False, "error": f"SSE不可用（依赖fastapi未就绪）: {e!s}"}
 
     import json
 
-    def _sse_line(obj: Dict[str, Any]) -> str:
+    def _sse_line(obj: dict[str, Any]) -> str:
         return "data: " + json.dumps(obj, ensure_ascii=False) + "\n\n"
 
     def _make_sse_generator():
@@ -276,7 +279,7 @@ def chat_with_config(
 )
 def complete_stream(
     conversation_file: str,
-    llm_config_file: str = None,
+    llm_config_file: str | None = None,
 ) -> Any:
     """
     流式补全：返回SSE
@@ -291,16 +294,13 @@ def complete_stream(
     try:
         from fastapi.responses import StreamingResponse
     except Exception as e:
-        return {
-            "success": False,
-            "error": f"SSE不可用（依赖fastapi未就绪）: {str(e)}"
-        }
-    
+        return {"success": False, "error": f"SSE不可用（依赖fastapi未就绪）: {e!s}"}
+
     import json
-    
-    def _sse_line(obj: Dict[str, Any]) -> str:
+
+    def _sse_line(obj: dict[str, Any]) -> str:
         return "data: " + json.dumps(obj, ensure_ascii=False) + "\n\n"
-    
+
     def _make_sse_generator():
         try:
             for event in _chat_completion_streaming(
@@ -311,7 +311,7 @@ def complete_stream(
         except Exception as e:
             yield _sse_line({"type": "error", "message": str(e)})
             yield _sse_line({"type": "end"})
-    
+
     return StreamingResponse(
         _make_sse_generator(),
         media_type="text/event-stream",

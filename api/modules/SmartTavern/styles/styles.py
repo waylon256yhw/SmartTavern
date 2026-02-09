@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 API 封装层：SmartTavern.styles
 
@@ -15,26 +14,29 @@ API 封装层：SmartTavern.styles
 """
 
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
+from typing import Any
+
 import core
+
 from .impl import (
-    list_themes_impl,
-    get_styles_switch_impl,
-    update_styles_switch_impl,
-    get_theme_detail_impl,
-    get_theme_entries_impl,
-    get_theme_asset_impl,
     delete_theme_impl,
     get_all_enabled_themes_impl,
-    get_page_backgrounds_hash_impl,
     get_page_background_impl,
+    get_page_backgrounds_hash_impl,
+    get_styles_switch_impl,
+    get_theme_asset_impl,
+    get_theme_detail_impl,
+    get_theme_entries_impl,
     list_page_backgrounds_impl,
-    upload_page_background_impl,
+    list_themes_impl,
+    update_styles_switch_impl,
     update_theme_file_impl,
+    upload_page_background_impl,
 )
 
-
 # ---------- 列出主题 ----------
+
 
 @core.register_api(
     path="smarttavern/styles/list_themes",
@@ -64,11 +66,7 @@ from .impl import (
         }
     ]
 }""",
-    input_schema={
-        "type": "object",
-        "properties": {},
-        "additionalProperties": False
-    },
+    input_schema={"type": "object", "properties": {}, "additionalProperties": False},
     output_schema={
         "type": "object",
         "properties": {
@@ -83,33 +81,31 @@ from .impl import (
                         "name": {"type": ["string", "null"]},
                         "description": {"type": ["string", "null"]},
                         "entries": {"type": "array", "items": {"type": "string"}},
-                        "enabled": {"type": "boolean"}
+                        "enabled": {"type": "boolean"},
                     },
                     "required": ["dir"],
-                    "additionalProperties": True
-                }
+                    "additionalProperties": True,
+                },
             },
             "errors": {
                 "type": "array",
                 "items": {
                     "type": "object",
-                    "properties": {
-                        "file": {"type": ["string", "null"]},
-                        "error": {"type": "string"}
-                    },
-                    "required": ["error"]
-                }
-            }
+                    "properties": {"file": {"type": ["string", "null"]}, "error": {"type": "string"}},
+                    "required": ["error"],
+                },
+            },
         },
         "required": ["folder", "total", "items"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
 )
-def list_themes(base_dir: Optional[str] = None) -> Dict[str, Any]:
+def list_themes(base_dir: str | None = None) -> dict[str, Any]:
     return list_themes_impl(base_dir=base_dir)
 
 
 # ---------- 获取主题开关文件 ----------
+
 
 @core.register_api(
     path="smarttavern/styles/get_styles_switch",
@@ -122,11 +118,7 @@ def list_themes(base_dir: Optional[str] = None) -> Dict[str, Any]:
     "enabled": ["demo-ocean.sttheme"],   # 启用的主题列表
     "disabled": []                       # 禁用的主题列表（可选）
 }""",
-    input_schema={
-        "type": "object",
-        "properties": {},
-        "additionalProperties": False
-    },
+    input_schema={"type": "object", "properties": {}, "additionalProperties": False},
     output_schema={
         "type": "object",
         "properties": {
@@ -137,14 +129,15 @@ def list_themes(base_dir: Optional[str] = None) -> Dict[str, Any]:
             "message": {"type": "string"},
         },
         "required": ["file"],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def get_styles_switch() -> Dict[str, Any]:
+def get_styles_switch() -> dict[str, Any]:
     return get_styles_switch_impl()
 
 
 # ---------- 更新主题开关文件 ----------
+
 
 @core.register_api(
     path="smarttavern/styles/update_styles_switch",
@@ -163,11 +156,9 @@ def get_styles_switch() -> Dict[str, Any]:
 """,
     input_schema={
         "type": "object",
-        "properties": {
-            "content": {"type": "object"}
-        },
+        "properties": {"content": {"type": "object"}},
         "required": ["content"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -179,14 +170,15 @@ def get_styles_switch() -> Dict[str, Any]:
             "message": {"type": "string"},
         },
         "required": ["file"],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def update_styles_switch(content: Dict[str, Any]) -> Dict[str, Any]:
+def update_styles_switch(content: dict[str, Any]) -> dict[str, Any]:
     return update_styles_switch_impl(content=content)
 
 
 # ---------- 获取主题详情 ----------
+
 
 @core.register_api(
     path="smarttavern/styles/get_theme_detail",
@@ -202,11 +194,11 @@ def update_styles_switch(content: Dict[str, Any]) -> Dict[str, Any]:
         "properties": {
             "theme_dir": {
                 "type": "string",
-                "description": "主题目录路径（POSIX 风格），例如 backend_projects/SmartTavern/styles/demo-ocean.sttheme"
+                "description": "主题目录路径（POSIX 风格），例如 backend_projects/SmartTavern/styles/demo-ocean.sttheme",
             }
         },
         "required": ["theme_dir"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -217,17 +209,18 @@ def update_styles_switch(content: Dict[str, Any]) -> Dict[str, Any]:
             "entries": {"type": "array", "items": {"type": "string"}},
             "manifest": {"type": ["object", "null"]},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def get_theme_detail(theme_dir: str) -> Dict[str, Any]:
+def get_theme_detail(theme_dir: str) -> dict[str, Any]:
     return get_theme_detail_impl(theme_dir=theme_dir)
 
 
 # ---------- 获取主题入口文件内容 ----------
+
 
 @core.register_api(
     path="smarttavern/styles/get_theme_entries",
@@ -256,14 +249,9 @@ def get_theme_detail(theme_dir: str) -> Dict[str, Any]:
 merged_pack 字段包含合并后的主题包，可直接传递给前端 ThemeManager.applyThemePack()。""",
     input_schema={
         "type": "object",
-        "properties": {
-            "theme_dir": {
-                "type": "string",
-                "description": "主题目录路径（POSIX 风格）"
-            }
-        },
+        "properties": {"theme_dir": {"type": "string", "description": "主题目录路径（POSIX 风格）"}},
         "required": ["theme_dir"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -281,33 +269,28 @@ merged_pack 字段包含合并后的主题包，可直接传递给前端 ThemeMa
                     "tokensDark": {"type": "object"},
                     "css": {"type": "string"},
                     "cssLight": {"type": "string"},
-                    "cssDark": {"type": "string"}
+                    "cssDark": {"type": "string"},
                 },
-                "additionalProperties": True
+                "additionalProperties": True,
             },
             "entries": {
                 "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "file": {"type": "string"},
-                        "content": {"type": "object"}
-                    }
-                }
+                "items": {"type": "object", "properties": {"file": {"type": "string"}, "content": {"type": "object"}}},
             },
             "errors": {"type": "array"},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def get_theme_entries(theme_dir: str) -> Dict[str, Any]:
+def get_theme_entries(theme_dir: str) -> dict[str, Any]:
     return get_theme_entries_impl(theme_dir=theme_dir)
 
 
 # ---------- 获取主题资产 ----------
+
 
 @core.register_api(
     path="smarttavern/styles/get_theme_asset",
@@ -320,14 +303,9 @@ def get_theme_entries(theme_dir: str) -> Dict[str, Any]:
 """,
     input_schema={
         "type": "object",
-        "properties": {
-            "file": {
-                "type": "string",
-                "description": "文件路径（POSIX 风格）"
-            }
-        },
+        "properties": {"file": {"type": "string", "description": "文件路径（POSIX 风格）"}},
         "required": ["file"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -337,17 +315,18 @@ def get_theme_entries(theme_dir: str) -> Dict[str, Any]:
             "size": {"type": "integer"},
             "content_base64": {"type": "string"},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def get_theme_asset(file: str) -> Dict[str, Any]:
+def get_theme_asset(file: str) -> dict[str, Any]:
     return get_theme_asset_impl(file=file)
 
 
 # ---------- 删除主题 ----------
+
 
 @core.register_api(
     path="smarttavern/styles/delete_theme",
@@ -364,11 +343,11 @@ def get_theme_asset(file: str) -> Dict[str, Any]:
         "properties": {
             "theme_dir": {
                 "type": "string",
-                "description": "主题目录路径（POSIX 风格），例如 backend_projects/SmartTavern/styles/demo-ocean.sttheme"
+                "description": "主题目录路径（POSIX 风格），例如 backend_projects/SmartTavern/styles/demo-ocean.sttheme",
             }
         },
         "required": ["theme_dir"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -376,17 +355,18 @@ def get_theme_asset(file: str) -> Dict[str, Any]:
             "success": {"type": "boolean"},
             "deleted_path": {"type": "string"},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": ["success"],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def delete_theme(theme_dir: str) -> Dict[str, Any]:
+def delete_theme(theme_dir: str) -> dict[str, Any]:
     return delete_theme_impl(theme_dir=theme_dir)
 
 
 # ---------- 获取所有启用主题的合并包 ----------
+
 
 @core.register_api(
     path="smarttavern/styles/get_all_enabled_themes",
@@ -411,19 +391,12 @@ def delete_theme(theme_dir: str) -> Dict[str, Any]:
 }
 
 merged_pack 可直接传递给前端 ThemeManager.applyThemePack()。""",
-    input_schema={
-        "type": "object",
-        "properties": {},
-        "additionalProperties": False
-    },
+    input_schema={"type": "object", "properties": {}, "additionalProperties": False},
     output_schema={
         "type": "object",
         "properties": {
             "enabled_count": {"type": "integer"},
-            "enabled_themes": {
-                "type": "array",
-                "items": {"type": "string"}
-            },
+            "enabled_themes": {"type": "array", "items": {"type": "string"}},
             "merged_pack": {
                 "type": ["object", "null"],
                 "properties": {
@@ -435,20 +408,21 @@ merged_pack 可直接传递给前端 ThemeManager.applyThemePack()。""",
                     "tokensDark": {"type": "object"},
                     "css": {"type": "string"},
                     "cssLight": {"type": "string"},
-                    "cssDark": {"type": "string"}
+                    "cssDark": {"type": "string"},
                 },
-                "additionalProperties": True
-            }
+                "additionalProperties": True,
+            },
         },
         "required": ["enabled_count", "enabled_themes"],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def get_all_enabled_themes() -> Dict[str, Any]:
+def get_all_enabled_themes() -> dict[str, Any]:
     return get_all_enabled_themes_impl()
 
 
 # ---------- 获取页面背景图片哈希 ----------
+
 
 @core.register_api(
     path="smarttavern/styles/get_page_backgrounds_hash",
@@ -483,32 +457,27 @@ def get_all_enabled_themes() -> Dict[str, Any]:
             "orientation": {
                 "type": "string",
                 "enum": ["landscape", "portrait"],
-                "description": "方向：landscape（横版）或 portrait（竖版）。不传则返回两者。"
+                "description": "方向：landscape（横版）或 portrait（竖版）。不传则返回两者。",
             }
         },
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
         "properties": {
-            "landscape": {
-                "type": "object",
-                "additionalProperties": {"type": ["string", "null"]}
-            },
-            "portrait": {
-                "type": "object",
-                "additionalProperties": {"type": ["string", "null"]}
-            },
-            "combined_hash": {"type": ["string", "null"]}
+            "landscape": {"type": "object", "additionalProperties": {"type": ["string", "null"]}},
+            "portrait": {"type": "object", "additionalProperties": {"type": ["string", "null"]}},
+            "combined_hash": {"type": ["string", "null"]},
         },
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def get_page_backgrounds_hash(orientation: Optional[str] = None) -> Dict[str, Any]:
+def get_page_backgrounds_hash(orientation: str | None = None) -> dict[str, Any]:
     return get_page_backgrounds_hash_impl(orientation=orientation)
 
 
 # ---------- 获取页面背景图片 ----------
+
 
 @core.register_api(
     path="smarttavern/styles/get_page_background",
@@ -533,20 +502,16 @@ def get_page_backgrounds_hash(orientation: Optional[str] = None) -> Dict[str, An
     input_schema={
         "type": "object",
         "properties": {
-            "page": {
-                "type": "string",
-                "enum": ["HomePage", "ThreadedChat", "SandboxChat"],
-                "description": "页面名称"
-            },
+            "page": {"type": "string", "enum": ["HomePage", "ThreadedChat", "SandboxChat"], "description": "页面名称"},
             "orientation": {
                 "type": "string",
                 "enum": ["landscape", "portrait"],
                 "default": "landscape",
-                "description": "方向：landscape（横版）或 portrait（竖版）"
-            }
+                "description": "方向：landscape（横版）或 portrait（竖版）",
+            },
         },
         "required": ["page"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -559,16 +524,17 @@ def get_page_backgrounds_hash(orientation: Optional[str] = None) -> Dict[str, An
             "size": {"type": "integer"},
             "content_base64": {"type": "string"},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def get_page_background(page: str, orientation: str = "landscape") -> Dict[str, Any]:
+def get_page_background(page: str, orientation: str = "landscape") -> dict[str, Any]:
     return get_page_background_impl(page=page, orientation=orientation)
 
 
 # ---------- 列出所有背景图片 ----------
+
 
 @core.register_api(
     path="smarttavern/styles/list_page_backgrounds",
@@ -591,11 +557,7 @@ def get_page_background(page: str, orientation: str = "landscape") -> Dict[str, 
     }
 }
 """,
-    input_schema={
-        "type": "object",
-        "properties": {},
-        "additionalProperties": False
-    },
+    input_schema={"type": "object", "properties": {}, "additionalProperties": False},
     output_schema={
         "type": "object",
         "properties": {
@@ -607,9 +569,9 @@ def get_page_background(page: str, orientation: str = "landscape") -> Dict[str, 
                     "properties": {
                         "file": {"type": "string"},
                         "hash": {"type": ["string", "null"]},
-                        "size": {"type": "integer"}
-                    }
-                }
+                        "size": {"type": "integer"},
+                    },
+                },
             },
             "portrait": {
                 "type": "object",
@@ -618,19 +580,20 @@ def get_page_background(page: str, orientation: str = "landscape") -> Dict[str, 
                     "properties": {
                         "file": {"type": "string"},
                         "hash": {"type": ["string", "null"]},
-                        "size": {"type": "integer"}
-                    }
-                }
-            }
+                        "size": {"type": "integer"},
+                    },
+                },
+            },
         },
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def list_page_backgrounds() -> Dict[str, Any]:
+def list_page_backgrounds() -> dict[str, Any]:
     return list_page_backgrounds_impl()
 
 
 # ---------- 上传/更新背景图片 ----------
+
 
 @core.register_api(
     path="smarttavern/styles/upload_page_background",
@@ -662,23 +625,16 @@ def list_page_backgrounds() -> Dict[str, Any]:
     input_schema={
         "type": "object",
         "properties": {
-            "page": {
-                "type": "string",
-                "enum": ["HomePage", "ThreadedChat", "SandboxChat"],
-                "description": "页面名称"
-            },
+            "page": {"type": "string", "enum": ["HomePage", "ThreadedChat", "SandboxChat"], "description": "页面名称"},
             "orientation": {
                 "type": "string",
                 "enum": ["landscape", "portrait"],
-                "description": "方向：landscape（横版）或 portrait（竖版）"
+                "description": "方向：landscape（横版）或 portrait（竖版）",
             },
-            "image_base64": {
-                "type": "string",
-                "description": "Base64 编码的图片内容"
-            }
+            "image_base64": {"type": "string", "description": "Base64 编码的图片内容"},
         },
         "required": ["page", "orientation", "image_base64"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -690,17 +646,18 @@ def list_page_backgrounds() -> Dict[str, Any]:
             "hash": {"type": "string"},
             "size": {"type": "integer"},
             "message": {"type": "string"},
-            "error": {"type": "string"}
+            "error": {"type": "string"},
         },
         "required": ["success"],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def upload_page_background(page: str, orientation: str, image_base64: str) -> Dict[str, Any]:
+def upload_page_background(page: str, orientation: str, image_base64: str) -> dict[str, Any]:
     return upload_page_background_impl(page=page, orientation=orientation, image_base64=image_base64)
 
 
 # ---------- 更新主题 manifest.json 文件 ----------
+
 
 @core.register_api(
     path="smarttavern/styles/update_theme_file",
@@ -716,21 +673,15 @@ def upload_page_background(page: str, orientation: str, image_base64: str) -> Di
     input_schema={
         "type": "object",
         "properties": {
-            "theme_dir": {
-                "type": "string",
-                "description": "主题目录路径（POSIX 风格）"
-            },
+            "theme_dir": {"type": "string", "description": "主题目录路径（POSIX 风格）"},
             "payload": {
                 "type": "object",
-                "properties": {
-                    "name": {"type": "string"},
-                    "description": {"type": "string"}
-                },
-                "description": "要更新的字段"
-            }
+                "properties": {"name": {"type": "string"}, "description": {"type": "string"}},
+                "description": "要更新的字段",
+            },
         },
         "required": ["theme_dir", "payload"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -741,11 +692,11 @@ def upload_page_background(page: str, orientation: str, image_base64: str) -> Di
             "description": {"type": ["string", "null"]},
             "manifest": {"type": ["object", "null"]},
             "error": {"type": "string"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
         "required": [],
-        "additionalProperties": True
+        "additionalProperties": True,
     },
 )
-def update_theme_file(theme_dir: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+def update_theme_file(theme_dir: str, payload: dict[str, Any]) -> dict[str, Any]:
     return update_theme_file_impl(theme_dir=theme_dir, payload=payload)

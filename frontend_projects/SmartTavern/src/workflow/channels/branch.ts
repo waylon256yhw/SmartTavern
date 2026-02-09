@@ -18,146 +18,146 @@
 
 /** 分支表请求 Payload */
 export interface BranchTableRequestPayload {
-  conversationFile: string;
-  tag?: string;
+  conversationFile: string
+  tag?: string
 }
 
 /** 分支表成功 Payload */
 export interface BranchTableSuccessPayload {
-  conversationFile: string;
-  result: any;
-  tag?: string;
+  conversationFile: string
+  result: any
+  tag?: string
 }
 
 /** 分支表失败 Payload */
 export interface BranchTableFailurePayload {
-  conversationFile?: string;
-  message: string;
-  detail?: any;
-  tag?: string;
+  conversationFile?: string
+  message: string
+  detail?: any
+  tag?: string
 }
 
 /** 切换分支请求 Payload */
 export interface BranchSwitchRequestPayload {
-  conversationFile: string;
-  targetJ: number;
-  tag?: string;
+  conversationFile: string
+  targetJ: number
+  tag?: string
 }
 
 /** 切换分支成功 Payload */
 export interface BranchSwitchSuccessPayload {
-  conversationFile: string;
-  node?: any;
-  doc?: any;
-  tag?: string;
+  conversationFile: string
+  node?: any
+  doc?: any
+  tag?: string
 }
 
 /** 切换分支失败 Payload */
 export interface BranchSwitchFailurePayload {
-  conversationFile?: string;
-  message: string;
-  detail?: any;
-  tag?: string;
+  conversationFile?: string
+  message: string
+  detail?: any
+  tag?: string
 }
 
 /** 删除分支请求 Payload */
 export interface BranchDeleteRequestPayload {
-  conversationFile: string;
-  nodeId: string;
-  tag?: string;
+  conversationFile: string
+  nodeId: string
+  tag?: string
 }
 
 /** 删除分支成功 Payload */
 export interface BranchDeleteSuccessPayload {
-  conversationFile: string;
-  doc?: any;
-  active_path?: string[];
-  switchedToNodeId?: string;
-  tag?: string;
+  conversationFile: string
+  doc?: any
+  active_path?: string[]
+  switchedToNodeId?: string
+  tag?: string
 }
 
 /** 删除分支失败 Payload */
 export interface BranchDeleteFailurePayload {
-  conversationFile?: string;
-  nodeId?: string;
-  message: string;
-  detail?: any;
-  tag?: string;
+  conversationFile?: string
+  nodeId?: string
+  message: string
+  detail?: any
+  tag?: string
 }
 
 /** 重试助手消息请求 Payload */
 export interface BranchRetryAssistRequestPayload {
-  conversationFile: string;
-  retryNodeId: string;
-  newNodeId?: string;
-  role?: 'assistant';
-  content?: string;
-  tag?: string;
+  conversationFile: string
+  retryNodeId: string
+  newNodeId?: string
+  role?: 'assistant'
+  content?: string
+  tag?: string
 }
 
 /** 重试助手消息成功 Payload */
 export interface BranchRetryAssistSuccessPayload {
-  conversationFile: string;
-  doc?: any;
-  newNodeId: string;
-  tag?: string;
+  conversationFile: string
+  doc?: any
+  newNodeId: string
+  tag?: string
 }
 
 /** 重试助手消息失败 Payload */
 export interface BranchRetryAssistFailurePayload {
-  conversationFile?: string;
-  retryNodeId?: string;
-  message: string;
-  detail?: any;
-  tag?: string;
+  conversationFile?: string
+  retryNodeId?: string
+  message: string
+  detail?: any
+  tag?: string
 }
 
 /** 重试用户消息请求 Payload */
 export interface BranchRetryUserRequestPayload {
-  conversationFile: string;
-  userNodeId: string;
-  tag?: string;
+  conversationFile: string
+  userNodeId: string
+  tag?: string
 }
 
 /** 重试用户消息成功 Payload */
 export interface BranchRetryUserSuccessPayload {
-  conversationFile: string;
-  action: 'retry_assistant' | 'create_assistant';
-  assistantNodeId?: string;
-  doc?: any;
-  tag?: string;
+  conversationFile: string
+  action: 'retry_assistant' | 'create_assistant'
+  assistantNodeId?: string
+  doc?: any
+  tag?: string
 }
 
 /** 重试用户消息失败 Payload */
 export interface BranchRetryUserFailurePayload {
-  conversationFile?: string;
-  userNodeId?: string;
-  message: string;
-  detail?: any;
-  tag?: string;
+  conversationFile?: string
+  userNodeId?: string
+  message: string
+  detail?: any
+  tag?: string
 }
 
 /** 修剪分支请求 Payload */
 export interface BranchTruncateRequestPayload {
-  conversationFile: string;
-  nodeId: string;
-  tag?: string;
+  conversationFile: string
+  nodeId: string
+  tag?: string
 }
 
 /** 修剪分支成功 Payload */
 export interface BranchTruncateSuccessPayload {
-  conversationFile: string;
-  doc?: any;
-  tag?: string;
+  conversationFile: string
+  doc?: any
+  tag?: string
 }
 
 /** 修剪分支失败 Payload */
 export interface BranchTruncateFailurePayload {
-  conversationFile?: string;
-  nodeId?: string;
-  message: string;
-  detail?: any;
-  tag?: string;
+  conversationFile?: string
+  nodeId?: string
+  message: string
+  detail?: any
+  tag?: string
 }
 
 // ============ Event Constants ============

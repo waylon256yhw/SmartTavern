@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Start all backend APIs for ModularFlow-Framework.
 
@@ -15,14 +14,16 @@ Notes:
  - Auto-discovery relies on each module calling core.register_api at import time.
  - --reload 使用 Uvicorn factory 模式，满足“必须以导入字符串传入应用”的要求，避免警告。
 """
+
 from __future__ import annotations
+
 import argparse
+import importlib
+import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
-import importlib
-import os
 
 REPO_ROOT = Path(__file__).resolve().parent
 
@@ -61,6 +62,7 @@ def _enable_inproc_defaults() -> None:
     except Exception:
         pass
 
+
 def _iter_py_modules(base_dir: Path, base_pkg: str):
     """
     遍历 base_dir 下所有 .py 模块，生成完整模块名（跳过 __* 与 test*/example*）
@@ -73,10 +75,11 @@ def _iter_py_modules(base_dir: Path, base_pkg: str):
             continue
         rel = p.relative_to(REPO_ROOT).with_suffix("")
         parts = list(rel.parts)
-        if parts[:len(base_pkg.split("."))] != base_pkg.split("."):
+        if parts[: len(base_pkg.split("."))] != base_pkg.split("."):
             continue
         mod = ".".join(parts)
         yield mod
+
 
 def _import_all_under(base_dir: Path, base_pkg: str) -> int:
     """导入 base_pkg 下所有模块，返回成功数量"""
@@ -88,6 +91,7 @@ def _import_all_under(base_dir: Path, base_pkg: str) -> int:
         except Exception as e:
             print(f"[WARN] Failed to import {mod}: {type(e).__name__}: {e}")
     return count
+
 
 def load_all_api_modules() -> int:
     """
@@ -118,22 +122,28 @@ def load_all_api_modules() -> int:
         total += _import_all_under(api_plugins_dir, "api.plugins")
     return total
 
+
 def _bootstrap_gateway(config_file=None):
     """加载所有 API 模块、插件，创建并配置网关实例。"""
     imported = load_all_api_modules()
     print(f"[INFO] Imported {imported} backend modules under 'api.modules' and 'api.workflow'.")
     try:
         from core.plugins_backend_loader import load_backend_plugin_apis
+
         plug_res = load_backend_plugin_apis(manifest_only=True, project="SmartTavern")
-        print(f"[INFO] Plugin backend loader: manifests={plug_res.manifests_read}, imported={len(plug_res.imported_modules)}, skipped={len(plug_res.skipped_entries)}")
+        print(
+            f"[INFO] Plugin backend loader: manifests={plug_res.manifests_read}, imported={len(plug_res.imported_modules)}, skipped={len(plug_res.skipped_entries)}"
+        )
     except Exception as e:
         print(f"[WARN] Plugin backend loader failed: {type(e).__name__}: {e}")
 
     import core
+
     reg = core.get_registry()
     print(f"[INFO] Registered API functions: {len(reg.list_functions())}")
 
     from core.api_gateway import get_api_gateway
+
     gateway = get_api_gateway(config_file=config_file)
     return gateway
 
@@ -154,6 +164,7 @@ def create_app():
 
     return gateway.app
 
+
 def main():
     _enable_inproc_defaults()
     parser = argparse.ArgumentParser(description="Start all backend APIs (API Gateway)")
@@ -162,10 +173,10 @@ def main():
     parser.add_argument("--background", action="store_true", help="Run in background thread (non-blocking)")
     parser.add_argument("--config", default=None, help="Optional api-config.json path")
     parser.add_argument("--reload", action="store_true", help="Enable uvicorn reload (development)")
-    parser.add_argument("--serve", action="store_true",
-                        help="Build frontend and serve everything on one port (production mode)")
-    parser.add_argument("--rebuild", action="store_true",
-                        help="Force rebuild frontend (use with --serve)")
+    parser.add_argument(
+        "--serve", action="store_true", help="Build frontend and serve everything on one port (production mode)"
+    )
+    parser.add_argument("--rebuild", action="store_true", help="Force rebuild frontend (use with --serve)")
     args = parser.parse_args()
 
     if args.serve:
@@ -184,7 +195,9 @@ def main():
 
         target = "start_all_apis:create_app"
         print(f"[INFO] Starting API Gateway with reload on http://{args.host}:{args.port}")
-        uvicorn.run(target, host=args.host, port=args.port, log_level="info", reload=True, factory=True, access_log=True)
+        uvicorn.run(
+            target, host=args.host, port=args.port, log_level="info", reload=True, factory=True, access_log=True
+        )
         return
 
     # 非 reload 情况：直接通过网关对象启动（无警告）
@@ -205,6 +218,7 @@ def main():
         print("[INFO] API server started in background. Press Ctrl+C to exit this launcher.")
         try:
             import time
+
             while True:
                 time.sleep(3600)
         except KeyboardInterrupt:
@@ -213,6 +227,7 @@ def main():
     else:
         # 前台模式：uvicorn 在 start_server 中阻塞运行
         pass
+
 
 if __name__ == "__main__":
     main()

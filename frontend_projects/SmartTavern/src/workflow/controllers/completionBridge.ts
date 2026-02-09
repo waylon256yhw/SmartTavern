@@ -36,10 +36,14 @@ try {
   Host.events.on('workflow.router.set', (provider: any) => {
     if (provider && typeof provider.call === 'function') {
       __router = provider as RouterProvider
-      try { if (typeof window !== 'undefined') (window as any).STPromptRouter = provider } catch (_) {}
+      try {
+        if (typeof window !== 'undefined') (window as any).STPromptRouter = provider
+      } catch (_) {}
     } else {
       __router = null
-      try { if (typeof window !== 'undefined') (window as any).STPromptRouter = null } catch (_) {}
+      try {
+        if (typeof window !== 'undefined') (window as any).STPromptRouter = null
+      } catch (_) {}
     }
   })
 } catch (_) {}
@@ -51,7 +55,7 @@ function buildKey({ tag, conversationFile }: { tag?: string; conversationFile?: 
 function normalizeRequest(p: any = {}): NormalizedRequest {
   const conversationFile = String(p.conversationFile || '').trim()
   const llmConfigFile = p.llmConfigFile ? String(p.llmConfigFile).trim() : null
-  const mode = (p.mode === 'stream' || p.mode === 'single') ? p.mode : 'auto'
+  const mode = p.mode === 'stream' || p.mode === 'single' ? p.mode : 'auto'
   const tag = p.tag ? String(p.tag) : undefined
   if (!conversationFile) {
     throw new Error('[completionBridge] conversationFile required')
@@ -64,90 +68,167 @@ export function initCompletionBridge(): DisposerFn {
   const offs: DisposerFn[] = []
 
   function release(key: string): void {
-    try { active.delete(key) } catch (_) {}
+    try {
+      active.delete(key)
+    } catch (_) {}
   }
 
   function emitError(message: string, detail: any, info: any = {}): void {
     try {
-      Host.events.emit(Completion.EVT_COMPLETION_ERROR, { message: String(message || 'Unknown error'), detail, ...info })
+      Host.events.emit(Completion.EVT_COMPLETION_ERROR, {
+        message: String(message || 'Unknown error'),
+        detail,
+        ...info,
+      })
     } catch (_) {}
     try {
-      Host.pushToast?.({ type: 'error', message: String(message || i18n.t('workflow.controllers.completion.completionFail')), timeout: 2500 })
+      Host.pushToast?.({
+        type: 'error',
+        message: String(message || i18n.t('workflow.controllers.completion.completionFail')),
+        timeout: 2500,
+      })
     } catch (_) {}
   }
 
-  offs.push(Host.events.on(Completion.EVT_COMPLETION_REQ, async (payload: any) => {
-    let req: NormalizedRequest
-    try {
-      req = normalizeRequest(payload)
-    } catch (e: any) {
-      emitError(e?.message || e, e, {})
-      return
-    }
-
-    const key = buildKey(req)
-    if (active.has(key)) {
+  offs.push(
+    Host.events.on(Completion.EVT_COMPLETION_REQ, async (payload: any) => {
+      let req: NormalizedRequest
       try {
-        active.get(key)?.abort?.()
-        Host.events.emit(Completion.EVT_COMPLETION_ABORTED, { tag: req.tag, conversationFile: req.conversationFile })
-      } catch (_) {}
-      release(key)
-    }
-
-    const info = { tag: req.tag, conversationFile: req.conversationFile }
-
-    const callbacks = {
-      onChunk(content: string) { try { Host.events.emit(Completion.EVT_COMPLETION_CHUNK, { content, ...info }) } catch (_) {} },
-      onFinish(finish_reason: string) { try { Host.events.emit(Completion.EVT_COMPLETION_FINISH, { finish_reason, ...info }) } catch (_) {} },
-      onUsage(usage: any) { try { Host.events.emit(Completion.EVT_COMPLETION_USAGE, { usage, ...info }) } catch (_) {} },
-      onSaved({ node_id, doc, usage, content }: any) { try { Host.events.emit(Completion.EVT_COMPLETION_SAVED, { node_id, doc, usage, content, ...info }) } catch (_) {} },
-      onError(message: string) { emitError(message, null, info) },
-      onEnd() { try { Host.events.emit(Completion.EVT_COMPLETION_END, { ...info }) } catch (_) {}; release(key) },
-    }
-
-    try {
-      // 路由器严格模式：必须存在
-      if (!__router || typeof __router.call !== 'function') {
-        emitError(i18n.t('workflow.controllers.completion.routerNotInjected'), null, info)
-        callbacks.onEnd?.()
+        req = normalizeRequest(payload)
+      } catch (e: any) {
+        emitError(e?.message || e, e, {})
         return
       }
-      const action = (req.mode === 'stream') ? 'completion.stream' : (req.mode === 'single' ? 'completion.single' : 'completion.auto')
-      const maybe = await __router.call(action, req, callbacks)
-      if (maybe && typeof maybe.abort === 'function') {
-        active.set(key, { abort: maybe.abort, info })
-      }
-    } catch (e: any) {
-      emitError(e?.message || e, e, info)
-      callbacks.onEnd?.()
-    }
-  }))
 
-  offs.push(Host.events.on(Completion.EVT_COMPLETION_ABORT, (payload: any = {}) => {
-    const key = buildKey({ tag: payload.tag, conversationFile: payload.conversationFile })
-    const rec = active.get(key)
-    if (!rec) {
-      for (const [k, v] of active.entries()) {
-        try { v.abort?.() } catch (_) {}
-        try { Host.events.emit(Completion.EVT_COMPLETION_ABORTED, { tag: v.info?.tag, conversationFile: v.info?.conversationFile }) } catch (_) {}
-        release(k)
+      const key = buildKey(req)
+      if (active.has(key)) {
+        try {
+          active.get(key)?.abort?.()
+          Host.events.emit(Completion.EVT_COMPLETION_ABORTED, {
+            tag: req.tag,
+            conversationFile: req.conversationFile,
+          })
+        } catch (_) {}
+        release(key)
       }
-      return
-    }
-    try { rec.abort?.() } catch (_) {}
-    try { Host.events.emit(Completion.EVT_COMPLETION_ABORTED, { tag: rec.info?.tag, conversationFile: rec.info?.conversationFile }) } catch (_) {}
-    release(key)
-    try { Host.pushToast?.({ type: 'warning', message: i18n.t('workflow.controllers.completion.completionCancelled'), timeout: 1500 }) } catch (_) {}
-  }))
+
+      const info = { tag: req.tag, conversationFile: req.conversationFile }
+
+      const callbacks = {
+        onChunk(content: string) {
+          try {
+            Host.events.emit(Completion.EVT_COMPLETION_CHUNK, { content, ...info })
+          } catch (_) {}
+        },
+        onFinish(finish_reason: string) {
+          try {
+            Host.events.emit(Completion.EVT_COMPLETION_FINISH, { finish_reason, ...info })
+          } catch (_) {}
+        },
+        onUsage(usage: any) {
+          try {
+            Host.events.emit(Completion.EVT_COMPLETION_USAGE, { usage, ...info })
+          } catch (_) {}
+        },
+        onSaved({ node_id, doc, usage, content }: any) {
+          try {
+            Host.events.emit(Completion.EVT_COMPLETION_SAVED, {
+              node_id,
+              doc,
+              usage,
+              content,
+              ...info,
+            })
+          } catch (_) {}
+        },
+        onError(message: string) {
+          emitError(message, null, info)
+        },
+        onEnd() {
+          try {
+            Host.events.emit(Completion.EVT_COMPLETION_END, { ...info })
+          } catch (_) {}
+          release(key)
+        },
+      }
+
+      try {
+        // 路由器严格模式：必须存在
+        if (!__router || typeof __router.call !== 'function') {
+          emitError(i18n.t('workflow.controllers.completion.routerNotInjected'), null, info)
+          callbacks.onEnd?.()
+          return
+        }
+        const action =
+          req.mode === 'stream'
+            ? 'completion.stream'
+            : req.mode === 'single'
+              ? 'completion.single'
+              : 'completion.auto'
+        const maybe = await __router.call(action, req, callbacks)
+        if (maybe && typeof maybe.abort === 'function') {
+          active.set(key, { abort: maybe.abort, info })
+        }
+      } catch (e: any) {
+        emitError(e?.message || e, e, info)
+        callbacks.onEnd?.()
+      }
+    }),
+  )
+
+  offs.push(
+    Host.events.on(Completion.EVT_COMPLETION_ABORT, (payload: any = {}) => {
+      const key = buildKey({ tag: payload.tag, conversationFile: payload.conversationFile })
+      const rec = active.get(key)
+      if (!rec) {
+        for (const [k, v] of active.entries()) {
+          try {
+            v.abort?.()
+          } catch (_) {}
+          try {
+            Host.events.emit(Completion.EVT_COMPLETION_ABORTED, {
+              tag: v.info?.tag,
+              conversationFile: v.info?.conversationFile,
+            })
+          } catch (_) {}
+          release(k)
+        }
+        return
+      }
+      try {
+        rec.abort?.()
+      } catch (_) {}
+      try {
+        Host.events.emit(Completion.EVT_COMPLETION_ABORTED, {
+          tag: rec.info?.tag,
+          conversationFile: rec.info?.conversationFile,
+        })
+      } catch (_) {}
+      release(key)
+      try {
+        Host.pushToast?.({
+          type: 'warning',
+          message: i18n.t('workflow.controllers.completion.completionCancelled'),
+          timeout: 1500,
+        })
+      } catch (_) {}
+    }),
+  )
 
   return () => {
     try {
-      offs.forEach(fn => { try { fn?.() } catch (_) {} })
+      offs.forEach((fn) => {
+        try {
+          fn?.()
+        } catch (_) {}
+      })
       offs.length = 0
     } catch (_) {}
     try {
       for (const [k, v] of active.entries()) {
-        try { v.abort?.() } catch (_) {}
+        try {
+          v.abort?.()
+        } catch (_) {}
         release(k)
       }
     } catch (_) {}

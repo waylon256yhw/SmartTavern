@@ -19,9 +19,9 @@ interface SandboxPermissions {
 }
 
 interface SandboxOptions {
-  clientOrigin?: string  // Expected origin of client messages. Use specific origin in production.
-  timeoutMs?: number  // Request timeout for RPC-like calls.
-  permissions?: SandboxPermissions  // Reserved permission gates
+  clientOrigin?: string // Expected origin of client messages. Use specific origin in production.
+  timeoutMs?: number // Request timeout for RPC-like calls.
+  permissions?: SandboxPermissions // Reserved permission gates
 }
 
 interface SandboxMessage {
@@ -55,11 +55,14 @@ interface SandboxHost {
 /**
  * Create a sandbox host bound to an iframe element.
  */
-export function createSandboxHost(iframe: HTMLIFrameElement, options: SandboxOptions = {}): SandboxHost {
+export function createSandboxHost(
+  iframe: HTMLIFrameElement,
+  options: SandboxOptions = {},
+): SandboxHost {
   if (!iframe || !(iframe instanceof HTMLIFrameElement)) {
     throw new Error('[SandboxHost] iframe element required')
   }
-  
+
   const {
     clientOrigin = '*',
     timeoutMs = DEFAULT_TIMEOUT,

@@ -15,7 +15,8 @@ SmartTavern Prompt RAW Workflow Registration (prompt_raw.py)
 输出:
 - messages: 完整提示词（prefix + in-chat 注入），每条结构 {role, content, source}（字段顺序: role → content → source）
 """
-from typing import Any, Dict, List, Optional
+
+from typing import Any
 
 import core  # type: ignore
 
@@ -38,17 +39,17 @@ from .impl import assemble_full as _assemble_full
                     "properties": {
                         "role": {"type": "string", "enum": ["system", "user", "assistant"]},
                         "content": {"type": "string"},
-                        "source": {"type": "object", "additionalProperties": True}
+                        "source": {"type": "object", "additionalProperties": True},
                     },
                     "required": ["role", "content"],
-                    "additionalProperties": True
-                }
+                    "additionalProperties": True,
+                },
             },
             "character": {"type": "object", "additionalProperties": True},
             "persona": {"type": "object", "additionalProperties": True},
-            "variables": {"type": "object", "additionalProperties": True}
+            "variables": {"type": "object", "additionalProperties": True},
         },
-        "required": ["presets", "history"]
+        "required": ["presets", "history"],
     },
     output_schema={
         "type": "object",
@@ -60,23 +61,23 @@ from .impl import assemble_full as _assemble_full
                     "properties": {
                         "role": {"type": "string", "enum": ["system", "user", "assistant"]},
                         "content": {"type": "string"},
-                        "source": {"type": "object", "additionalProperties": True}
+                        "source": {"type": "object", "additionalProperties": True},
                     },
-                    "required": ["role", "content", "source"]
-                }
+                    "required": ["role", "content", "source"],
+                },
             }
         },
-        "required": ["messages"]
+        "required": ["messages"],
     },
 )
 async def assemble_full(
-    presets: Dict[str, Any],
-    history: List[Dict[str, Any]],
+    presets: dict[str, Any],
+    history: list[dict[str, Any]],
     world_books: Any = None,
-    character: Optional[Dict[str, Any]] = None,
-    persona: Optional[Dict[str, Any]] = None,
-    variables: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    character: dict[str, Any] | None = None,
+    persona: dict[str, Any] | None = None,
+    variables: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """
     适配器：转发到实现层（impl.py），遵循 “API 优先 / 解耦” 原则。
     """
@@ -95,6 +96,12 @@ if __name__ == "__main__":
     # 请通过 API 网关运行或使用测试脚本进行验证：
     #   python api/workflow/smarttavern/prompt_raw/test_prompt_workflow.py
     import json
-    print(json.dumps({
-        "message": "This file registers the RAW workflow API. Please run the API gateway or the test script instead."
-    }, ensure_ascii=False))
+
+    print(
+        json.dumps(
+            {
+                "message": "This file registers the RAW workflow API. Please run the API gateway or the test script instead."
+            },
+            ensure_ascii=False,
+        )
+    )

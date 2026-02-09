@@ -34,11 +34,7 @@ function workflowBundlePlugin(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [
-    vue(),
-    vueDevTools(),
-    workflowBundlePlugin(),
-  ],
+  plugins: [vue(), vueDevTools(), workflowBundlePlugin()],
   resolve: {
     alias: {
       '@': srcDir,
@@ -54,7 +50,7 @@ export default defineConfig({
           'workflow-core': [
             './src/services/dataCatalog.ts',
             './src/workflow/core/host.ts',
-            './src/stores/chatVariables.ts'
+            './src/stores/chatVariables.ts',
           ],
         },
       },

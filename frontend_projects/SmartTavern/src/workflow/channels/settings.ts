@@ -1,6 +1,6 @@
 /**
  * 设置管理事件通道 (Settings Channel)
- * 
+ *
  * 负责处理对话设置的读取和更新操作。
  * 组件通过此通道请求获取或更新对话设置（角色、人设、预设等），
  * 桥接器负责调用ChatBranches服务并返回结果。
@@ -12,13 +12,13 @@ import { ref, type Ref } from 'vue'
 
 /** 设置对象 */
 export interface Settings {
-  preset?: string;
-  character?: string;
-  persona?: string;
-  regex_rules?: string[];
-  world_books?: string[];
-  llm_config?: string;
-  [key: string]: any;
+  preset?: string
+  character?: string
+  persona?: string
+  regex_rules?: string[]
+  world_books?: string[]
+  llm_config?: string
+  [key: string]: any
 }
 
 /** 设置缓存映射 */
@@ -89,11 +89,11 @@ export function getSettingField(conversationFile: string, field: string): any {
  */
 export function updateSettingsCache(conversationFile: string, settings: Settings): void {
   if (!conversationFile) return
-  
+
   if (!settingsCache.value[conversationFile]) {
     settingsCache.value[conversationFile] = {}
   }
-  
+
   Object.assign(settingsCache.value[conversationFile], settings)
 }
 
@@ -103,7 +103,7 @@ export function updateSettingsCache(conversationFile: string, settings: Settings
  */
 export function clearSettingsCache(conversationFile: string): void {
   if (!conversationFile) return
-  
+
   delete settingsCache.value[conversationFile]
   delete loadingStates.value[conversationFile]
   delete errorStates.value[conversationFile]

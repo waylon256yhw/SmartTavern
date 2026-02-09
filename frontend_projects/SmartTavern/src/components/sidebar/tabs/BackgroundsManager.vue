@@ -94,7 +94,7 @@ async function loadBackgrounds(): Promise<void> {
   try {
     // 步骤1：获取所有背景图片的哈希值
     const hashResponse = await StylesService.getPageBackgroundsHash()
-    
+
     // 步骤2：加载横版预览
     for (const page of pages) {
       const hash = hashResponse.landscape?.[page.key]
@@ -121,14 +121,16 @@ async function loadBackgrounds(): Promise<void> {
               preview: url,
             }
             saveImageToCache(hash, url)
-            console.info(`[BackgroundsManager] Downloaded and cached landscape: ${page.key} (${hash})`)
+            console.info(
+              `[BackgroundsManager] Downloaded and cached landscape: ${page.key} (${hash})`,
+            )
           } catch (err) {
             console.warn(`[BackgroundsManager] Failed to load landscape: ${page.key}`, err)
           }
         }
       }
     }
-    
+
     // 步骤3：加载竖版预览
     for (const page of pages) {
       const hash = hashResponse.portrait?.[page.key]
@@ -155,7 +157,9 @@ async function loadBackgrounds(): Promise<void> {
               preview: url,
             }
             saveImageToCache(hash, url)
-            console.info(`[BackgroundsManager] Downloaded and cached portrait: ${page.key} (${hash})`)
+            console.info(
+              `[BackgroundsManager] Downloaded and cached portrait: ${page.key} (${hash})`,
+            )
           } catch (err) {
             console.warn(`[BackgroundsManager] Failed to load portrait: ${page.key}`, err)
           }
@@ -176,19 +180,19 @@ async function onFileChange(page: PageName, orientation: Orientation, event: Eve
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
-  
+
   const uploadKey = `${page}-${orientation}`
   state.value.uploading[uploadKey] = true
-  
+
   try {
     const result = await StylesService.uploadPageBackgroundFromFile(page, orientation, file)
-    
+
     if (!result.success) {
       throw new Error(result.error || result.message || '上传失败')
     }
-    
+
     console.info(`[BackgroundsManager] Uploaded ${page} (${orientation}):`, result)
-    
+
     // 更新状态并加载预览
     state.value[orientation][page] = {
       file: result.file,
@@ -196,7 +200,7 @@ async function onFileChange(page: PageName, orientation: Orientation, event: Eve
       size: result.size,
       preview: null,
     }
-    
+
     // 上传后重新加载该图片（使用哈希校验）
     if (result.hash) {
       try {
@@ -204,15 +208,17 @@ async function onFileChange(page: PageName, orientation: Orientation, event: Eve
         const url = URL.createObjectURL(blob)
         state.value[orientation][page].preview = url
         saveImageToCache(result.hash, url)
-        console.info(`[BackgroundsManager] Uploaded and cached: ${page} (${orientation}, hash: ${result.hash})`)
+        console.info(
+          `[BackgroundsManager] Uploaded and cached: ${page} (${orientation}, hash: ${result.hash})`,
+        )
       } catch (err) {
         console.warn(`[BackgroundsManager] Failed to load preview after upload:`, err)
       }
     }
-    
+
     // 刷新背景管理器（使新背景生效）
     await BackgroundsManager.refresh()
-    
+
     // 清空输入框
     input.value = ''
   } catch (err) {
@@ -253,7 +259,7 @@ onMounted(() => {
       <!-- 每个页面一个卡片 -->
       <div v-for="page in pages" :key="page.key" class="page-card">
         <div class="page-title">{{ t(page.labelKey) }}</div>
-        
+
         <!-- 横版图片 -->
         <div class="orientation-section">
           <div class="orientation-header">
@@ -262,13 +268,23 @@ onMounted(() => {
               {{ formatSize(state.landscape[page.key].size) }}
             </span>
           </div>
-          <div class="bg-preview" :style="{ backgroundImage: state.landscape[page.key].preview ? `url(${state.landscape[page.key].preview})` : 'none' }">
+          <div
+            class="bg-preview"
+            :style="{
+              backgroundImage: state.landscape[page.key].preview
+                ? `url(${state.landscape[page.key].preview})`
+                : 'none',
+            }"
+          >
             <div v-if="!state.landscape[page.key].file" class="no-image">
               {{ t('appearance.backgrounds.noImage') }}
             </div>
           </div>
           <div class="bg-actions">
-            <label class="bg-upload" :class="{ uploading: state.uploading[`${page.key}-landscape`] }">
+            <label
+              class="bg-upload"
+              :class="{ uploading: state.uploading[`${page.key}-landscape`] }"
+            >
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/jpg,image/webp"
@@ -293,13 +309,23 @@ onMounted(() => {
               {{ formatSize(state.portrait[page.key].size) }}
             </span>
           </div>
-          <div class="bg-preview portrait" :style="{ backgroundImage: state.portrait[page.key].preview ? `url(${state.portrait[page.key].preview})` : 'none' }">
+          <div
+            class="bg-preview portrait"
+            :style="{
+              backgroundImage: state.portrait[page.key].preview
+                ? `url(${state.portrait[page.key].preview})`
+                : 'none',
+            }"
+          >
             <div v-if="!state.portrait[page.key].file" class="no-image">
               {{ t('appearance.backgrounds.noImage') }}
             </div>
           </div>
           <div class="bg-actions">
-            <label class="bg-upload" :class="{ uploading: state.uploading[`${page.key}-portrait`] }">
+            <label
+              class="bg-upload"
+              :class="{ uploading: state.uploading[`${page.key}-portrait`] }"
+            >
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/jpg,image/webp"
@@ -361,7 +387,9 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .backgrounds-grid {
@@ -388,7 +416,7 @@ onMounted(() => {
   }
 }
 
-[data-theme="dark"] .page-card {
+[data-theme='dark'] .page-card {
   border-color: rgba(200, 200, 200, 0.2);
 }
 
@@ -447,7 +475,7 @@ onMounted(() => {
 }
 
 /* 通过 data 属性判断主题 */
-[data-theme="dark"] .bg-preview {
+[data-theme='dark'] .bg-preview {
   border-color: rgba(200, 200, 200, 0.3);
 }
 
@@ -464,7 +492,9 @@ onMounted(() => {
     rgb(var(--st-surface-secondary)) 0% 50%
   );
   background-size: var(--st-bg-preview-checkerboard-size) var(--st-bg-preview-checkerboard-size);
-  background-position: 0 0, 10px 10px;
+  background-position:
+    0 0,
+    10px 10px;
 }
 
 .bg-actions {
@@ -486,7 +516,10 @@ onMounted(() => {
   border: 1px solid rgb(var(--st-border-default));
   border-radius: 0.375rem;
   cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
   overflow: hidden;
 }
 
@@ -500,14 +533,14 @@ onMounted(() => {
   cursor: wait;
 }
 
-.bg-upload input[type="file"] {
+.bg-upload input[type='file'] {
   position: absolute;
   inset: 0;
   opacity: 0;
   cursor: pointer;
 }
 
-.bg-upload input[type="file"]:disabled {
+.bg-upload input[type='file']:disabled {
   cursor: wait;
 }
 </style>

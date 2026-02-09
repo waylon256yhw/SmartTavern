@@ -22,7 +22,7 @@ const props = defineProps({
   conversationFile: { type: String, default: null },
 })
 
-const emit = defineEmits(['close','use','view','delete','import','export'])
+const emit = defineEmits(['close', 'use', 'view', 'delete', 'import', 'export'])
 
 const panelStyle = computed(() => ({
   position: 'fixed',
@@ -67,15 +67,17 @@ const showCreateModal = ref(false)
 
 // 使用通道响应式状态
 const presets = CatalogChannel.presets
-const loading = computed(() =>
-  CatalogChannel.loadingStates.value.presets ||
-  (props.conversationFile ? SettingsChannel.isLoading(props.conversationFile) : false) ||
-  importing.value
+const loading = computed(
+  () =>
+    CatalogChannel.loadingStates.value.presets ||
+    (props.conversationFile ? SettingsChannel.isLoading(props.conversationFile) : false) ||
+    importing.value,
 )
-const error = computed(() =>
-  importError.value ||
-  CatalogChannel.errorStates.value.presets ||
-  (props.conversationFile ? SettingsChannel.getError(props.conversationFile) : null)
+const error = computed(
+  () =>
+    importError.value ||
+    CatalogChannel.errorStates.value.presets ||
+    (props.conversationFile ? SettingsChannel.getError(props.conversationFile) : null),
 )
 
 // 监听事件响应
@@ -84,15 +86,15 @@ let unsubscribeSettings = null
 
 function loadData() {
   if (settingsLoaded.value) return
-  
+
   Host.events.emit(CatalogChannel.EVT_CATALOG_PRESETS_REQ, {
-    requestId: Date.now()
+    requestId: Date.now(),
   })
-  
+
   if (props.conversationFile) {
     Host.events.emit(SettingsChannel.EVT_SETTINGS_GET_REQ, {
       conversationFile: props.conversationFile,
-      requestId: Date.now()
+      requestId: Date.now(),
     })
   } else {
     settingsLoaded.value = true
@@ -104,7 +106,7 @@ function loadData() {
 
 function refreshPresets() {
   Host.events.emit(CatalogChannel.EVT_CATALOG_PRESETS_REQ, {
-    requestId: Date.now()
+    requestId: Date.now(),
   })
 }
 
@@ -123,7 +125,7 @@ onMounted(() => {
       }
     }
   })
-  
+
   unsubscribeSettings = Host.events.on(SettingsChannel.EVT_SETTINGS_GET_RES, (payload) => {
     if (payload?.success && payload?.conversationFile === props.conversationFile) {
       const settings = payload.settings || {}
@@ -142,13 +144,19 @@ onUnmounted(() => {
   if (unsubscribeSettings) unsubscribeSettings()
 })
 
-watch(() => props.conversationFile, (v) => {
-  if (v && !settingsLoaded.value) {
-    loadData()
-  }
-}, { immediate: true })
+watch(
+  () => props.conversationFile,
+  (v) => {
+    if (v && !settingsLoaded.value) {
+      loadData()
+    }
+  },
+  { immediate: true },
+)
 
-function close(){ emit('close') }
+function close() {
+  emit('close')
+}
 
 function onUse(k) {
   if (!props.conversationFile) {
@@ -156,13 +164,13 @@ function onUse(k) {
     emit('use', k)
     return
   }
-  
+
   Host.events.emit(SettingsChannel.EVT_SETTINGS_UPDATE_REQ, {
     conversationFile: props.conversationFile,
     patch: { preset: k },
-    requestId: Date.now()
+    requestId: Date.now(),
   })
-  
+
   const unsubUpdate = Host.events.on(SettingsChannel.EVT_SETTINGS_UPDATE_RES, (payload) => {
     if (payload?.conversationFile === props.conversationFile) {
       if (payload.success) {
@@ -174,15 +182,17 @@ function onUse(k) {
   })
 }
 
-function onView(k){ emit('view', k) }
+function onView(k) {
+  emit('view', k)
+}
 
 // ==================== 删除功能 ====================
 
 function onDelete(k) {
   // 找到要删除的预设信息
-  const preset = presets.value.find(p => p.key === k)
+  const preset = presets.value.find((p) => p.key === k)
   if (!preset) return
-  
+
   deleteTarget.value = {
     key: k,
     name: preset.name || getFolderName(k),
@@ -198,7 +208,7 @@ function closeDeleteConfirmModal() {
 
 async function handleDeleteConfirm() {
   if (!deleteTarget.value) return
-  
+
   deleting.value = true
   try {
     const result = await DataCatalog.deleteDataFolder(deleteTarget.value.folderPath)
@@ -249,7 +259,7 @@ function extractPresetName(filename) {
 async function handleFileSelect(event) {
   const files = event.target.files
   if (!files || files.length === 0) return
-  
+
   const file = files[0]
   const validTypes = ['.json', '.zip', '.png']
   const ext = '.' + (file.name.split('.').pop() || '').toLowerCase()
@@ -258,7 +268,7 @@ async function handleFileSelect(event) {
     event.target.value = ''
     return
   }
-  
+
   // 直接调用导入，后端会处理名称冲突检测
   await doImport(file, false)
   event.target.value = ''
@@ -267,7 +277,7 @@ async function handleFileSelect(event) {
 async function doImport(file, overwrite = false, targetName = null) {
   importing.value = true
   importError.value = null
-  
+
   try {
     const result = await DataCatalog.importDataFromFile('preset', file, targetName, overwrite)
     if (result.success) {
@@ -279,7 +289,11 @@ async function doImport(file, overwrite = false, targetName = null) {
       if (errorCode === 'NAME_EXISTS') {
         // 名称冲突，显示冲突弹窗
         openImportConflictModal(file, result.folder_name, result.suggested_name)
-      } else if (errorCode === 'TYPE_MISMATCH' || errorCode === 'NO_TYPE_INFO' || errorCode === 'NO_TYPE_IN_FILENAME') {
+      } else if (
+        errorCode === 'TYPE_MISMATCH' ||
+        errorCode === 'NO_TYPE_INFO' ||
+        errorCode === 'NO_TYPE_IN_FILENAME'
+      ) {
         openImportErrorModal(errorCode, result.message, result.expected_type, result.actual_type)
       } else {
         importError.value = result.message || result.error || t('error.importFailed')
@@ -367,79 +381,71 @@ function handleCreateComplete(result) {
 </script>
 
 <template>
-  <div
-    data-scope="presets-view"
-    class="pr-panel"
-    :style="panelStyle"
-  >
-      <header class="pr-header">
-        <div class="pr-title st-panel-title">
-          <span class="pr-icon"><i data-lucide="sliders-horizontal"></i></span>
-          {{ t('panel.presets.title') }}
-        </div>
-        <div class="pr-header-actions">
-          <button
-            class="pr-action-btn st-btn-shrinkable"
-            type="button"
-            :title="t('panel.presets.createTitle')"
-            @click="openCreateModal"
-          >
-            <i data-lucide="plus"></i>
-            <span class="st-btn-text">{{ t('common.create') }}</span>
-          </button>
-          <button
-            class="pr-action-btn st-btn-shrinkable"
-            type="button"
-            :title="t('panel.presets.importTitle')"
-            @click="triggerImport"
-            :disabled="importing"
-          >
-            <i data-lucide="download"></i>
-            <span class="st-btn-text">{{ t('common.import') }}</span>
-          </button>
-          <button
-            class="pr-action-btn st-btn-shrinkable"
-            type="button"
-            :title="t('panel.presets.exportTitle')"
-            @click="openExportModal"
-            :disabled="presets.length === 0"
-          >
-            <i data-lucide="upload"></i>
-            <span class="st-btn-text">{{ t('common.export') }}</span>
-          </button>
-          <button class="pr-close" type="button" :title="t('common.close')" @click="close">✕</button>
-        </div>
-      </header>
+  <div data-scope="presets-view" class="pr-panel" :style="panelStyle">
+    <header class="pr-header">
+      <div class="pr-title st-panel-title">
+        <span class="pr-icon"><i data-lucide="sliders-horizontal"></i></span>
+        {{ t('panel.presets.title') }}
+      </div>
+      <div class="pr-header-actions">
+        <button
+          class="pr-action-btn st-btn-shrinkable"
+          type="button"
+          :title="t('panel.presets.createTitle')"
+          @click="openCreateModal"
+        >
+          <i data-lucide="plus"></i>
+          <span class="st-btn-text">{{ t('common.create') }}</span>
+        </button>
+        <button
+          class="pr-action-btn st-btn-shrinkable"
+          type="button"
+          :title="t('panel.presets.importTitle')"
+          @click="triggerImport"
+          :disabled="importing"
+        >
+          <i data-lucide="download"></i>
+          <span class="st-btn-text">{{ t('common.import') }}</span>
+        </button>
+        <button
+          class="pr-action-btn st-btn-shrinkable"
+          type="button"
+          :title="t('panel.presets.exportTitle')"
+          @click="openExportModal"
+          :disabled="presets.length === 0"
+        >
+          <i data-lucide="upload"></i>
+          <span class="st-btn-text">{{ t('common.export') }}</span>
+        </button>
+        <button class="pr-close" type="button" :title="t('common.close')" @click="close">✕</button>
+      </div>
+    </header>
 
-      <input
-        ref="fileInputRef"
-        type="file"
-        accept=".json,.zip,.png"
-        style="display: none;"
-        @change="handleFileSelect"
-      />
+    <input
+      ref="fileInputRef"
+      type="file"
+      accept=".json,.zip,.png"
+      style="display: none"
+      @change="handleFileSelect"
+    />
 
-      <CustomScrollbar2 class="pr-body">
-        <!-- 面板内容区域 - 始终存在，通过 transition 控制显示 -->
-        <transition name="pr-content" mode="out-in" @after-enter="handleTransitionComplete">
-          <!-- 加载状态 -->
-          <div v-if="loading" key="loading" class="pr-loading">
-            {{ importing ? t('common.importing') : t('common.loading') }}
-          </div>
-          
-          <!-- 错误状态 -->
-          <div v-else-if="error" key="error" class="pr-error">
-            {{ importError ? importError : t('error.loadFailed', { error }) }}
-            <button v-if="importError" class="pr-error-dismiss" @click="importError = null">×</button>
-          </div>
-          
-          <!-- 内容列表 -->
-          <div v-else key="content" class="pr-list">
-          <div
-            v-for="it in presets"
-            :key="it.key"
-            class="pr-card"
-          >
+    <CustomScrollbar2 class="pr-body">
+      <!-- 面板内容区域 - 始终存在，通过 transition 控制显示 -->
+      <transition name="pr-content" mode="out-in" @after-enter="handleTransitionComplete">
+        <!-- 加载状态 -->
+        <div v-if="loading" key="loading" class="pr-loading">
+          {{ importing ? t('common.importing') : t('common.loading') }}
+        </div>
+
+        <!-- 错误状态 -->
+        <div v-else-if="error" key="error" class="pr-error">
+          {{ importError ? importError : t('error.loadFailed', { error }) }}
+          <button v-if="importError" class="pr-error-dismiss" @click="importError = null">×</button>
+        </div>
+
+        <!-- 内容列表 -->
+        <div v-else key="content" class="pr-list">
+          <div v-for="it in presets" :key="it.key" class="pr-card">
             <div class="pr-main">
               <div class="pr-avatar">
                 <img v-if="it.avatarUrl" :src="it.avatarUrl" alt="" class="pr-avatar-img" />
@@ -449,8 +455,21 @@ function handleCreateComplete(result) {
               <div class="pr-texts">
                 <div class="pr-name">{{ it.name }}</div>
                 <div class="pr-folder">
-                  <svg class="pr-folder-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  <svg
+                    class="pr-folder-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                    ></path>
                   </svg>
                   <span>{{ getFolderName(it.key) }}</span>
                 </div>
@@ -464,70 +483,80 @@ function handleCreateComplete(result) {
                 type="button"
                 @click="onUse(it.key)"
                 :aria-pressed="usingKey === it.key"
-              >{{ usingKey === it.key ? t('common.using') : t('common.use') }}</button>
+              >
+                {{ usingKey === it.key ? t('common.using') : t('common.use') }}
+              </button>
 
-              <button class="pr-btn st-btn-shrinkable" type="button" @click="onView(it.key)">{{ t('common.view') }}</button>
+              <button class="pr-btn st-btn-shrinkable" type="button" @click="onView(it.key)">
+                {{ t('common.view') }}
+              </button>
 
-              <button class="pr-btn pr-danger st-btn-shrinkable" type="button" @click="onDelete(it.key)">{{ t('common.delete') }}</button>
+              <button
+                class="pr-btn pr-danger st-btn-shrinkable"
+                type="button"
+                @click="onDelete(it.key)"
+              >
+                {{ t('common.delete') }}
+              </button>
             </div>
           </div>
-          </div>
-        </transition>
-      </CustomScrollbar2>
+        </div>
+      </transition>
+    </CustomScrollbar2>
 
-      <!-- 使用可复用的导入冲突弹窗组件 -->
-      <ImportConflictModal
-        :show="showImportConflictModal"
-        data-type="preset"
-        :data-type-name="t('panel.presets.typeName')"
-        :existing-name="importConflictExistingName"
-        :suggested-name="importConflictSuggestedName"
-        @close="closeImportConflictModal"
-        @overwrite="handleConflictOverwrite"
-        @rename="handleConflictRename"
-      />
+    <!-- 使用可复用的导入冲突弹窗组件 -->
+    <ImportConflictModal
+      :show="showImportConflictModal"
+      data-type="preset"
+      :data-type-name="t('panel.presets.typeName')"
+      :existing-name="importConflictExistingName"
+      :suggested-name="importConflictSuggestedName"
+      @close="closeImportConflictModal"
+      @overwrite="handleConflictOverwrite"
+      @rename="handleConflictRename"
+    />
 
-      <!-- 使用可复用的导出弹窗组件 -->
-      <ExportModal
-        :show="showExportModal"
-        data-type="preset"
-        :data-type-name="t('panel.presets.typeName')"
-        :items="presets"
-        default-icon="sliders-horizontal"
-        @close="closeExportModal"
-        @export="handleExportComplete"
-      />
+    <!-- 使用可复用的导出弹窗组件 -->
+    <ExportModal
+      :show="showExportModal"
+      data-type="preset"
+      :data-type-name="t('panel.presets.typeName')"
+      :items="presets"
+      default-icon="sliders-horizontal"
+      @close="closeExportModal"
+      @export="handleExportComplete"
+    />
 
-      <!-- 导入错误弹窗 -->
-      <ImportErrorModal
-        :show="showImportErrorModal"
-        :error-code="importErrorCode"
-        :error-message="importErrorMessage"
-        :data-type-name="t('panel.presets.typeName')"
-        :expected-type="importExpectedType"
-        :actual-type="importActualType"
-        @close="closeImportErrorModal"
-      />
+    <!-- 导入错误弹窗 -->
+    <ImportErrorModal
+      :show="showImportErrorModal"
+      :error-code="importErrorCode"
+      :error-message="importErrorMessage"
+      :data-type-name="t('panel.presets.typeName')"
+      :expected-type="importExpectedType"
+      :actual-type="importActualType"
+      @close="closeImportErrorModal"
+    />
 
-      <!-- 删除确认弹窗 -->
-      <DeleteConfirmModal
-        :show="showDeleteConfirmModal"
-        :item-name="deleteTarget?.name || ''"
-        :data-type-name="t('panel.presets.typeName')"
-        :loading="deleting"
-        @close="closeDeleteConfirmModal"
-        @confirm="handleDeleteConfirm"
-      />
+    <!-- 删除确认弹窗 -->
+    <DeleteConfirmModal
+      :show="showDeleteConfirmModal"
+      :item-name="deleteTarget?.name || ''"
+      :data-type-name="t('panel.presets.typeName')"
+      :loading="deleting"
+      @close="closeDeleteConfirmModal"
+      @confirm="handleDeleteConfirm"
+    />
 
-      <!-- 新建弹窗 -->
-      <CreateItemModal
-        :show="showCreateModal"
-        data-type="preset"
-        :data-type-name="t('panel.presets.typeName')"
-        @close="closeCreateModal"
-        @created="handleCreateComplete"
-      />
-    </div>
+    <!-- 新建弹窗 -->
+    <CreateItemModal
+      :show="showCreateModal"
+      data-type="preset"
+      :data-type-name="t('panel.presets.typeName')"
+      @close="closeCreateModal"
+      @created="handleCreateComplete"
+    />
+  </div>
 </template>
 
 <style scoped>
@@ -557,7 +586,11 @@ function handleCreateComplete(result) {
   font-weight: 700;
   color: rgb(var(--st-color-text));
 }
-.pr-icon i { width: var(--st-icon-md); height: var(--st-icon-md); display: inline-block; }
+.pr-icon i {
+  width: var(--st-icon-md);
+  height: var(--st-icon-md);
+  display: inline-block;
+}
 
 .pr-header-actions {
   display: flex;
@@ -577,9 +610,16 @@ function handleCreateComplete(result) {
   padding: var(--st-btn-padding-sm);
   font-size: var(--st-font-sm);
   cursor: pointer;
-  transition: transform var(--st-transition-normal), background var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    transform var(--st-transition-normal),
+    background var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
-.pr-action-btn i { width: var(--st-icon-sm); height: var(--st-icon-sm); display: inline-block; }
+.pr-action-btn i {
+  width: var(--st-icon-sm);
+  height: var(--st-icon-sm);
+  display: inline-block;
+}
 .pr-action-btn:hover:not(:disabled) {
   background: rgba(var(--st-primary), 0.15);
   transform: translateY(-1px);
@@ -597,7 +637,10 @@ function handleCreateComplete(result) {
   border-radius: var(--st-radius-lg);
   padding: var(--st-spacing-sm) var(--st-spacing-md);
   cursor: pointer;
-  transition: transform var(--st-transition-normal), background var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    transform var(--st-transition-normal),
+    background var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
 .pr-close:hover {
   background: rgb(var(--st-surface));
@@ -625,7 +668,11 @@ function handleCreateComplete(result) {
   background: rgb(var(--st-surface));
   padding: var(--st-spacing-xl);
   min-height: var(--st-preview-height-sm);
-  transition: background var(--st-transition-normal), border-color var(--st-transition-normal), transform var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    background var(--st-transition-normal),
+    border-color var(--st-transition-normal),
+    transform var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
 .pr-card:hover {
   transform: translateY(-1px);
@@ -646,13 +693,28 @@ function handleCreateComplete(result) {
   align-items: center;
   justify-content: center;
   font-size: var(--st-font-xl);
-  background: linear-gradient(135deg, var(--st-panel-avatar-gradient-start, rgba(var(--st-primary),0.12)), var(--st-panel-avatar-gradient-end, rgba(var(--st-accent),0.12)));
+  background: linear-gradient(
+    135deg,
+    var(--st-panel-avatar-gradient-start, rgba(var(--st-primary), 0.12)),
+    var(--st-panel-avatar-gradient-end, rgba(var(--st-accent), 0.12))
+  );
   border: 1px solid rgba(var(--st-border), 0.9);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
-.pr-avatar i { width: var(--st-icon-md); height: var(--st-icon-md); display: inline-block; }
-.pr-avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--st-radius-lg); }
-.pr-texts { min-width: 0; }
+.pr-avatar i {
+  width: var(--st-icon-md);
+  height: var(--st-icon-md);
+  display: inline-block;
+}
+.pr-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--st-radius-lg);
+}
+.pr-texts {
+  min-width: 0;
+}
 .pr-name {
   font-weight: 700;
   color: rgb(var(--st-color-text));
@@ -704,7 +766,11 @@ function handleCreateComplete(result) {
   border-radius: var(--st-radius-lg);
   font-size: var(--st-font-sm);
   cursor: pointer;
-  transition: transform var(--st-transition-normal), box-shadow var(--st-transition-normal), background var(--st-transition-normal), border-color var(--st-transition-normal);
+  transition:
+    transform var(--st-transition-normal),
+    box-shadow var(--st-transition-normal),
+    background var(--st-transition-normal),
+    border-color var(--st-transition-normal);
   min-width: var(--st-btn-min-width);
   text-align: center;
 }
@@ -765,7 +831,9 @@ function handleCreateComplete(result) {
 /* 内容过渡动画 */
 .pr-content-enter-active,
 .pr-content-leave-active {
-  transition: opacity var(--st-transition-medium), transform var(--st-transition-medium);
+  transition:
+    opacity var(--st-transition-medium),
+    transform var(--st-transition-medium);
 }
 
 .pr-content-enter-from {
@@ -779,7 +847,11 @@ function handleCreateComplete(result) {
 }
 
 @media (max-width: 640px) {
-  .pr-card { grid-template-columns: 1fr; }
-  .pr-actions { flex-direction: row; }
+  .pr-card {
+    grid-template-columns: 1fr;
+  }
+  .pr-actions {
+    flex-direction: row;
+  }
 }
 </style>

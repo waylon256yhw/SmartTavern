@@ -13,17 +13,23 @@
  * 用于 App.vue 的 @import 和预加载
  */
 export const CDN_FONTS = {
-  INTER_JETBRAINS: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap',
-  CINZEL_CORMORANT: 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cormorant+Garamond:wght@400;600;700&display=swap',
+  INTER_JETBRAINS:
+    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap',
+  CINZEL_CORMORANT:
+    'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cormorant+Garamond:wght@400;600;700&display=swap',
 } as const
 
 /**
  * 单独的字体链接（用于预加载管理器）
  */
-export const CDN_FONT_INTER = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
-export const CDN_FONT_JETBRAINS_MONO = 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap'
-export const CDN_FONT_CINZEL = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&display=swap'
-export const CDN_FONT_CORMORANT = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&display=swap'
+export const CDN_FONT_INTER =
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
+export const CDN_FONT_JETBRAINS_MONO =
+  'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap'
+export const CDN_FONT_CINZEL =
+  'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&display=swap'
+export const CDN_FONT_CORMORANT =
+  'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&display=swap'
 
 /**
  * UI 组件脚本链接
@@ -58,35 +64,35 @@ export class ResourceLoader {
       {
         name: 'Google Fonts (Inter)',
         url: CDN_FONT_INTER,
-        type: 'font'
+        type: 'font',
       },
       {
         name: 'Google Fonts (JetBrains Mono)',
         url: CDN_FONT_JETBRAINS_MONO,
-        type: 'font'
+        type: 'font',
       },
       {
         name: 'Google Fonts (Cinzel)',
         url: CDN_FONT_CINZEL,
-        type: 'font'
+        type: 'font',
       },
       {
         name: 'Google Fonts (Cormorant Garamond)',
         url: CDN_FONT_CORMORANT,
-        type: 'font'
+        type: 'font',
       },
       {
         name: 'Lucide Icons',
         url: CDN_LUCIDE_ICONS,
-        type: 'script'
+        type: 'script',
       },
       {
         name: 'Flowbite Components',
         url: CDN_FLOWBITE,
-        type: 'script'
-      }
+        type: 'script',
+      },
     ]
-    
+
     this.loaded = 0
     this.total = this.resources.length
     this.onProgress = null
@@ -107,22 +113,22 @@ export class ResourceLoader {
       const link = document.createElement('link')
       link.rel = 'stylesheet'
       link.href = url
-      
+
       // 字体加载通常很快，设置短超时
       const timeout = setTimeout(() => {
         resolve() // 即使超时也继续
       }, 3000)
-      
+
       link.onload = () => {
         clearTimeout(timeout)
         resolve()
       }
-      
+
       link.onerror = () => {
         clearTimeout(timeout)
         resolve() // 加载失败也继续
       }
-      
+
       document.head.appendChild(link)
     })
   }
@@ -142,21 +148,21 @@ export class ResourceLoader {
       const script = document.createElement('script')
       script.src = url
       script.async = true
-      
+
       const timeout = setTimeout(() => {
         resolve() // 超时也继续
       }, 5000)
-      
+
       script.onload = () => {
         clearTimeout(timeout)
         resolve()
       }
-      
+
       script.onerror = () => {
         clearTimeout(timeout)
         resolve() // 加载失败也继续
       }
-      
+
       document.head.appendChild(script)
     })
   }
@@ -167,13 +173,13 @@ export class ResourceLoader {
   private updateProgress(name: string): void {
     this.loaded++
     const progress = Math.floor((this.loaded / this.total) * 100)
-    
+
     if (this.onProgress) {
       this.onProgress({
         loaded: this.loaded,
         total: this.total,
         progress,
-        currentResource: name
+        currentResource: name,
       })
     }
   }
@@ -195,7 +201,7 @@ export class ResourceLoader {
         this.updateProgress(resource.name) // 失败也更新进度
       }
     }
-    
+
     // 确保进度达到 100%
     if (this.loaded < this.total) {
       this.loaded = this.total
@@ -204,7 +210,7 @@ export class ResourceLoader {
           loaded: this.total,
           total: this.total,
           progress: 100,
-          currentResource: '完成'
+          currentResource: '完成',
         })
       }
     }
@@ -217,11 +223,11 @@ export class ResourceLoader {
 export function updateProgressUI(data: ProgressData): void {
   const progressBar = document.getElementById('progress-bar')
   const progressText = document.getElementById('progress-text')
-  
+
   if (progressBar) {
     progressBar.style.width = `${data.progress}%`
   }
-  
+
   if (progressText) {
     if (data.progress === 100) {
       progressText.textContent = '加载完成'

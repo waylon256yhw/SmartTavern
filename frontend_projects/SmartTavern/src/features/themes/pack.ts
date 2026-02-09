@@ -6,14 +6,14 @@ export const PACK_VERSION = 'v1'
 
 // Type definitions
 export interface ThemeScriptPermissions {
-  dom?: boolean  // 允许访问 DOM（默认 false）
-  network?: boolean  // 允许网络请求（默认 false）
+  dom?: boolean // 允许访问 DOM（默认 false）
+  network?: boolean // 允许网络请求（默认 false）
 }
 
 export interface ThemeScript {
   code: string
   permissions?: ThemeScriptPermissions
-  scopes?: string[]  // 适用范围（如 'chat-threaded', 'sandbox'）
+  scopes?: string[] // 适用范围（如 'chat-threaded', 'sandbox'）
 }
 
 // CSS 自定义属性（--xxx）字典；值推荐字符串（可为 rgb/rgb(...) / 数字/px/% 等）
@@ -25,17 +25,17 @@ export interface ThemePackV1 {
   name?: string | null
   version?: string | null
   tokens?: ThemeTokens
-  tokensLight?: ThemeTokens  // Light mode specific tokens
-  tokensDark?: ThemeTokens   // Dark mode specific tokens
-  css?: string  // 附加 CSS 文本
-  cssLight?: string  // Light mode specific CSS
-  cssDark?: string   // Dark mode specific CSS
-  script?: ThemeScript  // 保留字段（默认不执行）
+  tokensLight?: ThemeTokens // Light mode specific tokens
+  tokensDark?: ThemeTokens // Dark mode specific tokens
+  css?: string // 附加 CSS 文本
+  cssLight?: string // Light mode specific CSS
+  cssDark?: string // Dark mode specific CSS
+  script?: ThemeScript // 保留字段（默认不执行）
 }
 
 export interface ThemeApplyOptions {
-  persist?: boolean  // 应用后是否持久化 (default: true)
-  allowScript?: boolean  // 是否允许脚本（default: false）
+  persist?: boolean // 应用后是否持久化 (default: true)
+  allowScript?: boolean // 是否允许脚本（default: false）
 }
 
 function isPlainObject(v: any): v is Record<string, any> {
@@ -48,9 +48,10 @@ function isPlainObject(v: any): v is Record<string, any> {
 export function normalizePack(input: any): ThemePackV1 {
   const p = isPlainObject(input) ? input : {}
   const out: ThemePackV1 = {
-    id: typeof p.id === 'string' ? p.id : (p.id == null ? null : String(p.id)),
-    name: typeof p.name === 'string' ? p.name : (p.name == null ? null : String(p.name)),
-    version: typeof p.version === 'string' ? p.version : (p.version == null ? null : String(p.version)),
+    id: typeof p.id === 'string' ? p.id : p.id == null ? null : String(p.id),
+    name: typeof p.name === 'string' ? p.name : p.name == null ? null : String(p.name),
+    version:
+      typeof p.version === 'string' ? p.version : p.version == null ? null : String(p.version),
     tokens: undefined,
     tokensLight: undefined,
     tokensDark: undefined,
@@ -59,40 +60,40 @@ export function normalizePack(input: any): ThemePackV1 {
     cssDark: typeof p.cssDark === 'string' ? p.cssDark : undefined,
     script: undefined,
   }
-  
+
   // Process base tokens
   if (isPlainObject(p.tokens)) {
     out.tokens = {}
     for (const [k, v] of Object.entries(p.tokens)) {
       if (typeof k === 'string' && k.startsWith('--')) {
-        out.tokens[k] = (typeof v === 'number' || typeof v === 'string') ? v : String(v)
+        out.tokens[k] = typeof v === 'number' || typeof v === 'string' ? v : String(v)
       }
     }
     if (Object.keys(out.tokens).length === 0) delete out.tokens
   }
-  
+
   // Process light mode tokens
   if (isPlainObject(p.tokensLight)) {
     out.tokensLight = {}
     for (const [k, v] of Object.entries(p.tokensLight)) {
       if (typeof k === 'string' && k.startsWith('--')) {
-        out.tokensLight[k] = (typeof v === 'number' || typeof v === 'string') ? v : String(v)
+        out.tokensLight[k] = typeof v === 'number' || typeof v === 'string' ? v : String(v)
       }
     }
     if (Object.keys(out.tokensLight).length === 0) delete out.tokensLight
   }
-  
+
   // Process dark mode tokens
   if (isPlainObject(p.tokensDark)) {
     out.tokensDark = {}
     for (const [k, v] of Object.entries(p.tokensDark)) {
       if (typeof k === 'string' && k.startsWith('--')) {
-        out.tokensDark[k] = (typeof v === 'number' || typeof v === 'string') ? v : String(v)
+        out.tokensDark[k] = typeof v === 'number' || typeof v === 'string' ? v : String(v)
       }
     }
     if (Object.keys(out.tokensDark).length === 0) delete out.tokensDark
   }
-  
+
   if (isPlainObject(p.script)) {
     out.script = {
       code: typeof p.script.code === 'string' ? p.script.code : '',
@@ -102,7 +103,9 @@ export function normalizePack(input: any): ThemePackV1 {
             network: !!p.script.permissions.network,
           }
         : { dom: false, network: false },
-      scopes: Array.isArray(p.script.scopes) ? p.script.scopes.filter(s => typeof s === 'string') : undefined,
+      scopes: Array.isArray(p.script.scopes)
+        ? p.script.scopes.filter((s) => typeof s === 'string')
+        : undefined,
     }
     // 注：脚本默认不执行，具体由上层管理器控制 allowScript 开关
   }
@@ -139,7 +142,10 @@ export function validatePack(pack: any): { valid: boolean; errors: string[] } {
 /**
  * 合并 tokens（后者覆盖前者）
  */
-export function mergeTokens(base: ThemeTokens | undefined, overrides: ThemeTokens | undefined): ThemeTokens | undefined {
+export function mergeTokens(
+  base: ThemeTokens | undefined,
+  overrides: ThemeTokens | undefined,
+): ThemeTokens | undefined {
   if (!base && !overrides) return undefined
   const out: ThemeTokens = { ...(base || {}) }
   if (overrides) {

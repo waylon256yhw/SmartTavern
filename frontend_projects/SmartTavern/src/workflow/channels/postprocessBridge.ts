@@ -44,13 +44,22 @@ export function on(stid: string, op: string, handler: PostprocessHandler): () =>
     handlers.set(k, set)
   }
   set.add(handler)
-  return () => { try { set!.delete(handler) } catch (_) {} }
+  return () => {
+    try {
+      set!.delete(handler)
+    } catch (_) {}
+  }
 }
 
 /**
  * 分发单条事件
  */
-export async function emit(stid: string, op: string, data?: any, ctx: PostprocessContext = {}): Promise<void> {
+export async function emit(
+  stid: string,
+  op: string,
+  data?: any,
+  ctx: PostprocessContext = {},
+): Promise<void> {
   const k = keyOf(stid, op)
   const set = handlers.get(k)
   if (!set || set.size === 0) return
@@ -64,7 +73,10 @@ export async function emit(stid: string, op: string, data?: any, ctx: Postproces
 /**
  * 批量分发（统一协议）：{"stid":[{"op":"...","data":{...}}, ...], ...}
  */
-export async function dispatch(dict: PostprocessDict | null | undefined, ctx: PostprocessContext = {}): Promise<void> {
+export async function dispatch(
+  dict: PostprocessDict | null | undefined,
+  ctx: PostprocessContext = {},
+): Promise<void> {
   if (!dict || typeof dict !== 'object') return
   const stids = Object.keys(dict)
   for (const stid of stids) {
@@ -96,5 +108,3 @@ try {
 } catch (_) {}
 
 export default Bridge
-
-

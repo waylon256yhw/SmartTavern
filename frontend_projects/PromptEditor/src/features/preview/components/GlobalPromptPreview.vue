@@ -41,7 +41,7 @@ const autoVariables = computed(() => {
 })
 const autoHasVariables = computed(() => {
   const v = autoVariables.value
-  return !!(v && typeof v === 'object' && (Object.keys(v).length > 0))
+  return !!(v && typeof v === 'object' && Object.keys(v).length > 0)
 })
 const autoLoading = computed(() => runtime.generating)
 const autoError = computed(() => runtime.lastError)
@@ -123,21 +123,26 @@ watch(varsOpen, (v) => {
         ></i>
       </div>
 
-      <p class="text-xs text-black/60 mt-3">
-        默认“原始提示词”。该选择会被持久化保存。
-      </p>
+      <p class="text-xs text-black/60 mt-3">默认“原始提示词”。该选择会被持久化保存。</p>
     </div>
 
     <!-- 自动消息结果：占据剩余空间，内部滚动 -->
-    <div class="mt-6 flex-1 min-h-0 bg-white border border-gray-200 rounded-4 p-4 flex flex-col overflow-hidden">
+    <div
+      class="mt-6 flex-1 min-h-0 bg-white border border-gray-200 rounded-4 p-4 flex flex-col overflow-hidden"
+    >
       <div class="flex items-center gap-2 mb-3">
         <i data-lucide="sparkles" class="w-5 h-5 text-black"></i>
         <span class="text-sm font-medium text-black">自动生成结果</span>
-        <span class="ml-auto text-xs text-black/60" v-if="autoMessages?.length">总条数：{{ autoMessages.length }}</span>
+        <span class="ml-auto text-xs text-black/60" v-if="autoMessages?.length"
+          >总条数：{{ autoMessages.length }}</span
+        >
       </div>
 
       <!-- 错误 -->
-      <div v-if="autoError" class="p-3 border border-gray-900 rounded-4 text-sm text-black bg-white mb-3">
+      <div
+        v-if="autoError"
+        class="p-3 border border-gray-900 rounded-4 text-sm text-black bg-white mb-3"
+      >
         {{ autoError }}
       </div>
 
@@ -154,18 +159,21 @@ watch(varsOpen, (v) => {
 
       <!-- 消息列表（可滚动） -->
       <div class="flex-1 min-h-0 overflow-auto space-y-2">
-        <div
-          v-if="autoMessages && autoMessages.length"
-          class="space-y-2"
-        >
+        <div v-if="autoMessages && autoMessages.length" class="space-y-2">
           <div
             v-for="(m, i) in autoMessages"
             :key="i"
             class="border border-gray-200 rounded-4 p-3 hover:bg-gray-50 transition-colors"
           >
             <div class="flex items-center gap-2 mb-1">
-              <span class="text-2xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent">{{ m.role }}</span>
-              <span class="text-2xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent">{{ sourceType(m) }}</span>
+              <span
+                class="text-2xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent"
+                >{{ m.role }}</span
+              >
+              <span
+                class="text-2xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent"
+                >{{ sourceType(m) }}</span
+              >
               <span class="text-2xs text-black/50">#{{ i + 1 }}</span>
             </div>
             <div class="text-sm text-black/80 leading-6 whitespace-pre-wrap break-words">
@@ -188,21 +196,22 @@ watch(varsOpen, (v) => {
           变量
           <span v-if="!autoHasVariables" class="text-black/50">(无)</span>
         </span>
-        <i
-          :data-lucide="varsOpen ? 'chevron-up' : 'chevron-down'"
-          class="w-4 h-4 text-black"
-        ></i>
+        <i :data-lucide="varsOpen ? 'chevron-up' : 'chevron-down'" class="w-4 h-4 text-black"></i>
       </button>
 
       <div v-if="varsOpen" class="px-4 pb-4">
         <div v-if="autoHasVariables" class="grid grid-cols-1 gap-3">
           <div class="border border-gray-200 rounded-4 p-3">
             <div class="text-xs font-medium text-black mb-2">initial</div>
-            <pre class="text-xs text-black/80 overflow-auto whitespace-pre-wrap">{{ pretty(autoVariables?.initial) }}</pre>
+            <pre class="text-xs text-black/80 overflow-auto whitespace-pre-wrap">{{
+              pretty(autoVariables?.initial)
+            }}</pre>
           </div>
           <div class="border border-gray-200 rounded-4 p-3">
             <div class="text-xs font-medium text-black mb-2">final</div>
-            <pre class="text-xs text-black/80 overflow-auto whitespace-pre-wrap">{{ pretty(autoVariables?.final) }}</pre>
+            <pre class="text-xs text-black/80 overflow-auto whitespace-pre-wrap">{{
+              pretty(autoVariables?.final)
+            }}</pre>
           </div>
         </div>
         <div v-else class="text-sm text-black/60">暂无变量。</div>

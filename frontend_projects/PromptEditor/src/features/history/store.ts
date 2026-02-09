@@ -24,7 +24,8 @@ function loadLocal(): { files: HistoryFile[]; activeName: string | null } {
     if (!raw) return { files: [], activeName: null }
     const obj = JSON.parse(raw)
     const files = Array.isArray(obj?.files) ? obj.files : []
-    const activeName = typeof obj?.activeName === 'string' ? obj.activeName : (files[0]?.name ?? null)
+    const activeName =
+      typeof obj?.activeName === 'string' ? obj.activeName : (files[0]?.name ?? null)
     return { files, activeName }
   } catch {
     return { files: [], activeName: null }
@@ -78,11 +79,7 @@ export function deriveMessagesFromHistory(doc: any): OpenAIMessage[] {
       const activePath: string[] = Array.isArray(doc.active_path) ? doc.active_path.slice() : []
       const root: string = doc.root || (activePath.length ? activePath[0] : null)
 
-      const path: string[] = activePath.length
-        ? activePath
-        : root
-        ? [root]
-        : []
+      const path: string[] = activePath.length ? activePath : root ? [root] : []
 
       const out: OpenAIMessage[] = []
       for (const nid of path) {
@@ -132,7 +129,7 @@ export const useHistoryStore = defineStore('history', {
     },
     activeFile(state): HistoryFile | null {
       const idx = (this as any).activeIndex as number
-      return idx >= 0 ? state.files[idx] ?? null : null
+      return idx >= 0 ? (state.files[idx] ?? null) : null
     },
     activeData(): any | null {
       return (this as any).activeFile?.data ?? null
@@ -169,7 +166,7 @@ export const useHistoryStore = defineStore('history', {
       const nn = String(newName || '').trim()
       if (!nn) return false
       if (!this.activeName) return false
-      const idx = this.files.findIndex(f => f.name === this.activeName)
+      const idx = this.files.findIndex((f) => f.name === this.activeName)
       if (idx < 0) return false
       if (this.files.some((f, i) => i !== idx && f.name === nn)) return false
       const rec = this.files[idx]
@@ -292,7 +289,7 @@ export const useHistoryStore = defineStore('history', {
       }
       const out = {
         schema: { name: 'chat-branches', version: 2 },
-        meta: { id: (doc?.meta?.id ?? 'conversation_1'), title: doc?.meta?.title ?? '对话' },
+        meta: { id: doc?.meta?.id ?? 'conversation_1', title: doc?.meta?.title ?? '对话' },
         root,
         nodes,
         children,
@@ -362,7 +359,7 @@ export const useHistoryStore = defineStore('history', {
       d.active_path = prefix.concat(id)
       this.setDoc(d)
     },
- 
+
     /** 修剪：仅保留前 keepDepth 个节点为活动路径，删除其后的分支子树 */
     truncateAfter(keepDepth: number) {
       this._ensureBranchDoc()

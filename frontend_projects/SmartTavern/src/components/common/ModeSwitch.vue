@@ -8,15 +8,18 @@ const props = defineProps({
   modelValue: { type: String, default: 'threaded' }, // 'threaded' | 'sandbox'
   options: {
     type: Array,
-    default: null
+    default: null,
   },
 })
 const emit = defineEmits(['update:modelValue'])
 
-const effectiveOptions = computed(() => props.options || [
-  { key: 'threaded', label: t('components.modeSwitch.threaded') },
-  { key: 'sandbox', label: t('components.modeSwitch.sandbox') },
-])
+const effectiveOptions = computed(
+  () =>
+    props.options || [
+      { key: 'threaded', label: t('components.modeSwitch.threaded') },
+      { key: 'sandbox', label: t('components.modeSwitch.sandbox') },
+    ],
+)
 
 function selectMode(key) {
   if (key !== props.modelValue) emit('update:modelValue', key)

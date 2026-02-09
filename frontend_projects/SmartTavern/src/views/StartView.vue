@@ -1,7 +1,13 @@
 <script setup>
 import HomeMenu from '@/components/home/HomeMenu.vue'
 
-const emit = defineEmits(['new-game', 'open-load', 'open-appearance', 'open-plugins', 'open-options'])
+const emit = defineEmits([
+  'new-game',
+  'open-load',
+  'open-appearance',
+  'open-plugins',
+  'open-options',
+])
 </script>
 
 <template>
@@ -40,5 +46,9 @@ const emit = defineEmits(['new-game', 'open-load', 'open-appearance', 'open-plug
   z-index: 0; /* 确保背景图位于内容层后面但不被 body 白底影响 */
   pointer-events: none;
 }
-@media (max-width: 980px) { .st-start { grid-template-columns: 1fr; } }
+@media (max-width: 980px) {
+  .st-start {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

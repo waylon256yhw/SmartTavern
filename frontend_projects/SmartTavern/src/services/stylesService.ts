@@ -1,8 +1,8 @@
 /**
  * SmartTavern Frontend API Client — Styles/Themes Service (v1)
- * 
+ *
  * 调用后端主题 API 来列出/加载/删除主题。
- * 
+ *
  * 用法:
  *   import StylesService from '@/services/stylesService'
  *   const themes = await StylesService.listThemes()
@@ -146,15 +146,20 @@ export interface ExportStyleResponse {
 
 // 扩展 ImportMeta 接口
 declare global {
-  interface Window { ST_BACKEND_BASE?: string }
-  interface ImportMetaEnv { VITE_API_BASE?: string }
+  interface Window {
+    ST_BACKEND_BASE?: string
+  }
+  interface ImportMetaEnv {
+    VITE_API_BASE?: string
+  }
 }
 
-const DEFAULT_BACKEND = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050')
+const DEFAULT_BACKEND =
+  import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050')
 
 function _readLS(key: string): string | null {
   try {
-    return (typeof window !== 'undefined') ? localStorage.getItem(key) : null
+    return typeof window !== 'undefined' ? localStorage.getItem(key) : null
   } catch (_) {
     return null
   }
@@ -162,7 +167,7 @@ function _readLS(key: string): string | null {
 
 function getBackendBase(): string {
   const fromLS = _readLS('st.backend_base')
-  const fromWin = (typeof window !== 'undefined') ? (window as any).ST_BACKEND_BASE : null
+  const fromWin = typeof window !== 'undefined' ? (window as any).ST_BACKEND_BASE : null
   const base = String(fromLS || fromWin || DEFAULT_BACKEND)
   return base.replace(/\/+$/, '')
 }
@@ -174,7 +179,7 @@ function ensureBase(): string {
 async function postJSON<T = any>(path: string, body: any = {}): Promise<T> {
   const base = ensureBase()
   const url = `${base}/${String(path).replace(/^\/+/, '')}`
-  
+
   let resp: Response
   try {
     resp = await fetch(url, {
@@ -183,7 +188,9 @@ async function postJSON<T = any>(path: string, body: any = {}): Promise<T> {
       body: JSON.stringify(body || {}),
     })
   } catch (networkError: any) {
-    const err: any = new Error(`[StylesService] Network error: ${networkError?.message || networkError}`)
+    const err: any = new Error(
+      `[StylesService] Network error: ${networkError?.message || networkError}`,
+    )
     err.cause = networkError
     err.url = url
     throw err
@@ -194,7 +201,9 @@ async function postJSON<T = any>(path: string, body: any = {}): Promise<T> {
   try {
     data = text ? JSON.parse(text) : null
   } catch (parseError: any) {
-    const err: any = new Error(`[StylesService] Invalid JSON response (${resp.status}): ${text?.slice(0, 200)}`)
+    const err: any = new Error(
+      `[StylesService] Invalid JSON response (${resp.status}): ${text?.slice(0, 200)}`,
+    )
     err.cause = parseError
     err.status = resp.status
     err.url = url
@@ -202,7 +211,9 @@ async function postJSON<T = any>(path: string, body: any = {}): Promise<T> {
   }
 
   if (!resp.ok) {
-    const err: any = new Error(`[StylesService] HTTP ${resp.status}: ${data && (data.message || data.error) || 'Unknown error'}`)
+    const err: any = new Error(
+      `[StylesService] HTTP ${resp.status}: ${(data && (data.message || data.error)) || 'Unknown error'}`,
+    )
     err.status = resp.status
     err.url = url
     err.details = data
@@ -240,7 +251,11 @@ const StylesService = {
    * 更新主题开关文件
    * @param content - { enabled: string[], disabled?: string[], order?: string[] }
    */
-  updateStylesSwitch(content: { enabled: string[]; disabled?: string[]; order?: string[] }): Promise<StylesSwitchResponse> {
+  updateStylesSwitch(content: {
+    enabled: string[]
+    disabled?: string[]
+    order?: string[]
+  }): Promise<StylesSwitchResponse> {
     return postJSON<StylesSwitchResponse>('smarttavern/styles/update_styles_switch', { content })
   },
 
@@ -253,7 +268,7 @@ const StylesService = {
     const current = await this.getStylesSwitch()
     const enabledList = Array.isArray(current.enabled) ? [...current.enabled] : []
     const disabledList = Array.isArray(current.disabled) ? [...current.disabled] : []
-    
+
     return this.updateStylesSwitch({ enabled: enabledList, disabled: disabledList, order })
   },
 
@@ -262,7 +277,9 @@ const StylesService = {
    * @param themeDir - 主题目录路径
    */
   getThemeDetail(themeDir: string): Promise<ThemeDetailResponse> {
-    return postJSON<ThemeDetailResponse>('smarttavern/styles/get_theme_detail', { theme_dir: themeDir })
+    return postJSON<ThemeDetailResponse>('smarttavern/styles/get_theme_detail', {
+      theme_dir: themeDir,
+    })
   },
 
   /**
@@ -270,7 +287,9 @@ const StylesService = {
    * @param themeDir - 主题目录路径
    */
   getThemeEntries(themeDir: string): Promise<ThemeEntriesResponse> {
-    return postJSON<ThemeEntriesResponse>('smarttavern/styles/get_theme_entries', { theme_dir: themeDir })
+    return postJSON<ThemeEntriesResponse>('smarttavern/styles/get_theme_entries', {
+      theme_dir: themeDir,
+    })
   },
 
   /**
@@ -297,7 +316,7 @@ const StylesService = {
     return {
       blob: new Blob([bytes.buffer as ArrayBuffer], { type: mime }),
       mime,
-      size: Number(res.size || bytes.length)
+      size: Number(res.size || bytes.length),
     }
   },
 
@@ -327,10 +346,10 @@ const StylesService = {
     const current = await this.getStylesSwitch()
     const enabledList = Array.isArray(current.enabled) ? [...current.enabled] : []
     const disabledList = Array.isArray(current.disabled) ? [...current.disabled] : []
-    
+
     // 提取主题目录名
     const themeName = themeDir.split('/').pop() || themeDir
-    
+
     if (enabled) {
       // 启用：从 disabled 移除，添加到 enabled（支持多主题同时启用）
       const disabledIdx = disabledList.indexOf(themeName)
@@ -342,7 +361,7 @@ const StylesService = {
       if (enabledIdx >= 0) enabledList.splice(enabledIdx, 1)
       if (!disabledList.includes(themeName)) disabledList.push(themeName)
     }
-    
+
     return this.updateStylesSwitch({ enabled: enabledList, disabled: disabledList })
   },
 
@@ -359,7 +378,7 @@ const StylesService = {
     fileContentBase64: string,
     filename: string,
     targetName?: string,
-    overwrite: boolean = false
+    overwrite: boolean = false,
   ): Promise<ImportStyleResponse> {
     return postJSON<ImportStyleResponse>('smarttavern/data_import/import_data', {
       data_type: 'style',
@@ -379,7 +398,7 @@ const StylesService = {
   async importStyleFromFile(
     file: File,
     targetName?: string,
-    overwrite: boolean = false
+    overwrite: boolean = false,
   ): Promise<ImportStyleResponse> {
     const base64 = await _fileToBase64(file)
     return this.importStyle(base64, file.name, targetName, overwrite)
@@ -394,7 +413,7 @@ const StylesService = {
   exportStyle(
     folderPath: string,
     embedImageBase64?: string,
-    exportFormat?: 'zip' | 'png'
+    exportFormat?: 'zip' | 'png',
   ): Promise<ExportStyleResponse> {
     return postJSON<ExportStyleResponse>('smarttavern/data_import/export_data', {
       folder_path: folderPath,
@@ -413,18 +432,20 @@ const StylesService = {
   async exportStyleAsBlob(
     folderPath: string,
     embedImageBase64?: string,
-    exportFormat?: 'zip' | 'png'
+    exportFormat?: 'zip' | 'png',
   ): Promise<{ blob: Blob; filename: string; mime: string; size: number }> {
     const res = await this.exportStyle(folderPath, embedImageBase64, exportFormat)
     if (!res.success || !res.content_base64) {
-      const err: any = new Error(`[StylesService] Export failed: ${res.message || res.error || 'Unknown error'}`)
+      const err: any = new Error(
+        `[StylesService] Export failed: ${res.message || res.error || 'Unknown error'}`,
+      )
       err.details = res
       throw err
     }
     const bytes = _b64ToBytes(res.content_base64)
     const mimeMap: Record<string, string> = {
-      'png': 'image/png',
-      'zip': 'application/zip',
+      png: 'image/png',
+      zip: 'application/zip',
     }
     const mime = mimeMap[res.format || 'zip'] || 'application/zip'
     const filename = res.filename || `export.${res.format || 'zip'}`
@@ -445,10 +466,14 @@ const StylesService = {
   async downloadExportedStyle(
     folderPath: string,
     embedImageBase64?: string,
-    exportFormat?: 'zip' | 'png'
+    exportFormat?: 'zip' | 'png',
   ): Promise<void> {
-    const { blob, filename } = await this.exportStyleAsBlob(folderPath, embedImageBase64, exportFormat)
-    
+    const { blob, filename } = await this.exportStyleAsBlob(
+      folderPath,
+      embedImageBase64,
+      exportFormat,
+    )
+
     // 创建下载链接
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -467,7 +492,7 @@ const StylesService = {
    */
   updateThemeFile(
     themeDir: string,
-    payload: { name?: string; description?: string }
+    payload: { name?: string; description?: string },
   ): Promise<ThemeDetailResponse> {
     return postJSON<ThemeDetailResponse>('smarttavern/styles/update_theme_file', {
       theme_dir: themeDir,
@@ -481,7 +506,9 @@ const StylesService = {
    * 获取页面背景图片的哈希值（用于缓存验证）
    * @param orientation - 方向：'landscape'（横版）或 'portrait'（竖版）
    */
-  getPageBackgroundsHash(orientation?: 'landscape' | 'portrait'): Promise<PageBackgroundHashesResponse> {
+  getPageBackgroundsHash(
+    orientation?: 'landscape' | 'portrait',
+  ): Promise<PageBackgroundHashesResponse> {
     return postJSON<PageBackgroundHashesResponse>('smarttavern/styles/get_page_backgrounds_hash', {
       orientation,
     })
@@ -492,7 +519,10 @@ const StylesService = {
    * @param page - 页面名称：'HomePage', 'ThreadedChat', 'SandboxChat'
    * @param orientation - 方向：'landscape' 或 'portrait'
    */
-  getPageBackground(page: string, orientation: 'landscape' | 'portrait' = 'landscape'): Promise<PageBackgroundResponse> {
+  getPageBackground(
+    page: string,
+    orientation: 'landscape' | 'portrait' = 'landscape',
+  ): Promise<PageBackgroundResponse> {
     return postJSON<PageBackgroundResponse>('smarttavern/styles/get_page_background', {
       page,
       orientation,
@@ -506,11 +536,13 @@ const StylesService = {
    */
   async getPageBackgroundBlob(
     page: string,
-    orientation: 'landscape' | 'portrait' = 'landscape'
+    orientation: 'landscape' | 'portrait' = 'landscape',
   ): Promise<{ blob: Blob; mime: string; size: number; hash: string }> {
     const res = await this.getPageBackground(page, orientation)
     if (res.error || !res.content_base64) {
-      const err: any = new Error(`[StylesService] Failed to get page background: ${res.message || res.error || 'Unknown'}`)
+      const err: any = new Error(
+        `[StylesService] Failed to get page background: ${res.message || res.error || 'Unknown'}`,
+      )
       err.details = res
       throw err
     }
@@ -540,8 +572,17 @@ const StylesService = {
   uploadPageBackground(
     page: string,
     orientation: 'landscape' | 'portrait',
-    imageBase64: string
-  ): Promise<{ success: boolean; page: string; orientation: string; file: string; hash: string; size: number; message: string; error?: string }> {
+    imageBase64: string,
+  ): Promise<{
+    success: boolean
+    page: string
+    orientation: string
+    file: string
+    hash: string
+    size: number
+    message: string
+    error?: string
+  }> {
     return postJSON('smarttavern/styles/upload_page_background', {
       page,
       orientation,
@@ -558,8 +599,17 @@ const StylesService = {
   async uploadPageBackgroundFromFile(
     page: string,
     orientation: 'landscape' | 'portrait',
-    file: File
-  ): Promise<{ success: boolean; page: string; orientation: string; file: string; hash: string; size: number; message: string; error?: string }> {
+    file: File,
+  ): Promise<{
+    success: boolean
+    page: string
+    orientation: string
+    file: string
+    hash: string
+    size: number
+    message: string
+    error?: string
+  }> {
     const base64 = await _fileToBase64(file)
     return this.uploadPageBackground(page, orientation, base64)
   },
@@ -572,7 +622,7 @@ async function _fileToBase64(file: File | Blob): Promise<string> {
     reader.onload = () => {
       const result = reader.result as string
       // Remove data URL prefix (e.g., "data:image/png;base64,")
-      const base64 = result.includes(',') ? (result.split(',')[1] || '') : result
+      const base64 = result.includes(',') ? result.split(',')[1] || '' : result
       resolve(base64)
     }
     reader.onerror = () => reject(reader.error)

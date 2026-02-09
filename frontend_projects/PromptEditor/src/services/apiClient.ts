@@ -70,8 +70,8 @@ async function readPortsFromPythonConfig(): Promise<PortTriplet | null> {
  */
 function preferPreconfiguredBase(): string | null {
   try {
-    const ls = (typeof window !== 'undefined') ? localStorage.getItem('st.backend_base') : null
-    const win = (typeof window !== 'undefined') ? (window as any).ST_BACKEND_BASE : null
+    const ls = typeof window !== 'undefined' ? localStorage.getItem('st.backend_base') : null
+    const win = typeof window !== 'undefined' ? (window as any).ST_BACKEND_BASE : null
     const env = (import.meta as any)?.env?.VITE_API_BASE || null
     const b = (ls || win || env) as string | null
     return b ? String(b).replace(/\/+$/, '') : null
@@ -90,7 +90,10 @@ function applyPorts(ports: PortTriplet | null): void {
   const port = ports?.backend ?? 8050
   let protocol = typeof window !== 'undefined' ? window.location.protocol : 'http:'
   if (!/^https?:/.test(protocol)) protocol = 'http:'
-  const host = typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : 'localhost'
+  const host =
+    typeof window !== 'undefined' && window.location.hostname
+      ? window.location.hostname
+      : 'localhost'
   cfg.baseURL = `${protocol}//${host}:${port}`
   cfg.apiPrefix = DEFAULT_API_PREFIX
 }
@@ -117,9 +120,7 @@ export function getApiConfig(): Readonly<APIConfig> {
 async function request(path: string, init: RequestInit): Promise<any> {
   await ensureApiClientReady()
   const url =
-    cfg.baseURL.replace(/\/+$/, '') +
-    cfg.apiPrefix +
-    (path.startsWith('/') ? path : '/' + path)
+    cfg.baseURL.replace(/\/+$/, '') + cfg.apiPrefix + (path.startsWith('/') ? path : '/' + path)
 
   const res = await fetch(url, {
     ...init,

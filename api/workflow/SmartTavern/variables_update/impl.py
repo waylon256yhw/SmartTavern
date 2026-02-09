@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 SmartTavern.workflow.smarttavern.variables_update 实现层
 
@@ -12,18 +11,20 @@ SmartTavern.workflow.smarttavern.variables_update 实现层
 - [python.function(chat_branches.variables())](api/modules/SmartTavern/chat_branches/chat_branches.py:504)
 - [python.function(variables_update.merge())](api/modules/SmartTavern/variables_update/variables_update.py:30)
 """
+
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
+
 import core  # 门面：统一 API 调用
 
 
 def apply_to_conversation(
     file: str,
-    overrides: Dict[str, Any],
-    options: Optional[Dict[str, Any]] = None,
+    overrides: dict[str, Any],
+    options: dict[str, Any] | None = None,
     operation: str = "merge",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     参数：
     - file: 对话主文件路径（相对仓库根，如 backend_projects/SmartTavern/data/conversations/branch_demo/conversation.json）

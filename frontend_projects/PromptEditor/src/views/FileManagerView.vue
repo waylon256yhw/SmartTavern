@@ -24,14 +24,16 @@
     </div>
 
     <!-- Tabs -->
-    <div
-      class="flex flex-wrap items-center gap-2 bg-white border border-gray-200 rounded-4 p-2"
-    >
+    <div class="flex flex-wrap items-center gap-2 bg-white border border-gray-200 rounded-4 p-2">
       <button
         v-for="t in tabs"
         :key="t.key"
         class="px-3 py-1.5 rounded-4 border transition text-sm"
-        :class="tab === t.key ? 'bg-black text-white border-black' : 'bg-transparent text-black border-gray-300 hover:bg-gray-100'"
+        :class="
+          tab === t.key
+            ? 'bg-black text-white border-black'
+            : 'bg-transparent text-black border-gray-300 hover:bg-gray-100'
+        "
         @click="tab = t.key"
       >
         <div class="flex items-center gap-2">
@@ -53,7 +55,11 @@
           <div class="flex items-center gap-2">
             <i data-lucide="file" class="w-4 h-4 text-black"></i>
             <span class="font-medium text-black">{{ f.name }}</span>
-            <span v-if="activeName === f.name" class="text-[10px] border border-black text-black px-2 py-0.5 rounded-4">当前</span>
+            <span
+              v-if="activeName === f.name"
+              class="text-[10px] border border-black text-black px-2 py-0.5 rounded-4"
+              >当前</span
+            >
             <span class="text-[10px] text-black/60">更新: {{ formatTime(f.updatedAt) }}</span>
           </div>
           <div class="flex items-center gap-2">
@@ -86,7 +92,10 @@
       </div>
     </div>
 
-    <div v-else class="border border-dashed border-gray-300 rounded p-6 text-center text-sm text-black/60 bg-gray-50">
+    <div
+      v-else
+      class="border border-dashed border-gray-300 rounded p-6 text-center text-sm text-black/60 bg-gray-50"
+    >
       当前类型下暂无文件。请在相应页面使用右上角“导入”按钮，导入后会自动出现在此处。
     </div>
   </section>
@@ -102,12 +111,12 @@ const tab = ref<TypeKey>(store.getCurrentType || 'presets')
 
 type TabDef = { key: TypeKey; cn: string; en: string }
 const tabs: TabDef[] = [
-  { key: 'presets',   cn: '预设',     en: 'Presets' },
-  { key: 'worldbook', cn: '世界书',   en: 'World Book' },
-  { key: 'characters',cn: '角色卡',   en: 'Characters' },
-  { key: 'regex',     cn: '正则',     en: 'Regex' },
-  { key: 'user',      cn: '用户信息', en: 'User' },
-  { key: 'history',   cn: '对话历史', en: 'History' },
+  { key: 'presets', cn: '预设', en: 'Presets' },
+  { key: 'worldbook', cn: '世界书', en: 'World Book' },
+  { key: 'characters', cn: '角色卡', en: 'Characters' },
+  { key: 'regex', cn: '正则', en: 'Regex' },
+  { key: 'user', cn: '用户信息', en: 'User' },
+  { key: 'history', cn: '对话历史', en: 'History' },
 ]
 
 onMounted(() => {
@@ -141,7 +150,7 @@ function formatTime(ts?: number): string {
   if (!ts) return '--'
   const d = new Date(ts)
   const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 function summaryFor(type: TypeKey, data: any): string {
@@ -167,16 +176,24 @@ function summaryFor(type: TypeKey, data: any): string {
         return `类型: 角色卡 · messages: ${messages} · world: ${wb} · regex: ${rules}`
       }
       case 'regex': {
-        const rules = Array.isArray(data) ? data.length : (Array.isArray(data?.regex_rules) ? data.regex_rules.length : 0)
+        const rules = Array.isArray(data)
+          ? data.length
+          : Array.isArray(data?.regex_rules)
+            ? data.regex_rules.length
+            : 0
         return `类型: 正则 · rules: ${rules}`
       }
       case 'user': {
         const name = typeof data?.name === 'string' ? data.name : ''
         const desc = typeof data?.description === 'string' ? data.description : ''
-        return `类型: 用户信息 · name: ${name || '未命名'} · 描述: ${desc ? (desc.length > 24 ? desc.slice(0,24)+'…' : desc) : '—'}`
+        return `类型: 用户信息 · name: ${name || '未命名'} · 描述: ${desc ? (desc.length > 24 ? desc.slice(0, 24) + '…' : desc) : '—'}`
       }
       case 'history': {
-        const arr = Array.isArray(data) ? data.length : (data && typeof data === 'object' ? Object.keys(data).length : 0)
+        const arr = Array.isArray(data)
+          ? data.length
+          : data && typeof data === 'object'
+            ? Object.keys(data).length
+            : 0
         return `类型: 历史 · 项目数: ${arr}`
       }
     }

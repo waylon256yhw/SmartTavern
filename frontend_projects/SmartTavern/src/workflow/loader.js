@@ -31,7 +31,15 @@ let __seq = 1
  * - 以 'http' 开头：作为前缀匹配完整 URL
  * - 以 '/' 开头：匹配同源下的 pathname 前缀
  */
-let __whitelist = ['same-origin', 'blob:', 'data:', '/public/workflows/', '/workflows/', '/src/workflow/workflows/', '/assets/workflows/']
+let __whitelist = [
+  'same-origin',
+  'blob:',
+  'data:',
+  '/public/workflows/',
+  '/workflows/',
+  '/src/workflow/workflows/',
+  '/assets/workflows/',
+]
 
 /** 内部插件注册表：id -> { id, url, dispose?:Function, mod?:any } */
 const __plugins = new Map()
@@ -54,7 +62,8 @@ function isAllowed(url) {
       if (w === 'blob:') return proto === 'blob:'
       if (w === 'data:') return proto === 'data:'
       if (typeof w === 'string' && w.startsWith('http')) return href.startsWith(w)
-      if (typeof w === 'string' && w.startsWith('/')) return isSameOrigin && u.pathname.startsWith(w)
+      if (typeof w === 'string' && w.startsWith('/'))
+        return isSameOrigin && u.pathname.startsWith(w)
       return false
     })
   } catch (e) {
@@ -111,7 +120,9 @@ async function load(url, options = {}) {
     activate = mod.default.activate
   }
   if (typeof activate !== 'function') {
-    throw new Error('[loader.load] module must export an activate(host) function (default or named)')
+    throw new Error(
+      '[loader.load] module must export an activate(host) function (default or named)',
+    )
   }
 
   let dispose = null
@@ -147,7 +158,9 @@ async function unload(id) {
     if (blobs && blobs.size) {
       try {
         for (const u of blobs) {
-          try { URL.revokeObjectURL(u) } catch (_) {}
+          try {
+            URL.revokeObjectURL(u)
+          } catch (_) {}
         }
       } finally {
         __blobsById.delete(id)
@@ -179,7 +192,9 @@ function has(id) {
 /**
  * POSIX helpers for path resolution (work with repo-like paths)
  */
-function __toPosix(p) { return String(p || '').replace(/\\\\/g, '/'); }
+function __toPosix(p) {
+  return String(p || '').replace(/\\\\/g, '/')
+}
 function __dirname(p) {
   const s = __toPosix(p)
   const i = s.lastIndexOf('/')
@@ -187,7 +202,7 @@ function __dirname(p) {
 }
 function __resolveRelative(basePath, spec) {
   const baseDir = __dirname(basePath)
-  const raw = __toPosix(baseDir ? (baseDir + '/' + spec) : spec)
+  const raw = __toPosix(baseDir ? baseDir + '/' + spec : spec)
   const parts = raw.split('/')
   const stack = []
   for (const part of parts) {
@@ -210,7 +225,8 @@ function __isRelative(spec) {
  * - options: { id?:string, replace?:boolean }
  */
 async function loadBackendWorkflow(entryFile, options = {}) {
-  if (!entryFile || typeof entryFile !== 'string') throw new Error('[loader.loadBackendWorkflow] entryFile required')
+  if (!entryFile || typeof entryFile !== 'string')
+    throw new Error('[loader.loadBackendWorkflow] entryFile required')
   const id = String(options.id || `wf_${__seq++}`)
 
   if (__plugins.has(id) && options.replace !== true) {
@@ -222,8 +238,8 @@ async function loadBackendWorkflow(entryFile, options = {}) {
 
   const entryPath = __toPosix(entryFile)
   const pluginRoot = __dirname(entryPath) // 限制相对导入不得越过入口所在目录
-  const visited = new Map()   // path -> blobUrl
-  const blobSet = new Set()   // 待释放的 blob 列表
+  const visited = new Map() // path -> blobUrl
+  const blobSet = new Set() // 待释放的 blob 列表
 
   // 简单 import 语句匹配（静态/动态）
   const RE_STATIC = /(?:import|export)\s+(?:[^'"]*?\sfrom\s*)?['"]([^'"]+)['"]/g
@@ -254,7 +270,9 @@ async function loadBackendWorkflow(entryFile, options = {}) {
     const b64 = detail.content_base64
     let bytes
     if (typeof atob === 'function') {
-      const bin = atob(b64); const len = bin.length; const out = new Uint8Array(len)
+      const bin = atob(b64)
+      const len = bin.length
+      const out = new Uint8Array(len)
       for (let i = 0; i < len; i++) out[i] = bin.charCodeAt(i)
       bytes = out
     } else {
@@ -272,7 +290,7 @@ async function loadBackendWorkflow(entryFile, options = {}) {
     blobSet.add(modUrl)
     return modUrl
   }
-  
+
   async function processFile(filePath) {
     const key = __toPosix(filePath)
     if (visited.has(key)) return visited.get(key)
@@ -284,7 +302,7 @@ async function loadBackendWorkflow(entryFile, options = {}) {
       visited.set(key, modUrl)
       return modUrl
     }
-  
+
     // 读取后端 JS 源码（通过插件资产接口）
     const asset = await DataCatalog.getPluginsAsset(key)
     const b64 = asset?.content_base64
@@ -293,7 +311,9 @@ async function loadBackendWorkflow(entryFile, options = {}) {
     }
     let bytes
     if (typeof atob === 'function') {
-      const bin = atob(b64); const len = bin.length; const out = new Uint8Array(len)
+      const bin = atob(b64)
+      const len = bin.length
+      const out = new Uint8Array(len)
       for (let i = 0; i < len; i++) out[i] = bin.charCodeAt(i)
       bytes = out
     } else {
@@ -304,7 +324,7 @@ async function loadBackendWorkflow(entryFile, options = {}) {
     if (typeof src !== 'string' || !src.length) {
       throw new Error(`[loader.loadBackendWorkflow] unable to fetch: ${key}`)
     }
-  
+
     async function transform(code, currentPath) {
       // 替换静态 import/export
       let out = code
@@ -315,7 +335,9 @@ async function loadBackendWorkflow(entryFile, options = {}) {
           const resolved = __resolveRelative(currentPath, spec)
           // 安全检查：禁止越过插件根目录
           if (pluginRoot && !(resolved === pluginRoot || resolved.startsWith(pluginRoot + '/'))) {
-            throw new Error(`[loader.loadBackendWorkflow] relative import escapes plugin root: ${spec} in ${currentPath}`)
+            throw new Error(
+              `[loader.loadBackendWorkflow] relative import escapes plugin root: ${spec} in ${currentPath}`,
+            )
           }
           const depUrl = await processFile(resolved)
           staticRepls.push({ from: spec, to: depUrl })
@@ -325,7 +347,7 @@ async function loadBackendWorkflow(entryFile, options = {}) {
         // 精准替换当前 spec（保持引号形式）
         out = out.replace(new RegExp(`(['"])${__escapeRegex(from)}\\1`, 'g'), `'${to}'`)
       }
-  
+
       // 替换动态 import('...')
       const dynRepls = []
       for (const m of code.matchAll(RE_DYNAMIC)) {
@@ -333,19 +355,24 @@ async function loadBackendWorkflow(entryFile, options = {}) {
         if (__isRelative(spec)) {
           const resolved = __resolveRelative(currentPath, spec)
           if (pluginRoot && !(resolved === pluginRoot || resolved.startsWith(pluginRoot + '/'))) {
-            throw new Error(`[loader.loadBackendWorkflow] dynamic import escapes plugin root: ${spec} in ${currentPath}`)
+            throw new Error(
+              `[loader.loadBackendWorkflow] dynamic import escapes plugin root: ${spec} in ${currentPath}`,
+            )
           }
           const depUrl = await processFile(resolved)
           dynRepls.push({ from: spec, to: depUrl })
         }
       }
       for (const { from, to } of dynRepls) {
-        out = out.replace(new RegExp(`(import\\s*\\(\\s*['"])${__escapeRegex(from)}(['"]\\s*\\))`, 'g'), `$1${to}$2`)
+        out = out.replace(
+          new RegExp(`(import\\s*\\(\\s*['"])${__escapeRegex(from)}(['"]\\s*\\))`, 'g'),
+          `$1${to}$2`,
+        )
       }
-  
+
       return out
     }
-  
+
     const transformed = await transform(src, key)
     const blob = new Blob([transformed], { type: 'application/javascript' })
     const blobUrl = URL.createObjectURL(blob)
@@ -353,7 +380,7 @@ async function loadBackendWorkflow(entryFile, options = {}) {
     blobSet.add(blobUrl)
     return blobUrl
   }
-  
+
   const entryBlobUrl = await processFile(entryPath)
 
   // 走统一 load（会调用 activate(host)）
@@ -381,16 +408,23 @@ async function loadPluginByDir(dir, options = {}) {
   // base64 decode to text
   let txt
   if (typeof atob === 'function') {
-    const bin = atob(b64); const len = bin.length; const out = new Uint8Array(len)
+    const bin = atob(b64)
+    const len = bin.length
+    const out = new Uint8Array(len)
     for (let i = 0; i < len; i++) out[i] = bin.charCodeAt(i)
     txt = new TextDecoder('utf-8').decode(out)
   } else {
     txt = Buffer.from(b64, 'base64').toString('utf-8')
   }
   let json
-  try { json = JSON.parse(txt) } catch (e) { throw new Error(`[loader.loadPluginByDir] manifest parse failed: ${e?.message || e}`) }
+  try {
+    json = JSON.parse(txt)
+  } catch (e) {
+    throw new Error(`[loader.loadPluginByDir] manifest parse failed: ${e?.message || e}`)
+  }
   const main = typeof json?.main === 'string' ? json.main : null
-  const entryFromList = Array.isArray(json?.entries) && json.entries.length ? String(json.entries[0]) : null
+  const entryFromList =
+    Array.isArray(json?.entries) && json.entries.length ? String(json.entries[0]) : null
   const entry = main || entryFromList || 'index.js'
   const entryPath = `${pluginRoot}/${entry}`
   return loadBackendWorkflow(entryPath, { id, replace: true })

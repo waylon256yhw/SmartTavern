@@ -21,10 +21,11 @@ SmartTavern Plugin Backend — Context Variables Implementation (impl)
 """
 
 import json
-from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
-import re
 import json as _json
+import re
+from pathlib import Path
+from typing import Any
+
 import core  # type: ignore
 
 
@@ -53,7 +54,7 @@ def _posix_to_abs(posix_path: str) -> Path:
     return (root / posix_path).resolve()
 
 
-def _read_json(path: Path) -> Optional[Any]:
+def _read_json(path: Path) -> Any | None:
     try:
         if not path.exists():
             return None
@@ -73,14 +74,14 @@ def _write_json(path: Path, obj: Any) -> bool:
         return False
 
 
-def _conversation_dir_and_settings(conversation_file: str) -> Tuple[Path, Path]:
+def _conversation_dir_and_settings(conversation_file: str) -> tuple[Path, Path]:
     abs_conv = _posix_to_abs(conversation_file)
     conv_dir = abs_conv.parent
     settings_path = conv_dir / "settings.json"
     return conv_dir, settings_path
 
 
-def _resolve_character_file_from_settings(settings_doc: Dict[str, Any]) -> Optional[str]:
+def _resolve_character_file_from_settings(settings_doc: dict[str, Any]) -> str | None:
     if not isinstance(settings_doc, dict):
         return None
     # settings.character 或 settings.characters[0]
@@ -92,7 +93,7 @@ def _resolve_character_file_from_settings(settings_doc: Dict[str, Any]) -> Optio
     return None
 
 
-def _extract_initvar_from_character(character_doc: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def _extract_initvar_from_character(character_doc: dict[str, Any]) -> dict[str, Any] | None:
     """
     提取 world_book.entries 中 name 含 "[InitVar]" 的条目，并解析其 content 成为 dict。
     content 可能是对象或字符串化 JSON（甚至双层字符串），逐层尝试。
@@ -142,7 +143,7 @@ def _extract_initvar_from_character(character_doc: Dict[str, Any]) -> Optional[D
         return None
 
 
-def _ensure_init_from_character(conversation_file: str) -> Tuple[Path, Dict[str, Any]]:
+def _ensure_init_from_character(conversation_file: str) -> tuple[Path, dict[str, Any]]:
     """
     依据 settings.json 的角色卡内嵌 world_book 提取 [InitVar]，返回 context_variables.json 路径与初始对象（没有则 {}）。
     不进行写入，仅返回目标路径与内容。
@@ -151,7 +152,7 @@ def _ensure_init_from_character(conversation_file: str) -> Tuple[Path, Dict[str,
     ctx_path = conv_dir / "context_variables.json"
 
     settings_doc = _read_json(settings_path) or {}
-    init_obj: Dict[str, Any] = {}
+    init_obj: dict[str, Any] = {}
 
     # 角色卡内嵌 world_book 的 [InitVar]
     char_file = _resolve_character_file_from_settings(settings_doc)
@@ -165,7 +166,7 @@ def _ensure_init_from_character(conversation_file: str) -> Tuple[Path, Dict[str,
     return ctx_path, init_obj
 
 
-def ensure_init_impl(conversation_file: str) -> Dict[str, Any]:
+def ensure_init_impl(conversation_file: str) -> dict[str, Any]:
     """
     若当前对话目录下不存在 context_variables.json，则创建占位文件，包含初始化标记：
       {"initialized": false}
@@ -179,37 +180,28 @@ def ensure_init_impl(conversation_file: str) -> Dict[str, Any]:
         # 不存在 → 创建占位（仅标记 initialized=false）
         payload = {"initialized": False}
         ok = _write_json(ctx_path, payload)
-        return {
-            "success": bool(ok),
-            "file": str(ctx_path),
-            "created": bool(ok),
-            "content": payload if ok else {}
-        }
+        return {"success": bool(ok), "file": str(ctx_path), "created": bool(ok), "content": payload if ok else {}}
     else:
         # 已存在 → 不覆盖，直接返回当前内容
         return {
             "success": True,
             "file": str(ctx_path),
             "created": False,
-            "content": existing if isinstance(existing, dict) else {}
+            "content": existing if isinstance(existing, dict) else {},
         }
 
 
-def get_context_variables_impl(conversation_file: str) -> Dict[str, Any]:
+def get_context_variables_impl(conversation_file: str) -> dict[str, Any]:
     """
     读取 context_variables.json；不存在返回 {}。
     """
     conv_dir, _ = _conversation_dir_and_settings(conversation_file)
     ctx_path = conv_dir / "context_variables.json"
     content = _read_json(ctx_path)
-    return {
-        "success": True,
-        "file": str(ctx_path),
-        "content": content if isinstance(content, dict) else {}
-    }
+    return {"success": True, "file": str(ctx_path), "content": content if isinstance(content, dict) else {}}
 
 
-def set_context_variables_impl(conversation_file: str, content: Dict[str, Any]) -> Dict[str, Any]:
+def set_context_variables_impl(conversation_file: str, content: dict[str, Any]) -> dict[str, Any]:
     """
     完整覆盖写入 context_variables.json。
     """
@@ -217,14 +209,10 @@ def set_context_variables_impl(conversation_file: str, content: Dict[str, Any]) 
     ctx_path = conv_dir / "context_variables.json"
 
     ok = _write_json(ctx_path, content if isinstance(content, dict) else {})
-    return {
-        "success": bool(ok),
-        "file": str(ctx_path),
-        "content": content if bool(ok) else {}
-    }
+    return {"success": bool(ok), "file": str(ctx_path), "content": content if bool(ok) else {}}
 
 
-def merge_context_variables_impl(conversation_file: str, patch: Dict[str, Any]) -> Dict[str, Any]:
+def merge_context_variables_impl(conversation_file: str, patch: dict[str, Any]) -> dict[str, Any]:
     """
     合并写入：读取现有 context_variables.json 与传入 patch 合并后写回（浅合并）。
     """
@@ -237,34 +225,31 @@ def merge_context_variables_impl(conversation_file: str, patch: Dict[str, Any]) 
     if not isinstance(patch, dict):
         patch = {}
 
-    merged: Dict[str, Any] = dict(current)
+    merged: dict[str, Any] = dict(current)
     # 浅合并；如需深合并可在此扩展
     for k, v in patch.items():
         merged[k] = v
 
     ok = _write_json(ctx_path, merged)
-    return {
-        "success": bool(ok),
-        "file": str(ctx_path),
-        "content": merged if bool(ok) else (current or {})
-    }
+    return {"success": bool(ok), "file": str(ctx_path), "content": merged if bool(ok) else (current or {})}
 
 
 __all__ = [
     "ensure_init_impl",
     "get_context_variables_impl",
-    "set_context_variables_impl",
     "merge_context_variables_impl",
     "replay_context_variables_impl",
     "replay_get_value_impl",
     "replay_keys_impl",
+    "set_context_variables_impl",
 ]
 
 
 _PP_RE = re.compile(r"<postprocess>\s*({[\s\S]*?})\s*</postprocess>", re.IGNORECASE)
 
-def _extract_pp_obj(text: str) -> Optional[Dict[str, Any]]:
-    if not isinstance(text, str) or '<postprocess>' not in text:
+
+def _extract_pp_obj(text: str) -> dict[str, Any] | None:
+    if not isinstance(text, str) or "<postprocess>" not in text:
         return None
     m = _PP_RE.search(text)
     if not m:
@@ -275,17 +260,18 @@ def _extract_pp_obj(text: str) -> Optional[Dict[str, Any]]:
     except Exception:
         return None
 
-def _set_by_path(root: Dict[str, Any], path: Any, value: Any) -> None:
+
+def _set_by_path(root: dict[str, Any], path: Any, value: Any) -> None:
     # path: list[str] or dotted string
     if isinstance(path, list):
         toks = [str(x).strip() for x in path if str(x).strip()]
     else:
         s = str(path or "")
-        s2 = s.replace('[', '.').replace(']', '.')
-        toks = [t.strip().strip("'\"") for t in s2.split('.') if t.strip()]
+        s2 = s.replace("[", ".").replace("]", ".")
+        toks = [t.strip().strip("'\"") for t in s2.split(".") if t.strip()]
     cur = root
     for i, key in enumerate(toks):
-        last = (i == len(toks) - 1)
+        last = i == len(toks) - 1
         if last:
             cur[key] = value
         else:
@@ -295,16 +281,17 @@ def _set_by_path(root: Dict[str, Any], path: Any, value: Any) -> None:
                 cur[key] = nxt
             cur = nxt
 
-def _del_by_path(root: Dict[str, Any], path: Any) -> None:
+
+def _del_by_path(root: dict[str, Any], path: Any) -> None:
     if isinstance(path, list):
         toks = [str(x).strip() for x in path if str(x).strip()]
     else:
         s = str(path or "")
-        s2 = s.replace('[', '.').replace(']', '.')
-        toks = [t.strip().strip("'\"") for t in s2.split('.') if t.strip()]
+        s2 = s.replace("[", ".").replace("]", ".")
+        toks = [t.strip().strip("'\"") for t in s2.split(".") if t.strip()]
     cur = root
     for i, key in enumerate(toks):
-        last = (i == len(toks) - 1)
+        last = i == len(toks) - 1
         if last:
             try:
                 if key in cur:
@@ -317,17 +304,18 @@ def _del_by_path(root: Dict[str, Any], path: Any) -> None:
                 return
             cur = nxt
 
-def _get_by_path(root: Dict[str, Any], path: Any) -> str:
+
+def _get_by_path(root: dict[str, Any], path: Any) -> str:
     # 解析路径为 token（支持数字下标）
     if isinstance(path, list):
         raw = [str(x).strip() for x in path if str(x).strip()]
     else:
         s = str(path or "")
-        s2 = s.replace('[', '.').replace(']', '.')
-        raw = [t.strip().strip("'\"") for t in s2.split('.') if t.strip()]
+        s2 = s.replace("[", ".").replace("]", ".")
+        raw = [t.strip().strip("'\"") for t in s2.split(".") if t.strip()]
     toks: list[Any] = []
     for t in raw:
-        if t.lstrip('-').isdigit():
+        if t.lstrip("-").isdigit():
             try:
                 toks.append(int(t))
                 continue
@@ -348,20 +336,22 @@ def _get_by_path(root: Dict[str, Any], path: Any) -> str:
             cur = cur[tok]
     return "" if cur is None else str(cur)
 
-def _resolve_path(root: Dict[str, Any], path: Any) -> Any:
+
+def _resolve_path(root: dict[str, Any], path: Any) -> Any:
     if path is None or path == "":
         return root
     if isinstance(path, list):
         raw = [str(x).strip() for x in path if str(x).strip()]
     else:
         s = str(path or "")
-        s2 = s.replace('[', '.').replace(']', '.')
-        raw = [t.strip().strip("'\"") for t in s2.split('.') if t.strip()]
+        s2 = s.replace("[", ".").replace("]", ".")
+        raw = [t.strip().strip("'\"") for t in s2.split(".") if t.strip()]
     toks: list[Any] = []
     for t in raw:
-        if t.lstrip('-').isdigit():
+        if t.lstrip("-").isdigit():
             try:
-                toks.append(int(t)); continue
+                toks.append(int(t))
+                continue
             except Exception:
                 pass
         toks.append(t)
@@ -377,20 +367,24 @@ def _resolve_path(root: Dict[str, Any], path: Any) -> Any:
             cur = cur[tok]
     return cur
 
-def replay_keys_impl(conversation_file: str, key: Optional[str] = None, until_node_id: Optional[str] = None) -> Dict[str, Any]:
+
+def replay_keys_impl(
+    conversation_file: str, key: str | None = None, until_node_id: str | None = None
+) -> dict[str, Any]:
     rep = replay_context_variables_impl(conversation_file, until_node_id=until_node_id) or {}
     acc = rep.get("content") or {}
     target = _resolve_path(acc, key) if key else acc
-    out: Dict[str, bool] = {}
+    out: dict[str, bool] = {}
     if isinstance(target, dict):
-        for k in target.keys():
+        for k in target:
             out[str(k)] = True
     elif isinstance(target, list):
         for i in range(len(target)):
             out[str(i)] = True
     return {"success": True, "keys": out}
 
-def replay_context_variables_impl(conversation_file: str, until_node_id: Optional[str] = None) -> Dict[str, Any]:
+
+def replay_context_variables_impl(conversation_file: str, until_node_id: str | None = None) -> dict[str, Any]:
     # 读取分支路径（active_path）
     try:
         oa = core.call_api(
@@ -419,7 +413,7 @@ def replay_context_variables_impl(conversation_file: str, until_node_id: Optiona
     try:
         base = get_context_variables_impl(conversation_file)
         base_doc = (base or {}).get("content", {}) or {}
-        acc: Dict[str, Any] = dict(base_doc.get("__char_initvar", {}) if isinstance(base_doc, dict) else {})
+        acc: dict[str, Any] = dict(base_doc.get("__char_initvar", {}) if isinstance(base_doc, dict) else {})
     except Exception:
         acc = {}
     applied = 0
@@ -440,7 +434,7 @@ def replay_context_variables_impl(conversation_file: str, until_node_id: Optiona
                         if op == "set":
                             _set_by_path(acc, data.get("path"), data.get("value"))
                             applied += 1
-                        elif op in ("del","delete","remove"):
+                        elif op in ("del", "delete", "remove"):
                             _del_by_path(acc, data.get("path"))
                             applied += 1
             break
@@ -460,14 +454,14 @@ def replay_context_variables_impl(conversation_file: str, until_node_id: Optiona
             if op == "set":
                 _set_by_path(acc, data.get("path"), data.get("value"))
                 applied += 1
-            elif op in ("del","delete","remove"):
+            elif op in ("del", "delete", "remove"):
                 _del_by_path(acc, data.get("path"))
                 applied += 1
 
     return {"success": True, "content": acc, "applied": applied, "path": path}
 
 
-def replay_get_value_impl(conversation_file: str, key: str, until_node_id: Optional[str] = None) -> Dict[str, Any]:
+def replay_get_value_impl(conversation_file: str, key: str, until_node_id: str | None = None) -> dict[str, Any]:
     res = replay_context_variables_impl(conversation_file, until_node_id=until_node_id) or {}
     acc = res.get("content") or {}
     val = _get_by_path(acc, key)

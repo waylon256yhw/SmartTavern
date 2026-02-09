@@ -19,7 +19,15 @@ import { i18n } from '@/locales'
  *   } = useViewModal()
  */
 
-export type ViewModalType = 'preset' | 'worldbook' | 'character' | 'persona' | 'regex' | 'aiconfig' | 'workflow' | ''
+export type ViewModalType =
+  | 'preset'
+  | 'worldbook'
+  | 'character'
+  | 'persona'
+  | 'regex'
+  | 'aiconfig'
+  | 'workflow'
+  | ''
 
 export interface UseViewModalAPI {
   // state
@@ -39,28 +47,28 @@ export interface UseViewModalAPI {
 
 export function useViewModal(): UseViewModalAPI {
   // state
-  const viewModalOpen    = ref<boolean>(false)
-  const viewModalTitle   = ref<string>('')
-  const viewModalType    = ref<ViewModalType>('')
-  const viewModalData    = ref<any>(null)
+  const viewModalOpen = ref<boolean>(false)
+  const viewModalTitle = ref<string>('')
+  const viewModalType = ref<ViewModalType>('')
+  const viewModalData = ref<any>(null)
   const viewModalLoading = ref<boolean>(false)
-  const viewModalError   = ref<string>('')
-  const viewModalFile    = ref<string>('')
+  const viewModalError = ref<string>('')
+  const viewModalFile = ref<string>('')
 
   // 供外部 AI 配置面板使用的"当前预设内容"
   const currentPresetData = ref<any>(null)
-  
+
   // 事件监听清理器
-  const __eventOffs: Array<(() => void)> = []
-  
+  const __eventOffs: Array<() => void> = []
+
   onBeforeUnmount(() => {
     try {
-      __eventOffs?.forEach(fn => { 
-        try { 
-          fn?.() 
+      __eventOffs?.forEach((fn) => {
+        try {
+          fn?.()
         } catch (_) {
           // Ignore errors
-        } 
+        }
       })
       __eventOffs.length = 0
     } catch (_) {
@@ -68,13 +76,17 @@ export function useViewModal(): UseViewModalAPI {
     }
   })
 
-  async function openViewModal(type: ViewModalType, title: string, fileOrData?: string | object): Promise<void> {
-    viewModalType.value  = type
+  async function openViewModal(
+    type: ViewModalType,
+    title: string,
+    fileOrData?: string | object,
+  ): Promise<void> {
+    viewModalType.value = type
     viewModalTitle.value = title || ''
     viewModalError.value = ''
     viewModalLoading.value = true
-    viewModalData.value  = null
-    viewModalFile.value  = typeof fileOrData === 'string' ? fileOrData : ''
+    viewModalData.value = null
+    viewModalFile.value = typeof fileOrData === 'string' ? fileOrData : ''
 
     viewModalOpen.value = true
 
@@ -93,70 +105,84 @@ export function useViewModal(): UseViewModalAPI {
           refreshUI()
           return
         }
-        
+
         // 通过事件请求详情
         const categoryMap: Record<string, string> = {
-          'preset': 'preset',
-          'worldbook': 'worldbook',
-          'character': 'character',
-          'persona': 'persona',
-          'regex': 'regex',
-          'aiconfig': 'llm_config'
+          preset: 'preset',
+          worldbook: 'worldbook',
+          character: 'character',
+          persona: 'persona',
+          regex: 'regex',
+          aiconfig: 'llm_config',
         }
-        
+
         const category = categoryMap[type]
         if (!category) {
           throw new Error(i18n.t('error.unknownType', { type }))
         }
-        
+
         const tag = `detail_${type}_${Date.now()}`
-        
+
         // 监听详情查询结果（一次性）
-        const offOk = Host.events.on(Catalog.EVT_CATALOG_GET_DETAIL_OK, ({ category: _resCategory, file: resFile, data, tag: resTag }) => {
-          if (resTag !== tag) return
-          
-          try {
-            viewModalData.value = data
-            viewModalFile.value = resFile || fileOrData
-            
-            if (type === 'preset' && data) {
-              currentPresetData.value = data
+        const offOk = Host.events.on(
+          Catalog.EVT_CATALOG_GET_DETAIL_OK,
+          ({ category: _resCategory, file: resFile, data, tag: resTag }) => {
+            if (resTag !== tag) return
+
+            try {
+              viewModalData.value = data
+              viewModalFile.value = resFile || fileOrData
+
+              if (type === 'preset' && data) {
+                currentPresetData.value = data
+              }
+            } catch (e: any) {
+              viewModalError.value = e?.message || String(e)
+            } finally {
+              viewModalLoading.value = false
+              refreshUI()
+              try {
+                offOk?.()
+              } catch (_) {
+                // Ignore errors
+              }
+              try {
+                offFail?.()
+              } catch (_) {
+                // Ignore errors
+              }
             }
-          } catch (e: any) {
-            viewModalError.value = e?.message || String(e)
-          } finally {
+          },
+        )
+
+        const offFail = Host.events.on(
+          Catalog.EVT_CATALOG_GET_DETAIL_FAIL,
+          ({ category: _resCategory, message, tag: resTag }) => {
+            if (resTag && resTag !== tag) return
+
+            viewModalError.value = message || i18n.t('error.getDetailFailed')
             viewModalLoading.value = false
             refreshUI()
-            try { offOk?.() } catch (_) {
+            try {
+              offOk?.()
+            } catch (_) {
               // Ignore errors
             }
-            try { offFail?.() } catch (_) {
+            try {
+              offFail?.()
+            } catch (_) {
               // Ignore errors
             }
-          }
-        })
-        
-        const offFail = Host.events.on(Catalog.EVT_CATALOG_GET_DETAIL_FAIL, ({ category: _resCategory, message, tag: resTag }) => {
-          if (resTag && resTag !== tag) return
-          
-          viewModalError.value = message || i18n.t('error.getDetailFailed')
-          viewModalLoading.value = false
-          refreshUI()
-          try { offOk?.() } catch (_) {
-            // Ignore errors
-          }
-          try { offFail?.() } catch (_) {
-            // Ignore errors
-          }
-        })
-        
+          },
+        )
+
         __eventOffs.push(offOk, offFail)
-        
+
         // 发送详情查询请求
         Host.events.emit(Catalog.EVT_CATALOG_GET_DETAIL_REQ, {
           category,
           file: fileOrData,
-          tag
+          tag,
         })
       } else {
         // 无 fileOrData：保持空占位
@@ -169,18 +195,18 @@ export function useViewModal(): UseViewModalAPI {
       refreshUI()
     }
   }
-  
+
   function refreshUI(): void {
     // 刷新图标与 Flowbite 交互组件
     nextTick(() => {
-      try { 
-        (window as any)?.lucide?.createIcons?.() 
+      try {
+        ;(window as any)?.lucide?.createIcons?.()
       } catch (_) {
         // Ignore errors
       }
       if (typeof (window as any).initFlowbite === 'function') {
-        try { 
-          (window as any).initFlowbite() 
+        try {
+          ;(window as any).initFlowbite()
         } catch (_) {
           // Ignore errors
         }

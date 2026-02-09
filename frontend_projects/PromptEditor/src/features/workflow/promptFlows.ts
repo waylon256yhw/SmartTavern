@@ -1,7 +1,11 @@
 import { postWorkflow } from '@/services/apiClient'
 import { usePresetStore } from '@/features/presets/store'
 import { useEditorContextStore } from '@/features/workflow/store'
-import { buildPromptRawPayload, callPromptRaw, type PromptRawMessage } from '@/features/workflow/promptRaw'
+import {
+  buildPromptRawPayload,
+  callPromptRaw,
+  type PromptRawMessage,
+} from '@/features/workflow/promptRaw'
 
 /**
  * 对话页面提示词（user_view）
@@ -9,7 +13,9 @@ import { buildPromptRawPayload, callPromptRaw, type PromptRawMessage } from '@/f
  * 1) 从前端上下文装配 RAW（prompt_raw/assemble_full）
  * 2) 将 RAW messages 送入后处理（prompt_postprocess/apply, view=user_view, variables={}）
  */
-export async function runDialogView(rawMessages: PromptRawMessage[]): Promise<{ message: PromptRawMessage[]; variables: any }> {
+export async function runDialogView(
+  rawMessages: PromptRawMessage[],
+): Promise<{ message: PromptRawMessage[]; variables: any }> {
   const preset = usePresetStore()
   const rules = Array.isArray(preset.regexRules) ? preset.regexRules : []
   // prompt_postprocess 接口 schema：{messages, rules, view, variables?}
@@ -34,7 +40,10 @@ export async function runDialogView(rawMessages: PromptRawMessage[]): Promise<{ 
  * 3) 将 user_view 的结果作为新的 history，重新调用 prompt_raw/assemble_full
  * 4) 在 3) 的输出上，对 assistant_view 再做后处理（prompt_postprocess/apply）
  */
-export async function runPreflightView(userView: { message: PromptRawMessage[]; variables?: any }): Promise<{ message: PromptRawMessage[]; variables: any }> {
+export async function runPreflightView(userView: {
+  message: PromptRawMessage[]
+  variables?: any
+}): Promise<{ message: PromptRawMessage[]; variables: any }> {
   const preset = usePresetStore()
   const rules = Array.isArray(preset.regexRules) ? preset.regexRules : []
 
@@ -46,7 +55,8 @@ export async function runPreflightView(userView: { message: PromptRawMessage[]; 
   const assembled = await callPromptRaw(payload)
 
   // assistant_view 后处理；将 user_view 的变量结果作为初始变量传入
-  const variablesIn = (userView?.variables && (userView.variables.final ?? userView.variables)) || {}
+  const variablesIn =
+    (userView?.variables && (userView.variables.final ?? userView.variables)) || {}
   const body = {
     messages: assembled.messages,
     rules: { rules },

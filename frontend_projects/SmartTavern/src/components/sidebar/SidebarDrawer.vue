@@ -1,4 +1,3 @@
-
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useI18n } from '@/locales'
@@ -17,8 +16,8 @@ const { t } = useI18n()
  */
 const props = defineProps({
   modelValue: { type: Boolean, default: true }, // open/close
-  width: { type: Number, default: 280 },        // 抽屉宽度
-  iconSize: { type: Number, default: 44 },      // 浮标尺寸
+  width: { type: Number, default: 280 }, // 抽屉宽度
+  iconSize: { type: Number, default: 44 }, // 浮标尺寸
   storageKey: { type: String, default: 'st.sidebar.drawer' },
   draggable: { type: Boolean, default: true },
 })
@@ -26,7 +25,10 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const open = ref(props.modelValue)
-watch(() => props.modelValue, (v) => (open.value = v))
+watch(
+  () => props.modelValue,
+  (v) => (open.value = v),
+)
 watch(open, (v) => emit('update:modelValue', v))
 // 重新渲染 Lucide 图标（FAB 在 open=false 时新插入）
 watch(open, () => {
@@ -39,7 +41,9 @@ watch(open, () => {
 // margin 现在从CSS变量读取，在OthersAppearance中配置
 function getMargin() {
   try {
-    const val = getComputedStyle(document.documentElement).getPropertyValue('--st-fab-margin')?.trim()
+    const val = getComputedStyle(document.documentElement)
+      .getPropertyValue('--st-fab-margin')
+      ?.trim()
     const num = parseInt(val, 10)
     return Number.isFinite(num) && num >= 0 ? num : 12
   } catch (_) {
@@ -48,9 +52,9 @@ function getMargin() {
 }
 
 const iconPos = ref({
-  x: 0,              // 左上角坐标（使用 left/top 模式）
+  x: 0, // 左上角坐标（使用 left/top 模式）
   y: 200,
-  dock: 'right',     // 'left' | 'right' | 'top' | 'bottom'
+  dock: 'right', // 'left' | 'right' | 'top' | 'bottom'
 })
 
 function clamp(n, min, max) {
@@ -60,7 +64,9 @@ function clamp(n, min, max) {
 // 获取当前的UI缩放比例
 function getUIScale() {
   try {
-    const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--st-ui-scale') || '1')
+    const scale = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--st-ui-scale') || '1',
+    )
     return isNaN(scale) ? 1 : scale
   } catch (_) {
     return 1
@@ -72,7 +78,7 @@ function getRealViewportSize() {
   const scale = getUIScale()
   return {
     width: window.innerWidth / scale,
-    height: window.innerHeight / scale
+    height: window.innerHeight / scale,
   }
 }
 
@@ -162,14 +168,14 @@ function onPointerDown(e) {
   moved = false
   pointerStart = { x: e.clientX, y: e.clientY }
   iconStart = { x: iconPos.value.x, y: iconPos.value.y }
-  
+
   // 使用setPointerCapture确保持续接收指针事件（即使鼠标移出元素）
   if (e.target && typeof e.target.setPointerCapture === 'function') {
     try {
       e.target.setPointerCapture(e.pointerId)
     } catch (_) {}
   }
-  
+
   window.addEventListener('pointermove', onPointerMove)
   window.addEventListener('pointerup', onPointerUp, { once: true })
 }
@@ -187,14 +193,14 @@ function onPointerMove(e) {
 
 function onPointerUp(e) {
   window.removeEventListener('pointermove', onPointerMove)
-  
+
   // 释放指针捕获
   if (e.target && typeof e.target.releasePointerCapture === 'function') {
     try {
       e.target.releasePointerCapture(e.pointerId)
     } catch (_) {}
   }
-  
+
   dragging = false
   if (moved) {
     nearestDock()
@@ -238,7 +244,8 @@ const fabClass = computed(() => ['sd-fab', `dock-${iconPos.value.dock}`])
 const drawerStyle = computed(() => {
   // 抽屉固定靠左 overlay
   const margin = getMargin()
-  const top = getComputedStyle(document.documentElement).getPropertyValue('--st-sidebar-top') || '64px'
+  const top =
+    getComputedStyle(document.documentElement).getPropertyValue('--st-sidebar-top') || '64px'
   return {
     position: 'fixed',
     zIndex: 59,
@@ -253,15 +260,10 @@ const drawerStyle = computed(() => {
 <template>
   <!-- 展开状态：左侧 overlay 抽屉（不占用布局） -->
   <transition name="sd-backdrop">
-    <div v-if="open" class="sd-backdrop" @click="open=false"></div>
+    <div v-if="open" class="sd-backdrop" @click="open = false"></div>
   </transition>
   <transition name="sd-drawer">
-    <div
-      v-if="open"
-      :style="drawerStyle"
-      class="sd-drawer"
-      data-scope="sidebar"
-    >
+    <div v-if="open" :style="drawerStyle" class="sd-drawer" data-scope="sidebar">
       <div class="sd-header">
         <div class="sd-title">{{ t('sidebar.title') }}</div>
         <button class="sd-close" type="button" @click="open = false" :title="t('sidebar.collapse')">
@@ -285,10 +287,18 @@ const drawerStyle = computed(() => {
   >
     <span class="sd-fab-icon">
       <!-- inline lucide: menu -->
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-           viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-           class="lucide lucide-menu">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="lucide lucide-menu"
+      >
         <line x1="3" y1="6" x2="21" y2="6"></line>
         <line x1="3" y1="12" x2="21" y2="12"></line>
         <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -327,11 +337,15 @@ const drawerStyle = computed(() => {
   border-radius: var(--st-radius-lg);
   padding: var(--st-spacing-sm) var(--st-spacing-md);
   cursor: pointer;
-  transition: transform var(--st-transition-fast) ease, background var(--st-transition-fast) ease, box-shadow var(--st-transition-fast) ease;
+  transition:
+    transform var(--st-transition-fast) ease,
+    background var(--st-transition-fast) ease,
+    box-shadow var(--st-transition-fast) ease;
 }
 .sd-close:hover {
   background: rgb(var(--st-surface));
-  transform: translateX(var(--st-sidebar-close-hover-offset, -2px)) rotate(var(--st-sidebar-close-hover-rotate, -2deg));
+  transform: translateX(var(--st-sidebar-close-hover-offset, -2px))
+    rotate(var(--st-sidebar-close-hover-rotate, -2deg));
   box-shadow: var(--st-shadow-sm);
 }
 
@@ -346,7 +360,7 @@ const drawerStyle = computed(() => {
 .sd-backdrop {
   position: fixed;
   inset: 0;
-  background: var(--st-sidebar-backdrop-bg, rgba(0,0,0,0.18));
+  background: var(--st-sidebar-backdrop-bg, rgba(0, 0, 0, 0.18));
   backdrop-filter: blur(var(--st-sidebar-backdrop-blur, 16px));
   -webkit-backdrop-filter: blur(var(--st-sidebar-backdrop-blur, 16px));
   z-index: 58; /* 低于抽屉(59)，高于内容 */
@@ -360,11 +374,7 @@ const drawerStyle = computed(() => {
   /* 精致边框 - 炭黑色 */
   border: 1px solid rgba(0, 0, 0, 0.18);
   /* 极简背景：纯净白到浅灰渐变 */
-  background: linear-gradient(180deg,
-    #ffffff 0%,
-    #fafafa 50%,
-    #f5f5f5 100%
-  );
+  background: linear-gradient(180deg, #ffffff 0%, #fafafa 50%, #f5f5f5 100%);
   color: #1a1a1a;
   /* 精致圆角 < 4px */
   border-radius: var(--st-radius-lg);
@@ -394,11 +404,7 @@ const drawerStyle = computed(() => {
 .sd-fab:hover {
   transform: translateY(-2px);
   border-color: rgba(0, 0, 0, 0.25);
-  background: linear-gradient(180deg,
-    #ffffff 0%,
-    #fefefe 50%,
-    #fafafa 100%
-  );
+  background: linear-gradient(180deg, #ffffff 0%, #fefefe 50%, #fafafa 100%);
   box-shadow:
     0 2px 6px rgba(0, 0, 0, 0.1),
     0 8px 20px rgba(0, 0, 0, 0.08),
@@ -409,14 +415,10 @@ const drawerStyle = computed(() => {
 /* ═══════════════════════════════════════════════════════════════
    暗色主题 - 深色极简设计
    ═══════════════════════════════════════════════════════════════ */
-:root[data-theme="dark"] .sd-fab,
-[data-theme="dark"] .sd-fab {
+:root[data-theme='dark'] .sd-fab,
+[data-theme='dark'] .sd-fab {
   border-color: rgba(255, 255, 255, 0.15);
-  background: linear-gradient(180deg,
-    #3a3a3a 0%,
-    #2d2d2d 50%,
-    #262626 100%
-  );
+  background: linear-gradient(180deg, #3a3a3a 0%, #2d2d2d 50%, #262626 100%);
   color: #f5f5f5;
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.25),
@@ -424,14 +426,10 @@ const drawerStyle = computed(() => {
     0 8px 24px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
-:root[data-theme="dark"] .sd-fab:hover,
-[data-theme="dark"] .sd-fab:hover {
+:root[data-theme='dark'] .sd-fab:hover,
+[data-theme='dark'] .sd-fab:hover {
   border-color: rgba(255, 255, 255, 0.22);
-  background: linear-gradient(180deg,
-    #454545 0%,
-    #3a3a3a 50%,
-    #333333 100%
-  );
+  background: linear-gradient(180deg, #454545 0%, #3a3a3a 50%, #333333 100%);
   box-shadow:
     0 2px 6px rgba(0, 0, 0, 0.3),
     0 8px 20px rgba(0, 0, 0, 0.25),
@@ -447,24 +445,61 @@ const drawerStyle = computed(() => {
 }
 
 /* dock 定制（可按需要扩展外观差异） */
-.sd-fab.dock-left { border-top-left-radius: var(--st-radius-lg); border-bottom-left-radius: var(--st-radius-lg); }
-.sd-fab.dock-right { border-top-right-radius: var(--st-radius-lg); border-bottom-right-radius: var(--st-radius-lg); }
-.sd-fab.dock-top { border-top-left-radius: var(--st-radius-lg); border-top-right-radius: var(--st-radius-lg); }
-.sd-fab.dock-bottom { border-bottom-left-radius: var(--st-radius-lg); border-bottom-right-radius: var(--st-radius-lg); }
+.sd-fab.dock-left {
+  border-top-left-radius: var(--st-radius-lg);
+  border-bottom-left-radius: var(--st-radius-lg);
+}
+.sd-fab.dock-right {
+  border-top-right-radius: var(--st-radius-lg);
+  border-bottom-right-radius: var(--st-radius-lg);
+}
+.sd-fab.dock-top {
+  border-top-left-radius: var(--st-radius-lg);
+  border-top-right-radius: var(--st-radius-lg);
+}
+.sd-fab.dock-bottom {
+  border-bottom-left-radius: var(--st-radius-lg);
+  border-bottom-right-radius: var(--st-radius-lg);
+}
 
 /* Backdrop 动画 */
-.sd-backdrop-enter-from, .sd-backdrop-leave-to { opacity: 0; }
-.sd-backdrop-enter-active, .sd-backdrop-leave-active { transition: opacity var(--st-transition-fast) ease; }
+.sd-backdrop-enter-from,
+.sd-backdrop-leave-to {
+  opacity: 0;
+}
+.sd-backdrop-enter-active,
+.sd-backdrop-leave-active {
+  transition: opacity var(--st-transition-fast) ease;
+}
 
 /* Drawer 进出场动画 */
-.sd-drawer-enter-from { opacity: 0; transform: translateX(var(--st-sidebar-drawer-enter-x, -14px)) scale(var(--st-sidebar-drawer-scale, 0.98)); filter: blur(var(--st-sidebar-drawer-blur, 4px)); }
-.sd-drawer-leave-to { opacity: 0; transform: translateX(var(--st-sidebar-drawer-leave-x, -16px)) scale(var(--st-sidebar-drawer-scale, 0.98)); filter: blur(var(--st-sidebar-drawer-blur, 4px)); }
+.sd-drawer-enter-from {
+  opacity: 0;
+  transform: translateX(var(--st-sidebar-drawer-enter-x, -14px))
+    scale(var(--st-sidebar-drawer-scale, 0.98));
+  filter: blur(var(--st-sidebar-drawer-blur, 4px));
+}
+.sd-drawer-leave-to {
+  opacity: 0;
+  transform: translateX(var(--st-sidebar-drawer-leave-x, -16px))
+    scale(var(--st-sidebar-drawer-scale, 0.98));
+  filter: blur(var(--st-sidebar-drawer-blur, 4px));
+}
 .sd-drawer-enter-active,
-.sd-drawer-leave-active { transition: opacity var(--st-transition-fast) ease, transform var(--st-transition-normal), filter var(--st-transition-normal) ease; }
+.sd-drawer-leave-active {
+  transition:
+    opacity var(--st-transition-fast) ease,
+    transform var(--st-transition-normal),
+    filter var(--st-transition-normal) ease;
+}
 
 /* 浮动动画（轻微呼吸） */
 @keyframes sd-float {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(var(--st-sidebar-float-offset, -3px)); }
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(var(--st-sidebar-float-offset, -3px));
+  }
 }
 </style>

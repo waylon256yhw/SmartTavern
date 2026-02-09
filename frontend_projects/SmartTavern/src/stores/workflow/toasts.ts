@@ -87,7 +87,9 @@ export const useToastsStore = defineStore('toasts', {
       // 可选自动销毁
       if (toast.autoDismiss !== false && t.timeout > 0) {
         try {
-          setTimeout(() => { this.remove(t.id) }, t.timeout)
+          setTimeout(() => {
+            this.remove(t.id)
+          }, t.timeout)
         } catch {
           /* ignore env without timers */
         }
@@ -109,7 +111,7 @@ export const useToastsStore = defineStore('toasts', {
      * @param id - Toast ID
      */
     remove(id: string): void {
-      const i = this.queue.findIndex(x => x.id === id)
+      const i = this.queue.findIndex((x) => x.id === id)
       if (i >= 0) this.queue.splice(i, 1)
     },
 
@@ -147,15 +149,15 @@ export interface ShowToastFunction {
  * @param options - 消息内容或配置对象
  * @returns Toast 对象，包含 id 等信息
  */
-export const showToast: ShowToastFunction = function(options: ShowToastOptions): Toast | null {
+export const showToast: ShowToastFunction = function (options: ShowToastOptions): Toast | null {
   try {
     const store = useToastsStore()
-    
+
     // 支持字符串快捷方式
     if (typeof options === 'string') {
       return store.push({ message: options, type: 'info' })
     }
-    
+
     return store.push(options)
   } catch (e) {
     console.error('[showToast] Error:', e)
@@ -168,7 +170,7 @@ export const showToast: ShowToastFunction = function(options: ShowToastOptions):
  * @param message - 消息内容
  * @param timeout - 可选的超时时间（毫秒）
  */
-showToast.success = function(message: string, timeout?: number): Toast | null {
+showToast.success = function (message: string, timeout?: number): Toast | null {
   return showToast({ type: 'success', message, timeout })
 }
 
@@ -177,7 +179,7 @@ showToast.success = function(message: string, timeout?: number): Toast | null {
  * @param message - 消息内容
  * @param timeout - 可选的超时时间（毫秒）
  */
-showToast.error = function(message: string, timeout?: number): Toast | null {
+showToast.error = function (message: string, timeout?: number): Toast | null {
   return showToast({ type: 'error', message, timeout })
 }
 
@@ -186,7 +188,7 @@ showToast.error = function(message: string, timeout?: number): Toast | null {
  * @param message - 消息内容
  * @param timeout - 可选的超时时间（毫秒）
  */
-showToast.warning = function(message: string, timeout?: number): Toast | null {
+showToast.warning = function (message: string, timeout?: number): Toast | null {
   return showToast({ type: 'warning', message, timeout })
 }
 
@@ -195,7 +197,7 @@ showToast.warning = function(message: string, timeout?: number): Toast | null {
  * @param message - 消息内容
  * @param timeout - 可选的超时时间（毫秒）
  */
-showToast.info = function(message: string, timeout?: number): Toast | null {
+showToast.info = function (message: string, timeout?: number): Toast | null {
   return showToast({ type: 'info', message, timeout })
 }
 
@@ -206,7 +208,9 @@ export interface RegisterGlobalFunctionsOptions {
   exposeToWindow?: boolean
 }
 
-export function registerGlobalFunctions({ exposeToWindow = true }: RegisterGlobalFunctionsOptions = {}): void {
+export function registerGlobalFunctions({
+  exposeToWindow = true,
+}: RegisterGlobalFunctionsOptions = {}): void {
   if (typeof window === 'undefined') return
   if (exposeToWindow) {
     try {
@@ -218,7 +222,7 @@ export function registerGlobalFunctions({ exposeToWindow = true }: RegisterGloba
       })
     } catch {
       // 回退直接赋值
-      (window as any).showToast = showToast
+      ;(window as any).showToast = showToast
     }
   }
 }

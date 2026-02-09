@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Postprocess Registry（统一注册中心，插件命名空间）
 
@@ -8,52 +7,54 @@ Postprocess Registry（统一注册中心，插件命名空间）
 - smarttavern/postprocess/list_units_full  （GET） 列出完整（含 settings）
 - smarttavern/postprocess/clear_units      （POST）清空
 """
+
 from __future__ import annotations
-from typing import Any, Dict, List
+
+from typing import Any
+
 import core
 
+_REGISTRY: dict[str, dict[str, Any]] = {}
 
-_REGISTRY: Dict[str, Dict[str, Any]] = {}
 
-
-def _normalize_unit(spec: Dict[str, Any]) -> Dict[str, Any]:
-    stid = str(spec.get('stid') or '').strip()
+def _normalize_unit(spec: dict[str, Any]) -> dict[str, Any]:
+    stid = str(spec.get("stid") or "").strip()
     if not stid:
-        raise ValueError('missing stid')
-    description = str(spec.get('description') or '')
-    enabled = bool(spec.get('enabled', True))
-    priority = int(spec.get('priority', 0))
-    ops_list = spec.get('ops') or []
+        raise ValueError("missing stid")
+    description = str(spec.get("description") or "")
+    enabled = bool(spec.get("enabled", True))
+    priority = int(spec.get("priority", 0))
+    ops_list = spec.get("ops") or []
     if not isinstance(ops_list, list) or not ops_list:
-        raise ValueError('ops must be non-empty list')
-    ops_map: Dict[str, Dict[str, Any]] = {}
+        raise ValueError("ops must be non-empty list")
+    ops_map: dict[str, dict[str, Any]] = {}
     for i, it in enumerate(ops_list):
         if not isinstance(it, dict):
-            raise ValueError(f'ops[{i}] must be object')
-        op_name = str(it.get('op') or '').strip()
+            raise ValueError(f"ops[{i}] must be object")
+        op_name = str(it.get("op") or "").strip()
         if not op_name:
-            raise ValueError(f'ops[{i}].op required')
-        data_schema = it.get('data_schema') or {}
+            raise ValueError(f"ops[{i}].op required")
+        data_schema = it.get("data_schema") or {}
         if not isinstance(data_schema, dict):
-            raise ValueError(f'ops[{i}].data_schema must be object')
-        settings = it.get('settings') or {}
+            raise ValueError(f"ops[{i}].data_schema must be object")
+        settings = it.get("settings") or {}
         if not isinstance(settings, dict):
-            raise ValueError(f'ops[{i}].settings must be object')
-        once = bool(settings.get('once', False))
-        visible_to_ai = bool(settings.get('visible_to_ai', True))
+            raise ValueError(f"ops[{i}].settings must be object")
+        once = bool(settings.get("once", False))
+        visible_to_ai = bool(settings.get("visible_to_ai", True))
         ops_map[op_name] = {
-            'data_schema': data_schema,
-            'settings': {
-                'once': once,
-                'visible_to_ai': visible_to_ai,
-            }
+            "data_schema": data_schema,
+            "settings": {
+                "once": once,
+                "visible_to_ai": visible_to_ai,
+            },
         }
     return {
-        'stid': stid,
-        'description': description,
-        'enabled': enabled,
-        'priority': priority,
-        'ops': ops_map,
+        "stid": stid,
+        "description": description,
+        "enabled": enabled,
+        "priority": priority,
+        "ops": ops_map,
     }
 
 
@@ -78,23 +79,23 @@ def _normalize_unit(spec: Dict[str, Any]) -> Dict[str, Any]:
         },
         "required": ["success"],
         "additionalProperties": True,
-    }
+    },
 )
-def api_register_units(units: Any) -> Dict[str, Any]:
-    registered: List[str] = []
-    errors: List[str] = []
+def api_register_units(units: Any) -> dict[str, Any]:
+    registered: list[str] = []
+    errors: list[str] = []
     try:
         arr = units if isinstance(units, list) else []
         for i, spec in enumerate(arr):
             try:
                 norm = _normalize_unit(spec)
-                _REGISTRY[norm['stid']] = {
-                    'description': norm['description'],
-                    'enabled': norm['enabled'],
-                    'priority': norm['priority'],
-                    'ops': norm['ops'],
+                _REGISTRY[norm["stid"]] = {
+                    "description": norm["description"],
+                    "enabled": norm["enabled"],
+                    "priority": norm["priority"],
+                    "ops": norm["ops"],
                 }
-                registered.append(norm['stid'])
+                registered.append(norm["stid"])
             except Exception as e:
                 errors.append(f"[{i}] {type(e).__name__}: {e}")
         return {"success": True, "registered": registered, "errors": errors}
@@ -107,25 +108,27 @@ def api_register_units(units: Any) -> Dict[str, Any]:
     name="列出已注册单元（隐藏设置）",
     description="返回当前注册的 stid/ops（不含 settings 字段）",
     input_schema={"type": "object", "properties": {}},
-    output_schema={"type": "object", "additionalProperties": True}
+    output_schema={"type": "object", "additionalProperties": True},
 )
-def api_list_units() -> Dict[str, Any]:
-    out: List[Dict[str, Any]] = []
+def api_list_units() -> dict[str, Any]:
+    out: list[dict[str, Any]] = []
     items = sorted(
-        (itm for itm in _REGISTRY.items() if itm[1].get('enabled', True)),
-        key=lambda kv: (-int(kv[1].get('priority', 0)), str(kv[0]).lower()),
+        (itm for itm in _REGISTRY.items() if itm[1].get("enabled", True)),
+        key=lambda kv: (-int(kv[1].get("priority", 0)), str(kv[0]).lower()),
     )
     for stid, spec in items:
-        ops_def = spec.get('ops') or {}
+        ops_def = spec.get("ops") or {}
         ops_arr = []
         for op_name, od in ops_def.items():
-            ops_arr.append({'op': op_name, 'data_schema': od.get('data_schema') or {}})
-        out.append({
-            'stid': stid,
-            'description': spec.get('description') or '',
-            'ops': ops_arr,
-            'priority': spec.get('priority', 0),
-        })
+            ops_arr.append({"op": op_name, "data_schema": od.get("data_schema") or {}})
+        out.append(
+            {
+                "stid": stid,
+                "description": spec.get("description") or "",
+                "ops": ops_arr,
+                "priority": spec.get("priority", 0),
+            }
+        )
     return {"success": True, "units": out}
 
 
@@ -134,26 +137,30 @@ def api_list_units() -> Dict[str, Any]:
     name="列出已注册单元（完整）",
     description="返回当前注册的 stid/ops（包含 settings）",
     input_schema={"type": "object", "properties": {}},
-    output_schema={"type": "object", "additionalProperties": True}
+    output_schema={"type": "object", "additionalProperties": True},
 )
-def api_list_units_full() -> Dict[str, Any]:
+def api_list_units_full() -> dict[str, Any]:
     # 按照 list_units 的顺序返回，但包含 settings
-    out: List[Dict[str, Any]] = []
+    out: list[dict[str, Any]] = []
     items = sorted(
-        (itm for itm in _REGISTRY.items() if itm[1].get('enabled', True)),
-        key=lambda kv: (-int(kv[1].get('priority', 0)), str(kv[0]).lower()),
+        (itm for itm in _REGISTRY.items() if itm[1].get("enabled", True)),
+        key=lambda kv: (-int(kv[1].get("priority", 0)), str(kv[0]).lower()),
     )
     for stid, spec in items:
-        ops_def = spec.get('ops') or {}
+        ops_def = spec.get("ops") or {}
         ops_arr = []
         for op_name, od in ops_def.items():
-            ops_arr.append({'op': op_name, 'data_schema': od.get('data_schema') or {}, 'settings': od.get('settings') or {}})
-        out.append({
-            'stid': stid,
-            'description': spec.get('description') or '',
-            'ops': ops_arr,
-            'priority': spec.get('priority', 0),
-        })
+            ops_arr.append(
+                {"op": op_name, "data_schema": od.get("data_schema") or {}, "settings": od.get("settings") or {}}
+            )
+        out.append(
+            {
+                "stid": stid,
+                "description": spec.get("description") or "",
+                "ops": ops_arr,
+                "priority": spec.get("priority", 0),
+            }
+        )
     return {"success": True, "units": out}
 
 
@@ -162,13 +169,11 @@ def api_list_units_full() -> Dict[str, Any]:
     name="清空已注册单元",
     description="开发/测试用途：清空当前注册表",
     input_schema={"type": "object", "properties": {}},
-    output_schema={"type": "object", "additionalProperties": True}
+    output_schema={"type": "object", "additionalProperties": True},
 )
-def api_clear_units() -> Dict[str, Any]:
+def api_clear_units() -> dict[str, Any]:
     try:
         _REGISTRY.clear()
         return {"success": True}
     except Exception as e:
         return {"success": False, "error": str(e)}
-
-

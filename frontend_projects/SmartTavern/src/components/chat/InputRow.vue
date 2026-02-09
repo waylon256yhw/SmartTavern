@@ -2,10 +2,19 @@
   <!-- 输入区（多行文本，玻璃拟态容器 + 工具栏 + Lucide 图标） -->
   <div class="tch-input-row glass">
     <div class="tch-tools-left">
-      <button class="tool-btn round" :title="t('chat.input.expand')" :aria-label="t('chat.input.expand')" data-tooltip-target="tt-expand">
+      <button
+        class="tool-btn round"
+        :title="t('chat.input.expand')"
+        :aria-label="t('chat.input.expand')"
+        data-tooltip-target="tt-expand"
+      >
         <i data-lucide="plus" class="icon-16" aria-hidden="true"></i>
       </button>
-      <div id="tt-expand" role="tooltip" class="absolute z-10 invisible inline-block px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded-md shadow-sm opacity-0 tooltip">
+      <div
+        id="tt-expand"
+        role="tooltip"
+        class="absolute z-10 invisible inline-block px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded-md shadow-sm opacity-0 tooltip"
+      >
         {{ t('chat.input.expand') }}
         <div class="tooltip-arrow" data-popper-arrow></div>
       </div>
@@ -31,10 +40,25 @@
         :aria-label="pendingActive ? t('chat.input.stopWaiting') : t('chat.input.send')"
         data-tooltip-target="tt-send"
       >
-        <i :data-lucide="sending ? 'loader-circle' : (pendingActive ? 'square' : 'send')" class="icon-16" :class="{'icon-spin': sending}" aria-hidden="true"></i>
-        <span class="tch-send-text">{{ sending ? t('chat.input.sending') : (pendingActive ? effectiveStopLabel : effectiveSendLabel) }}</span>
+        <i
+          :data-lucide="sending ? 'loader-circle' : pendingActive ? 'square' : 'send'"
+          class="icon-16"
+          :class="{ 'icon-spin': sending }"
+          aria-hidden="true"
+        ></i>
+        <span class="tch-send-text">{{
+          sending
+            ? t('chat.input.sending')
+            : pendingActive
+              ? effectiveStopLabel
+              : effectiveSendLabel
+        }}</span>
       </button>
-      <div id="tt-send" role="tooltip" class="absolute z-10 invisible inline-block px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded-md shadow-sm opacity-0 tooltip">
+      <div
+        id="tt-send"
+        role="tooltip"
+        class="absolute z-10 invisible inline-block px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded-md shadow-sm opacity-0 tooltip"
+      >
         {{ t('chat.input.send') }}
         <div class="tooltip-arrow" data-popper-arrow></div>
       </div>
@@ -53,7 +77,7 @@ const props = defineProps({
   sending: { type: Boolean, default: false },
   placeholder: { type: String, default: '' },
   sendLabel: { type: String, default: '' },
-  stopLabel: { type: String, default: '' }
+  stopLabel: { type: String, default: '' },
 })
 
 const emit = defineEmits(['submit', 'cancel'])
@@ -66,7 +90,9 @@ const effectivePlaceholder = computed(() => props.placeholder || t('chat.input.p
 const effectiveSendLabel = computed(() => props.sendLabel || t('chat.input.send'))
 const effectiveStopLabel = computed(() => props.stopLabel || t('chat.input.stop'))
 
-const sendButtonTitle = computed(() => props.pendingActive ? t('chat.input.stopWaiting') : t('chat.input.sendShortcut'))
+const sendButtonTitle = computed(() =>
+  props.pendingActive ? t('chat.input.stopWaiting') : t('chat.input.sendShortcut'),
+)
 
 function onKeydown(e) {
   if (props.pendingActive) {
@@ -105,7 +131,11 @@ defineExpose({ setText, clearText })
 
 <style scoped>
 /* 工具：icon 尺寸（与父级保持一致） */
-.icon-16 { width: var(--st-icon-md); height: var(--st-icon-md); stroke: currentColor; }
+.icon-16 {
+  width: var(--st-icon-md);
+  height: var(--st-icon-md);
+  stroke: currentColor;
+}
 
 /* 输入行（玻璃拟态输入容器） */
 .tch-input-row {
@@ -116,18 +146,26 @@ defineExpose({ setText, clearText })
   padding: var(--st-spacing-lg) var(--st-spacing-xl);
   border: 1px solid rgba(var(--st-border), 0.9);
   border-radius: var(--st-radius-lg);
-  background: rgb(var(--st-surface) / var(--st-threaded-input-bg-opacity, 0.80)) !important;
-  backdrop-filter: blur(calc(var(--st-threaded-input-bg-opacity, 0.80) * 18px)) saturate(calc(1 + var(--st-threaded-input-bg-opacity, 0.80) * 0.6));
-  -webkit-backdrop-filter: blur(calc(var(--st-threaded-input-bg-opacity, 0.80) * 18px)) saturate(calc(1 + var(--st-threaded-input-bg-opacity, 0.80) * 0.6));
+  background: rgb(var(--st-surface) / var(--st-threaded-input-bg-opacity, 0.8)) !important;
+  backdrop-filter: blur(calc(var(--st-threaded-input-bg-opacity, 0.8) * 18px))
+    saturate(calc(1 + var(--st-threaded-input-bg-opacity, 0.8) * 0.6));
+  -webkit-backdrop-filter: blur(calc(var(--st-threaded-input-bg-opacity, 0.8) * 18px))
+    saturate(calc(1 + var(--st-threaded-input-bg-opacity, 0.8) * 0.6));
   box-shadow: var(--st-shadow-sm);
   flex-shrink: 0;
   height: 100%;
   min-height: var(--st-input-min-height, 100px);
-  transition: box-shadow var(--st-transition-normal), border-color var(--st-transition-normal), background var(--st-transition-normal), transform var(--st-transition-normal);
+  transition:
+    box-shadow var(--st-transition-normal),
+    border-color var(--st-transition-normal),
+    background var(--st-transition-normal),
+    transform var(--st-transition-normal);
 }
 .tch-input-row:focus-within {
   border-color: rgba(var(--st-primary), 0.45);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.08), 0 0 0 3px rgba(var(--st-primary), 0.08);
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.08),
+    0 0 0 3px rgba(var(--st-primary), 0.08);
   background: rgb(var(--st-surface) / var(--st-threaded-input-bg-focus-opacity, 0.86)) !important;
 }
 
@@ -151,7 +189,11 @@ defineExpose({ setText, clearText })
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background var(--st-transition-fast), border-color var(--st-transition-fast), transform var(--st-transition-fast), box-shadow var(--st-transition-fast);
+  transition:
+    background var(--st-transition-fast),
+    border-color var(--st-transition-fast),
+    transform var(--st-transition-fast),
+    box-shadow var(--st-transition-fast);
 }
 .tool-btn:hover {
   background: rgba(var(--st-surface-2), 0.9);
@@ -228,21 +270,24 @@ defineExpose({ setText, clearText })
   padding: var(--st-spacing-lg) var(--st-spacing-xl);
   min-width: var(--st-send-btn-min-width, 90px);
   border-radius: var(--st-radius-md);
-  background: linear-gradient(135deg, rgba(var(--st-primary),1), rgba(var(--st-accent),1));
+  background: linear-gradient(135deg, rgba(var(--st-primary), 1), rgba(var(--st-accent), 1));
   color: var(--st-primary-contrast);
   border: 1px solid transparent;
   cursor: pointer;
   height: var(--st-btn-lg);
   box-sizing: border-box;
-  transition: filter var(--st-transition-fast), transform var(--st-transition-fast), box-shadow var(--st-transition-fast);
+  transition:
+    filter var(--st-transition-fast),
+    transform var(--st-transition-fast),
+    box-shadow var(--st-transition-fast);
 }
-.tch-send[aria-label="停止等待"] {
+.tch-send[aria-label='停止等待'] {
   background: var(--st-gradient-error);
 }
 .tch-send:hover:enabled {
   filter: saturate(1.08) brightness(1.04);
   transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(0,0,0,0.10);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
 }
 .tch-send:active:enabled {
   transform: translateY(0);
@@ -265,7 +310,9 @@ defineExpose({ setText, clearText })
   animation: icon-spin var(--st-chip-spinner-duration, 0.9s) linear infinite;
 }
 @keyframes icon-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* 焦点可见态统一 */

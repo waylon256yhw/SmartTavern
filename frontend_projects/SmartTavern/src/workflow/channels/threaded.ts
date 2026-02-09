@@ -11,9 +11,9 @@
 
 /** 创建助手占位消息 Payload */
 export interface ThreadedAssistantPlaceholderCreatePayload {
-  conversationFile: string;
-  tempNodeId: string;
-  meta?: any;
+  conversationFile: string
+  tempNodeId: string
+  meta?: any
 }
 
 // ============ Event Constants ============

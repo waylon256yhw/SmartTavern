@@ -54,7 +54,13 @@ watch([apiOpen, promptsOpen, regexOpen, relativeOpen, inChatOpen], ([a, p, r, ro
   try {
     localStorage.setItem(
       PANEL_STATE_KEY,
-      JSON.stringify({ apiOpen: a, promptsOpen: p, regexOpen: r, relativeOpen: ro, inChatOpen: io })
+      JSON.stringify({
+        apiOpen: a,
+        promptsOpen: p,
+        regexOpen: r,
+        relativeOpen: ro,
+        inChatOpen: io,
+      }),
     )
   } catch {}
 })
@@ -67,7 +73,12 @@ onMounted(() => {
 
 /* 使用 Store 管理预设数据 */
 import { usePresetStore } from '../features/presets/store'
-import type { PromptItem, PromptItemRelative, PromptItemInChat, RegexRule } from '@/features/presets/types'
+import type {
+  PromptItem,
+  PromptItemRelative,
+  PromptItemInChat,
+  RegexRule,
+} from '@/features/presets/types'
 import { SPECIAL_RELATIVE_TEMPLATES } from '@/features/presets/types'
 import PresetPromptCard from '@/features/presets/components/PresetPromptCard.vue'
 import RegexRuleCard from '@/features/regex/components/RegexRuleCard.vue'
@@ -80,18 +91,28 @@ const fileTitle = ref<string>('')
 const renameError = ref<string | null>(null)
 watch(
   () => store.activeFile?.name,
-  (v) => { fileTitle.value = v ?? '' },
-  { immediate: true }
+  (v) => {
+    fileTitle.value = v ?? ''
+  },
+  { immediate: true },
 )
 function renamePresetFile() {
   renameError.value = null
   const oldName = store.activeFile?.name || ''
   const nn = (fileTitle.value || '').trim()
-  if (!nn) { renameError.value = '文件名不能为空'; return }
+  if (!nn) {
+    renameError.value = '文件名不能为空'
+    return
+  }
   if (nn === oldName) return
   const ok = (store as any).renameActive?.(nn)
-  if (!ok) { renameError.value = '重命名失败：可能与现有文件重名'; return }
-  try { fm.renameFile('presets', oldName, nn) } catch {}
+  if (!ok) {
+    renameError.value = '重命名失败：可能与现有文件重名'
+    return
+  }
+  try {
+    fm.renameFile('presets', oldName, nn)
+  } catch {}
 }
 
 watch(
@@ -100,7 +121,7 @@ watch(
     await nextTick()
     ;(window as any).lucide?.createIcons?.()
   },
-  { flush: 'post' }
+  { flush: 'post' },
 )
 
 watch(
@@ -109,9 +130,8 @@ watch(
     await nextTick()
     ;(window as any).lucide?.createIcons?.()
   },
-  { flush: 'post' }
+  { flush: 'post' },
 )
-
 
 /* 新增条目（Relative / In-Chat） */
 const specialSelect = ref<string>('')
@@ -120,18 +140,20 @@ const newRelName = ref<string>('')
 const relError = ref<string | null>(null)
 
 const availableSpecials = computed(() =>
-  SPECIAL_RELATIVE_TEMPLATES.filter(t => !store.relativePrompts.some(p => p.identifier === t.identifier))
+  SPECIAL_RELATIVE_TEMPLATES.filter(
+    (t) => !store.relativePrompts.some((p) => p.identifier === t.identifier),
+  ),
 )
-const reservedIdSet = new Set(SPECIAL_RELATIVE_TEMPLATES.map(t => t.identifier))
-const reservedNameSet = new Set(SPECIAL_RELATIVE_TEMPLATES.map(t => t.name))
+const reservedIdSet = new Set(SPECIAL_RELATIVE_TEMPLATES.map((t) => t.identifier))
+const reservedNameSet = new Set(SPECIAL_RELATIVE_TEMPLATES.map((t) => t.name))
 
 async function addSelectedSpecial() {
   relError.value = null
   const sel = specialSelect.value
   if (!sel) return
-  const tpl = SPECIAL_RELATIVE_TEMPLATES.find(t => t.identifier === sel)
+  const tpl = SPECIAL_RELATIVE_TEMPLATES.find((t) => t.identifier === sel)
   if (!tpl) return
-  if (store.relativePrompts.some(p => p.identifier === tpl.identifier)) {
+  if (store.relativePrompts.some((p) => p.identifier === tpl.identifier)) {
     relError.value = '该一次性组件已存在'
     return
   }
@@ -165,11 +187,11 @@ async function addCustomRelative() {
     relError.value = 'id 或 名称 与保留组件重复'
     return
   }
-  if (store.relativePrompts.some(p => p.identifier === id)) {
+  if (store.relativePrompts.some((p) => p.identifier === id)) {
     relError.value = 'id 已存在'
     return
   }
-  if (store.relativePrompts.some(p => p.name === name)) {
+  if (store.relativePrompts.some((p) => p.name === name)) {
     relError.value = '名称已存在'
     return
   }
@@ -179,7 +201,7 @@ async function addCustomRelative() {
     enabled: null,
     role: 'system',
     position: 'relative',
-    content: ''
+    content: '',
   }
   store.addPrompt(item as PromptItem)
   newRelId.value = ''
@@ -187,7 +209,6 @@ async function addCustomRelative() {
   await nextTick()
   ;(window as any).lucide?.createIcons?.()
 }
-
 
 // In-Chat 新增（右对齐 id + 名称 + 添加）
 const newChatId = ref<string>('')
@@ -207,11 +228,11 @@ async function addCustomInChat() {
     return
   }
   // 唯一性校验：identifier 需全局唯一；名称在 In-Chat 内唯一
-  if (store.prompts.some(p => p.identifier === id)) {
+  if (store.prompts.some((p) => p.identifier === id)) {
     chatError.value = 'id 已存在'
     return
   }
-  if (store.inChatPrompts.some(p => p.name === name)) {
+  if (store.inChatPrompts.some((p) => p.name === name)) {
     chatError.value = '名称已存在'
     return
   }
@@ -223,7 +244,7 @@ async function addCustomInChat() {
     position: 'in-chat',
     depth: 0,
     order: 0,
-    content: ''
+    content: '',
   }
   store.addPrompt(item as PromptItem)
   newChatId.value = ''
@@ -250,7 +271,7 @@ async function addCustomRegex() {
     return
   }
   const rules = store.activeData?.regex_rules ?? []
-  if (rules.some(r => r.id === id)) {
+  if (rules.some((r) => r.id === id)) {
     regexError.value = 'id 已存在'
     return
   }
@@ -315,7 +336,7 @@ function onDrop(position: PosType, overId: string | null, ev: DragEvent) {
   ev.preventDefault()
   const dId = dragging.value.id
   const list = position === 'relative' ? [...store.relativePrompts] : [...store.inChatPrompts]
-  let ids = list.map(i => i.identifier)
+  let ids = list.map((i) => i.identifier)
   const fromIdx = ids.indexOf(dId)
   if (fromIdx < 0) return
   // remove original
@@ -357,7 +378,8 @@ function onRegexDragStart(id: string, ev: DragEvent) {
     ev.dataTransfer?.setData('text/plain', id)
     ev.dataTransfer!.effectAllowed = 'move'
     const canvas = document.createElement('canvas')
-    canvas.width = 1; canvas.height = 1
+    canvas.width = 1
+    canvas.height = 1
     ev.dataTransfer?.setDragImage(canvas, 0, 0)
   } catch {}
 }
@@ -381,7 +403,7 @@ function onRegexDrop(overId: string | null, ev: DragEvent) {
   ev.preventDefault()
   const dId = draggingRegex.value
   const list = [...(store.activeData?.regex_rules || [])]
-  let ids = list.map(i => i.id)
+  let ids = list.map((i) => i.id)
   const fromIdx = ids.indexOf(dId)
   if (fromIdx < 0) return
   ids.splice(fromIdx, 1)
@@ -414,7 +436,9 @@ function onRegexDragEnd() {
   <!-- 仅 Preset 视图的内容（不包含三栏布局与顶部栏） -->
   <section class="space-y-6">
     <!-- 页面标题 -->
-    <div class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <i data-lucide="settings-2" class="w-5 h-5 text-black"></i>
@@ -431,7 +455,9 @@ function onRegexDragEnd() {
           <button
             class="px-3 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-sm hover:bg-gray-100 active:bg-gray-200 transition-all duration-200 ease-soft"
             @click="renamePresetFile"
-          >重命名</button>
+          >
+            重命名
+          </button>
         </div>
       </div>
       <p class="mt-2 text-xs text-black/60">本页为 UI 演示，保存与联通待后续</p>
@@ -439,7 +465,9 @@ function onRegexDragEnd() {
     </div>
 
     <!-- API 配置（默认收起） -->
-    <div class="bg-white rounded-4 border border-gray-200 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <button
         type="button"
         class="w-full flex items-center justify-between px-5 py-3 rounded-4"
@@ -477,7 +505,11 @@ function onRegexDragEnd() {
             <div class="flex items-center justify-between mb-2">
               <label class="text-sm font-medium text-black">Temperature</label>
               <label class="inline-flex items-center gap-2 select-none">
-                <input type="checkbox" v-model="enableTemperature" class="w-4 h-4 border border-gray-400 rounded-4 accent-black" />
+                <input
+                  type="checkbox"
+                  v-model="enableTemperature"
+                  class="w-4 h-4 border border-gray-400 rounded-4 accent-black"
+                />
                 <span class="text-xs text-black/60">启用</span>
               </label>
             </div>
@@ -499,7 +531,11 @@ function onRegexDragEnd() {
             <div class="flex items-center justify-between mb-2">
               <label class="text-sm font-medium text-black">Top P</label>
               <label class="inline-flex items-center gap-2 select-none">
-                <input type="checkbox" v-model="enableTopP" class="w-4 h-4 border border-gray-400 rounded-4 accent-black" />
+                <input
+                  type="checkbox"
+                  v-model="enableTopP"
+                  class="w-4 h-4 border border-gray-400 rounded-4 accent-black"
+                />
                 <span class="text-xs text-black/60">启用</span>
               </label>
             </div>
@@ -521,12 +557,17 @@ function onRegexDragEnd() {
             <div class="flex items-center justify-between mb-2">
               <label class="text-sm font-medium text-black">Top K</label>
               <label class="inline-flex items-center gap-2 select-none">
-                <input type="checkbox" v-model="enableTopK" class="w-4 h-4 border border-gray-400 rounded-4 accent-black" />
+                <input
+                  type="checkbox"
+                  v-model="enableTopK"
+                  class="w-4 h-4 border border-gray-400 rounded-4 accent-black"
+                />
                 <span class="text-xs text-black/60">启用</span>
               </label>
             </div>
             <input
-              type="number" min="0"
+              type="number"
+              min="0"
               v-model.number="topK"
               :disabled="!apiEnabled || !enableTopK"
               class="w-full px-3 py-2 border border-gray-300 rounded-4 focus:outline-none focus:ring-2 focus:ring-gray-800"
@@ -538,12 +579,17 @@ function onRegexDragEnd() {
             <div class="flex items-center justify-between mb-2">
               <label class="text-sm font-medium text-black">Max Context</label>
               <label class="inline-flex items-center gap-2 select-none">
-                <input type="checkbox" v-model="enableMaxContext" class="w-4 h-4 border border-gray-400 rounded-4 accent-black" />
+                <input
+                  type="checkbox"
+                  v-model="enableMaxContext"
+                  class="w-4 h-4 border border-gray-400 rounded-4 accent-black"
+                />
                 <span class="text-xs text-black/60">启用</span>
               </label>
             </div>
             <input
-              type="number" min="1"
+              type="number"
+              min="1"
               v-model.number="maxContext"
               :disabled="!apiEnabled || !enableMaxContext"
               class="w-full px-3 py-2 border border-gray-300 rounded-4 focus:outline-none focus:ring-2 focus:ring-gray-800"
@@ -555,12 +601,17 @@ function onRegexDragEnd() {
             <div class="flex items-center justify-between mb-2">
               <label class="text-sm font-medium text-black">Max Tokens</label>
               <label class="inline-flex items-center gap-2 select-none">
-                <input type="checkbox" v-model="enableMaxTokens" class="w-4 h-4 border border-gray-400 rounded-4 accent-black" />
+                <input
+                  type="checkbox"
+                  v-model="enableMaxTokens"
+                  class="w-4 h-4 border border-gray-400 rounded-4 accent-black"
+                />
                 <span class="text-xs text-black/60">启用</span>
               </label>
             </div>
             <input
-              type="number" min="1"
+              type="number"
+              min="1"
               v-model.number="maxTokens"
               :disabled="!apiEnabled || !enableMaxTokens"
               class="w-full px-3 py-2 border border-gray-300 rounded-4 focus:outline-none focus:ring-2 focus:ring-gray-800"
@@ -573,7 +624,11 @@ function onRegexDragEnd() {
               <div class="flex items-center justify-between mb-2">
                 <label class="text-sm font-medium text-black">流式输出（stream）</label>
                 <label class="inline-flex items-center gap-2 select-none">
-                  <input type="checkbox" v-model="enableStream" class="w-4 h-4 border border-gray-400 rounded-4 accent-black" />
+                  <input
+                    type="checkbox"
+                    v-model="enableStream"
+                    class="w-4 h-4 border border-gray-400 rounded-4 accent-black"
+                  />
                   <span class="text-xs text-black/60">启用</span>
                 </label>
               </div>
@@ -594,12 +649,17 @@ function onRegexDragEnd() {
             <div class="flex items-center justify-between mb-2">
               <label class="text-sm font-medium text-black">Frequency Penalty</label>
               <label class="inline-flex items-center gap-2 select-none">
-                <input type="checkbox" v-model="enableFrequencyPenalty" class="w-4 h-4 border border-gray-400 rounded-4 accent-black" />
+                <input
+                  type="checkbox"
+                  v-model="enableFrequencyPenalty"
+                  class="w-4 h-4 border border-gray-400 rounded-4 accent-black"
+                />
                 <span class="text-xs text-black/60">启用</span>
               </label>
             </div>
             <input
-              type="number" min="0"
+              type="number"
+              min="0"
               v-model.number="frequencyPenalty"
               :disabled="!apiEnabled || !enableFrequencyPenalty"
               class="w-full px-3 py-2 border border-gray-300 rounded-4 focus:outline-none focus:ring-2 focus:ring-gray-800"
@@ -611,12 +671,17 @@ function onRegexDragEnd() {
             <div class="flex items-center justify-between mb-2">
               <label class="text-sm font-medium text-black">Presence Penalty</label>
               <label class="inline-flex items-center gap-2 select-none">
-                <input type="checkbox" v-model="enablePresencePenalty" class="w-4 h-4 border border-gray-400 rounded-4 accent-black" />
+                <input
+                  type="checkbox"
+                  v-model="enablePresencePenalty"
+                  class="w-4 h-4 border border-gray-400 rounded-4 accent-black"
+                />
                 <span class="text-xs text-black/60">启用</span>
               </label>
             </div>
             <input
-              type="number" min="0"
+              type="number"
+              min="0"
               v-model.number="presencePenalty"
               :disabled="!apiEnabled || !enablePresencePenalty"
               class="w-full px-3 py-2 border border-gray-300 rounded-4 focus:outline-none focus:ring-2 focus:ring-gray-800"
@@ -627,7 +692,9 @@ function onRegexDragEnd() {
     </div>
 
     <!-- 提示词编辑（默认展开） -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <button
         type="button"
         class="w-full flex items-center justify-between mb-4 rounded-4"
@@ -649,7 +716,9 @@ function onRegexDragEnd() {
 
         <!-- 右：提示词条目 -->
         <div class="space-y-4">
-          <div class="border border-gray-200 rounded-4 p-4 transition-all duration-200 ease-soft hover:shadow-elevate">
+          <div
+            class="border border-gray-200 rounded-4 p-4 transition-all duration-200 ease-soft hover:shadow-elevate"
+          >
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center space-x-2">
                 <i data-lucide="list" class="w-4 h-4 text-black"></i>
@@ -732,9 +801,20 @@ function onRegexDragEnd() {
                     :key="it.identifier"
                     class="flex items-stretch gap-2 group draglist-item"
                     :class="{
-                      'dragging-item': dragging && dragging.id === it.identifier && dragging.position === 'relative',
-                      'drag-over-top': dragging && dragOverId === it.identifier && dragging.position === 'relative' && dragOverBefore,
-                      'drag-over-bottom': dragging && dragOverId === it.identifier && dragging.position === 'relative' && !dragOverBefore
+                      'dragging-item':
+                        dragging &&
+                        dragging.id === it.identifier &&
+                        dragging.position === 'relative',
+                      'drag-over-top':
+                        dragging &&
+                        dragOverId === it.identifier &&
+                        dragging.position === 'relative' &&
+                        dragOverBefore,
+                      'drag-over-bottom':
+                        dragging &&
+                        dragOverId === it.identifier &&
+                        dragging.position === 'relative' &&
+                        !dragOverBefore,
                     }"
                     @dragover.prevent="onDragOver('relative', it.identifier, $event)"
                     @drop.prevent="onDrop('relative', it.identifier, $event)"
@@ -746,7 +826,10 @@ function onRegexDragEnd() {
                       @dragend="onDragEnd"
                       title="拖拽排序"
                     >
-                      <i data-lucide="grip-vertical" class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"></i>
+                      <i
+                        data-lucide="grip-vertical"
+                        class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"
+                      ></i>
                     </div>
                     <div class="flex-1">
                       <PresetPromptCard :item="it" />
@@ -754,7 +837,10 @@ function onRegexDragEnd() {
                   </div>
                   <div
                     class="h-3 draglist-end"
-                    :class="{ 'drag-over-end': dragging && dragOverId === null && dragging.position === 'relative' }"
+                    :class="{
+                      'drag-over-end':
+                        dragging && dragOverId === null && dragging.position === 'relative',
+                    }"
                     @dragover.prevent="onDragOver('relative', null, $event)"
                     @drop.prevent="onDropEnd('relative', $event)"
                   />
@@ -798,16 +884,29 @@ function onRegexDragEnd() {
                     </button>
                   </div>
                 </div>
-                <p v-show="inChatOpen && chatError" class="text-xs text-red-600">* {{ chatError }}</p>
+                <p v-show="inChatOpen && chatError" class="text-xs text-red-600">
+                  * {{ chatError }}
+                </p>
                 <div v-show="inChatOpen" class="space-y-2">
                   <div
                     v-for="it in store.inChatPrompts"
                     :key="it.identifier"
                     class="flex items-stretch gap-2 group draglist-item"
                     :class="{
-                      'dragging-item': dragging && dragging.id === it.identifier && dragging.position === 'in-chat',
-                      'drag-over-top': dragging && dragOverId === it.identifier && dragging.position === 'in-chat' && dragOverBefore,
-                      'drag-over-bottom': dragging && dragOverId === it.identifier && dragging.position === 'in-chat' && !dragOverBefore
+                      'dragging-item':
+                        dragging &&
+                        dragging.id === it.identifier &&
+                        dragging.position === 'in-chat',
+                      'drag-over-top':
+                        dragging &&
+                        dragOverId === it.identifier &&
+                        dragging.position === 'in-chat' &&
+                        dragOverBefore,
+                      'drag-over-bottom':
+                        dragging &&
+                        dragOverId === it.identifier &&
+                        dragging.position === 'in-chat' &&
+                        !dragOverBefore,
                     }"
                     @dragover.prevent="onDragOver('in-chat', it.identifier, $event)"
                     @drop.prevent="onDrop('in-chat', it.identifier, $event)"
@@ -819,7 +918,10 @@ function onRegexDragEnd() {
                       @dragend="onDragEnd"
                       title="拖拽排序"
                     >
-                      <i data-lucide="grip-vertical" class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"></i>
+                      <i
+                        data-lucide="grip-vertical"
+                        class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"
+                      ></i>
                     </div>
                     <div class="flex-1">
                       <PresetPromptCard :item="it" />
@@ -827,7 +929,10 @@ function onRegexDragEnd() {
                   </div>
                   <div
                     class="h-3 draglist-end"
-                    :class="{ 'drag-over-end': dragging && dragOverId === null && dragging.position === 'in-chat' }"
+                    :class="{
+                      'drag-over-end':
+                        dragging && dragOverId === null && dragging.position === 'in-chat',
+                    }"
                     @dragover.prevent="onDragOver('in-chat', null, $event)"
                     @drop.prevent="onDropEnd('in-chat', $event)"
                   />
@@ -836,11 +941,14 @@ function onRegexDragEnd() {
             </div>
           </div>
         </div>
-      </div> <!-- grid end -->
+      </div>
+      <!-- grid end -->
     </div>
 
     <!-- 正则编辑（默认展开） -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <button
         type="button"
         class="w-full flex items-center justify-between mb-3 rounded-4"
@@ -884,13 +992,13 @@ function onRegexDragEnd() {
         <!-- 规则列表（可拖拽排序，黑线插入预览） -->
         <div class="space-y-2">
           <div
-            v-for="r in (store.activeData?.regex_rules || [])"
+            v-for="r in store.activeData?.regex_rules || []"
             :key="r.id"
             class="flex items-stretch gap-2 group draglist-item"
             :class="{
               'dragging-item': draggingRegex && draggingRegex === r.id,
               'drag-over-top': draggingRegex && dragOverRegexId === r.id && dragOverRegexBefore,
-              'drag-over-bottom': draggingRegex && dragOverRegexId === r.id && !dragOverRegexBefore
+              'drag-over-bottom': draggingRegex && dragOverRegexId === r.id && !dragOverRegexBefore,
             }"
             @dragover.prevent="onRegexDragOver(r.id, $event)"
             @drop.prevent="onRegexDrop(r.id, $event)"
@@ -902,7 +1010,10 @@ function onRegexDragEnd() {
               @dragend="onRegexDragEnd"
               title="拖拽排序"
             >
-              <i data-lucide="grip-vertical" class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"></i>
+              <i
+                data-lucide="grip-vertical"
+                class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"
+              ></i>
             </div>
             <div class="flex-1">
               <RegexRuleCard :rule="r" />
@@ -916,7 +1027,10 @@ function onRegexDragEnd() {
           />
         </div>
 
-        <div v-if="(store.activeData?.regex_rules || []).length === 0" class="text-xs text-black/50 px-1 py-1">
+        <div
+          v-if="(store.activeData?.regex_rules || []).length === 0"
+          class="text-xs text-black/50 px-1 py-1"
+        >
           暂无规则，请在右上角输入后点击添加
         </div>
       </div>
@@ -988,7 +1102,7 @@ function onRegexDragEnd() {
 
 /* TransitionGroup（FLIP）用于条目移动时的“推挤让位”动画 */
 .draglist-move {
-  transition: transform 180ms cubic-bezier(.2,.6,.2,1);
+  transition: transform 180ms cubic-bezier(0.2, 0.6, 0.2, 1);
 }
 .draglist-enter-active,
 .draglist-leave-active {
@@ -1001,7 +1115,9 @@ function onRegexDragEnd() {
 }
 
 /* 让每个可拖拽条目成为相对定位容器，便于绘制顶/底插入线 */
-.draglist-item { position: relative; }
+.draglist-item {
+  position: relative;
+}
 
 /* 顶部插入提示线（推挤让位的视觉锚点） */
 .drag-over-top::before {
@@ -1030,14 +1146,19 @@ function onRegexDragEnd() {
 /* 正在拖拽的条目：轻微缩放、阴影与透明度，增强拟物感 */
 .dragging-item {
   transform: scale(0.98);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.18);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
   opacity: 0.92;
   z-index: 1;
-  transition: transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    opacity 150ms ease;
 }
 
 /* 列表末尾的预览线（拖到列表末尾时显示） */
-.draglist-end { position: relative; }
+.draglist-end {
+  position: relative;
+}
 .drag-over-end::after {
   content: '';
   position: absolute;

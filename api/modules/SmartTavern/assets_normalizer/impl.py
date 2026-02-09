@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 SmartTavern.assets_normalizer 实现层
 
@@ -20,18 +19,21 @@ SmartTavern.assets_normalizer 实现层
 """
 
 from __future__ import annotations
-from typing import Any, Dict, List, Tuple, Optional
-import hashlib
-import copy
 
+import copy
+import hashlib
+from typing import Any
 
 # ========== 低阶工具 ==========
+
 
 def _is_list(x: Any) -> bool:
     return isinstance(x, list)
 
+
 def _is_dict(x: Any) -> bool:
     return isinstance(x, dict)
+
 
 def _deepcopy_json(x: Any) -> Any:
     try:
@@ -39,11 +41,13 @@ def _deepcopy_json(x: Any) -> Any:
     except Exception:
         return x
 
+
 def _hash_text(s: str) -> str:
     try:
         return hashlib.sha1((s or "").encode("utf-8")).hexdigest()
     except Exception:
         return ""
+
 
 def _safe_str(x: Any) -> str:
     if isinstance(x, str):
@@ -52,7 +56,8 @@ def _safe_str(x: Any) -> str:
         return ""
     return str(x)
 
-def _dedup_key_for_wb(item: Dict[str, Any]) -> str:
+
+def _dedup_key_for_wb(item: dict[str, Any]) -> str:
     """
     世界书去重键：
     - 优先 id（含数字 id 也可）
@@ -66,7 +71,8 @@ def _dedup_key_for_wb(item: Dict[str, Any]) -> str:
     content = _safe_str(item.get("content"))
     return f"name:{name}#sha1:{_hash_text(content)}"
 
-def _dedup_key_for_rule(rule: Dict[str, Any], dedup_by: str = "auto") -> str:
+
+def _dedup_key_for_rule(rule: dict[str, Any], dedup_by: str = "auto") -> str:
     """
     正则去重键：
     - auto: id > name > find_regex
@@ -88,13 +94,14 @@ def _dedup_key_for_rule(rule: Dict[str, Any], dedup_by: str = "auto") -> str:
         return f"name:{_safe_str(rule.get('name'))}"
     return f"re:{_safe_str(rule.get('find_regex'))}"
 
-def _normalize_rules_array(maybe_rules: Any, add_source: Optional[str] = None) -> List[Dict[str, Any]]:
+
+def _normalize_rules_array(maybe_rules: Any, add_source: str | None = None) -> list[dict[str, Any]]:
     """
     归一化成规则数组（不抛异常）
     - 支持：list[dict] 或 {"regex_rules":[...]}
     - add_source: 为每条规则注入 meta.source
     """
-    arr: List[Dict[str, Any]] = []
+    arr: list[dict[str, Any]] = []
     try:
         if _is_list(maybe_rules):
             for r in maybe_rules:
@@ -121,7 +128,8 @@ def _normalize_rules_array(maybe_rules: Any, add_source: Optional[str] = None) -
                 pass
     return arr
 
-def _collect_rules_from_mixed(container: Any, add_source: Optional[str] = None) -> List[Dict[str, Any]]:
+
+def _collect_rules_from_mixed(container: Any, add_source: str | None = None) -> list[dict[str, Any]]:
     """
     聚合多源规则：
     - 支持：直接数组、{"regex_rules":[...]}、{"items":[ [...], {"regex_rules":[...]}, ... ]}
@@ -129,41 +137,42 @@ def _collect_rules_from_mixed(container: Any, add_source: Optional[str] = None) 
     """
     if container is None:
         return []
-    out: List[Dict[str, Any]] = []
+    out: list[dict[str, Any]] = []
 
     # 1) 直接数组 / {"regex_rules":[...]}
     if _is_list(container):
         return _normalize_rules_array(container, add_source=add_source)
-    
+
     if _is_dict(container):
         # 检查是否有 "regex_rules" 键（单一规则容器）
         if "regex_rules" in container:
             return _normalize_rules_array(container, add_source=add_source)
-        
+
         # 2) {"items":[ ... ]} 格式
         items = container.get("items")
         if _is_list(items):
             for it in items:
                 out.extend(_normalize_rules_array(it, add_source=add_source))
             return out
-        
+
         # 3) 字典的值是规则容器：{"regex_0": {"regex_rules":[...]}, "regex_1": {...}}
         # 遍历所有值，尝试从每个值中提取规则
-        for key, value in container.items():
+        for _key, value in container.items():
             if _is_dict(value):
                 rules = _normalize_rules_array(value, add_source=add_source)
                 out.extend(rules)
-    
+
     return out
 
 
 # ========== 世界书工具 ==========
 
-def _flatten_world_books(items: Any) -> List[Dict[str, Any]]:
+
+def _flatten_world_books(items: Any) -> list[dict[str, Any]]:
     """
     展平成新世界书格式：仅支持 {entries:[...]} 或 {world_book:{entries:[...]}}。
     """
-    out: List[Dict[str, Any]] = []
+    out: list[dict[str, Any]] = []
     if not _is_dict(items):
         return out
 
@@ -183,7 +192,8 @@ def _flatten_world_books(items: Any) -> List[Dict[str, Any]]:
                 out.append(_deepcopy_json(e))
     return out
 
-def _normalize_char_world_book_entries(character: Any) -> List[Dict[str, Any]]:
+
+def _normalize_char_world_book_entries(character: Any) -> list[dict[str, Any]]:
     """
     从 角色卡.character["world_book"]["entries"] 抽取条目数组。
     - 注入 enabled 默认 True（若缺省）
@@ -192,7 +202,7 @@ def _normalize_char_world_book_entries(character: Any) -> List[Dict[str, Any]]:
     if not _is_dict(character):
         return []
     wb = character.get("world_book")
-    entries: List[Dict[str, Any]] = []
+    entries: list[dict[str, Any]] = []
     if _is_dict(wb) and _is_list(wb.get("entries")):
         for e in wb["entries"]:
             if not _is_dict(e):
@@ -206,7 +216,8 @@ def _normalize_char_world_book_entries(character: Any) -> List[Dict[str, Any]]:
 
 # ========== 提取 ==========
 
-def extract_preset_regex_impl(preset: Dict[str, Any]) -> Dict[str, Any]:
+
+def extract_preset_regex_impl(preset: dict[str, Any]) -> dict[str, Any]:
     """
     提取预设中的 regex_rules，标准化为 {"regex_rules":[...]} 并注入 meta.source="preset"
     """
@@ -218,10 +229,11 @@ def extract_preset_regex_impl(preset: Dict[str, Any]) -> Dict[str, Any]:
         "meta": {
             "source": "preset",
             "count": len(rules),
-        }
+        },
     }
 
-def extract_character_world_book_impl(character: Dict[str, Any]) -> Dict[str, Any]:
+
+def extract_character_world_book_impl(character: dict[str, Any]) -> dict[str, Any]:
     """
     提取角色卡 world_book.entries，输出 {"entries":[...]}
     """
@@ -231,10 +243,11 @@ def extract_character_world_book_impl(character: Dict[str, Any]) -> Dict[str, An
         "meta": {
             "source": "character",
             "count": len(entries),
-        }
+        },
     }
 
-def extract_character_regex_impl(character: Dict[str, Any]) -> Dict[str, Any]:
+
+def extract_character_regex_impl(character: dict[str, Any]) -> dict[str, Any]:
     """
     提取角色卡中的 regex_rules，标准化为 {"regex_rules":[...]} 并注入 meta.source="character"
     """
@@ -246,18 +259,16 @@ def extract_character_regex_impl(character: Dict[str, Any]) -> Dict[str, Any]:
         "meta": {
             "source": "character",
             "count": len(rules),
-        }
+        },
     }
 
 
 # ========== 合并 ==========
 
+
 def merge_world_books_impl(
-    world_books: Any,
-    character_world_book: Any,
-    allow_override: bool = False,
-    dedup_key: str = "auto"
-) -> Dict[str, Any]:
+    world_books: Any, character_world_book: Any, allow_override: bool = False, dedup_key: str = "auto"
+) -> dict[str, Any]:
     """
     合并世界书：
     - 输入：
@@ -268,15 +279,17 @@ def merge_world_books_impl(
     - 输出：
       {"world_book":[...], "meta":{...}}
     """
-    base_list: List[Dict[str, Any]] = _flatten_world_books(world_books)
+    base_list: list[dict[str, Any]] = _flatten_world_books(world_books)
     # 统一新格式：character_world_book 也是 {entries:[...]} 或 {world_book:{entries:[...]}}
-    char_items: List[Dict[str, Any]] = _flatten_world_books(character_world_book) if character_world_book is not None else []
+    char_items: list[dict[str, Any]] = (
+        _flatten_world_books(character_world_book) if character_world_book is not None else []
+    )
 
-    result: List[Dict[str, Any]] = []
-    seen: Dict[str, int] = {}
+    result: list[dict[str, Any]] = []
+    seen: dict[str, int] = {}
     removed = 0
 
-    def add_item(it: Dict[str, Any], is_override_stage: bool = False):
+    def add_item(it: dict[str, Any], is_override_stage: bool = False):
         nonlocal removed
         key = _dedup_key_for_wb(it) if dedup_key == "auto" else f"id:{_safe_str(it.get('id'))}"
         if key in seen:
@@ -313,15 +326,13 @@ def merge_world_books_impl(
             "total": len(result),
             "allow_override": allow_override,
             "dedup_key": dedup_key,
-        }
+        },
     }
 
+
 def merge_regex_impl(
-    independent_regex: Any,
-    preset_regex: Any,
-    character_regex: Any,
-    options: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    independent_regex: Any, preset_regex: Any, character_regex: Any, options: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     合并正则规则，顺序：独立 → 预设 → 角色卡
     - 输入可为：
@@ -349,11 +360,11 @@ def merge_regex_impl(
         ("character", char_rules),
     ]
 
-    out: List[Dict[str, Any]] = []
-    seen: Dict[str, int] = {}
+    out: list[dict[str, Any]] = []
+    seen: dict[str, int] = {}
     removed = 0
 
-    def push(rule: Dict[str, Any], stage_index: int):
+    def push(rule: dict[str, Any], stage_index: int):
         nonlocal removed
         key = _dedup_key_for_rule(rule, dedup_by=dedup_by)
         if key in seen:
@@ -385,19 +396,20 @@ def merge_regex_impl(
             "total": len(out),
             "dedup_by": dedup_by,
             "on_conflict": on_conflict,
-        }
+        },
     }
 
 
 # ========== 主流程 ==========
 
+
 def normalize_impl(
-    preset: Dict[str, Any],
+    preset: dict[str, Any],
     world_books: Any,
-    character: Dict[str, Any],
+    character: dict[str, Any],
     regex_files: Any,
-    options: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    options: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """
     一键标准化：
     - 统一输出：
@@ -428,7 +440,7 @@ def normalize_impl(
         independent_regex=indep_rx,  # 直接传数组
         preset_regex=preset_rx,
         character_regex=char_rx,
-        options=(options or {}).get("regex_options") if _is_dict(options) else None
+        options=(options or {}).get("regex_options") if _is_dict(options) else None,
     )
 
     return {
@@ -438,7 +450,9 @@ def normalize_impl(
         "merged_regex": rx_merge.get("merged_regex") or {"regex_rules": []},
         "meta": {
             "stats": {
-                "world_books_input_count_flat": wb_merge.get("meta", {}).get("input_counts", {}).get("world_books_flat", 0),
+                "world_books_input_count_flat": wb_merge.get("meta", {})
+                .get("input_counts", {})
+                .get("world_books_flat", 0),
                 "character_world_book_extracted_count": char_wb.get("meta", {}).get("count", 0),
                 "regex_input_independent_count": len(indep_rx),
                 "regex_extracted_from_preset_count": preset_rx.get("meta", {}).get("count", 0),
@@ -448,8 +462,8 @@ def normalize_impl(
             },
             "order": {
                 "regex": ["independent", "preset", "character"],
-                "world_book": ["original_world_books", "character_world_book"]
+                "world_book": ["original_world_books", "character_world_book"],
             },
-            "warnings": []
-        }
+            "warnings": [],
+        },
     }

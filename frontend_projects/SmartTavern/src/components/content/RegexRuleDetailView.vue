@@ -13,7 +13,7 @@ const { t } = useI18n()
 
 const props = defineProps({
   regexData: { type: Object, default: null },
-  file: { type: String, default: '' }
+  file: { type: String, default: '' },
 })
 
 // 图标上传相关
@@ -29,13 +29,13 @@ const hasIcon = computed(() => !!iconPreviewUrl.value)
 function handleIconSelect(e) {
   const file = e.target.files?.[0]
   if (!file) return
-  
+
   if (!file.type.startsWith('image/')) {
     return
   }
-  
+
   iconFile.value = file
-  
+
   if (iconPreviewUrl.value) {
     URL.revokeObjectURL(iconPreviewUrl.value)
   }
@@ -76,11 +76,11 @@ function resetIconPreview() {
 
 async function loadExistingIcon() {
   resetIconPreview()
-  
+
   if (!props.file) return
-  
+
   const iconPath = props.file.replace(/regex_rule\.json$/, 'icon.png')
-  
+
   try {
     const { blob, mime } = await DataCatalog.getDataAssetBlob(iconPath)
     if (blob.size > 0 && mime.startsWith('image/')) {
@@ -106,10 +106,11 @@ async function fileToBase64(file) {
   })
 }
 
-
 // 当前编辑的数据（内存中）
 /** 深拷贝 */
-function deepClone(x) { return JSON.parse(JSON.stringify(x)) }
+function deepClone(x) {
+  return JSON.parse(JSON.stringify(x))
+}
 /** 规范化 正则规则集 结构 */
 function normalizeRegexData(src) {
   if (!src || typeof src !== 'object') return null
@@ -121,19 +122,20 @@ function normalizeRegexData(src) {
   return { name, regex_rules: rules }
 }
 const currentData = ref(
-  deepClone(
-    normalizeRegexData(props.regexData) || { name: '', description: '', regex_rules: [] }
-  )
+  deepClone(normalizeRegexData(props.regexData) || { name: '', description: '', regex_rules: [] }),
 )
 // 外部数据变更时同步
-watch(() => props.regexData, async (v) => {
-  currentData.value = deepClone(
-    normalizeRegexData(v) || { name: '', description: '', regex_rules: [] }
-  )
-  await loadExistingIcon()
-  await nextTick()
-  window.lucide?.createIcons?.()
-})
+watch(
+  () => props.regexData,
+  async (v) => {
+    currentData.value = deepClone(
+      normalizeRegexData(v) || { name: '', description: '', regex_rules: [] },
+    )
+    await loadExistingIcon()
+    await nextTick()
+    window.lucide?.createIcons?.()
+  },
+)
 
 // 新增规则
 const newId = ref('')
@@ -153,7 +155,7 @@ async function addRule() {
     return
   }
   const rules = currentData.value.regex_rules || []
-  if (rules.some(r => r.id === id)) {
+  if (rules.some((r) => r.id === id)) {
     error.value = t('detail.regexRule.errors.idExists')
     return
   }
@@ -179,33 +181,28 @@ async function addRule() {
 
 // 规则更新和删除
 function onRegexUpdate(updated) {
-  const idx = currentData.value.regex_rules.findIndex(r => r.id === updated.id)
+  const idx = currentData.value.regex_rules.findIndex((r) => r.id === updated.id)
   if (idx >= 0) {
     currentData.value.regex_rules[idx] = updated
   }
 }
 
 function onRegexDelete(id) {
-  currentData.value.regex_rules = currentData.value.regex_rules.filter(r => r.id !== id)
+  currentData.value.regex_rules = currentData.value.regex_rules.filter((r) => r.id !== id)
 }
 
 // 正则规则拖拽 - 使用 composable
-const {
-  dragging,
-  dragOverId,
-  dragOverBefore,
-  startDrag,
-} = useCustomDrag({
+const { dragging, dragOverId, dragOverBefore, startDrag } = useCustomDrag({
   scrollContainerSelector: '.modal-scroll .scroll-container2',
   itemSelector: '.draglist-item',
   dataAttribute: 'data-rule-id',
   onReorder: (draggedId, targetId, insertBefore) => {
     const list = [...(currentData.value.regex_rules || [])]
-    let ids = list.map(i => String(i.id))
+    let ids = list.map((i) => String(i.id))
     const draggedIdStr = String(draggedId)
     const targetIdStr = targetId ? String(targetId) : null
     const fromIdx = ids.indexOf(draggedIdStr)
-    
+
     if (fromIdx >= 0 && draggedIdStr !== targetIdStr) {
       ids.splice(fromIdx, 1)
       if (targetIdStr) {
@@ -217,15 +214,17 @@ const {
       } else {
         ids.push(draggedIdStr)
       }
-      
-      currentData.value.regex_rules = ids.map(id => list.find(r => String(r.id) === id)).filter(Boolean)
+
+      currentData.value.regex_rules = ids
+        .map((id) => list.find((r) => String(r.id) === id))
+        .filter(Boolean)
       window.lucide?.createIcons?.()
     }
   },
   getTitleForItem: (id) => {
-    const rule = currentData.value.regex_rules?.find(r => String(r.id) === String(id))
+    const rule = currentData.value.regex_rules?.find((r) => String(r.id) === String(id))
     return rule?.name || id
-  }
+  },
 })
 
 // 初始化 Lucide 图标
@@ -234,10 +233,14 @@ onMounted(async () => {
   await loadExistingIcon()
 })
 
-watch(() => currentData.value.regex_rules, async () => {
-  await nextTick()
-  window.lucide?.createIcons?.()
-}, { flush: 'post' })
+watch(
+  () => currentData.value.regex_rules,
+  async () => {
+    await nextTick()
+    window.lucide?.createIcons?.()
+  },
+  { flush: 'post' },
+)
 
 const __eventOffs = [] // 事件监听清理器
 const saving = ref(false)
@@ -246,7 +249,11 @@ let __saveTimer = null
 
 onBeforeUnmount(() => {
   try {
-    __eventOffs?.forEach(fn => { try { fn?.() } catch (_) {} })
+    __eventOffs?.forEach((fn) => {
+      try {
+        fn?.()
+      } catch (_) {}
+    })
     __eventOffs.length = 0
     if (__saveTimer) clearTimeout(__saveTimer)
   } catch (_) {}
@@ -256,15 +263,17 @@ onBeforeUnmount(() => {
 async function save() {
   const file = props.file
   if (!file) {
-    try { alert(t('error.missingFilePath')); } catch (_) {}
+    try {
+      alert(t('error.missingFilePath'))
+    } catch (_) {}
     return
   }
   const content = {
     name: currentData.value.name || '',
     description: currentData.value.description || '',
-    regex_rules: Array.isArray(currentData.value.regex_rules) ? currentData.value.regex_rules : []
+    regex_rules: Array.isArray(currentData.value.regex_rules) ? currentData.value.regex_rules : [],
   }
-  
+
   // 处理图标
   let iconBase64 = undefined
   if (iconFile.value) {
@@ -276,61 +285,84 @@ async function save() {
   } else if (iconDeleted.value && iconLoadedFromServer.value) {
     iconBase64 = ''
   }
-  
+
   saving.value = true
   savedOk.value = false
-  if (__saveTimer) { try { clearTimeout(__saveTimer) } catch {} __saveTimer = null }
+  if (__saveTimer) {
+    try {
+      clearTimeout(__saveTimer)
+    } catch {}
+    __saveTimer = null
+  }
   const tag = `regex_save_${Date.now()}`
-  
+
   // 监听保存结果（一次性）
-  const offOk = Host.events.on(Catalog.EVT_CATALOG_REGEX_UPDATE_OK, async ({ file: resFile, tag: resTag }) => {
-    if (resFile !== file || resTag !== tag) return
-    console.log('[RegexRuleDetailView] 保存成功（事件）')
-    savedOk.value = true
-    saving.value = false
-    if (savedOk.value) {
-      __saveTimer = setTimeout(() => { savedOk.value = false }, 1800)
-    }
-    
-    // 保存成功后，刷新侧边栏列表
-    try {
-      console.log('[RegexRuleDetailView] 刷新正则规则列表')
-      Host.events.emit(Catalog.EVT_CATALOG_REGEX_REQ, {
-        requestId: Date.now()
-      })
-    } catch (err) {
-      console.warn('[RegexRuleDetailView] 刷新正则规则列表失败:', err)
-    }
-    
-    // 保存成功后，检查是否是当前使用的正则规则之一，如果是则刷新 store
-    try {
-      const chatSettingsStore = useChatSettingsStore()
-      const regexRulesStore = useRegexRulesStore()
-      const currentRegexRulesFiles = chatSettingsStore.regexRulesFiles || []
-      if (currentRegexRulesFiles.includes(file)) {
-        console.log('[RegexRuleDetailView] 刷新正则规则 store')
-        await regexRulesStore.refreshFromRegexRuleFiles(currentRegexRulesFiles)
+  const offOk = Host.events.on(
+    Catalog.EVT_CATALOG_REGEX_UPDATE_OK,
+    async ({ file: resFile, tag: resTag }) => {
+      if (resFile !== file || resTag !== tag) return
+      console.log('[RegexRuleDetailView] 保存成功（事件）')
+      savedOk.value = true
+      saving.value = false
+      if (savedOk.value) {
+        __saveTimer = setTimeout(() => {
+          savedOk.value = false
+        }, 1800)
       }
-    } catch (err) {
-      console.warn('[RegexRuleDetailView] 刷新正则规则 store 失败:', err)
-    }
-    
-    try { offOk?.() } catch (_) {}
-    try { offFail?.() } catch (_) {}
-  })
-  
-  const offFail = Host.events.on(Catalog.EVT_CATALOG_REGEX_UPDATE_FAIL, ({ file: resFile, message, tag: resTag }) => {
-    if (resFile && resFile !== file) return
-    if (resTag && resTag !== tag) return
-    console.error('[RegexRuleDetailView] 保存失败（事件）:', message)
-    try { alert(t('detail.regexRule.saveFailed') + '：' + message) } catch (_) {}
-    saving.value = false
-    try { offOk?.() } catch (_) {}
-    try { offFail?.() } catch (_) {}
-  })
-  
+
+      // 保存成功后，刷新侧边栏列表
+      try {
+        console.log('[RegexRuleDetailView] 刷新正则规则列表')
+        Host.events.emit(Catalog.EVT_CATALOG_REGEX_REQ, {
+          requestId: Date.now(),
+        })
+      } catch (err) {
+        console.warn('[RegexRuleDetailView] 刷新正则规则列表失败:', err)
+      }
+
+      // 保存成功后，检查是否是当前使用的正则规则之一，如果是则刷新 store
+      try {
+        const chatSettingsStore = useChatSettingsStore()
+        const regexRulesStore = useRegexRulesStore()
+        const currentRegexRulesFiles = chatSettingsStore.regexRulesFiles || []
+        if (currentRegexRulesFiles.includes(file)) {
+          console.log('[RegexRuleDetailView] 刷新正则规则 store')
+          await regexRulesStore.refreshFromRegexRuleFiles(currentRegexRulesFiles)
+        }
+      } catch (err) {
+        console.warn('[RegexRuleDetailView] 刷新正则规则 store 失败:', err)
+      }
+
+      try {
+        offOk?.()
+      } catch (_) {}
+      try {
+        offFail?.()
+      } catch (_) {}
+    },
+  )
+
+  const offFail = Host.events.on(
+    Catalog.EVT_CATALOG_REGEX_UPDATE_FAIL,
+    ({ file: resFile, message, tag: resTag }) => {
+      if (resFile && resFile !== file) return
+      if (resTag && resTag !== tag) return
+      console.error('[RegexRuleDetailView] 保存失败（事件）:', message)
+      try {
+        alert(t('detail.regexRule.saveFailed') + '：' + message)
+      } catch (_) {}
+      saving.value = false
+      try {
+        offOk?.()
+      } catch (_) {}
+      try {
+        offFail?.()
+      } catch (_) {}
+    },
+  )
+
   __eventOffs.push(offOk, offFail)
-  
+
   // 发送保存请求事件
   Host.events.emit(Catalog.EVT_CATALOG_REGEX_UPDATE_REQ, {
     file,
@@ -338,7 +370,7 @@ async function save() {
     name: content.name,
     description: content.description,
     iconBase64,
-    tag
+    tag,
   })
 }
 </script>
@@ -346,7 +378,9 @@ async function save() {
 <template>
   <section class="space-y-6">
     <!-- 页面标题 -->
-    <div class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <i data-lucide="code" class="w-5 h-5 text-black"></i>
@@ -356,7 +390,9 @@ async function save() {
           <!-- 保存状态：左侧提示区 -->
           <div class="save-indicator min-w-[72px] h-7 flex items-center justify-center">
             <span v-if="saving" class="save-spinner" :aria-label="t('detail.preset.saving')"></span>
-            <span v-else-if="savedOk" class="save-done"><strong>{{ t('detail.preset.saved') }}</strong></span>
+            <span v-else-if="savedOk" class="save-done"
+              ><strong>{{ t('detail.preset.saved') }}</strong></span
+            >
           </div>
           <button
             type="button"
@@ -364,7 +400,9 @@ async function save() {
             :disabled="saving"
             @click="save"
             :title="t('detail.preset.saveToBackend')"
-          >{{ t('common.save') }}</button>
+          >
+            {{ t('common.save') }}
+          </button>
           <div class="px-3 py-1 rounded-4 bg-gray-100 border border-gray-300 text-black text-sm">
             {{ t('detail.regexRule.editMode') }}
           </div>
@@ -374,7 +412,9 @@ async function save() {
     </div>
 
     <!-- 基本信息（名称/描述/图标） -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center gap-2 mb-3">
         <i data-lucide="id-card" class="w-4 h-4 text-black"></i>
         <h3 class="text-base font-semibold text-black">{{ t('detail.regexRule.basicInfo') }}</h3>
@@ -382,12 +422,10 @@ async function save() {
       <div class="flex gap-6">
         <!-- 左侧：图标上传区域 -->
         <div class="flex-shrink-0">
-          <label class="block text-sm font-medium text-black mb-2">{{ t('createItem.iconLabel') }}</label>
-          <div
-            class="icon-upload-area"
-            :class="{ 'has-icon': hasIcon }"
-            @click="triggerIconSelect"
-          >
+          <label class="block text-sm font-medium text-black mb-2">{{
+            t('createItem.iconLabel')
+          }}</label>
+          <div class="icon-upload-area" :class="{ 'has-icon': hasIcon }" @click="triggerIconSelect">
             <input
               ref="iconInputRef"
               type="file"
@@ -408,18 +446,30 @@ async function save() {
             </template>
             <template v-else>
               <div class="icon-placeholder">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
-                  <circle cx="9" cy="9" r="2"/>
-                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                  <circle cx="9" cy="9" r="2" />
+                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
                 </svg>
                 <span class="text-xs">{{ t('createItem.uploadIcon') }}</span>
               </div>
             </template>
           </div>
-          <div class="text-xs text-black/50 mt-1 text-center max-w-[120px]">{{ t('createItem.iconHint') }}</div>
+          <div class="text-xs text-black/50 mt-1 text-center max-w-[120px]">
+            {{ t('createItem.iconHint') }}
+          </div>
         </div>
-        
+
         <!-- 右侧：名称和描述 -->
         <div class="flex-1 grid grid-cols-1 gap-4">
           <div>
@@ -430,7 +480,9 @@ async function save() {
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-black mb-2">{{ t('common.description') }}</label>
+            <label class="block text-sm font-medium text-black mb-2">{{
+              t('common.description')
+            }}</label>
             <textarea
               v-model="currentData.description"
               rows="2"
@@ -442,10 +494,14 @@ async function save() {
     </div>
 
     <!-- 工具栏：新增 -->
-    <div class="bg-white rounded-4 border border-gray-200 p-4 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-4 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between gap-3">
         <div class="text-sm text-black/70">
-          {{ t('detail.regexRule.toolbar.ruleCount') }}：{{ (currentData.regex_rules || []).length }}
+          {{ t('detail.regexRule.toolbar.ruleCount') }}：{{
+            (currentData.regex_rules || []).length
+          }}
         </div>
         <div class="flex items-center gap-2">
           <input
@@ -470,7 +526,9 @@ async function save() {
     </div>
 
     <!-- 正则规则列表 -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center gap-2 mb-3">
         <i data-lucide="sliders" class="w-4 h-4 text-black"></i>
         <h3 class="text-base font-semibold text-black">{{ t('detail.regexRule.list.title') }}</h3>
@@ -479,13 +537,14 @@ async function save() {
       <!-- 列表（可拖拽排序） -->
       <div class="space-y-2">
         <div
-          v-for="r in (currentData.regex_rules || [])"
+          v-for="r in currentData.regex_rules || []"
           :key="r.id"
           class="flex items-stretch gap-2 group draglist-item"
           :class="{
             'dragging-item': dragging && String(dragging.id) === String(r.id),
             'drag-over-top': dragOverId && String(dragOverId) === String(r.id) && dragOverBefore,
-            'drag-over-bottom': dragOverId && String(dragOverId) === String(r.id) && !dragOverBefore
+            'drag-over-bottom':
+              dragOverId && String(dragOverId) === String(r.id) && !dragOverBefore,
           }"
           :data-rule-id="r.id"
         >
@@ -494,26 +553,29 @@ async function save() {
             @mousedown="startDrag(r.id, $event)"
             :title="t('detail.preset.prompts.dragToSort')"
           >
-            <i data-lucide="grip-vertical" class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"></i>
+            <i
+              data-lucide="grip-vertical"
+              class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"
+            ></i>
           </div>
           <div class="flex-1">
-            <RegexRuleCard
-              :rule="r"
-              @update="onRegexUpdate"
-              @delete="onRegexDelete"
-            />
+            <RegexRuleCard :rule="r" @update="onRegexUpdate" @delete="onRegexDelete" />
           </div>
         </div>
-
       </div>
 
-      <div v-if="(currentData.regex_rules || []).length === 0" class="text-center py-8 text-black/50 text-sm">
+      <div
+        v-if="(currentData.regex_rules || []).length === 0"
+        class="text-center py-8 text-black/50 text-sm"
+      >
         {{ t('detail.regexRule.list.empty') }}
       </div>
     </div>
 
     <!-- 说明 -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center gap-2 mb-3">
         <i data-lucide="info" class="w-4 h-4 text-black"></i>
         <h3 class="text-sm font-semibold text-black">{{ t('detail.regexRule.notes.title') }}</h3>

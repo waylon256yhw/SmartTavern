@@ -38,13 +38,16 @@ interface AppearanceSnapshot {
  * @param msgOpacityPct 楼层消息背景不透明度（百分比 0~100）
  * @returns CSS 阴影文本
  */
-function deriveShadowMedium(cardRadiusPx: number | null | undefined, msgOpacityPct: number | null | undefined): string {
-  const r = (typeof cardRadiusPx === 'number' && Number.isFinite(cardRadiusPx)) ? cardRadiusPx : 12
-  const o = (typeof msgOpacityPct === 'number' && Number.isFinite(msgOpacityPct)) ? msgOpacityPct : 80
+function deriveShadowMedium(
+  cardRadiusPx: number | null | undefined,
+  msgOpacityPct: number | null | undefined,
+): string {
+  const r = typeof cardRadiusPx === 'number' && Number.isFinite(cardRadiusPx) ? cardRadiusPx : 12
+  const o = typeof msgOpacityPct === 'number' && Number.isFinite(msgOpacityPct) ? msgOpacityPct : 80
 
   // 基于圆角与不透明度推一个主观的视觉强度
   // 圆角越大 → 阴影距离/半径略大；不透明度越大 → 阴影透明度略低（更轻）
-  const baseBlur = r >= 16 ? 40 : (r >= 12 ? 32 : 24)
+  const baseBlur = r >= 16 ? 40 : r >= 12 ? 32 : 24
   const spread = Math.max(0, Math.round((r - 10) / 2))
   // 将 0~100 的不透明度换算到 0.12~0.28 的阴影透明度区间（示例数字）
   const alpha = 0.28 - (Math.min(100, Math.max(0, o)) / 100) * 0.16

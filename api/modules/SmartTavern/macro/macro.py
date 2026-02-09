@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 API 封装层：SmartTavern.macro
 - 注册“顺序宏处理（仅修改 content）”API
 """
-from typing import Any, Dict, List, Optional
+
 import os
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any
+
 import core
-from .impl import process_messages as _process_messages, process_text_value as _process_text_value
-from .impl import register_custom_macros as _register_custom_macros
-from .impl import list_custom_macros as _list_custom_macros
+
 from .impl import clear_custom_macros as _clear_custom_macros
+from .impl import list_custom_macros as _list_custom_macros
+from .impl import process_messages as _process_messages
+from .impl import process_text_value as _process_text_value
+from .impl import register_custom_macros as _register_custom_macros
 
 
 @core.register_api(
@@ -28,16 +31,16 @@ from .impl import clear_custom_macros as _clear_custom_macros
                     "properties": {
                         "role": {"type": "string"},
                         "content": {"type": "string"},
-                        "source": {"type": "object", "additionalProperties": True}
+                        "source": {"type": "object", "additionalProperties": True},
                     },
                     "required": ["role", "content"],
-                    "additionalProperties": True
-                }
+                    "additionalProperties": True,
+                },
             },
             "variables": {"type": "object", "additionalProperties": True},
         },
         "required": ["messages"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -49,31 +52,31 @@ from .impl import clear_custom_macros as _clear_custom_macros
                     "properties": {
                         "role": {"type": "string"},
                         "content": {"type": "string"},
-                        "source": {"type": "object", "additionalProperties": True}
+                        "source": {"type": "object", "additionalProperties": True},
                     },
                     "required": ["role", "content"],
-                    "additionalProperties": True
-                }
+                    "additionalProperties": True,
+                },
             },
             "variables": {
                 "type": "object",
                 "properties": {
                     "initial": {"type": "object", "additionalProperties": True},
-                    "final": {"type": "object", "additionalProperties": True}
+                    "final": {"type": "object", "additionalProperties": True},
                 },
                 "required": ["initial", "final"],
-                "additionalProperties": False
-            }
+                "additionalProperties": False,
+            },
         },
         "required": ["messages", "variables"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
 )
 def process(
-    messages: List[Dict[str, Any]],
-    variables: Optional[Dict[str, Any]] = None,
-    policy: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    messages: list[dict[str, Any]],
+    variables: dict[str, Any] | None = None,
+    policy: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     return _process_messages(messages=messages, variables=variables or {}, policy=policy or {})
 
 
@@ -92,26 +95,20 @@ def process(
                 "type": "array",
                 "items": {
                     "type": "object",
-                    "properties": {
-                        "name": {"type": "string"},
-                        "handler_api": {"type": "string"}
-                    },
+                    "properties": {"name": {"type": "string"}, "handler_api": {"type": "string"}},
                     "required": ["name", "handler_api"],
-                    "additionalProperties": False
-                }
+                    "additionalProperties": False,
+                },
             }
         },
         "required": ["macros"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
-        "properties": {
-            "success": {"type": "boolean"},
-            "count": {"type": "integer"}
-        },
+        "properties": {"success": {"type": "boolean"}, "count": {"type": "integer"}},
         "required": ["success", "count"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
 )
 def register(macros: list[dict]) -> dict:
@@ -123,19 +120,15 @@ def register(macros: list[dict]) -> dict:
     path="smarttavern/macro/list",
     name="列出已注册的自定义宏",
     description="返回当前在内存中的自定义宏名称与 handler_api 映射",
-    input_schema={
-        "type": "object",
-        "properties": {},
-        "additionalProperties": False
-    },
+    input_schema={"type": "object", "properties": {}, "additionalProperties": False},
     output_schema={
         "type": "object",
         "properties": {
             "success": {"type": "boolean"},
-            "items": {"type": "object", "additionalProperties": {"type": "string"}}
+            "items": {"type": "object", "additionalProperties": {"type": "string"}},
         },
         "required": ["success", "items"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
 )
 def list_registered() -> dict:
@@ -146,21 +139,18 @@ def list_registered() -> dict:
     path="smarttavern/macro/clear",
     name="清空自定义宏注册",
     description="清空当前内存中的所有自定义宏注册项",
-    input_schema={
-        "type": "object",
-        "properties": {},
-        "additionalProperties": False
-    },
+    input_schema={"type": "object", "properties": {}, "additionalProperties": False},
     output_schema={
         "type": "object",
         "properties": {"success": {"type": "boolean"}},
         "required": ["success"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
 )
 def clear() -> dict:
     _clear_custom_macros()
     return {"success": True}
+
 
 @core.register_api(
     path="smarttavern/macro/process_text",
@@ -173,7 +163,7 @@ def clear() -> dict:
             "variables": {"type": "object", "additionalProperties": True},
         },
         "required": ["text"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -183,21 +173,21 @@ def clear() -> dict:
                 "type": "object",
                 "properties": {
                     "initial": {"type": "object", "additionalProperties": True},
-                    "final": {"type": "object", "additionalProperties": True}
+                    "final": {"type": "object", "additionalProperties": True},
                 },
                 "required": ["initial", "final"],
-                "additionalProperties": False
-            }
+                "additionalProperties": False,
+            },
         },
         "required": ["text", "variables"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
 )
 def process_text(
     text: str,
-    variables: Optional[Dict[str, Any]] = None,
-    policy: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    variables: dict[str, Any] | None = None,
+    policy: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     return _process_text_value(text=text, variables=variables or {}, policy=policy or {})
 
 
@@ -212,7 +202,7 @@ def process_text(
             "variables": {"type": "object", "additionalProperties": True},
         },
         "required": ["texts"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
@@ -224,31 +214,29 @@ def process_text(
                     "type": "object",
                     "properties": {
                         "initial": {"type": "object", "additionalProperties": True},
-                        "final": {"type": "object", "additionalProperties": True}
+                        "final": {"type": "object", "additionalProperties": True},
                     },
                     "required": ["initial", "final"],
-                    "additionalProperties": False
-                }
-            }
+                    "additionalProperties": False,
+                },
+            },
         },
         "required": ["texts", "variables_list"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
 )
 def process_text_batch(
-    texts: List[str],
-    variables: Optional[Dict[str, Any]] = None,
-    policy: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    texts: list[str],
+    variables: dict[str, Any] | None = None,
+    policy: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     n = len(texts or [])
     if n == 0:
         return {"texts": [], "variables_list": []}
     base_vars = variables or {}
     pol = policy or {}
-    out_texts: List[str] = [""] * n
-    out_vars: List[Dict[str, Any]] = [
-        {"initial": dict(base_vars), "final": dict(base_vars)}
-    ] * n
+    out_texts: list[str] = [""] * n
+    out_vars: list[dict[str, Any]] = [{"initial": dict(base_vars), "final": dict(base_vars)}] * n
 
     # 为每条 condition 使用变量的“镜像”（dict 拷贝），保证互不影响
     def _work(idx: int, text: str) -> None:

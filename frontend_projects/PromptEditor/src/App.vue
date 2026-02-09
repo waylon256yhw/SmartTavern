@@ -42,15 +42,34 @@ onMounted(() => {
 })
 
 // 监听右侧栏模式切换：每次切换立即调用对应工作流
-watch(() => previewUI.mode, (m) => {
-  previewRuntime.generateNow(m)
-})
+watch(
+  () => previewUI.mode,
+  (m) => {
+    previewRuntime.generateNow(m)
+  },
+)
 
 // 监听各处 JSON 变更：1 秒冷却内防抖触发工作流
-watch(() => presetStore.activeData, () => previewRuntime.schedule(), { deep: true })
-watch(() => characterStore.doc, () => previewRuntime.schedule(), { deep: true })
-watch(() => personaStore.doc, () => previewRuntime.schedule(), { deep: true })
-watch(() => historyStore.activeData, () => previewRuntime.schedule(), { deep: true })
+watch(
+  () => presetStore.activeData,
+  () => previewRuntime.schedule(),
+  { deep: true },
+)
+watch(
+  () => characterStore.doc,
+  () => previewRuntime.schedule(),
+  { deep: true },
+)
+watch(
+  () => personaStore.doc,
+  () => previewRuntime.schedule(),
+  { deep: true },
+)
+watch(
+  () => historyStore.activeData,
+  () => previewRuntime.schedule(),
+  { deep: true },
+)
 
 /* 右上角“新建”对话框与逻辑 */
 const showNewDialog = ref(false)
@@ -59,15 +78,22 @@ const newError = ref<string | null>(null)
 
 function suggestNewNameForTab(tab: TabKey): string {
   const now = new Date()
-  const stamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`
+  const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
   switch (tab) {
-    case 'presets': return `Preset_${stamp}.json`
-    case 'worldbook': return `WorldBook_${stamp}.json`
-    case 'regex': return `RegexRules_${stamp}.json`
-    case 'characters': return `Character_${stamp}.json`
-    case 'user': return `Persona_${stamp}.json`
-    case 'history': return `History_${stamp}.json`
-    default: return `New_${stamp}.json`
+    case 'presets':
+      return `Preset_${stamp}.json`
+    case 'worldbook':
+      return `WorldBook_${stamp}.json`
+    case 'regex':
+      return `RegexRules_${stamp}.json`
+    case 'characters':
+      return `Character_${stamp}.json`
+    case 'user':
+      return `Persona_${stamp}.json`
+    case 'history':
+      return `History_${stamp}.json`
+    default:
+      return `New_${stamp}.json`
   }
 }
 function normalizeJsonName(name: string): string {
@@ -91,8 +117,14 @@ function buildBaseDoc(tab: TabKey): any {
     // 最小 PresetData 承载
     return {
       setting: {
-        temperature: 1, frequency_penalty: 0, presence_penalty: 0,
-        top_p: 1, top_k: 0, max_context: 4095, max_tokens: 300, stream: true
+        temperature: 1,
+        frequency_penalty: 0,
+        presence_penalty: 0,
+        top_p: 1,
+        top_k: 0,
+        max_context: 4095,
+        max_tokens: 300,
+        stream: true,
       },
       regex_rules: [],
       prompts: [],
@@ -101,7 +133,8 @@ function buildBaseDoc(tab: TabKey): any {
   }
   if (tab === 'characters') {
     return {
-      name: '', description: '',
+      name: '',
+      description: '',
       message: [],
       world_book: { name: '', entries: [] },
       regex_rules: [],
@@ -147,7 +180,7 @@ async function confirmNew() {
       // world_books 面板直接使用 activeData.world_books
       presetStore.setWorldBooks([])
       ;(presetStore as any).renameActive?.(raw)
-      fileManager.upsertFile('worldbook', raw, { name: raw.replace(/\.json$/,''), entries: [] })
+      fileManager.upsertFile('worldbook', raw, { name: raw.replace(/\.json$/, ''), entries: [] })
     } else if (targetTab === 'regex') {
       const entry: any = { name: raw, enabled: true, data: doc }
       presetStore.upsertFile(entry)
@@ -196,7 +229,7 @@ function handleImport() {
       alert('导入失败：无法读取文件')
       return
     }
-    if (text && text.charCodeAt(0) === 0xFEFF) text = text.slice(1)
+    if (text && text.charCodeAt(0) === 0xfeff) text = text.slice(1)
     text = text.replace(/\uFEFF/g, '').trim()
 
     let json: any
@@ -228,14 +261,20 @@ function handleImport() {
       try {
         characterStore.setCharacter(json, file.name)
       } catch {}
-      try { fileManager.upsertFile('characters', file.name, json) } catch {}
+      try {
+        fileManager.upsertFile('characters', file.name, json)
+      } catch {}
       return
     }
 
     // 用户信息（Persona）
     if (targetTab === 'user') {
-      try { personaStore.setPersona(json, file.name) } catch {}
-      try { fileManager.upsertFile('user', file.name, json) } catch {}
+      try {
+        personaStore.setPersona(json, file.name)
+      } catch {}
+      try {
+        fileManager.upsertFile('user', file.name, json)
+      } catch {}
       return
     }
 
@@ -243,7 +282,9 @@ function handleImport() {
     if (targetTab === 'regex') {
       const rules: any[] = Array.isArray(json)
         ? json
-        : (Array.isArray(json?.regex_rules) ? json.regex_rules : [])
+        : Array.isArray(json?.regex_rules)
+          ? json.regex_rules
+          : []
       try {
         if (!presetStore.activeData) {
           presetStore.upsertFile({
@@ -253,16 +294,24 @@ function handleImport() {
           } as any)
         }
         presetStore.setRegexRules(rules as any)
-        try { (presetStore as any).renameActive?.(file.name) } catch {}
+        try {
+          ;(presetStore as any).renameActive?.(file.name)
+        } catch {}
       } catch {}
-      try { fileManager.upsertFile('regex', file.name, json) } catch {}
+      try {
+        fileManager.upsertFile('regex', file.name, json)
+      } catch {}
       return
     }
 
     // 对话历史：入库 + 镜像到历史面板
     if (targetTab === 'history') {
-      try { historyStore.setDoc(json, file.name) } catch {}
-      try { fileManager.upsertFile('history', file.name, json) } catch {}
+      try {
+        historyStore.setDoc(json, file.name)
+      } catch {}
+      try {
+        fileManager.upsertFile('history', file.name, json)
+      } catch {}
       return
     }
 
@@ -276,12 +325,20 @@ function handleImport() {
       } else if (Array.isArray(json)) {
         flat = flattenObjects(json)
       } else {
-        try { fileManager.upsertFile('worldbook', file.name, json) } catch {}
+        try {
+          fileManager.upsertFile('worldbook', file.name, json)
+        } catch {}
         return
       }
-      try { presetStore.setWorldBooks(flat as any) } catch {}
-      try { (presetStore as any).renameActive?.(file.name) } catch {}
-      try { fileManager.upsertFile('worldbook', file.name, json) } catch {}
+      try {
+        presetStore.setWorldBooks(flat as any)
+      } catch {}
+      try {
+        ;(presetStore as any).renameActive?.(file.name)
+      } catch {}
+      try {
+        fileManager.upsertFile('worldbook', file.name, json)
+      } catch {}
       return
     }
 
@@ -289,7 +346,9 @@ function handleImport() {
     if (targetTab === 'presets') {
       try {
         await presetStore.importFromFile(file)
-        try { fileManager.upsertFile('presets', file.name, json) } catch {}
+        try {
+          fileManager.upsertFile('presets', file.name, json)
+        } catch {}
       } catch {
         alert('导入失败：预设数据结构不符合预期')
       }
@@ -447,7 +506,12 @@ function handleReset() {
 </script>
 
 <template>
-  <AppShell @new="openNewDialog" @import-files="handleImport" @export-file="handleExport" @reset="handleReset">
+  <AppShell
+    @new="openNewDialog"
+    @import-files="handleImport"
+    @export-file="handleExport"
+    @reset="handleReset"
+  >
     <!-- 左侧栏插槽：侧边导航 -->
     <template #left>
       <Sidebar v-model="currentTab" />
@@ -483,7 +547,10 @@ function handleReset() {
         <HistoryView />
       </section>
 
-      <section v-else class="bg-white rounded-4 card-shadow border border-gray-200 p-8 transition-all duration-200 ease-soft hover:shadow-elevate">
+      <section
+        v-else
+        class="bg-white rounded-4 card-shadow border border-gray-200 p-8 transition-all duration-200 ease-soft hover:shadow-elevate"
+      >
         <div class="text-center">
           <i data-lucide="circle-dashed" class="w-10 h-10 text-black/40 mx-auto mb-4"></i>
           <p class="text-black/60">未知视图：{{ currentTab }}</p>
@@ -498,7 +565,10 @@ function handleReset() {
   </AppShell>
 
   <!-- 新建文件对话框 -->
-  <div v-if="showNewDialog" class="fixed inset-0 z-[999] flex items-center justify-center bg-black/30">
+  <div
+    v-if="showNewDialog"
+    class="fixed inset-0 z-[999] flex items-center justify-center bg-black/30"
+  >
     <div class="bg-white rounded-4 border border-gray-200 w-[90%] max-w-md p-5">
       <div class="flex items-center gap-2 mb-3">
         <i data-lucide="file-plus-2" class="w-5 h-5 text-black"></i>
@@ -535,23 +605,23 @@ function handleReset() {
 
 <style>
 /* Range 输入美化（全局，黑白风格） */
-input[type="range"] {
+input[type='range'] {
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
   width: 100%;
 }
-input[type="range"]::-webkit-slider-runnable-track {
+input[type='range']::-webkit-slider-runnable-track {
   height: 4px;
-  background-color: #E5E7EB;
+  background-color: #e5e7eb;
   border-radius: 9999px;
 }
-input[type="range"]::-moz-range-track {
+input[type='range']::-moz-range-track {
   height: 4px;
-  background-color: #E5E7EB;
+  background-color: #e5e7eb;
   border-radius: 9999px;
 }
-input[type="range"]::-webkit-slider-thumb {
+input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 14px;
@@ -560,22 +630,26 @@ input[type="range"]::-webkit-slider-thumb {
   border: 2px solid #111;
   border-radius: 50%;
   margin-top: -5px; /* 居中对齐轨道 */
-  transition: transform 180ms cubic-bezier(0.2,0,0,1), box-shadow 180ms cubic-bezier(0.2,0,0,1);
+  transition:
+    transform 180ms cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 180ms cubic-bezier(0.2, 0, 0, 1);
 }
-input[type="range"]::-webkit-slider-thumb:hover {
+input[type='range']::-webkit-slider-thumb:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
-input[type="range"]::-moz-range-thumb {
+input[type='range']::-moz-range-thumb {
   width: 14px;
   height: 14px;
   background: #111;
   border: 2px solid #111;
   border-radius: 50%;
-  transition: transform 180ms cubic-bezier(0.2,0,0,1), box-shadow 180ms cubic-bezier(0.2,0,0,1);
+  transition:
+    transform 180ms cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 180ms cubic-bezier(0.2, 0, 0, 1);
 }
-input[type="range"]::-moz-range-thumb:hover {
+input[type='range']::-moz-range-thumb:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 </style>

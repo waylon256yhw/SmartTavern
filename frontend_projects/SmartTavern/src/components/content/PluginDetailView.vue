@@ -8,7 +8,7 @@ const { t } = useI18n()
 
 const props = defineProps({
   pluginData: { type: Object, default: null },
-  dir: { type: String, default: '' }
+  dir: { type: String, default: '' },
 })
 
 const emit = defineEmits(['saved'])
@@ -29,14 +29,14 @@ const hasIcon = computed(() => !!iconPreviewUrl.value)
 function handleIconSelect(e) {
   const file = e.target.files?.[0]
   if (!file) return
-  
+
   // 验证文件类型
   if (!file.type.startsWith('image/')) {
     return
   }
-  
+
   iconFile.value = file
-  
+
   // 创建预览URL
   if (iconPreviewUrl.value) {
     URL.revokeObjectURL(iconPreviewUrl.value)
@@ -82,12 +82,12 @@ function resetIconPreview() {
 async function loadExistingIcon() {
   // 重置当前图标
   resetIconPreview()
-  
+
   if (!props.dir) return
-  
+
   // 构建图标路径：dir/icon.png
   const iconPath = `${props.dir}/icon.png`
-  
+
   try {
     // 使用 DataCatalog.getPluginsAssetBlob 获取图标
     const { blob, mime } = await DataCatalog.getPluginsAssetBlob(iconPath)
@@ -119,38 +119,45 @@ async function fileToBase64(file) {
 }
 
 /** 深拷贝 */
-function deepClone(x) { return JSON.parse(JSON.stringify(x)) }
+function deepClone(x) {
+  return JSON.parse(JSON.stringify(x))
+}
 /** 规范化 Plugin 结构 */
 function normalizePluginData(src) {
   if (!src || typeof src !== 'object') return null
   return {
     name: src.name || '',
-    description: src.description || ''
+    description: src.description || '',
   }
 }
 
 // 当前编辑的数据（内存中）
 const currentData = ref(
-  deepClone(
-    normalizePluginData(props.pluginData) || { name: '', description: '' }
-  )
+  deepClone(normalizePluginData(props.pluginData) || { name: '', description: '' }),
 )
 
 // 外部数据变更时同步
-watch(() => props.pluginData, async (v) => {
-  currentData.value = deepClone(normalizePluginData(v) || { name: '', description: '' })
-  await nextTick()
-  window.lucide?.createIcons?.()
-})
+watch(
+  () => props.pluginData,
+  async (v) => {
+    currentData.value = deepClone(normalizePluginData(v) || { name: '', description: '' })
+    await nextTick()
+    window.lucide?.createIcons?.()
+  },
+)
 
 // 监听目录路径变化，加载图标
-watch(() => props.dir, (newDir) => {
-  if (newDir) {
-    loadExistingIcon()
-  } else {
-    resetIconPreview()
-  }
-}, { immediate: true })
+watch(
+  () => props.dir,
+  (newDir) => {
+    if (newDir) {
+      loadExistingIcon()
+    } else {
+      resetIconPreview()
+    }
+  },
+  { immediate: true },
+)
 
 // 本地草稿
 const nameDraft = ref(currentData.value.name || '')
@@ -187,14 +194,16 @@ onBeforeUnmount(() => {
 async function save() {
   const dir = props.dir
   if (!dir) {
-    try { alert(t('error.missingFilePath')); } catch (_) {}
+    try {
+      alert(t('error.missingFilePath'))
+    } catch (_) {}
     return
   }
-  
+
   // 先保存当前草稿
   saveName()
   saveDesc()
-  
+
   // 处理图标：
   // - 用户选择了新图标 -> 转换为 base64
   // - 用户删除了图标 -> 传空字符串 ''（告诉后端删除）
@@ -212,36 +221,47 @@ async function save() {
     iconBase64 = ''
   }
   // 否则 iconBase64 保持 undefined，表示不修改图标
-  
+
   saving.value = true
   savedOk.value = false
-  if (__saveTimer) { try { clearTimeout(__saveTimer) } catch {} __saveTimer = null }
-  
+  if (__saveTimer) {
+    try {
+      clearTimeout(__saveTimer)
+    } catch {}
+    __saveTimer = null
+  }
+
   try {
     const result = await DataCatalog.updatePluginFile(
       dir,
       currentData.value.name || '',
       currentData.value.description || '',
-      iconBase64
+      iconBase64,
     )
-    
+
     if (result.error) {
       console.error('[PluginDetailView] 保存失败:', result.message)
-      try { alert(t('detail.plugin.saveFailed') + '：' + result.message) } catch (_) {}
+      try {
+        alert(t('detail.plugin.saveFailed') + '：' + result.message)
+      } catch (_) {}
     } else {
       console.log('[PluginDetailView] 保存成功')
       savedOk.value = true
       if (savedOk.value) {
-        __saveTimer = setTimeout(() => { savedOk.value = false }, 1800)
+        __saveTimer = setTimeout(() => {
+          savedOk.value = false
+        }, 1800)
       }
       Host.pushToast?.({ type: 'success', message: t('detail.plugin.saved'), timeout: 1600 })
-      
+
       // 通知父组件刷新插件列表
       emit('saved', { dir: props.dir })
     }
   } catch (err) {
     console.error('[PluginDetailView] 保存错误:', err)
-    try { alert(t('detail.plugin.saveFailed') + '：' + (err.message || err)) } catch (_) {}
+    try {
+      alert(t('detail.plugin.saveFailed') + '：' + (err.message || err))
+    } catch (_) {}
   } finally {
     saving.value = false
   }
@@ -256,7 +276,9 @@ onMounted(() => {
 <template>
   <section class="space-y-6">
     <!-- 页面标题 -->
-    <div class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <i data-lucide="puzzle" class="w-5 h-5 text-black"></i>
@@ -266,7 +288,9 @@ onMounted(() => {
           <!-- 保存状态：左侧提示区 -->
           <div class="save-indicator min-w-[72px] h-7 flex items-center justify-center">
             <span v-if="saving" class="save-spinner" :aria-label="t('detail.preset.saving')"></span>
-            <span v-else-if="savedOk" class="save-done"><strong>{{ t('detail.preset.saved') }}</strong></span>
+            <span v-else-if="savedOk" class="save-done"
+              ><strong>{{ t('detail.preset.saved') }}</strong></span
+            >
           </div>
           <button
             type="button"
@@ -274,7 +298,9 @@ onMounted(() => {
             :disabled="saving"
             @click="save"
             :title="t('detail.preset.saveToBackend')"
-          >{{ t('common.save') }}</button>
+          >
+            {{ t('common.save') }}
+          </button>
           <div class="px-3 py-1 rounded-4 bg-gray-100 border border-gray-300 text-black text-sm">
             {{ t('detail.plugin.editMode') }}
           </div>
@@ -284,7 +310,9 @@ onMounted(() => {
     </div>
 
     <!-- 基本信息 -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center gap-2 mb-3">
         <i data-lucide="info" class="w-4 h-4 text-black"></i>
         <h3 class="text-base font-semibold text-black">{{ t('detail.plugin.basicInfo') }}</h3>
@@ -293,17 +321,15 @@ onMounted(() => {
       <div class="flex gap-6 mb-4">
         <!-- 左侧：图标上传区域 -->
         <div class="flex-shrink-0">
-          <label class="block text-sm font-medium text-black mb-2">{{ t('createItem.iconLabel') }}</label>
-          <div
-            class="icon-upload-area"
-            :class="{ 'has-icon': hasIcon }"
-            @click="triggerIconSelect"
-          >
+          <label class="block text-sm font-medium text-black mb-2">{{
+            t('createItem.iconLabel')
+          }}</label>
+          <div class="icon-upload-area" :class="{ 'has-icon': hasIcon }" @click="triggerIconSelect">
             <input
               ref="iconInputRef"
               type="file"
               accept="image/*"
-              style="display: none;"
+              style="display: none"
               @change="handleIconSelect"
             />
             <template v-if="hasIcon">
@@ -319,10 +345,20 @@ onMounted(() => {
             </template>
             <template v-else>
               <div class="icon-placeholder">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
-                  <circle cx="9" cy="9" r="2"/>
-                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                  <circle cx="9" cy="9" r="2" />
+                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
                 </svg>
                 <span>{{ t('createItem.uploadIcon') }}</span>
               </div>
@@ -333,7 +369,9 @@ onMounted(() => {
         <!-- 右侧：表单字段 -->
         <div class="flex-1 grid grid-cols-1 gap-4">
           <div>
-            <label class="block text-sm font-medium text-black mb-2">{{ t('detail.plugin.pluginName') }}</label>
+            <label class="block text-sm font-medium text-black mb-2">{{
+              t('detail.plugin.pluginName')
+            }}</label>
             <input
               v-model="nameDraft"
               @blur="saveName"
@@ -341,11 +379,17 @@ onMounted(() => {
               :placeholder="t('detail.plugin.pluginNamePlaceholder')"
               class="w-full px-3 py-2 border border-gray-300 rounded-4 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
             />
-            <p class="text-xs text-black/50 mt-1">{{ t('detail.persona.currentValue') }}：{{ currentData.name || t('detail.persona.notSet') }}</p>
+            <p class="text-xs text-black/50 mt-1">
+              {{ t('detail.persona.currentValue') }}：{{
+                currentData.name || t('detail.persona.notSet')
+              }}
+            </p>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-black mb-2">{{ t('detail.plugin.pluginDesc') }}</label>
+            <label class="block text-sm font-medium text-black mb-2">{{
+              t('detail.plugin.pluginDesc')
+            }}</label>
             <textarea
               v-model="descDraft"
               @blur="saveDesc"
@@ -353,14 +397,18 @@ onMounted(() => {
               :placeholder="t('detail.plugin.pluginDescPlaceholder')"
               class="w-full px-3 py-2 border border-gray-300 rounded-4 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
             ></textarea>
-            <p class="text-xs text-black/50 mt-1">{{ t('detail.persona.charCount') }}：{{ (descDraft || '').length }}</p>
+            <p class="text-xs text-black/50 mt-1">
+              {{ t('detail.persona.charCount') }}：{{ (descDraft || '').length }}
+            </p>
           </div>
         </div>
       </div>
     </div>
 
     <!-- 说明 -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center gap-2 mb-3">
         <i data-lucide="info" class="w-4 h-4 text-black"></i>
         <h3 class="text-sm font-semibold text-black">{{ t('detail.plugin.notes.title') }}</h3>
@@ -373,13 +421,17 @@ onMounted(() => {
     </div>
 
     <!-- 数据预览 -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center gap-2 mb-3">
         <i data-lucide="eye" class="w-4 h-4 text-black"></i>
         <h3 class="text-sm font-semibold text-black">{{ t('detail.persona.preview.title') }}</h3>
       </div>
       <div class="bg-gray-50 rounded-4 p-4 border border-gray-200">
-        <pre class="text-xs text-black/70 font-mono whitespace-pre-wrap">{{ JSON.stringify(currentData, null, 2) }}</pre>
+        <pre class="text-xs text-black/70 font-mono whitespace-pre-wrap">{{
+          JSON.stringify(currentData, null, 2)
+        }}</pre>
       </div>
     </div>
   </section>

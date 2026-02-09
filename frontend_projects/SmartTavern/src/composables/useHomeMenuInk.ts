@@ -50,7 +50,8 @@ export function useHomeMenuInk(isActive: () => boolean = () => true): HomeMenuIn
   }
 
   function ensureCanvas(): void {
-    const vw = window.innerWidth, vh = window.innerHeight
+    const vw = window.innerWidth,
+      vh = window.innerHeight
     if (!__cv) {
       __cv = document.createElement('canvas')
       __ctx = __cv.getContext('2d', { willReadFrequently: true })
@@ -63,10 +64,13 @@ export function useHomeMenuInk(isActive: () => boolean = () => true): HomeMenuIn
 
   function drawBgToCanvas(img: HTMLImageElement | null): void {
     if (!img || !__ctx) return
-    const vw = window.innerWidth, vh = window.innerHeight
-    const iw = img.naturalWidth, ih = img.naturalHeight
+    const vw = window.innerWidth,
+      vh = window.innerHeight
+    const iw = img.naturalWidth,
+      ih = img.naturalHeight
     const scale = Math.max(vw / iw, vh / ih)
-    const sw = iw * scale, sh = ih * scale
+    const sw = iw * scale,
+      sh = ih * scale
     const ox = (vw - sw) / 2
     const oy = (vh - sh) / 2
     __ctx.clearRect(0, 0, vw, vh)
@@ -82,7 +86,8 @@ export function useHomeMenuInk(isActive: () => boolean = () => true): HomeMenuIn
     if (w <= 0 || h <= 0) return null
     try {
       const data = __ctx.getImageData(x0, y0, w, h).data
-      let sum = 0, n = 0
+      let sum = 0,
+        n = 0
       for (let i = 0; i < data.length; i += 4) {
         const red = data[i] ?? 0
         const green = data[i + 1] ?? 0
@@ -91,7 +96,7 @@ export function useHomeMenuInk(isActive: () => boolean = () => true): HomeMenuIn
         sum += 0.2126 * red + 0.7152 * green + 0.0722 * blue
         n++
       }
-      return n ? (sum / n) : null
+      return n ? sum / n : null
     } catch (e) {
       // Canvas 污染或数据不可读
       return null
@@ -109,7 +114,7 @@ export function useHomeMenuInk(isActive: () => boolean = () => true): HomeMenuIn
     ensureCanvas()
     drawBgToCanvas(img)
     const buttons = document.querySelectorAll<HTMLElement>('.home-menu .menu-btn')
-    buttons.forEach(btn => {
+    buttons.forEach((btn) => {
       const rect = btn.getBoundingClientRect()
       // 采样 5 点（中心 + 四角中点）
       const pts: [number, number][] = [
@@ -122,16 +127,15 @@ export function useHomeMenuInk(isActive: () => boolean = () => true): HomeMenuIn
       const samples = pts
         .map(([x, y]) => sampleBrightnessAt(x, y, 10))
         .filter((v): v is number => typeof v === 'number')
-      const avg = samples.length ? (samples.reduce((a, b) => a + b, 0) / samples.length) : null
+      const avg = samples.length ? samples.reduce((a, b) => a + b, 0) / samples.length : null
       const ink = avg == null ? '#ffffff' : chooseInkFor(avg)
 
       // 智能前景色 + 阴影/边框提升可读性
-      const shadow = ink === '#ffffff'
-        ? '0 1px 2px rgba(0,0,0,0.55), 0 0 8px rgba(0,0,0,0.20)'
-        : '0 1px 0 rgba(255,255,255,0.35)'
-      const border = ink === '#ffffff'
-        ? 'rgba(255,255,255,0.55)'
-        : 'rgba(0,0,0,0.45)'
+      const shadow =
+        ink === '#ffffff'
+          ? '0 1px 2px rgba(0,0,0,0.55), 0 0 8px rgba(0,0,0,0.20)'
+          : '0 1px 0 rgba(255,255,255,0.35)'
+      const border = ink === '#ffffff' ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)'
 
       btn.style.setProperty('--menu-fg', ink)
       btn.style.setProperty('--menu-shadow', shadow)

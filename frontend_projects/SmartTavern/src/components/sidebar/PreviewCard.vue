@@ -75,7 +75,11 @@ onUpdated(() => window.lucide?.createIcons?.())
   /* 浅色主题：使用更灰的背景色，与悬浮时的白色形成对比 */
   background: var(--st-preview-card-bg-light, rgba(120, 120, 130, 0.08));
   cursor: pointer;
-  transition: transform var(--st-transition-fast) ease, background var(--st-transition-fast) ease, box-shadow var(--st-transition-fast) ease, border-color var(--st-transition-fast) ease;
+  transition:
+    transform var(--st-transition-fast) ease,
+    background var(--st-transition-fast) ease,
+    box-shadow var(--st-transition-fast) ease,
+    border-color var(--st-transition-fast) ease;
 }
 .st-preview-card:hover {
   transform: translateY(-1px);
@@ -86,12 +90,12 @@ onUpdated(() => window.lucide?.createIcons?.())
 }
 
 /* 深色主题覆盖 */
-[data-theme="dark"] .st-preview-card,
-:root[data-theme="dark"] .st-preview-card {
+[data-theme='dark'] .st-preview-card,
+:root[data-theme='dark'] .st-preview-card {
   background: var(--st-preview-card-bg-dark, rgba(40, 42, 50, 0.6));
 }
-[data-theme="dark"] .st-preview-card:hover,
-:root[data-theme="dark"] .st-preview-card:hover {
+[data-theme='dark'] .st-preview-card:hover,
+:root[data-theme='dark'] .st-preview-card:hover {
   background: var(--st-preview-card-hover-dark, rgba(55, 58, 68, 0.9));
   border-color: rgba(var(--st-primary), 0.4);
 }
@@ -135,13 +139,13 @@ onUpdated(() => window.lucide?.createIcons?.())
   background: var(--st-preview-badge-sandbox-bg, rgba(168, 85, 247, 0.15));
   color: var(--st-preview-badge-sandbox-color, rgb(168, 85, 247));
 }
-[data-theme="dark"] .type-threaded,
-:root[data-theme="dark"] .type-threaded {
+[data-theme='dark'] .type-threaded,
+:root[data-theme='dark'] .type-threaded {
   background: var(--st-preview-badge-threaded-bg-dark, rgba(96, 165, 250, 0.2));
   color: var(--st-preview-badge-threaded-color-dark, rgb(147, 197, 253));
 }
-[data-theme="dark"] .type-sandbox,
-:root[data-theme="dark"] .type-sandbox {
+[data-theme='dark'] .type-sandbox,
+:root[data-theme='dark'] .type-sandbox {
   background: var(--st-preview-badge-sandbox-bg-dark, rgba(192, 132, 252, 0.2));
   color: var(--st-preview-badge-sandbox-color-dark, rgb(216, 180, 254));
 }

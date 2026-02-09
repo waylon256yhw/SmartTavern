@@ -1,6 +1,6 @@
 /**
  * 数据目录事件通道 (Data Catalog Channel)
- * 
+ *
  * 负责处理所有数据目录相关的请求与响应事件。
  * 组件通过此通道请求各类数据列表（角色、人设、预设等），
  * 桥接器负责调用后端服务并返回结果。
@@ -15,96 +15,96 @@ export type DataCategory = 'preset' | 'character' | 'persona' | 'regex' | 'world
 
 /** 数据项 */
 export interface DataItem {
-  name: string;
-  file: string;
-  icon?: string;
-  [key: string]: any;
+  name: string
+  file: string
+  icon?: string
+  [key: string]: any
 }
 
 /** 列表查询请求 Payload */
 export interface CatalogListRequestPayload {
-  category: DataCategory;
-  tag?: string;
+  category: DataCategory
+  tag?: string
 }
 
 /** 列表查询成功 Payload */
 export interface CatalogListSuccessPayload {
-  category: DataCategory;
-  items: DataItem[];
-  tag?: string;
+  category: DataCategory
+  items: DataItem[]
+  tag?: string
 }
 
 /** 列表查询失败 Payload */
 export interface CatalogListFailurePayload {
-  category: DataCategory;
-  message: string;
-  tag?: string;
+  category: DataCategory
+  message: string
+  tag?: string
 }
 
 /** 详情查询请求 Payload */
 export interface CatalogDetailRequestPayload {
-  category: DataCategory;
-  file: string;
-  tag?: string;
+  category: DataCategory
+  file: string
+  tag?: string
 }
 
 /** 详情查询成功 Payload */
 export interface CatalogDetailSuccessPayload {
-  category: DataCategory;
-  file: string;
-  data: any;
-  tag?: string;
+  category: DataCategory
+  file: string
+  data: any
+  tag?: string
 }
 
 /** 详情查询失败 Payload */
 export interface CatalogDetailFailurePayload {
-  category: DataCategory;
-  file: string;
-  message: string;
-  tag?: string;
+  category: DataCategory
+  file: string
+  message: string
+  tag?: string
 }
 
 /** 更新请求 Payload */
 export interface CatalogUpdateRequestPayload {
-  category: DataCategory;
-  file: string;
-  data: any;
-  tag?: string;
+  category: DataCategory
+  file: string
+  data: any
+  tag?: string
 }
 
 /** 更新成功 Payload */
 export interface CatalogUpdateSuccessPayload {
-  category: DataCategory;
-  file: string;
-  tag?: string;
+  category: DataCategory
+  file: string
+  tag?: string
 }
 
 /** 更新失败 Payload */
 export interface CatalogUpdateFailurePayload {
-  category: DataCategory;
-  file: string;
-  message: string;
-  tag?: string;
+  category: DataCategory
+  file: string
+  message: string
+  tag?: string
 }
 
 /** 加载状态映射 */
 export interface LoadingStates {
-  characters: boolean;
-  personas: boolean;
-  presets: boolean;
-  worldbooks: boolean;
-  regex: boolean;
-  llmconfigs: boolean;
+  characters: boolean
+  personas: boolean
+  presets: boolean
+  worldbooks: boolean
+  regex: boolean
+  llmconfigs: boolean
 }
 
 /** 错误状态映射 */
 export interface ErrorStates {
-  characters: string | null;
-  personas: string | null;
-  presets: string | null;
-  worldbooks: string | null;
-  regex: string | null;
-  llmconfigs: string | null;
+  characters: string | null
+  personas: string | null
+  presets: string | null
+  worldbooks: string | null
+  regex: string | null
+  llmconfigs: string | null
 }
 
 // ============ Event Constants ============
@@ -231,7 +231,7 @@ export const loadingStates: Ref<LoadingStates> = ref({
   presets: false,
   worldbooks: false,
   regex: false,
-  llmconfigs: false
+  llmconfigs: false,
 })
 
 /** 错误状态映射 */
@@ -241,7 +241,7 @@ export const errorStates: Ref<ErrorStates> = ref({
   presets: null,
   worldbooks: null,
   regex: null,
-  llmconfigs: null
+  llmconfigs: null,
 })
 
 // ============ Helper Functions ============
@@ -257,17 +257,17 @@ export function resetCatalogState(type: keyof LoadingStates): void {
     presets,
     worldbooks,
     regex: regexRules,
-    llmconfigs: llmConfigs
+    llmconfigs: llmConfigs,
   }
-  
+
   if (stateMap[type]) {
     stateMap[type].value = []
   }
-  
+
   if (loadingStates.value[type] !== undefined) {
     loadingStates.value[type] = false
   }
-  
+
   if (errorStates.value[type] !== undefined) {
     errorStates.value[type] = null
   }
@@ -283,12 +283,12 @@ export function clearAllCatalog(): void {
   worldbooks.value = []
   regexRules.value = []
   llmConfigs.value = []
-  
-  Object.keys(loadingStates.value).forEach(key => {
+
+  Object.keys(loadingStates.value).forEach((key) => {
     loadingStates.value[key as keyof LoadingStates] = false
   })
-  
-  Object.keys(errorStates.value).forEach(key => {
+
+  Object.keys(errorStates.value).forEach((key) => {
     errorStates.value[key as keyof ErrorStates] = null
   })
 }

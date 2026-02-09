@@ -14,7 +14,7 @@ const { t } = useI18n()
 
 const props = defineProps({
   characterData: { type: Object, default: null },
-  file: { type: String, default: '' }
+  file: { type: String, default: '' },
 })
 
 // 图标上传相关
@@ -45,14 +45,14 @@ const hasAvatar = computed(() => !!avatarPreviewUrl.value)
 function handleIconSelect(e) {
   const file = e.target.files?.[0]
   if (!file) return
-  
+
   // 验证文件类型
   if (!file.type.startsWith('image/')) {
     return
   }
-  
+
   iconFile.value = file
-  
+
   // 创建预览URL
   if (iconPreviewUrl.value) {
     URL.revokeObjectURL(iconPreviewUrl.value)
@@ -98,14 +98,14 @@ function resetIconPreview() {
 function handleAvatarSelect(e) {
   const file = e.target.files?.[0]
   if (!file) return
-  
+
   // 验证文件类型
   if (!file.type.startsWith('image/')) {
     return
   }
-  
+
   avatarFile.value = file
-  
+
   // 创建预览URL
   if (avatarPreviewUrl.value) {
     URL.revokeObjectURL(avatarPreviewUrl.value)
@@ -151,12 +151,12 @@ function resetAvatarPreview() {
 async function loadExistingIcon() {
   // 重置当前图标
   resetIconPreview()
-  
+
   if (!props.file) return
-  
+
   // 构建图标路径：将文件路径的 character.json 替换为 icon.png
   const iconPath = props.file.replace(/character\.json$/, 'icon.png')
-  
+
   try {
     // 使用 DataCatalog.getDataAssetBlob 获取图标
     const { blob, mime } = await DataCatalog.getDataAssetBlob(iconPath)
@@ -176,12 +176,12 @@ async function loadExistingIcon() {
 async function loadExistingAvatar() {
   // 重置当前头像
   resetAvatarPreview()
-  
+
   if (!props.file) return
-  
+
   // 构建头像路径：将文件路径的 character.json 替换为 character.png
   const avatarPath = props.file.replace(/character\.json$/, 'character.png')
-  
+
   try {
     // 使用 DataCatalog.getDataAssetBlob 获取头像
     const { blob, mime } = await DataCatalog.getDataAssetBlob(avatarPath)
@@ -212,9 +212,10 @@ async function fileToBase64(file) {
   })
 }
 
-
 /** 深拷贝 */
-function deepClone(x) { return JSON.parse(JSON.stringify(x)) }
+function deepClone(x) {
+  return JSON.parse(JSON.stringify(x))
+}
 /** 规范化后端/外部传入的角色卡结构到本组件内部期望结构 */
 function normalizeCharacterData(src) {
   if (!src || typeof src !== 'object') return null
@@ -223,9 +224,11 @@ function normalizeCharacterData(src) {
   const type = src.type || 'threaded' // 默认为 threaded
   const character_name = src.character_name || ''
   const character_badge = src.character_badge || ''
-  const message = Array.isArray(src.message) ? src.message
-                 : Array.isArray(src.messages) ? src.messages
-                 : []
+  const message = Array.isArray(src.message)
+    ? src.message
+    : Array.isArray(src.messages)
+      ? src.messages
+      : []
   // world_book 可能是对象 { name, entries } 或直接 entries 数组
   let world_book
   if (Array.isArray(src.entries)) {
@@ -239,8 +242,19 @@ function normalizeCharacterData(src) {
   }
   const regex_rules = Array.isArray(src.regex_rules)
     ? src.regex_rules
-    : (src.find_regex || src.replace_regex || src.id) ? [src] : []
-  return { name, description, type, character_name, character_badge, message, world_book, regex_rules }
+    : src.find_regex || src.replace_regex || src.id
+      ? [src]
+      : []
+  return {
+    name,
+    description,
+    type,
+    character_name,
+    character_badge,
+    message,
+    world_book,
+    regex_rules,
+  }
 }
 // 当前编辑的数据（内存中）
 const currentData = ref(
@@ -253,38 +267,45 @@ const currentData = ref(
       character_badge: '',
       message: [],
       world_book: { name: '', entries: [] },
-      regex_rules: []
-    }
-  )
+      regex_rules: [],
+    },
+  ),
 )
 // 外部数据变更时同步
-watch(() => props.characterData, async (v) => {
-  currentData.value = deepClone(
-    normalizeCharacterData(v) || {
-      name: '',
-      description: '',
-      type: 'threaded',
-      character_name: '',
-      character_badge: '',
-      message: [],
-      world_book: { name: '', entries: [] },
-      regex_rules: []
-    }
-  )
-  await nextTick()
-  window.lucide?.createIcons?.()
-})
+watch(
+  () => props.characterData,
+  async (v) => {
+    currentData.value = deepClone(
+      normalizeCharacterData(v) || {
+        name: '',
+        description: '',
+        type: 'threaded',
+        character_name: '',
+        character_badge: '',
+        message: [],
+        world_book: { name: '', entries: [] },
+        regex_rules: [],
+      },
+    )
+    await nextTick()
+    window.lucide?.createIcons?.()
+  },
+)
 
 // 监听文件路径变化，加载图标和头像
-watch(() => props.file, (newFile) => {
-  if (newFile) {
-    loadExistingIcon()
-    loadExistingAvatar()
-  } else {
-    resetIconPreview()
-    resetAvatarPreview()
-  }
-}, { immediate: true })
+watch(
+  () => props.file,
+  (newFile) => {
+    if (newFile) {
+      loadExistingIcon()
+      loadExistingAvatar()
+    } else {
+      resetIconPreview()
+      resetAvatarPreview()
+    }
+  },
+  { immediate: true },
+)
 
 // 基本信息编辑
 const nameDraft = ref(currentData.value.name || '')
@@ -310,7 +331,7 @@ watch(
   (arr) => {
     messageEdits.value = [...(arr || [])]
   },
-  { deep: true }
+  { deep: true },
 )
 
 function onEditMsg(i) {
@@ -359,10 +380,13 @@ function addWorldEntry() {
     return
   }
   if (!currentData.value.world_book) {
-    currentData.value.world_book = { name: t('detail.character.worldBook.defaultName'), entries: [] }
+    currentData.value.world_book = {
+      name: t('detail.character.worldBook.defaultName'),
+      entries: [],
+    }
   }
   const list = currentData.value.world_book.entries || []
-  if (list.some(e => e.id === id)) {
+  if (list.some((e) => e.id === id)) {
     wbError.value = t('detail.character.errors.wbIdExists')
     return
   }
@@ -387,7 +411,7 @@ function addWorldEntry() {
 function onWbUpdate(updated) {
   const list = currentData.value.world_book?.entries || []
   const oldId = updated._oldId || updated.id
-  const idx = list.findIndex(w => w.id === oldId)
+  const idx = list.findIndex((w) => w.id === oldId)
   if (idx >= 0) {
     const { _oldId, ...cleanData } = updated
     list[idx] = cleanData
@@ -396,7 +420,9 @@ function onWbUpdate(updated) {
 
 function onWbDelete(id) {
   if (currentData.value.world_book?.entries) {
-    currentData.value.world_book.entries = currentData.value.world_book.entries.filter(w => w.id !== id)
+    currentData.value.world_book.entries = currentData.value.world_book.entries.filter(
+      (w) => w.id !== id,
+    )
   }
 }
 
@@ -412,11 +438,11 @@ const {
   dataAttribute: 'data-wb-id',
   onReorder: (draggedId, targetId, insertBefore) => {
     const list = [...(currentData.value.world_book?.entries || [])]
-    let ids = list.map(i => String(i.id))
+    let ids = list.map((i) => String(i.id))
     const draggedIdStr = String(draggedId)
     const targetIdStr = targetId ? String(targetId) : null
     const fromIdx = ids.indexOf(draggedIdStr)
-    
+
     if (fromIdx >= 0 && draggedIdStr !== targetIdStr) {
       ids.splice(fromIdx, 1)
       if (targetIdStr) {
@@ -428,15 +454,17 @@ const {
       } else {
         ids.push(draggedIdStr)
       }
-      
-      currentData.value.world_book.entries = ids.map(id => list.find(w => String(w.id) === id)).filter(Boolean)
+
+      currentData.value.world_book.entries = ids
+        .map((id) => list.find((w) => String(w.id) === id))
+        .filter(Boolean)
       window.lucide?.createIcons?.()
     }
   },
   getTitleForItem: (id) => {
-    const entry = currentData.value.world_book?.entries?.find(w => w.id === id)
+    const entry = currentData.value.world_book?.entries?.find((w) => w.id === id)
     return entry?.name || id
-  }
+  },
 })
 
 // 内嵌正则规则
@@ -457,7 +485,7 @@ function addRegexRule() {
     return
   }
   const rules = currentData.value.regex_rules || []
-  if (rules.some(r => r.id === id)) {
+  if (rules.some((r) => r.id === id)) {
     ruleError.value = t('detail.character.errors.ruleIdExists')
     return
   }
@@ -479,14 +507,14 @@ function addRegexRule() {
 }
 
 function onRegexUpdate(updated) {
-  const idx = currentData.value.regex_rules.findIndex(r => r.id === updated.id)
+  const idx = currentData.value.regex_rules.findIndex((r) => r.id === updated.id)
   if (idx >= 0) {
     currentData.value.regex_rules[idx] = updated
   }
 }
 
 function onRegexDelete(id) {
-  currentData.value.regex_rules = currentData.value.regex_rules.filter(r => r.id !== id)
+  currentData.value.regex_rules = currentData.value.regex_rules.filter((r) => r.id !== id)
 }
 
 // 正则规则拖拽 - 使用 composable
@@ -501,11 +529,11 @@ const {
   dataAttribute: 'data-rule-id',
   onReorder: (draggedId, targetId, insertBefore) => {
     const list = [...(currentData.value.regex_rules || [])]
-    let ids = list.map(i => String(i.id))
+    let ids = list.map((i) => String(i.id))
     const draggedIdStr = String(draggedId)
     const targetIdStr = targetId ? String(targetId) : null
     const fromIdx = ids.indexOf(draggedIdStr)
-    
+
     if (fromIdx >= 0 && draggedIdStr !== targetIdStr) {
       ids.splice(fromIdx, 1)
       if (targetIdStr) {
@@ -517,15 +545,17 @@ const {
       } else {
         ids.push(draggedIdStr)
       }
-      
-      currentData.value.regex_rules = ids.map(id => list.find(r => String(r.id) === id)).filter(Boolean)
+
+      currentData.value.regex_rules = ids
+        .map((id) => list.find((r) => String(r.id) === id))
+        .filter(Boolean)
       window.lucide?.createIcons?.()
     }
   },
   getTitleForItem: (id) => {
-    const rule = currentData.value.regex_rules?.find(r => r.id === id)
+    const rule = currentData.value.regex_rules?.find((r) => r.id === id)
     return rule?.name || id
-  }
+  },
 })
 
 // 初始化 Lucide 图标
@@ -533,14 +563,18 @@ onMounted(() => {
   window.lucide?.createIcons?.()
 })
 
-watch([
-  () => currentData.value.message,
-  () => currentData.value.world_book?.entries,
-  () => currentData.value.regex_rules
-], async () => {
-  await nextTick()
-  window.lucide?.createIcons?.()
-}, { flush: 'post' })
+watch(
+  [
+    () => currentData.value.message,
+    () => currentData.value.world_book?.entries,
+    () => currentData.value.regex_rules,
+  ],
+  async () => {
+    await nextTick()
+    window.lucide?.createIcons?.()
+  },
+  { flush: 'post' },
+)
 
 // 保存状态
 const saving = ref(false)
@@ -550,7 +584,11 @@ const __eventOffs = []
 
 onBeforeUnmount(() => {
   try {
-    __eventOffs?.forEach(fn => { try { fn?.() } catch (_) {} })
+    __eventOffs?.forEach((fn) => {
+      try {
+        fn?.()
+      } catch (_) {}
+    })
     __eventOffs.length = 0
     if (__saveTimer) clearTimeout(__saveTimer)
   } catch (_) {}
@@ -560,13 +598,15 @@ onBeforeUnmount(() => {
 async function save() {
   const file = props.file
   if (!file) {
-    try { alert(t('error.missingFilePath')); } catch (_) {}
+    try {
+      alert(t('error.missingFilePath'))
+    } catch (_) {}
     return
   }
-  
+
   // 先保存当前草稿
   saveMeta()
-  
+
   // 处理图标：
   // - 用户选择了新图标 -> 转换为 base64
   // - 用户删除了图标 -> 传空字符串 ''（告诉后端删除）
@@ -584,7 +624,7 @@ async function save() {
     iconBase64 = ''
   }
   // 否则 iconBase64 保持 undefined，表示不修改图标
-  
+
   // 处理头像：
   // - 用户选择了新头像 -> 转换为 base64
   // - 用户删除了头像 -> 传空字符串 ''（告诉后端删除）
@@ -602,7 +642,7 @@ async function save() {
     avatarBase64 = ''
   }
   // 否则 avatarBase64 保持 undefined，表示不修改头像
-  
+
   // 构建保存内容
   const content = {
     name: currentData.value.name || '',
@@ -612,64 +652,87 @@ async function save() {
     character_badge: currentData.value.character_badge || '',
     message: Array.isArray(currentData.value.message) ? currentData.value.message : [],
     world_book: currentData.value.world_book || { name: '', entries: [] },
-    regex_rules: Array.isArray(currentData.value.regex_rules) ? currentData.value.regex_rules : []
+    regex_rules: Array.isArray(currentData.value.regex_rules) ? currentData.value.regex_rules : [],
   }
-  
+
   saving.value = true
   savedOk.value = false
-  if (__saveTimer) { try { clearTimeout(__saveTimer) } catch {} __saveTimer = null }
-  
+  if (__saveTimer) {
+    try {
+      clearTimeout(__saveTimer)
+    } catch {}
+    __saveTimer = null
+  }
+
   const tag = `character_save_${Date.now()}`
-  
+
   // 监听保存结果（一次性）
-  const offOk = Host.events.on(Catalog.EVT_CATALOG_CHARACTER_UPDATE_OK, async ({ file: resFile, tag: resTag }) => {
-    if (resFile !== file || resTag !== tag) return
-    console.log('[CharacterDetailView] 保存成功（事件）')
-    savedOk.value = true
-    saving.value = false
-    if (savedOk.value) {
-      __saveTimer = setTimeout(() => { savedOk.value = false }, 1800)
-    }
-    
-    // 保存成功后，刷新侧边栏列表
-    try {
-      console.log('[CharacterDetailView] 刷新角色卡列表')
-      Host.events.emit(Catalog.EVT_CATALOG_CHARACTERS_REQ, {
-        requestId: Date.now()
-      })
-    } catch (err) {
-      console.warn('[CharacterDetailView] 刷新角色卡列表失败:', err)
-    }
-    
-    // 保存成功后，检查是否是当前使用的角色卡，如果是则刷新 store
-    try {
-      const chatSettingsStore = useChatSettingsStore()
-      const characterStore = useCharacterStore()
-      const currentCharacterFile = chatSettingsStore.characterFile
-      if (currentCharacterFile && currentCharacterFile === file) {
-        console.log('[CharacterDetailView] 刷新角色卡 store')
-        await characterStore.refreshFromCharacterFile(file)
+  const offOk = Host.events.on(
+    Catalog.EVT_CATALOG_CHARACTER_UPDATE_OK,
+    async ({ file: resFile, tag: resTag }) => {
+      if (resFile !== file || resTag !== tag) return
+      console.log('[CharacterDetailView] 保存成功（事件）')
+      savedOk.value = true
+      saving.value = false
+      if (savedOk.value) {
+        __saveTimer = setTimeout(() => {
+          savedOk.value = false
+        }, 1800)
       }
-    } catch (err) {
-      console.warn('[CharacterDetailView] 刷新角色卡 store 失败:', err)
-    }
-    
-    try { offOk?.() } catch (_) {}
-    try { offFail?.() } catch (_) {}
-  })
-  
-  const offFail = Host.events.on(Catalog.EVT_CATALOG_CHARACTER_UPDATE_FAIL, ({ file: resFile, message, tag: resTag }) => {
-    if (resFile && resFile !== file) return
-    if (resTag && resTag !== tag) return
-    console.error('[CharacterDetailView] 保存失败（事件）:', message)
-    try { alert(t('detail.character.saveFailed') + '：' + message) } catch (_) {}
-    saving.value = false
-    try { offOk?.() } catch (_) {}
-    try { offFail?.() } catch (_) {}
-  })
-  
+
+      // 保存成功后，刷新侧边栏列表
+      try {
+        console.log('[CharacterDetailView] 刷新角色卡列表')
+        Host.events.emit(Catalog.EVT_CATALOG_CHARACTERS_REQ, {
+          requestId: Date.now(),
+        })
+      } catch (err) {
+        console.warn('[CharacterDetailView] 刷新角色卡列表失败:', err)
+      }
+
+      // 保存成功后，检查是否是当前使用的角色卡，如果是则刷新 store
+      try {
+        const chatSettingsStore = useChatSettingsStore()
+        const characterStore = useCharacterStore()
+        const currentCharacterFile = chatSettingsStore.characterFile
+        if (currentCharacterFile && currentCharacterFile === file) {
+          console.log('[CharacterDetailView] 刷新角色卡 store')
+          await characterStore.refreshFromCharacterFile(file)
+        }
+      } catch (err) {
+        console.warn('[CharacterDetailView] 刷新角色卡 store 失败:', err)
+      }
+
+      try {
+        offOk?.()
+      } catch (_) {}
+      try {
+        offFail?.()
+      } catch (_) {}
+    },
+  )
+
+  const offFail = Host.events.on(
+    Catalog.EVT_CATALOG_CHARACTER_UPDATE_FAIL,
+    ({ file: resFile, message, tag: resTag }) => {
+      if (resFile && resFile !== file) return
+      if (resTag && resTag !== tag) return
+      console.error('[CharacterDetailView] 保存失败（事件）:', message)
+      try {
+        alert(t('detail.character.saveFailed') + '：' + message)
+      } catch (_) {}
+      saving.value = false
+      try {
+        offOk?.()
+      } catch (_) {}
+      try {
+        offFail?.()
+      } catch (_) {}
+    },
+  )
+
   __eventOffs.push(offOk, offFail)
-  
+
   // 发送保存请求事件
   Host.events.emit(Catalog.EVT_CATALOG_CHARACTER_UPDATE_REQ, {
     file,
@@ -678,7 +741,7 @@ async function save() {
     description: content.description,
     iconBase64,
     avatarBase64,
-    tag
+    tag,
   })
 }
 </script>
@@ -686,7 +749,9 @@ async function save() {
 <template>
   <section class="space-y-6">
     <!-- 页面标题 -->
-    <div class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 card-shadow border border-gray-200 p-6 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <i data-lucide="user" class="w-5 h-5 text-black"></i>
@@ -696,7 +761,9 @@ async function save() {
           <!-- 保存状态：左侧提示区 -->
           <div class="save-indicator min-w-[72px] h-7 flex items-center justify-center">
             <span v-if="saving" class="save-spinner" :aria-label="t('detail.preset.saving')"></span>
-            <span v-else-if="savedOk" class="save-done"><strong>{{ t('detail.preset.saved') }}</strong></span>
+            <span v-else-if="savedOk" class="save-done"
+              ><strong>{{ t('detail.preset.saved') }}</strong></span
+            >
           </div>
           <button
             type="button"
@@ -704,7 +771,9 @@ async function save() {
             :disabled="saving"
             @click="save"
             :title="t('detail.preset.saveToBackend')"
-          >{{ t('common.save') }}</button>
+          >
+            {{ t('common.save') }}
+          </button>
           <div class="px-3 py-1 rounded-4 bg-gray-100 border border-gray-300 text-black text-sm">
             {{ t('detail.character.editMode') }}
           </div>
@@ -714,7 +783,9 @@ async function save() {
     </div>
 
     <!-- 基本设定 -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center gap-2 mb-3">
         <i data-lucide="id-card" class="w-4 h-4 text-black"></i>
         <h3 class="text-base font-semibold text-black">{{ t('detail.character.basicInfo') }}</h3>
@@ -725,7 +796,9 @@ async function save() {
         <div class="flex flex-col gap-4 flex-shrink-0">
           <!-- 图标 -->
           <div>
-            <label class="block text-sm font-medium text-black mb-2">{{ t('createItem.iconLabel') }}</label>
+            <label class="block text-sm font-medium text-black mb-2">{{
+              t('createItem.iconLabel')
+            }}</label>
             <div
               class="icon-upload-area"
               :class="{ 'has-icon': hasIcon }"
@@ -735,7 +808,7 @@ async function save() {
                 ref="iconInputRef"
                 type="file"
                 accept="image/*"
-                style="display: none;"
+                style="display: none"
                 @change="handleIconSelect"
               />
               <template v-if="hasIcon">
@@ -751,20 +824,32 @@ async function save() {
               </template>
               <template v-else>
                 <div class="icon-placeholder">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
-                    <circle cx="9" cy="9" r="2"/>
-                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                    <circle cx="9" cy="9" r="2" />
+                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
                   </svg>
                   <span>{{ t('createItem.uploadIcon') }}</span>
                 </div>
               </template>
             </div>
           </div>
-          
+
           <!-- 头像 -->
           <div>
-            <label class="block text-sm font-medium text-black mb-2">{{ t('detail.character.avatarLabel') }}</label>
+            <label class="block text-sm font-medium text-black mb-2">{{
+              t('detail.character.avatarLabel')
+            }}</label>
             <div
               class="icon-upload-area"
               :class="{ 'has-icon': hasAvatar }"
@@ -774,7 +859,7 @@ async function save() {
                 ref="avatarInputRef"
                 type="file"
                 accept="image/*"
-                style="display: none;"
+                style="display: none"
                 @change="handleAvatarSelect"
               />
               <template v-if="hasAvatar">
@@ -790,9 +875,19 @@ async function save() {
               </template>
               <template v-else>
                 <div class="icon-placeholder">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="8" r="5"/>
-                    <path d="M20 21a8 8 0 1 0-16 0"/>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="8" r="5" />
+                    <path d="M20 21a8 8 0 1 0-16 0" />
                   </svg>
                   <span>{{ t('detail.character.uploadAvatar') }}</span>
                 </div>
@@ -804,61 +899,73 @@ async function save() {
         <!-- 右侧：表单字段 -->
         <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-black mb-2">{{ t('detail.character.characterName') }}</label>
+            <label class="block text-sm font-medium text-black mb-2">{{
+              t('detail.character.characterName')
+            }}</label>
             <input
               v-model="nameDraft"
               @blur="saveMeta"
               class="w-full px-3 py-2 border border-gray-300 rounded-4 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
             />
           </div>
-        <div>
-          <label class="block text-sm font-medium text-black mb-2">{{ t('common.type') }}</label>
-          <select
-            v-model="typeDraft"
-            @change="saveMeta"
-            class="w-full px-3 py-2 border border-gray-300 rounded-4 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
-          >
-            <option value="threaded">{{ t('panel.character.type.threaded') }}</option>
-            <option value="sandbox">{{ t('panel.character.type.sandbox') }}</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-black mb-2">{{ t('detail.character.displayName') }}</label>
-          <input
-            v-model="characterNameDraft"
-            @blur="saveMeta"
-            :placeholder="t('detail.character.displayNamePlaceholder')"
-            class="w-full px-3 py-2 border border-gray-300 rounded-4 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
-          />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-black mb-2">{{ t('detail.character.badgeName') }}</label>
-          <input
-            v-model="characterBadgeDraft"
-            @blur="saveMeta"
-            :placeholder="t('detail.character.badgeNamePlaceholder')"
-            class="w-full px-3 py-2 border border-gray-300 rounded-4 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
-          />
-        </div>
-        <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-black mb-2">{{ t('detail.character.characterDesc') }}</label>
-          <textarea
-            v-model="descDraft"
-            @blur="saveMeta"
-            rows="3"
-            class="w-full px-3 py-2 border border-gray-300 rounded-4 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
-          />
+          <div>
+            <label class="block text-sm font-medium text-black mb-2">{{ t('common.type') }}</label>
+            <select
+              v-model="typeDraft"
+              @change="saveMeta"
+              class="w-full px-3 py-2 border border-gray-300 rounded-4 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
+            >
+              <option value="threaded">{{ t('panel.character.type.threaded') }}</option>
+              <option value="sandbox">{{ t('panel.character.type.sandbox') }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-black mb-2">{{
+              t('detail.character.displayName')
+            }}</label>
+            <input
+              v-model="characterNameDraft"
+              @blur="saveMeta"
+              :placeholder="t('detail.character.displayNamePlaceholder')"
+              class="w-full px-3 py-2 border border-gray-300 rounded-4 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-black mb-2">{{
+              t('detail.character.badgeName')
+            }}</label>
+            <input
+              v-model="characterBadgeDraft"
+              @blur="saveMeta"
+              :placeholder="t('detail.character.badgeNamePlaceholder')"
+              class="w-full px-3 py-2 border border-gray-300 rounded-4 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
+            />
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-black mb-2">{{
+              t('detail.character.characterDesc')
+            }}</label>
+            <textarea
+              v-model="descDraft"
+              @blur="saveMeta"
+              rows="3"
+              class="w-full px-3 py-2 border border-gray-300 rounded-4 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
+            />
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- 初始消息 -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <!-- 初始消息 -->
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
           <i data-lucide="message-square" class="w-4 h-4 text-black"></i>
-          <h3 class="text-base font-semibold text-black">{{ t('detail.character.messages.title') }} ({{ messageEdits.length }})</h3>
+          <h3 class="text-base font-semibold text-black">
+            {{ t('detail.character.messages.title') }} ({{ messageEdits.length }})
+          </h3>
         </div>
         <button
           class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100 active:bg-gray-200 transition-all duration-200 ease-soft"
@@ -879,35 +986,46 @@ async function save() {
           class="border border-gray-200 rounded-4 p-3 bg-white transition-all duration-200 ease-soft hover:shadow-elevate"
         >
           <div class="flex items-center justify-between gap-2 mb-2">
-            <div class="text-xs text-black/60">{{ t('detail.character.messages.messageNum', { num: i + 1 }) }} · {{ t('detail.character.messages.charCount') }}：{{ (m || '').length }}</div>
+            <div class="text-xs text-black/60">
+              {{ t('detail.character.messages.messageNum', { num: i + 1 }) }} ·
+              {{ t('detail.character.messages.charCount') }}：{{ (m || '').length }}
+            </div>
             <div class="flex items-center gap-2">
               <template v-if="editingMsgIndex === i">
                 <button
                   class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
                   @click="onSaveMsg(i)"
-                >{{ t('common.save') }}</button>
+                >
+                  {{ t('common.save') }}
+                </button>
                 <button
                   class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
                   @click="onCancelMsg(i)"
-                >{{ t('common.cancel') }}</button>
+                >
+                  {{ t('common.cancel') }}
+                </button>
               </template>
               <template v-else>
                 <button
                   class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
                   @click="onEditMsg(i)"
-                >{{ t('common.edit') }}</button>
+                >
+                  {{ t('common.edit') }}
+                </button>
                 <button
                   class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
                   @click="removeMessage(i)"
-                >{{ t('common.delete') }}</button>
+                >
+                  {{ t('common.delete') }}
+                </button>
               </template>
             </div>
           </div>
           <template v-if="editingMsgIndex === i">
-            <textarea 
-              v-model="messageEdits[i]" 
-              rows="4" 
-              class="w-full px-3 py-2 border border-gray-300 rounded-4 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800" 
+            <textarea
+              v-model="messageEdits[i]"
+              rows="4"
+              class="w-full px-3 py-2 border border-gray-300 rounded-4 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
             />
           </template>
           <template v-else>
@@ -918,11 +1036,15 @@ async function save() {
     </div>
 
     <!-- 内嵌世界书 -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
           <i data-lucide="book-open" class="w-4 h-4 text-black"></i>
-          <h3 class="text-base font-semibold text-black">{{ t('detail.character.worldBook.title') }}</h3>
+          <h3 class="text-base font-semibold text-black">
+            {{ t('detail.character.worldBook.title') }}
+          </h3>
         </div>
         <div class="flex items-center gap-2">
           <input
@@ -947,13 +1069,15 @@ async function save() {
 
       <div class="space-y-2">
         <div
-          v-for="w in (currentData.world_book?.entries || [])"
+          v-for="w in currentData.world_book?.entries || []"
           :key="w.id"
           class="flex items-stretch gap-2 group draglist-item"
           :class="{
             'dragging-item': draggingWb && String(draggingWb.id) === String(w.id),
-            'drag-over-top': dragOverWbId && String(dragOverWbId) === String(w.id) && dragOverWbBefore,
-            'drag-over-bottom': dragOverWbId && String(dragOverWbId) === String(w.id) && !dragOverWbBefore
+            'drag-over-top':
+              dragOverWbId && String(dragOverWbId) === String(w.id) && dragOverWbBefore,
+            'drag-over-bottom':
+              dragOverWbId && String(dragOverWbId) === String(w.id) && !dragOverWbBefore,
           }"
           :data-wb-id="w.id"
         >
@@ -962,29 +1086,35 @@ async function save() {
             @mousedown="startWbDrag(w.id, $event)"
             :title="t('detail.preset.prompts.dragToSort')"
           >
-            <i data-lucide="grip-vertical" class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"></i>
+            <i
+              data-lucide="grip-vertical"
+              class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"
+            ></i>
           </div>
           <div class="flex-1">
-            <WorldBookCard
-              :entry="w"
-              @update="onWbUpdate"
-              @delete="onWbDelete"
-            />
+            <WorldBookCard :entry="w" @update="onWbUpdate" @delete="onWbDelete" />
           </div>
         </div>
       </div>
 
-      <div v-if="(currentData.world_book?.entries || []).length === 0" class="text-center py-8 text-black/50 text-sm">
+      <div
+        v-if="(currentData.world_book?.entries || []).length === 0"
+        class="text-center py-8 text-black/50 text-sm"
+      >
         {{ t('detail.character.worldBook.empty') }}
       </div>
     </div>
 
     <!-- 内嵌正则规则 -->
-    <div class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate">
+    <div
+      class="bg-white rounded-4 border border-gray-200 p-5 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
           <i data-lucide="code" class="w-4 h-4 text-black"></i>
-          <h3 class="text-base font-semibold text-black">{{ t('detail.character.regexRules.title') }}</h3>
+          <h3 class="text-base font-semibold text-black">
+            {{ t('detail.character.regexRules.title') }}
+          </h3>
         </div>
         <div class="flex items-center gap-2">
           <input
@@ -1009,13 +1139,15 @@ async function save() {
 
       <div class="space-y-2">
         <div
-          v-for="r in (currentData.regex_rules || [])"
+          v-for="r in currentData.regex_rules || []"
           :key="r.id"
           class="flex items-stretch gap-2 group draglist-item"
           :class="{
             'dragging-item': draggingRx && String(draggingRx.id) === String(r.id),
-            'drag-over-top': dragOverRxId && String(dragOverRxId) === String(r.id) && dragOverRxBefore,
-            'drag-over-bottom': dragOverRxId && String(dragOverRxId) === String(r.id) && !dragOverRxBefore
+            'drag-over-top':
+              dragOverRxId && String(dragOverRxId) === String(r.id) && dragOverRxBefore,
+            'drag-over-bottom':
+              dragOverRxId && String(dragOverRxId) === String(r.id) && !dragOverRxBefore,
           }"
           :data-rule-id="r.id"
         >
@@ -1024,19 +1156,21 @@ async function save() {
             @mousedown="startRxDrag(r.id, $event)"
             :title="t('detail.preset.prompts.dragToSort')"
           >
-            <i data-lucide="grip-vertical" class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"></i>
+            <i
+              data-lucide="grip-vertical"
+              class="icon-grip w-4 h-4 text-black opacity-60 group-hover:opacity-100"
+            ></i>
           </div>
           <div class="flex-1">
-            <RegexRuleCard
-              :rule="r"
-              @update="onRegexUpdate"
-              @delete="onRegexDelete"
-            />
+            <RegexRuleCard :rule="r" @update="onRegexUpdate" @delete="onRegexDelete" />
           </div>
         </div>
       </div>
 
-      <div v-if="(currentData.regex_rules || []).length === 0" class="text-center py-8 text-black/50 text-sm">
+      <div
+        v-if="(currentData.regex_rules || []).length === 0"
+        class="text-center py-8 text-black/50 text-sm"
+      >
         {{ t('detail.character.regexRules.empty') }}
       </div>
     </div>

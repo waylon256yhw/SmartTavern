@@ -22,7 +22,7 @@ const props = defineProps({
   conversationFile: { type: String, default: null },
 })
 
-const emit = defineEmits(['close','use','view','delete','import','export','create'])
+const emit = defineEmits(['close', 'use', 'view', 'delete', 'import', 'export', 'create'])
 
 const panelStyle = computed(() => ({
   position: 'fixed',
@@ -67,15 +67,17 @@ const showCreateModal = ref(false)
 
 // 使用通道响应式状态
 const personas = CatalogChannel.personas
-const loading = computed(() =>
-  CatalogChannel.loadingStates.value.personas ||
-  (props.conversationFile ? SettingsChannel.isLoading(props.conversationFile) : false) ||
-  importing.value
+const loading = computed(
+  () =>
+    CatalogChannel.loadingStates.value.personas ||
+    (props.conversationFile ? SettingsChannel.isLoading(props.conversationFile) : false) ||
+    importing.value,
 )
-const error = computed(() =>
-  importError.value ||
-  CatalogChannel.errorStates.value.personas ||
-  (props.conversationFile ? SettingsChannel.getError(props.conversationFile) : null)
+const error = computed(
+  () =>
+    importError.value ||
+    CatalogChannel.errorStates.value.personas ||
+    (props.conversationFile ? SettingsChannel.getError(props.conversationFile) : null),
 )
 
 let unsubscribePersonas = null
@@ -83,15 +85,15 @@ let unsubscribeSettings = null
 
 function loadData() {
   if (settingsLoaded.value) return
-  
+
   Host.events.emit(CatalogChannel.EVT_CATALOG_PERSONAS_REQ, {
-    requestId: Date.now()
+    requestId: Date.now(),
   })
-  
+
   if (props.conversationFile) {
     Host.events.emit(SettingsChannel.EVT_SETTINGS_GET_REQ, {
       conversationFile: props.conversationFile,
-      requestId: Date.now()
+      requestId: Date.now(),
     })
   } else {
     settingsLoaded.value = true
@@ -120,7 +122,7 @@ onMounted(() => {
       }
     }
   })
-  
+
   unsubscribeSettings = Host.events.on(SettingsChannel.EVT_SETTINGS_GET_RES, (payload) => {
     if (payload?.success && payload?.conversationFile === props.conversationFile) {
       const settings = payload.settings || {}
@@ -139,13 +141,19 @@ onUnmounted(() => {
   if (unsubscribeSettings) unsubscribeSettings()
 })
 
-watch(() => props.conversationFile, (v) => {
-  if (v && !settingsLoaded.value) {
-    loadData()
-  }
-}, { immediate: true })
+watch(
+  () => props.conversationFile,
+  (v) => {
+    if (v && !settingsLoaded.value) {
+      loadData()
+    }
+  },
+  { immediate: true },
+)
 
-function close(){ emit('close') }
+function close() {
+  emit('close')
+}
 
 function onUse(k) {
   if (!props.conversationFile) {
@@ -153,13 +161,13 @@ function onUse(k) {
     emit('use', k)
     return
   }
-  
+
   Host.events.emit(SettingsChannel.EVT_SETTINGS_UPDATE_REQ, {
     conversationFile: props.conversationFile,
     patch: { persona: k },
-    requestId: Date.now()
+    requestId: Date.now(),
   })
-  
+
   const unsubUpdate = Host.events.on(SettingsChannel.EVT_SETTINGS_UPDATE_RES, (payload) => {
     if (payload?.conversationFile === props.conversationFile) {
       if (payload.success) {
@@ -171,14 +179,16 @@ function onUse(k) {
   })
 }
 
-function onView(k){ emit('view', k) }
+function onView(k) {
+  emit('view', k)
+}
 
 // ==================== 删除功能 ====================
 
 function onDelete(k) {
-  const item = personas.value.find(p => p.key === k)
+  const item = personas.value.find((p) => p.key === k)
   if (!item) return
-  
+
   deleteTarget.value = {
     key: k,
     name: item.name || getFolderName(k),
@@ -194,7 +204,7 @@ function closeDeleteConfirmModal() {
 
 async function handleDeleteConfirm() {
   if (!deleteTarget.value) return
-  
+
   deleting.value = true
   try {
     const result = await DataCatalog.deleteDataFolder(deleteTarget.value.folderPath)
@@ -241,7 +251,7 @@ function extractPersonaName(filename) {
 async function handleFileSelect(event) {
   const files = event.target.files
   if (!files || files.length === 0) return
-  
+
   const file = files[0]
   const validTypes = ['.json', '.zip', '.png']
   const ext = '.' + (file.name.split('.').pop() || '').toLowerCase()
@@ -250,7 +260,7 @@ async function handleFileSelect(event) {
     event.target.value = ''
     return
   }
-  
+
   // 直接调用导入，后端会处理名称冲突检测
   await doImport(file, false)
   event.target.value = ''
@@ -259,7 +269,7 @@ async function handleFileSelect(event) {
 async function doImport(file, overwrite = false, targetName = null) {
   importing.value = true
   importError.value = null
-  
+
   try {
     const result = await DataCatalog.importDataFromFile('persona', file, targetName, overwrite)
     if (result.success) {
@@ -271,7 +281,11 @@ async function doImport(file, overwrite = false, targetName = null) {
       if (errorCode === 'NAME_EXISTS') {
         // 名称冲突，显示冲突弹窗
         openImportConflictModal(file, result.folder_name, result.suggested_name)
-      } else if (errorCode === 'TYPE_MISMATCH' || errorCode === 'NO_TYPE_INFO' || errorCode === 'NO_TYPE_IN_FILENAME') {
+      } else if (
+        errorCode === 'TYPE_MISMATCH' ||
+        errorCode === 'NO_TYPE_INFO' ||
+        errorCode === 'NO_TYPE_IN_FILENAME'
+      ) {
         openImportErrorModal(errorCode, result.message, result.expected_type, result.actual_type)
       } else {
         importError.value = result.message || result.error || t('error.importFailed')
@@ -354,48 +368,63 @@ function handleCreated(result) {
 </script>
 
 <template>
-  <div
-    data-scope="persona-view"
-    class="ps-panel"
-    :style="panelStyle"
-  >
-      <header class="ps-header">
-        <div class="ps-title st-panel-title">
-          <span class="ps-icon"><i data-lucide="user-cog"></i></span>
-          {{ t('panel.personas.title') }}
-        </div>
-        <div class="ps-header-actions">
-          <button class="ps-action-btn st-btn-shrinkable" type="button" :title="t('panel.personas.createTitle')" @click="openCreateModal">
-            <i data-lucide="plus"></i><span class="st-btn-text">{{ t('common.create') }}</span>
-          </button>
-          <button class="ps-action-btn st-btn-shrinkable" type="button" :title="t('panel.personas.importTitle')" @click="triggerImport" :disabled="importing">
-            <i data-lucide="download"></i><span class="st-btn-text">{{ t('common.import') }}</span>
-          </button>
-          <button class="ps-action-btn st-btn-shrinkable" type="button" :title="t('panel.personas.exportTitle')" @click="openExportModal" :disabled="personas.length === 0">
-            <i data-lucide="upload"></i><span class="st-btn-text">{{ t('common.export') }}</span>
-          </button>
-          <button class="ps-close" type="button" :title="t('common.close')" @click="close">✕</button>
-        </div>
-      </header>
-      <input ref="fileInputRef" type="file" accept=".json,.zip,.png" style="display: none;" @change="handleFileSelect" />
+  <div data-scope="persona-view" class="ps-panel" :style="panelStyle">
+    <header class="ps-header">
+      <div class="ps-title st-panel-title">
+        <span class="ps-icon"><i data-lucide="user-cog"></i></span>
+        {{ t('panel.personas.title') }}
+      </div>
+      <div class="ps-header-actions">
+        <button
+          class="ps-action-btn st-btn-shrinkable"
+          type="button"
+          :title="t('panel.personas.createTitle')"
+          @click="openCreateModal"
+        >
+          <i data-lucide="plus"></i><span class="st-btn-text">{{ t('common.create') }}</span>
+        </button>
+        <button
+          class="ps-action-btn st-btn-shrinkable"
+          type="button"
+          :title="t('panel.personas.importTitle')"
+          @click="triggerImport"
+          :disabled="importing"
+        >
+          <i data-lucide="download"></i><span class="st-btn-text">{{ t('common.import') }}</span>
+        </button>
+        <button
+          class="ps-action-btn st-btn-shrinkable"
+          type="button"
+          :title="t('panel.personas.exportTitle')"
+          @click="openExportModal"
+          :disabled="personas.length === 0"
+        >
+          <i data-lucide="upload"></i><span class="st-btn-text">{{ t('common.export') }}</span>
+        </button>
+        <button class="ps-close" type="button" :title="t('common.close')" @click="close">✕</button>
+      </div>
+    </header>
+    <input
+      ref="fileInputRef"
+      type="file"
+      accept=".json,.zip,.png"
+      style="display: none"
+      @change="handleFileSelect"
+    />
 
-      <CustomScrollbar2 class="ps-body">
-        <transition name="ps-content" mode="out-in" @after-enter="handleTransitionComplete">
-          <div v-if="loading" key="loading" class="ps-loading">
-            {{ importing ? t('common.importing') : t('common.loading') }}
-          </div>
-          
-          <div v-else-if="error" key="error" class="ps-error">
-            {{ importError ? importError : t('error.loadFailed', { error }) }}
-            <button v-if="importError" class="ps-error-dismiss" @click="importError = null">×</button>
-          </div>
-          
-          <div v-else key="content" class="ps-list">
-          <div
-            v-for="it in personas"
-            :key="it.key"
-            class="ps-card"
-          >
+    <CustomScrollbar2 class="ps-body">
+      <transition name="ps-content" mode="out-in" @after-enter="handleTransitionComplete">
+        <div v-if="loading" key="loading" class="ps-loading">
+          {{ importing ? t('common.importing') : t('common.loading') }}
+        </div>
+
+        <div v-else-if="error" key="error" class="ps-error">
+          {{ importError ? importError : t('error.loadFailed', { error }) }}
+          <button v-if="importError" class="ps-error-dismiss" @click="importError = null">×</button>
+        </div>
+
+        <div v-else key="content" class="ps-list">
+          <div v-for="it in personas" :key="it.key" class="ps-card">
             <div class="ps-main">
               <div class="ps-avatar-container">
                 <div class="ps-icon">
@@ -410,8 +439,21 @@ function handleCreated(result) {
               <div class="ps-texts">
                 <div class="ps-name">{{ it.name }}</div>
                 <div class="ps-folder">
-                  <svg class="ps-folder-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  <svg
+                    class="ps-folder-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                    ></path>
                   </svg>
                   <span>{{ getFolderName(it.key) }}</span>
                 </div>
@@ -425,70 +467,80 @@ function handleCreated(result) {
                 type="button"
                 @click="onUse(it.key)"
                 :aria-pressed="usingKey === it.key"
-              >{{ usingKey === it.key ? t('common.using') : t('common.use') }}</button>
+              >
+                {{ usingKey === it.key ? t('common.using') : t('common.use') }}
+              </button>
 
-              <button class="ps-btn st-btn-shrinkable" type="button" @click="onView(it.key)">{{ t('common.view') }}</button>
+              <button class="ps-btn st-btn-shrinkable" type="button" @click="onView(it.key)">
+                {{ t('common.view') }}
+              </button>
 
-              <button class="ps-btn ps-danger st-btn-shrinkable" type="button" @click="onDelete(it.key)">{{ t('common.delete') }}</button>
+              <button
+                class="ps-btn ps-danger st-btn-shrinkable"
+                type="button"
+                @click="onDelete(it.key)"
+              >
+                {{ t('common.delete') }}
+              </button>
             </div>
           </div>
-          </div>
-        </transition>
-      </CustomScrollbar2>
+        </div>
+      </transition>
+    </CustomScrollbar2>
 
-      <!-- 使用可复用的导入冲突弹窗组件 -->
-      <ImportConflictModal
-        :show="showImportConflictModal"
-        data-type="persona"
-        :data-type-name="t('panel.personas.typeName')"
-        :existing-name="importConflictExistingName"
-        :suggested-name="importConflictSuggestedName"
-        @close="closeImportConflictModal"
-        @overwrite="handleConflictOverwrite"
-        @rename="handleConflictRename"
-      />
+    <!-- 使用可复用的导入冲突弹窗组件 -->
+    <ImportConflictModal
+      :show="showImportConflictModal"
+      data-type="persona"
+      :data-type-name="t('panel.personas.typeName')"
+      :existing-name="importConflictExistingName"
+      :suggested-name="importConflictSuggestedName"
+      @close="closeImportConflictModal"
+      @overwrite="handleConflictOverwrite"
+      @rename="handleConflictRename"
+    />
 
-      <!-- 使用可复用的导出弹窗组件 -->
-      <ExportModal
-        :show="showExportModal"
-        data-type="persona"
-        :data-type-name="t('panel.personas.typeName')"
-        :items="personas"
-        default-icon="user-cog"
-        @close="closeExportModal"
-        @export="handleExportComplete"
-      />
+    <!-- 使用可复用的导出弹窗组件 -->
+    <ExportModal
+      :show="showExportModal"
+      data-type="persona"
+      :data-type-name="t('panel.personas.typeName')"
+      :items="personas"
+      default-icon="user-cog"
+      @close="closeExportModal"
+      @export="handleExportComplete"
+    />
 
-      <!-- 导入错误弹窗 -->
-      <ImportErrorModal
-        :show="showImportErrorModal"
-        :error-code="importErrorCode"
-        :error-message="importErrorMessage"
-        :data-type-name="t('panel.personas.typeName')"
-        :expected-type="importExpectedType"
-        :actual-type="importActualType"
-        @close="closeImportErrorModal"
-      />
+    <!-- 导入错误弹窗 -->
+    <ImportErrorModal
+      :show="showImportErrorModal"
+      :error-code="importErrorCode"
+      :error-message="importErrorMessage"
+      :data-type-name="t('panel.personas.typeName')"
+      :expected-type="importExpectedType"
+      :actual-type="importActualType"
+      @close="closeImportErrorModal"
+    />
 
-      <!-- 删除确认弹窗 -->
-      <DeleteConfirmModal
-        :show="showDeleteConfirmModal"
-        :item-name="deleteTarget?.name || ''"
-        :data-type-name="t('panel.personas.typeName')"
-        :loading="deleting"
-        @close="closeDeleteConfirmModal"
-        @confirm="handleDeleteConfirm"
-      />
+    <!-- 删除确认弹窗 -->
+    <DeleteConfirmModal
+      :show="showDeleteConfirmModal"
+      :item-name="deleteTarget?.name || ''"
+      :data-type-name="t('panel.personas.typeName')"
+      :loading="deleting"
+      @close="closeDeleteConfirmModal"
+      @confirm="handleDeleteConfirm"
+    />
 
-      <!-- 新建弹窗 -->
-      <CreateItemModal
-        :show="showCreateModal"
-        data-type="persona"
-        :data-type-name="t('panel.personas.typeName')"
-        @close="closeCreateModal"
-        @created="handleCreated"
-      />
-    </div>
+    <!-- 新建弹窗 -->
+    <CreateItemModal
+      :show="showCreateModal"
+      data-type="persona"
+      :data-type-name="t('panel.personas.typeName')"
+      @close="closeCreateModal"
+      @created="handleCreated"
+    />
+  </div>
 </template>
 
 <style scoped>
@@ -518,9 +570,17 @@ function handleCreated(result) {
   font-weight: 700;
   color: rgb(var(--st-color-text));
 }
-.ps-icon i { width: var(--st-icon-md); height: var(--st-icon-md); display: inline-block; }
+.ps-icon i {
+  width: var(--st-icon-md);
+  height: var(--st-icon-md);
+  display: inline-block;
+}
 
-.ps-header-actions { display: flex; align-items: center; gap: var(--st-spacing-md); }
+.ps-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--st-spacing-md);
+}
 .ps-action-btn {
   appearance: none;
   display: inline-flex;
@@ -533,15 +593,25 @@ function handleCreated(result) {
   padding: var(--st-btn-padding-sm);
   font-size: var(--st-font-sm);
   cursor: pointer;
-  transition: transform var(--st-transition-normal), background var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    transform var(--st-transition-normal),
+    background var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
-.ps-action-btn i { width: var(--st-icon-sm); height: var(--st-icon-sm); display: inline-block; }
-.ps-action-btn:hover:not(:disabled) { 
-  background: rgba(var(--st-primary), 0.15); 
-  transform: translateY(-1px); 
-  box-shadow: var(--st-shadow-sm); 
+.ps-action-btn i {
+  width: var(--st-icon-sm);
+  height: var(--st-icon-sm);
+  display: inline-block;
 }
-.ps-action-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.ps-action-btn:hover:not(:disabled) {
+  background: rgba(var(--st-primary), 0.15);
+  transform: translateY(-1px);
+  box-shadow: var(--st-shadow-sm);
+}
+.ps-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 .ps-close {
   appearance: none;
@@ -550,7 +620,10 @@ function handleCreated(result) {
   border-radius: var(--st-radius-lg);
   padding: var(--st-spacing-sm) var(--st-spacing-md);
   cursor: pointer;
-  transition: transform var(--st-transition-normal), background var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    transform var(--st-transition-normal),
+    background var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
 .ps-close:hover {
   background: rgb(var(--st-surface));
@@ -578,7 +651,11 @@ function handleCreated(result) {
   background: rgb(var(--st-surface));
   padding: var(--st-spacing-xl);
   min-height: var(--st-preview-height-sm);
-  transition: background var(--st-transition-normal), border-color var(--st-transition-normal), transform var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    background var(--st-transition-normal),
+    border-color var(--st-transition-normal),
+    transform var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
 .ps-card:hover {
   transform: translateY(-1px);
@@ -586,14 +663,18 @@ function handleCreated(result) {
 }
 .ps-main {
   display: grid;
-  grid-template-columns: calc(var(--st-avatar-md) + var(--st-spacing-xs) + var(--st-avatar-sm) + var(--st-spacing-xs)) 1fr;
+  grid-template-columns:
+    calc(var(--st-avatar-md) + var(--st-spacing-xs) + var(--st-avatar-sm) + var(--st-spacing-xs))
+    1fr;
   gap: var(--st-spacing-md);
   align-items: center;
 }
 
 .ps-avatar-container {
   position: relative;
-  width: calc(var(--st-avatar-md) + var(--st-spacing-xs) + var(--st-avatar-sm) + var(--st-spacing-xs));
+  width: calc(
+    var(--st-avatar-md) + var(--st-spacing-xs) + var(--st-avatar-sm) + var(--st-spacing-xs)
+  );
   height: var(--st-avatar-md);
 }
 .ps-icon {
@@ -604,12 +685,25 @@ function handleCreated(result) {
   align-items: center;
   justify-content: center;
   font-size: var(--st-font-xl);
-  background: linear-gradient(135deg, var(--st-panel-avatar-gradient-start, rgba(var(--st-primary),0.12)), var(--st-panel-avatar-gradient-end, rgba(var(--st-accent),0.12)));
+  background: linear-gradient(
+    135deg,
+    var(--st-panel-avatar-gradient-start, rgba(var(--st-primary), 0.12)),
+    var(--st-panel-avatar-gradient-end, rgba(var(--st-accent), 0.12))
+  );
   border: 1px solid rgba(var(--st-border), 0.9);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
-.ps-icon i { width: var(--st-icon-md); height: var(--st-icon-md); display: inline-block; }
-.ps-icon-img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--st-radius-lg); }
+.ps-icon i {
+  width: var(--st-icon-md);
+  height: var(--st-icon-md);
+  display: inline-block;
+}
+.ps-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--st-radius-lg);
+}
 .ps-avatar-badge {
   position: absolute;
   left: calc(var(--st-avatar-md) + var(--st-spacing-xs));
@@ -627,7 +721,9 @@ function handleCreated(result) {
   height: 100%;
   object-fit: cover;
 }
-.ps-texts { min-width: 0; }
+.ps-texts {
+  min-width: 0;
+}
 .ps-name {
   font-weight: 700;
   color: rgb(var(--st-color-text));
@@ -679,7 +775,11 @@ function handleCreated(result) {
   border-radius: var(--st-radius-lg);
   font-size: var(--st-font-sm);
   cursor: pointer;
-  transition: transform var(--st-transition-normal), box-shadow var(--st-transition-normal), background var(--st-transition-normal), border-color var(--st-transition-normal);
+  transition:
+    transform var(--st-transition-normal),
+    box-shadow var(--st-transition-normal),
+    background var(--st-transition-normal),
+    border-color var(--st-transition-normal);
   min-width: var(--st-btn-min-width);
   text-align: center;
 }
@@ -732,12 +832,16 @@ function handleCreated(result) {
   font-size: var(--st-font-md);
   line-height: 1;
 }
-.ps-error-dismiss:hover { background: rgba(220, 38, 38, 0.2); }
+.ps-error-dismiss:hover {
+  background: rgba(220, 38, 38, 0.2);
+}
 
 /* 内容过渡动画 */
 .ps-content-enter-active,
 .ps-content-leave-active {
-  transition: opacity var(--st-transition-medium), transform var(--st-transition-medium);
+  transition:
+    opacity var(--st-transition-medium),
+    transform var(--st-transition-medium);
 }
 
 .ps-content-enter-from {
@@ -751,7 +855,11 @@ function handleCreated(result) {
 }
 
 @media (max-width: 640px) {
-  .ps-card { grid-template-columns: 1fr; }
-  .ps-actions { flex-direction: row; }
+  .ps-card {
+    grid-template-columns: 1fr;
+  }
+  .ps-actions {
+    flex-direction: row;
+  }
 }
 </style>

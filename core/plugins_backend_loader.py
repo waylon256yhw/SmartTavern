@@ -32,22 +32,21 @@
 - 对“文件级”声明：将文件路径转换为模块导入字符串，并直接 import
 """
 
-import json
 import importlib
+import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Tuple
 
 
 @dataclass
 class LoaderResult:
-    imported_modules: List[str]
-    skipped_entries: List[Tuple[str, str]]  # (entry, reason)
+    imported_modules: list[str]
+    skipped_entries: list[tuple[str, str]]  # (entry, reason)
     manifests_read: int
 
 
 class PluginsBackendLoader:
-    def __init__(self, repo_root: Optional[Path] = None):
+    def __init__(self, repo_root: Path | None = None):
         # core/ -> repo root
         here = Path(__file__).resolve()
         core_dir = here.parent
@@ -63,14 +62,14 @@ class PluginsBackendLoader:
         except Exception:
             return False
 
-    def _read_manifest(self, manifest_path: Path) -> Optional[dict]:
+    def _read_manifest(self, manifest_path: Path) -> dict | None:
         try:
-            with open(manifest_path, "r", encoding="utf-8") as f:
+            with open(manifest_path, encoding="utf-8") as f:
                 return json.load(f)
         except Exception:
             return None
 
-    def _extract_backend_entries(self, manifest: dict) -> List[str]:
+    def _extract_backend_entries(self, manifest: dict) -> list[str]:
         """
         支持多种字段名，统一返回 string 列表
         优先：backend_entries
@@ -116,7 +115,7 @@ class PluginsBackendLoader:
                 seen.add(x)
         return dedup
 
-    def _to_module_path_from_file(self, file_path: Path) -> Optional[str]:
+    def _to_module_path_from_file(self, file_path: Path) -> str | None:
         """
         将仓库内文件路径转换为 Python 导入路径字符串，如：
         f:/repo/api/plugins/smarttavern/example_backend/example_backend.py
@@ -137,7 +136,7 @@ class PluginsBackendLoader:
         module = ".".join(rel2.parts)
         return module
 
-    def _impl_module_for_dir(self, dir_path: Path) -> Optional[str]:
+    def _impl_module_for_dir(self, dir_path: Path) -> str | None:
         """
         对“目录级”入口，寻找同名实现文件：
         .../<dir_name>/<dir_name>.py 存在时，返回对应导入路径
@@ -157,7 +156,7 @@ class PluginsBackendLoader:
             return None
         return self._to_module_path_from_file(impl_file)
 
-    def _resolve_entry_to_modules(self, entry: str, plugin_root: Path) -> List[str]:
+    def _resolve_entry_to_modules(self, entry: str, plugin_root: Path) -> list[str]:
         """
         将 manifest 中的 entry 解析为“可导入模块路径”列表
         支持：
@@ -167,7 +166,7 @@ class PluginsBackendLoader:
         -（不支持插件根相对的 Python 文件/目录，因为命名空间推断要求模块必须位于 api/* 包）
         """
         entry = entry.strip()
-        modules: List[str] = []
+        modules: list[str] = []
 
         # 1) 点式模块路径
         if entry.startswith("api.plugins.") or entry.startswith("api.modules.") or entry.startswith("api.workflow."):
@@ -197,12 +196,14 @@ class PluginsBackendLoader:
 
         return modules
 
-    def _import_modules(self, module_paths: List[str]) -> Tuple[List[str], List[Tuple[str, str]]]:
+    def _import_modules(self, module_paths: list[str]) -> tuple[list[str], list[tuple[str, str]]]:
         imported = []
         skipped = []
         for mod in module_paths:
             # 安全约束：仅允许 api.* 模块导入
-            if not (mod.startswith("api.plugins.") or mod.startswith("api.modules.") or mod.startswith("api.workflow.")):
+            if not (
+                mod.startswith("api.plugins.") or mod.startswith("api.modules.") or mod.startswith("api.workflow.")
+            ):
                 skipped.append((mod, "仅允许导入 api.* 包下的模块"))
                 continue
             try:
@@ -220,8 +221,8 @@ class PluginsBackendLoader:
           - 自动扫描 api/plugins/<project>/<plugin-id> 目录，并导入同名实现文件（如果存在）
         """
         plugins_root = self._plugins_root(project)
-        imported_modules: List[str] = []
-        skipped_entries: List[Tuple[str, str]] = []
+        imported_modules: list[str] = []
+        skipped_entries: list[tuple[str, str]] = []
         manifests_read = 0
 
         if not plugins_root.exists() or not plugins_root.is_dir():
@@ -259,7 +260,7 @@ class PluginsBackendLoader:
                 continue
 
             # 解析每个 entry -> module 路径
-            module_paths: List[str] = []
+            module_paths: list[str] = []
             for entry in entries:
                 mods = self._resolve_entry_to_modules(entry, plugin_root=plugin_root)
                 if not mods:
@@ -272,7 +273,9 @@ class PluginsBackendLoader:
             imported_modules.extend(modules)
             skipped_entries.extend(skips)
 
-        return LoaderResult(imported_modules=imported_modules, skipped_entries=skipped_entries, manifests_read=manifests_read)
+        return LoaderResult(
+            imported_modules=imported_modules, skipped_entries=skipped_entries, manifests_read=manifests_read
+        )
 
 
 # 便捷函数

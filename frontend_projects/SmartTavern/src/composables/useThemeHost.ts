@@ -39,7 +39,10 @@ async function ensureInit(): Promise<void> {
 /**
  * 导入并应用主题包（JSON 文本）
  */
-async function importFromText(text: string, options: ThemeApplyOptions = { persist: true }): Promise<ThemePackV1 | null> {
+async function importFromText(
+  text: string,
+  options: ThemeApplyOptions = { persist: true },
+): Promise<ThemePackV1 | null> {
   await ensureInit()
   return ThemeManager.importFromText(text, options)
 }
@@ -47,7 +50,10 @@ async function importFromText(text: string, options: ThemeApplyOptions = { persi
 /**
  * 从文件导入并应用主题包（.json/.sttheme.json）
  */
-async function importFromFile(file: File, options: ThemeApplyOptions = { persist: true }): Promise<ThemePackV1 | null> {
+async function importFromFile(
+  file: File,
+  options: ThemeApplyOptions = { persist: true },
+): Promise<ThemePackV1 | null> {
   await ensureInit()
   return ThemeManager.importFromFile(file, options)
 }
@@ -55,7 +61,10 @@ async function importFromFile(file: File, options: ThemeApplyOptions = { persist
 /**
  * 直接应用主题包对象
  */
-async function applyThemePack(pack: ThemePackV1, options: ThemeApplyOptions = { persist: true }): Promise<ThemePackV1 | null> {
+async function applyThemePack(
+  pack: ThemePackV1,
+  options: ThemeApplyOptions = { persist: true },
+): Promise<ThemePackV1 | null> {
   await ensureInit()
   return ThemeManager.applyThemePack(pack, options)
 }
@@ -71,7 +80,11 @@ async function resetTheme(options: { persist?: boolean } = { persist: true }): P
 /**
  * 动态设置单个 token（会写入当前 pack 的 tokens 并持久化，若 persist!==false）
  */
-async function setToken(name: string, value: string | number, options: { persist?: boolean } = { persist: true }): Promise<void> {
+async function setToken(
+  name: string,
+  value: string | number,
+  options: { persist?: boolean } = { persist: true },
+): Promise<void> {
   await ensureInit()
   // ThemeStore.setToken 在 manager/store 内部可用（此处通过 manager 暴露 store 时可直接 setToken）
   try {
@@ -92,25 +105,25 @@ async function registerExtension(ext: ThemeExtension): Promise<() => void> {
 }
 
 function unregisterExtension(id: string): void {
-  try { 
-    ThemeManager?.unregisterExtension?.(id) 
+  try {
+    ThemeManager?.unregisterExtension?.(id)
   } catch (_) {
     // Ignore errors
   }
 }
 
 function getExtensions(): ThemeExtension[] {
-  try { 
-    return ThemeManager?.getExtensions?.() ?? [] 
-  } catch (_) { 
-    return [] 
+  try {
+    return ThemeManager?.getExtensions?.() ?? []
+  } catch (_) {
+    return []
   }
 }
 
 async function applyAppearanceSnapshot(snapshot: ThemeAppearanceSnapshot): Promise<void> {
   await ensureInit()
-  try { 
-    ThemeManager?.applyAppearanceSnapshot?.(snapshot) 
+  try {
+    ThemeManager?.applyAppearanceSnapshot?.(snapshot)
   } catch (_) {
     // Ignore errors
   }

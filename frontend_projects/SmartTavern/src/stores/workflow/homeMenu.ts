@@ -71,7 +71,7 @@ function normalize(input: HomeMenuEntry): NormalizedEntry {
   if (!id) throw new Error('[homeMenuStore] id required')
   if (!label) throw new Error('[homeMenuStore] label required')
   if (!actionId) throw new Error('[homeMenuStore] actionId required')
-  
+
   return {
     id,
     label,
@@ -91,7 +91,8 @@ function normalize(input: HomeMenuEntry): NormalizedEntry {
  */
 function computeFlags(btn: NormalizedEntry, ctx: any): { visible: boolean; disabled: boolean } {
   const visible = typeof btn.visibleWhen === 'function' ? !!btn.visibleWhen(ctx) : !!btn.visibleWhen
-  const disabled = typeof btn.disabledWhen === 'function' ? !!btn.disabledWhen(ctx) : !!btn.disabledWhen
+  const disabled =
+    typeof btn.disabledWhen === 'function' ? !!btn.disabledWhen(ctx) : !!btn.disabledWhen
   return { visible, disabled }
 }
 
@@ -106,20 +107,22 @@ export const useHomeMenuStore = defineStore('homeMenu', {
     /**
      * 获取排序后 + 可见性计算的按钮快照
      */
-    list: (state) => (ctx: any = {}): ComputedEntry[] => {
-      const sorted = state.items.slice().sort((a, b) => {
-        const ao = Number.isFinite(a.order) ? a.order : 0
-        const bo = Number.isFinite(b.order) ? b.order : 0
-        if (ao !== bo) return ao - bo
-        return a.label.localeCompare(b.label, 'zh-CN')
-      })
-      return sorted
-        .map(b => {
-          const f = computeFlags(b, ctx)
-          return { ...b, ...f }
+    list:
+      (state) =>
+      (ctx: any = {}): ComputedEntry[] => {
+        const sorted = state.items.slice().sort((a, b) => {
+          const ao = Number.isFinite(a.order) ? a.order : 0
+          const bo = Number.isFinite(b.order) ? b.order : 0
+          if (ao !== bo) return ao - bo
+          return a.label.localeCompare(b.label, 'zh-CN')
         })
-        .filter(b => b.visible)
-    },
+        return sorted
+          .map((b) => {
+            const f = computeFlags(b, ctx)
+            return { ...b, ...f }
+          })
+          .filter((b) => b.visible)
+      },
   },
 
   actions: {
@@ -129,7 +132,7 @@ export const useHomeMenuStore = defineStore('homeMenu', {
      */
     register(entry: HomeMenuEntry): () => void {
       const btn = normalize(entry)
-      const idx = this.items.findIndex(it => it.id === btn.id)
+      const idx = this.items.findIndex((it) => it.id === btn.id)
       if (idx >= 0) {
         this.items[idx] = { ...this.items[idx], ...btn }
       } else {
@@ -142,7 +145,7 @@ export const useHomeMenuStore = defineStore('homeMenu', {
      * 撤销一个按钮
      */
     unregister(id: string): void {
-      const i = this.items.findIndex(it => it.id === id)
+      const i = this.items.findIndex((it) => it.id === id)
       if (i >= 0) this.items.splice(i, 1)
     },
 

@@ -3,8 +3,11 @@ API 封装层：SmartTavern.framing_prompt
 - 遵循 DEVELOPMENT_NOTES 新规范：斜杠 path + JSON Schema
 - 通过 @core.register_api 暴露公共 API，内部实现位于 impl.py
 """
-from typing import Any, Dict, List, Optional
+
+from typing import Any
+
 import core
+
 from .impl import assemble as _assemble
 
 
@@ -15,31 +18,14 @@ from .impl import assemble as _assemble
     input_schema={
         "type": "object",
         "properties": {
-            "history": {
-                "type": ["array", "object"],
-                "additionalProperties": True
-            },
-            "world_books": {
-                "type": "object"
-            },
-            "presets_relative": {
-                "type": "array",
-                "items": {"type": "object", "additionalProperties": True}
-            },
-            "presets_doc": {
-                "type": "object",
-                "additionalProperties": True
-            },
-            "character": {
-                "type": "object",
-                "additionalProperties": True
-            },
-            "persona": {
-                "type": "object",
-                "additionalProperties": True
-            }
+            "history": {"type": ["array", "object"], "additionalProperties": True},
+            "world_books": {"type": "object"},
+            "presets_relative": {"type": "array", "items": {"type": "object", "additionalProperties": True}},
+            "presets_doc": {"type": "object", "additionalProperties": True},
+            "character": {"type": "object", "additionalProperties": True},
+            "persona": {"type": "object", "additionalProperties": True},
         },
-        "required": ["history"]
+        "required": ["history"],
     },
     output_schema={
         "type": "object",
@@ -51,23 +37,23 @@ from .impl import assemble as _assemble
                     "properties": {
                         "role": {"type": "string", "enum": ["system", "user", "assistant", "thinking"]},
                         "content": {"type": "string"},
-                        "source": {"type": "object", "additionalProperties": True}
+                        "source": {"type": "object", "additionalProperties": True},
                     },
-                    "required": ["role", "content", "source"]
-                }
+                    "required": ["role", "content", "source"],
+                },
             }
         },
-        "required": ["messages"]
+        "required": ["messages"],
     },
 )
 def assemble(
-    history: List[Dict[str, Any]],
+    history: list[dict[str, Any]],
     world_books: Any = None,
-    presets_relative: Optional[List[Dict[str, Any]]] = None,
-    presets_doc: Optional[Dict[str, Any]] = None,
-    character: Optional[Dict[str, Any]] = None,
-    persona: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    presets_relative: list[dict[str, Any]] | None = None,
+    presets_doc: dict[str, Any] | None = None,
+    character: dict[str, Any] | None = None,
+    persona: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """
     - history 可为“原始 OpenAI 消息数组（无 source）”或“已处理消息（含 source）”
     - 若无 source，将按 in_chat_constructor 的历史来源规范补齐 {"type":"history","id":"history_i","index":i}

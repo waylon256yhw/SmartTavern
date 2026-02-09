@@ -1,6 +1,6 @@
 /**
  * SmartTavern — Page Backgrounds Manager
- * 
+ *
  * 职责：
  * - 初始化时从后端加载页面背景图片（带缓存验证）
  * - 动态设置 CSS 变量（--st-bg-start, --st-bg-threaded, --st-bg-sandbox）
@@ -48,7 +48,7 @@ const CSS_VAR_MAP: Record<PageName, string> = {
 function applyBackgroundToCSS(page: PageName, url: string | null): void {
   const varName = CSS_VAR_MAP[page]
   if (!varName) return
-  
+
   const root = document.documentElement
   if (url) {
     root.style.setProperty(varName, `url('${url}')`)
@@ -63,7 +63,7 @@ function applyBackgroundToCSS(page: PageName, url: string | null): void {
 async function loadPageBackground(page: PageName, orientation?: Orientation): Promise<void> {
   try {
     const { url, hash } = await BackgroundsService.getPageBackground(page, orientation)
-    
+
     // 释放旧的 blob URL
     const oldUrl = state.urls[page]
     if (oldUrl && oldUrl.startsWith('blob:')) {
@@ -71,15 +71,17 @@ async function loadPageBackground(page: PageName, orientation?: Orientation): Pr
         URL.revokeObjectURL(oldUrl)
       } catch (_) {}
     }
-    
+
     // 更新状态
     state.urls[page] = url
     state.hashes[page] = hash
-    
+
     // 应用到 CSS
     applyBackgroundToCSS(page, url)
-    
-    console.info(`[BackgroundsManager] Loaded ${page} background (${orientation || state.orientation})`)
+
+    console.info(
+      `[BackgroundsManager] Loaded ${page} background (${orientation || state.orientation})`,
+    )
   } catch (err) {
     console.warn(`[BackgroundsManager] Failed to load ${page} background:`, err)
     // 加载失败时移除 CSS 变量（回退到默认样式）
@@ -96,28 +98,28 @@ async function loadAllBackgrounds(orientation?: Orientation): Promise<void> {
     console.info('[BackgroundsManager] Already loading backgrounds, skip')
     return
   }
-  
+
   state.loading = true
   state.error = null
-  
+
   const orient = orientation || BackgroundsService.detectOrientation()
   state.orientation = orient
-  
+
   try {
     const pages: PageName[] = ['HomePage', 'ThreadedChat', 'SandboxChat']
-    
+
     // 并发加载所有背景
-    const results = await Promise.allSettled(
-      pages.map(page => loadPageBackground(page, orient))
-    )
-    
+    const results = await Promise.allSettled(pages.map((page) => loadPageBackground(page, orient)))
+
     // 检查是否有失败的
-    const failures = results.filter(r => r.status === 'rejected')
+    const failures = results.filter((r) => r.status === 'rejected')
     if (failures.length > 0) {
       console.warn(`[BackgroundsManager] ${failures.length} backgrounds failed to load`)
     }
-    
-    console.info(`[BackgroundsManager] Loaded ${results.length - failures.length}/${results.length} backgrounds`)
+
+    console.info(
+      `[BackgroundsManager] Loaded ${results.length - failures.length}/${results.length} backgrounds`,
+    )
   } catch (err) {
     state.error = String(err)
     console.error('[BackgroundsManager] Failed to load backgrounds:', err)
@@ -131,12 +133,14 @@ async function loadAllBackgrounds(orientation?: Orientation): Promise<void> {
  */
 function handleOrientationChange(newOrientation: Orientation): void {
   if (newOrientation === state.orientation) return
-  
-  console.info(`[BackgroundsManager] Orientation changed: ${state.orientation} -> ${newOrientation}`)
+
+  console.info(
+    `[BackgroundsManager] Orientation changed: ${state.orientation} -> ${newOrientation}`,
+  )
   state.orientation = newOrientation
-  
+
   // 重新加载所有背景
-  loadAllBackgrounds(newOrientation).catch(err => {
+  loadAllBackgrounds(newOrientation).catch((err) => {
     console.error('[BackgroundsManager] Failed to reload backgrounds:', err)
   })
 }
@@ -146,7 +150,7 @@ function handleOrientationChange(newOrientation: Orientation): void {
  */
 function cleanup(): void {
   const pages: PageName[] = ['HomePage', 'ThreadedChat', 'SandboxChat']
-  
+
   for (const page of pages) {
     const url = state.urls[page]
     if (url && url.startsWith('blob:')) {
@@ -168,16 +172,16 @@ let cleanupOrientationWatcher: (() => void) | null = null
  */
 async function initialize(): Promise<void> {
   console.info('[BackgroundsManager] Initializing...')
-  
+
   // 加载所有背景
   await loadAllBackgrounds()
-  
+
   // 设置方向监听
   if (cleanupOrientationWatcher) {
     cleanupOrientationWatcher()
   }
   cleanupOrientationWatcher = BackgroundsService.setupOrientationWatcher()
-  
+
   // 监听方向变化（通过 resize 事件）
   let resizeTimeoutId: number | null = null
   const resizeHandler = () => {
@@ -191,11 +195,11 @@ async function initialize(): Promise<void> {
       }
     }, 500)
   }
-  
+
   if (typeof window !== 'undefined') {
     window.addEventListener('resize', resizeHandler)
   }
-  
+
   console.info('[BackgroundsManager] Initialized')
 }
 
@@ -216,10 +220,10 @@ function destroy(): void {
  */
 async function refresh(): Promise<void> {
   console.info('[BackgroundsManager] Refreshing backgrounds...')
-  
+
   // 清除缓存
   await BackgroundsService.clearAllCache()
-  
+
   // 重新加载
   await loadAllBackgrounds()
 }

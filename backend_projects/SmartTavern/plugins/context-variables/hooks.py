@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Context Variables 插件 - 后端 Hooks（基于后处理事件）
 
@@ -11,14 +10,16 @@ Context Variables 插件 - 后端 Hooks（基于后处理事件）
 """
 
 from __future__ import annotations
-from typing import Any, Dict, List
+
 import logging
+from typing import Any
+
 import core
 
 logger = logging.getLogger(__name__)
 
 
-_SPEC_CTXVAR: Dict[str, Any] = {
+_SPEC_CTXVAR: dict[str, Any] = {
     "stid": "CtxVar",
     "description": (
         "上下文变量（context_variables.json）操作。\n"
@@ -35,16 +36,12 @@ _SPEC_CTXVAR: Dict[str, Any] = {
                 "type": "object",
                 "required": ["path", "value"],
                 "properties": {
-                    "path": {
-                        "type": ["array", "string"],
-                        "minItems": 1,
-                        "items": {"type": "string"}
-                    },
-                    "value": {}
+                    "path": {"type": ["array", "string"], "minItems": 1, "items": {"type": "string"}},
+                    "value": {},
                 },
-                "additionalProperties": False
+                "additionalProperties": False,
             },
-            "settings": {"once": False, "visible_to_ai": False}
+            "settings": {"once": False, "visible_to_ai": False},
         },
         {
             "op": "add",
@@ -52,32 +49,22 @@ _SPEC_CTXVAR: Dict[str, Any] = {
                 "type": "object",
                 "required": ["path", "value"],
                 "properties": {
-                    "path": {
-                        "type": ["array", "string"],
-                        "minItems": 1,
-                        "items": {"type": "string"}
-                    },
-                    "value": {}
+                    "path": {"type": ["array", "string"], "minItems": 1, "items": {"type": "string"}},
+                    "value": {},
                 },
-                "additionalProperties": False
+                "additionalProperties": False,
             },
-            "settings": {"once": False, "visible_to_ai": False}
+            "settings": {"once": False, "visible_to_ai": False},
         },
         {
             "op": "del",
             "data_schema": {
                 "type": "object",
                 "required": ["path"],
-                "properties": {
-                    "path": {
-                        "type": ["array", "string"],
-                        "minItems": 1,
-                        "items": {"type": "string"}
-                    }
-                },
-                "additionalProperties": False
+                "properties": {"path": {"type": ["array", "string"], "minItems": 1, "items": {"type": "string"}}},
+                "additionalProperties": False,
             },
-            "settings": {"once": False, "visible_to_ai": False}
+            "settings": {"once": False, "visible_to_ai": False},
         },
     ],
     "enabled": True,
@@ -85,7 +72,7 @@ _SPEC_CTXVAR: Dict[str, Any] = {
 }
 
 
-def _get_ctx_vars(conversation_file: str) -> Dict[str, Any]:
+def _get_ctx_vars(conversation_file: str) -> dict[str, Any]:
     try:
         res = core.call_api(
             "smarttavern/context_variables/get",
@@ -99,7 +86,7 @@ def _get_ctx_vars(conversation_file: str) -> Dict[str, Any]:
         return {}
 
 
-def _set_ctx_vars(conversation_file: str, content: Dict[str, Any]) -> bool:
+def _set_ctx_vars(conversation_file: str, content: dict[str, Any]) -> bool:
     try:
         res = core.call_api(
             "smarttavern/context_variables/set",
@@ -113,11 +100,11 @@ def _set_ctx_vars(conversation_file: str, content: Dict[str, Any]) -> bool:
         return False
 
 
-def _set_by_path(root: Dict[str, Any], path: List[str], value: Any) -> None:
+def _set_by_path(root: dict[str, Any], path: list[str], value: Any) -> None:
     """设置指定路径的值；如果路径不存在则自动创建中间对象"""
     cur = root
     for i, key in enumerate(path):
-        is_last = (i == len(path) - 1)
+        is_last = i == len(path) - 1
         if is_last:
             cur[key] = value
         else:
@@ -128,7 +115,7 @@ def _set_by_path(root: Dict[str, Any], path: List[str], value: Any) -> None:
             cur = nxt
 
 
-def _add_by_path(root: Dict[str, Any], path: List[str], delta: Any) -> None:
+def _add_by_path(root: dict[str, Any], path: list[str], delta: Any) -> None:
     """
     增量修改指定路径的值：
     - 如果路径不存在，先创建并设置为 delta（等价于 set）
@@ -142,7 +129,7 @@ def _add_by_path(root: Dict[str, Any], path: List[str], delta: Any) -> None:
     # 先确保路径存在（创建中间对象）
     cur = root
     for i, key in enumerate(path):
-        is_last = (i == len(path) - 1)
+        is_last = i == len(path) - 1
         if is_last:
             existing = cur.get(key)
             if existing is None:
@@ -174,10 +161,10 @@ def _add_by_path(root: Dict[str, Any], path: List[str], delta: Any) -> None:
             cur = nxt
 
 
-def _del_by_path(root: Dict[str, Any], path: List[str]) -> None:
+def _del_by_path(root: dict[str, Any], path: list[str]) -> None:
     cur = root
     for i, key in enumerate(path):
-        is_last = (i == len(path) - 1)
+        is_last = i == len(path) - 1
         if is_last:
             try:
                 if key in cur:
@@ -191,7 +178,7 @@ def _del_by_path(root: Dict[str, Any], path: List[str]) -> None:
             cur = nxt
 
 
-async def _after_llm_call(data: Dict[str, Any], ctx: Dict[str, Any]) -> Dict[str, Any]:
+async def _after_llm_call(data: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
     """消费 afterLLMCall 中 postprocess_orchestrator 规范化写入的 postprocess_items。"""
     try:
         items = None
@@ -211,12 +198,13 @@ async def _after_llm_call(data: Dict[str, Any], ctx: Dict[str, Any]) -> Dict[str
         # 读取 → 应用全部操作 → 一次性写入
         doc = _get_ctx_vars(conversation_file)
         changed = False
-        def _normalize_path(pv: Any) -> List[str]:
+
+        def _normalize_path(pv: Any) -> list[str]:
             if isinstance(pv, list):
                 return [str(x).strip() for x in pv if str(x).strip()]
             if isinstance(pv, str):
-                s = pv.replace('[', '.').replace(']', '.')
-                toks = [t.strip() for t in s.split('.') if t.strip()]
+                s = pv.replace("[", ".").replace("]", ".")
+                toks = [t.strip() for t in s.split(".") if t.strip()]
                 return toks
             return []
 
@@ -245,8 +233,6 @@ async def _after_llm_call(data: Dict[str, Any], ctx: Dict[str, Any]) -> Dict[str
     return data
 
 
- 
-
 def register_hooks(hook_manager):
     strategy_id = "context-variables-backend"
 
@@ -265,10 +251,12 @@ def register_hooks(hook_manager):
     try:
         core.call_api(
             "smarttavern/macro/register",
-            {"macros": [
-                {"name": "getCtxVar", "handler_api": "plugins:smarttavern/context_variables/macro_get"},
-                {"name": "getCtxVarJSON", "handler_api": "plugins:smarttavern/context_variables/macro_get_json"}
-            ]},
+            {
+                "macros": [
+                    {"name": "getCtxVar", "handler_api": "plugins:smarttavern/context_variables/macro_get"},
+                    {"name": "getCtxVarJSON", "handler_api": "plugins:smarttavern/context_variables/macro_get_json"},
+                ]
+            },
             method="POST",
             namespace="modules",
         )
@@ -279,9 +267,9 @@ def register_hooks(hook_manager):
     hook_manager.register_strategy(
         strategy_id=strategy_id,
         hooks_dict={
-            'afterLLMCall': _after_llm_call,
+            "afterLLMCall": _after_llm_call,
         },
-        order=120  # 在 orchestrator(100) 之后执行
+        order=120,  # 在 orchestrator(100) 之后执行
     )
 
     logger.info("Context Variables(CtxVar) 插件已注册：afterLLMCall & postprocess unit")

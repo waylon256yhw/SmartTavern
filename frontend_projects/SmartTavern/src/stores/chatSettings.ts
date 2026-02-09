@@ -41,7 +41,7 @@ interface ChatBranchesSettingsResponse {
 export const useChatSettingsStore = defineStore('chatSettings', () => {
   // 当前 settings 对象
   const settings = ref<ChatSettings | null>(null)
-  
+
   // 加载状态
   const loading = ref<boolean>(false)
   const error = ref<string | null>(null)
@@ -62,7 +62,7 @@ export const useChatSettingsStore = defineStore('chatSettings', () => {
   async function loadSettings(): Promise<ChatSettings | null> {
     const messagesStore = useMessagesStore()
     const conversationFile = messagesStore.conversationFile
-    
+
     if (!conversationFile) {
       error.value = 'No conversation file in messages store'
       console.warn('[chatSettings] No conversation file, cannot load settings')
@@ -71,20 +71,20 @@ export const useChatSettingsStore = defineStore('chatSettings', () => {
 
     loading.value = true
     error.value = null
-    
+
     try {
       // 使用 ChatBranches.settings API 读取 settings.json
-      const res = await (ChatBranches as any).settings({
+      const res = (await (ChatBranches as any).settings({
         action: 'get',
-        file: conversationFile
-      }) as ChatBranchesSettingsResponse
-      
+        file: conversationFile,
+      })) as ChatBranchesSettingsResponse
+
       if (!res || !res.settings) {
         throw new Error('No settings found in response')
       }
-      
+
       settings.value = res.settings
-      
+
       console.log('[chatSettings] Loaded settings:', settings.value)
       return settings.value
     } catch (err) {
@@ -145,7 +145,7 @@ export const useChatSettingsStore = defineStore('chatSettings', () => {
     settings,
     loading,
     error,
-    
+
     // 计算属性（便捷访问）
     presetFile,
     llmConfigFile,
@@ -154,14 +154,14 @@ export const useChatSettingsStore = defineStore('chatSettings', () => {
     worldBooksFiles,
     regexRulesFiles,
     type,
-    
+
     // 方法
     loadSettings,
     refresh,
     getField,
     getSettings,
     hasField,
-    clear
+    clear,
   }
 })
 
@@ -176,7 +176,9 @@ export interface RegisterGlobalFunctionsOptions {
   exposeToWindow?: boolean
 }
 
-export function registerGlobalFunctions({ exposeToWindow = false }: RegisterGlobalFunctionsOptions = {}): void {
+export function registerGlobalFunctions({
+  exposeToWindow = false,
+}: RegisterGlobalFunctionsOptions = {}): void {
   if (!exposeToWindow) return
 
   const store = useChatSettingsStore()
@@ -200,13 +202,13 @@ export function registerGlobalFunctions({ exposeToWindow = false }: RegisterGlob
       Object.defineProperty(window, 'getChatSettings', {
         value: getChatSettings,
         writable: false,
-        configurable: true
+        configurable: true,
       })
 
       Object.defineProperty(window, 'getChatSettingsField', {
         value: getChatSettingsField,
         writable: false,
-        configurable: true
+        configurable: true,
       })
     }
   } catch (err) {

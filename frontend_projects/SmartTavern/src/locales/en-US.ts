@@ -1,6 +1,6 @@
 /**
  * SmartTavern English Language Pack
- * 
+ *
  * Structure:
  * - common: Common text (buttons, status, etc.)
  * - panel: Panel related
@@ -36,7 +36,7 @@ const enUS = {
     enabled: 'Enabled',
     disabled: 'Disabled',
     create: 'Create',
-    
+
     // Status
     loading: 'Loading…',
     importing: 'Importing…',
@@ -45,7 +45,7 @@ const enUS = {
     saved: 'Saved!',
     checking: 'Checking…',
     processing: 'Processing…',
-    
+
     // Form
     name: 'Name',
     description: 'Description',
@@ -55,11 +55,11 @@ const enUS = {
     type: 'Type',
     content: 'Content',
     value: 'Value',
-    
+
     // Time
     am: 'AM',
     pm: 'PM',
-    
+
     // Other
     noDescription: 'No description',
     noData: 'No data',
@@ -134,7 +134,7 @@ const enUS = {
       hint: 'Manage plugins (backend plugins directory): Load / Unload. Imported plugins will be automatically enabled.',
       detailTitle: 'Plugin Details',
     },
-    
+
     themes: {
       title: 'Themes',
       detailTitle: 'Theme Details',
@@ -152,7 +152,7 @@ const enUS = {
     title: '⚠️ Name Conflict',
     message: 'A {type} folder named "{name}" already exists.',
     hint: 'Please choose how to handle this:',
-    
+
     overwrite: {
       title: 'Overwrite existing {type}',
       desc: 'Delete the old {type} and replace with the imported content',
@@ -163,9 +163,9 @@ const enUS = {
       placeholder: 'Enter new name',
       button: 'Confirm',
     },
-    
+
     cancelButton: 'Cancel Import',
-    
+
     errors: {
       emptyName: 'Please enter a name',
       nameExists: 'Name "{name}" already exists, please use a different name',
@@ -176,7 +176,7 @@ const enUS = {
   exportModal: {
     title: 'Export {type}',
     selectItem: 'Select {type}',
-    
+
     format: {
       title: 'Export Format',
       zip: {
@@ -192,18 +192,18 @@ const enUS = {
         desc: 'Data embedded in image, can preview directly',
       },
     },
-    
+
     embedImage: {
       title: 'Embed Image (Optional)',
       hint: 'Select a PNG image as carrier, data will be embedded in it',
       dropzone: 'Click to select or drag image here',
       note: 'PNG format only. If not selected, will use {type} icon',
     },
-    
+
     cancelButton: 'Cancel',
     confirmButton: 'Confirm Export',
     exportSuccess: 'Export successful!',
-    
+
     errors: {
       noSelection: 'Please select a {type} to export',
       noPath: 'Cannot get {type} path',
@@ -231,7 +231,8 @@ const enUS = {
   deleteConfirm: {
     title: 'Confirm Delete',
     message: 'Are you sure you want to delete {type} "{name}"?',
-    warning: 'This will delete the entire folder and all files within it. This action cannot be undone!',
+    warning:
+      'This will delete the entire folder and all files within it. This action cannot be undone!',
     deleting: 'Deleting…',
   },
 
@@ -254,7 +255,8 @@ const enUS = {
     errors: {
       emptyName: 'Name cannot be empty',
       emptyFolder: 'Folder name cannot be empty',
-      invalidFolder: 'Invalid folder name format. Only letters, numbers, underscores, hyphens, and Chinese characters are allowed',
+      invalidFolder:
+        'Invalid folder name format. Only letters, numbers, underscores, hyphens, and Chinese characters are allowed',
       folderExists: 'Folder "{folder}" already exists',
       createFailed: 'Creation failed, please try again',
     },
@@ -270,21 +272,27 @@ const enUS = {
       invalidZip: 'Invalid Archive',
       invalidFormat: 'Unsupported Format',
       importFailed: 'Import Failed',
-      
+
       // Error descriptions
-      typeMismatchDesc: 'The selected file contains data of a different type than expected by this panel.',
-      noTypeInfoDesc: 'This file is missing type marker information, unable to verify if it is the correct data type.',
-      noTypeInFilenameDesc: 'The JSON filename does not contain a type identifier. Please ensure the filename starts with a type prefix, such as "preset_name.json".',
+      typeMismatchDesc:
+        'The selected file contains data of a different type than expected by this panel.',
+      noTypeInfoDesc:
+        'This file is missing type marker information, unable to verify if it is the correct data type.',
+      noTypeInFilenameDesc:
+        'The JSON filename does not contain a type identifier. Please ensure the filename starts with a type prefix, such as "preset_name.json".',
       genericDesc: 'An error occurred during import. Please check if the file format is correct.',
-      
+
       // Type information
       fileContains: 'File contains',
       panelExpects: 'Panel expects',
-      
+
       // Hints
-      typeMismatchHint: 'Please make sure to import files in the correct panel for their type, or select a different file.',
-      noTypeInfoHint: 'This file may be from an older version or not exported from this system. Please manually verify the data format if you need to import it.',
-      noTypeInFilenameHint: 'JSON files exported from this system will automatically include type prefixes. Please use correctly named files.',
+      typeMismatchHint:
+        'Please make sure to import files in the correct panel for their type, or select a different file.',
+      noTypeInfoHint:
+        'This file may be from an older version or not exported from this system. Please manually verify the data format if you need to import it.',
+      noTypeInFilenameHint:
+        'JSON files exported from this system will automatically include type prefixes. Please use correctly named files.',
     },
   },
 
@@ -294,14 +302,15 @@ const enUS = {
     collapse: 'Collapse',
     expand: 'Expand Sidebar',
     configPreview: 'Config Preview',
-    configPreviewHint: 'Configuration entry displayed on the right side of chat page (preview placeholder)',
+    configPreviewHint:
+      'Configuration entry displayed on the right side of chat page (preview placeholder)',
     backToHome: 'Back to Home',
-    
+
     viewMode: {
       threaded: 'Threaded',
       sandbox: 'Frontend',
     },
-    
+
     theme: {
       dark: 'Dark',
       light: 'Light',
@@ -319,9 +328,9 @@ const enUS = {
       saving: 'Saving',
       saved: 'Saved!',
       saveFailed: 'Save failed',
-      
+
       basicInfo: 'Basic Info',
-      
+
       apiConfig: {
         title: 'API Config',
         enableTitle: 'Enable API Config',
@@ -338,7 +347,7 @@ const enUS = {
         presencePenalty: 'Presence Penalty',
         on: 'On',
       },
-      
+
       prompts: {
         title: 'Prompt Editor',
         items: 'Prompt Items',
@@ -348,12 +357,12 @@ const enUS = {
         addSpecial: 'Add Special',
         dragToSort: 'Drag to Sort',
       },
-      
+
       regex: {
         title: 'Regex Editor',
         empty: 'No rules yet. Enter in the top right corner and click Add',
       },
-      
+
       errors: {
         idRequired: 'Please fill in ID',
         nameRequired: 'Please fill in name',
@@ -363,13 +372,14 @@ const enUS = {
         specialExists: 'This special component already exists',
       },
     },
-    
+
     character: {
       title: 'Character Details',
       pageTitle: 'Character Card Editor',
       editMode: 'Edit Mode',
-      editHint: 'This page supports editing basic info, initial messages, embedded world books, and regex rules',
-      
+      editHint:
+        'This page supports editing basic info, initial messages, embedded world books, and regex rules',
+
       basicInfo: 'Basic Settings',
       characterName: 'Character Card Name',
       characterDesc: 'Character Card Description',
@@ -380,7 +390,7 @@ const enUS = {
       avatarLabel: 'Avatar',
       uploadAvatar: 'Upload Avatar',
       removeAvatar: 'Remove Avatar',
-      
+
       messages: {
         title: 'Initial Messages',
         addNew: 'Add Message',
@@ -388,7 +398,7 @@ const enUS = {
         messageNum: 'Message #{num}',
         charCount: 'Characters',
       },
-      
+
       worldBook: {
         title: 'Embedded World Book',
         empty: 'No world book entries',
@@ -396,14 +406,14 @@ const enUS = {
         namePlaceholder: 'Name',
         defaultName: 'Character World Book',
       },
-      
+
       regexRules: {
         title: 'Regex Rules',
         empty: 'No regex rules',
         idPlaceholder: 'Rule ID',
         namePlaceholder: 'Rule Name',
       },
-      
+
       errors: {
         wbIdRequired: 'Please fill in world book ID',
         wbNameRequired: 'Please fill in world book name',
@@ -413,18 +423,19 @@ const enUS = {
         ruleIdExists: 'ID already exists',
       },
     },
-    
+
     persona: {
       title: 'Persona Details',
       pageTitle: 'Persona Editor',
       editMode: 'Edit Mode',
       editHint: 'This page is for editing user information including name and description',
-      
+
       basicInfo: 'Basic Info',
       personaInfoName: 'Persona Info Name',
       personaInfoNamePlaceholder: 'Enter persona info name',
       personaInfoDesc: 'Persona Info Description',
-      personaInfoDescPlaceholder: 'Enter persona info description, can include preferences, background, conversation style, etc.',
+      personaInfoDescPlaceholder:
+        'Enter persona info description, can include preferences, background, conversation style, etc.',
       personaName: 'Persona Name',
       personaNamePlaceholder: 'Persona name to display in chat (optional)',
       personaBadge: 'Persona Badge',
@@ -435,49 +446,49 @@ const enUS = {
       avatarLabel: 'Avatar',
       uploadAvatar: 'Upload Avatar',
       removeAvatar: 'Remove Avatar',
-      
+
       notes: {
         title: 'Notes',
         line1: 'Persona is used to define user identity, preferences, and conversation style',
         line2: 'Auto-saves when input loses focus',
         line3: 'Click "Reset" button to restore to currently saved content',
       },
-      
+
       preview: {
         title: 'Currently Saved Data',
       },
     },
-    
+
     worldBook: {
       title: 'World Book Details',
       entries: 'Entry List',
       addEntry: 'Add Entry',
-      
+
       pageTitle: 'World Book Details',
       editMode: 'Edit Mode',
       editHint: 'This page supports full editing, adding, deleting, and drag-to-sort',
       saveFailed: 'Save failed',
-      
+
       basicInfo: 'Basic Info',
-      
+
       toolbar: {
         entryCount: 'Entry Count',
         idPlaceholder: 'ID',
         namePlaceholder: 'Name',
       },
-      
+
       editor: {
         title: 'World Book Editor',
         empty: 'No world book entries. Enter in the top right corner and click Add',
       },
-      
+
       errors: {
         idRequired: 'Please fill in ID',
         nameRequired: 'Please fill in name',
         idExists: 'ID already exists',
       },
     },
-    
+
     regexRule: {
       title: 'Regex Rule Details',
       findRegex: 'Find Regex',
@@ -485,25 +496,26 @@ const enUS = {
       targets: 'Targets',
       placement: 'Placement',
       views: 'Views',
-      
+
       pageTitle: 'Regex Rule Editor',
       editMode: 'Edit Mode',
-      editHint: 'This page is for editing independent regex rule sets, supports adding, editing, deleting, and drag-to-sort',
+      editHint:
+        'This page is for editing independent regex rule sets, supports adding, editing, deleting, and drag-to-sort',
       saveFailed: 'Save failed',
-      
+
       basicInfo: 'Basic Info',
-      
+
       toolbar: {
         ruleCount: 'Rule Count',
         idPlaceholder: 'ID',
         namePlaceholder: 'Name',
       },
-      
+
       list: {
         title: 'Regex Rule List',
         empty: 'No regex rules. Enter in the top right corner and click Add',
       },
-      
+
       notes: {
         title: 'Usage Notes',
         line1: 'Regex rules are for text post-processing, supporting find and replace operations',
@@ -512,23 +524,23 @@ const enUS = {
         line4: 'Click "Edit" button to expand the full edit form',
         line5: 'Use the grip icon on the left to drag and reorder rules',
       },
-      
+
       errors: {
         idRequired: 'Please fill in ID',
         nameRequired: 'Please fill in name',
         idExists: 'ID already exists',
       },
     },
-    
+
     llmConfig: {
       title: 'AI Config Details',
       editMode: 'Edit Mode',
       editHint: 'This page supports full editing of AI configuration parameters',
       saveFailed: 'Save failed',
-      
+
       basicInfo: 'Basic Info',
       baseConfig: 'Base Config',
-      
+
       provider: 'Provider',
       baseUrl: 'Base URL',
       apiKey: 'API Key',
@@ -536,7 +548,7 @@ const enUS = {
       modelPlaceholder: 'e.g., gpt-4o-mini',
       selectModel: 'Select Model',
       modelListPlaceholder: 'Select model (placeholder)',
-      
+
       requestParams: {
         title: 'Request Parameters',
         maxTokens: 'max_tokens',
@@ -547,39 +559,39 @@ const enUS = {
         stream: 'Streaming',
         on: 'On',
       },
-      
+
       network: {
         title: 'Network & Logging',
         connectTimeout: 'Connection Timeout (sec)',
         requestTimeout: 'Request Timeout (sec)',
         enableLogging: 'Enable Logging',
       },
-      
+
       customParams: {
         title: 'Custom Parameters (JSON)',
         hint: 'Enter custom parameters in JSON format, will be merged into request',
       },
-      
+
       gemini: {
         title: 'Gemini Advanced Config',
         stopSequences: 'stopSequences (comma-separated)',
         safetySettings: 'safetySettings (JSON)',
         customParams: 'customParams (JSON)',
       },
-      
+
       anthropic: {
         title: 'Anthropic Advanced Config',
         stopSequences: 'stop_sequences (comma-separated)',
         enableThinking: 'enable_thinking',
         thinkingBudget: 'thinking_budget',
       },
-      
+
       errors: {
         jsonFormatError: 'JSON format error',
         fixJsonErrors: 'Please fix JSON format errors before saving',
       },
     },
-    
+
     plugin: {
       title: 'Plugin Details',
       pageTitle: 'Plugin Info Editor',
@@ -587,13 +599,13 @@ const enUS = {
       editHint: 'This page is for editing plugin basic information, including name and description',
       saveFailed: 'Save failed',
       saved: 'Saved successfully',
-      
+
       basicInfo: 'Basic Info',
       pluginName: 'Plugin Name',
       pluginNamePlaceholder: 'Enter plugin name',
       pluginDesc: 'Plugin Description',
       pluginDescPlaceholder: 'Enter plugin description, can include features, usage, etc.',
-      
+
       notes: {
         title: 'Notes',
         line1: 'Plugin info includes only name and description, saved to manifest.json',
@@ -601,7 +613,7 @@ const enUS = {
         line3: 'Click "Save" button to write changes to backend file',
       },
     },
-    
+
     theme: {
       title: 'Theme Details',
       pageTitle: 'Theme Info Editor',
@@ -609,13 +621,13 @@ const enUS = {
       editHint: 'This page is for editing theme basic information, including name and description',
       saveFailed: 'Save failed',
       saved: 'Saved successfully',
-      
+
       basicInfo: 'Basic Info',
       themeName: 'Theme Name',
       themeNamePlaceholder: 'Enter theme name',
       themeDesc: 'Theme Description',
       themeDescPlaceholder: 'Enter theme description, can include style, features, etc.',
-      
+
       notes: {
         title: 'Notes',
         line1: 'Theme info includes only name and description, saved to manifest.json',
@@ -637,7 +649,7 @@ const enUS = {
     },
     unknownTab: 'Unknown Tab',
     placeholderContent: 'Placeholder Content',
-    
+
     // Background Image Management
     backgrounds: {
       title: 'Background Images',
@@ -652,7 +664,7 @@ const enUS = {
       noImage: 'No Image',
       uploading: 'Uploading…',
     },
-    
+
     // Sandbox Appearance
     sandbox: {
       title: 'Frontend Sandbox Appearance',
@@ -661,7 +673,8 @@ const enUS = {
       displayModeAuto: 'Auto Height (Default)',
       displayModeFixed: 'Fixed Container (Use Aspect Ratio)',
       displayModeInline: 'Determined by Sandbox Code (Fallback to Auto)',
-      displayModeHint: 'When using "Determined by Sandbox Code", add comment in HTML: <!-- st:display-mode=auto|fixed --> Falls back to auto height if not declared.',
+      displayModeHint:
+        'When using "Determined by Sandbox Code", add comment in HTML: <!-- st:display-mode=auto|fixed --> Falls back to auto height if not declared.',
       aspectRatio: 'Aspect Ratio',
       preset: 'Preset',
       orCustom: 'or Custom',
@@ -671,11 +684,12 @@ const enUS = {
       stageRadius: 'Stage Radius',
       bgMaskOpacity: 'Background Mask Opacity',
       bgMaskBlur: 'Background Mask Blur',
-      bgMaskBlurHint: 'Apply Gaussian blur to background via mask layer (recommend 0~12px, higher values may affect performance)',
+      bgMaskBlurHint:
+        'Apply Gaussian blur to background via mask layer (recommend 0~12px, higher values may affect performance)',
       stageBgOpacity: 'Stage Background Opacity',
       tip: 'Tip: These settings apply in real-time to the "Global Sandbox" stage and are saved as CSS variables for theme/script integration.',
     },
-    
+
     // Theme Management
     theme: {
       title: 'Theme Management',
@@ -684,11 +698,13 @@ const enUS = {
       backendThemes: 'Backend Themes',
       importTitle: 'Import Theme Package',
       selectFile: 'Select .json / .sttheme.json',
-      importHint: 'Theme packages contain tokens and optional CSS; applied settings persist in browser.',
+      importHint:
+        'Theme packages contain tokens and optional CSS; applied settings persist in browser.',
       quickTry: 'Quick Try',
       applyDemo: 'Apply Demo Theme',
       enableExtension: 'Enable sample extension: Rounded Shadow Follow',
-      extensionHint: 'Extensions only link style tokens, no external scripts; can be disabled anytime.',
+      extensionHint:
+        'Extensions only link style tokens, no external scripts; can be disabled anytime.',
       currentTheme: 'Current Theme',
       applied: 'Applied',
       notApplied: 'Not Applied',
@@ -699,16 +715,19 @@ const enUS = {
       resetDefault: 'Reset to Default Theme',
       // Multi-theme layering
       multiThemeInfo: 'Multi-Theme Layering',
-      multiThemeHint: 'Enable multiple themes simultaneously. Themes higher in the list have higher priority and will override matching styles from themes below. Drag to reorder.',
+      multiThemeHint:
+        'Enable multiple themes simultaneously. Themes higher in the list have higher priority and will override matching styles from themes below. Drag to reorder.',
     },
-    
+
     // Others Appearance Settings
     others: {
       title: 'Other Appearance Settings',
       desc: 'Configure FAB (Floating Action Button) snap margin, controlling the distance from screen edges when the sidebar FAB snaps.',
       fabMargin: 'FAB Snap Margin',
-      fabMarginHint: 'Control the distance from screen edges when the sidebar floating button snaps. Higher values move the FAB further from edges.',
-      tuningTip: 'Tip: When dragging sliders, the page will become transparent, leaving only this panel opaque for real-time margin adjustment preview.',
+      fabMarginHint:
+        'Control the distance from screen edges when the sidebar floating button snaps. Higher values move the FAB further from edges.',
+      tuningTip:
+        'Tip: When dragging sliders, the page will become transparent, leaving only this panel opaque for real-time margin adjustment preview.',
       timezone: 'Timezone',
       timezoneHint: 'Select timezone for message timestamps display',
       dateTimeFormat: 'Date Time Format',
@@ -734,7 +753,7 @@ const enUS = {
       formatCN24: 'CN 24h (2025年12月01日 14:30)',
       formatCN12: 'CN 12h (2025年12月01日 02:30 PM)',
     },
-    
+
     // Threaded Chat Appearance
     threaded: {
       title: 'Threaded Chat Appearance',
@@ -752,7 +771,8 @@ const enUS = {
       stripeWidth: 'Color Stripe Width',
       bgMaskOpacity: 'Background Mask Opacity',
       bgMaskBlur: 'Background Mask Blur',
-      bgMaskBlurHint: 'Apply Gaussian blur to background via mask layer (recommend 0~12px for performance/quality balance)',
+      bgMaskBlurHint:
+        'Apply Gaussian blur to background via mask layer (recommend 0~12px for performance/quality balance)',
       msgBgOpacity: 'Message Background Opacity',
       listBgOpacity: 'Chat Container Background Opacity',
       inputBgOpacity: 'Input Box Background Opacity',
@@ -761,7 +781,8 @@ const enUS = {
       displayModeAuto: 'Auto Height (Default)',
       displayModeFixed: 'Fixed Container (Use Aspect Ratio)',
       displayModeInline: 'Determined by Sandbox Code (Fallback to Auto)',
-      displayModeHint: 'When using "Determined by Sandbox Code", add comment in HTML: <!-- st:display-mode=auto|fixed --> Falls back to auto height if not declared.',
+      displayModeHint:
+        'When using "Determined by Sandbox Code", add comment in HTML: <!-- st:display-mode=auto|fixed --> Falls back to auto height if not declared.',
       aspectRatio: 'Aspect Ratio',
       preset: 'Preset',
       orCustom: 'or Custom',
@@ -770,17 +791,21 @@ const enUS = {
       stagePadding: 'Stage Padding',
       stageRadius: 'Stage Radius',
       messageSidebarWidth: 'Message Sidebar Width',
-      messageSidebarWidthHint: 'Adjust the width of the left sidebar in message list (including avatar, badge, and floor number)',
+      messageSidebarWidthHint:
+        'Adjust the width of the left sidebar in message list (including avatar, badge, and floor number)',
       iframeRenderOptimization: 'iframe Render Optimization',
       iframeRenderMode: 'iframe Render Mode',
       iframeRenderModeAll: 'Render All',
       iframeRenderModeTrackLatest: 'Track Latest Messages',
       iframeRenderModeTrackViewport: 'Track Viewport Messages',
-      iframeRenderModeHint: 'Choose rendering strategy to optimize memory usage. "Render All" renders all HTML; "Track Latest" only renders the latest N layers; "Track Viewport" only renders messages near the viewport',
+      iframeRenderModeHint:
+        'Choose rendering strategy to optimize memory usage. "Render All" renders all HTML; "Track Latest" only renders the latest N layers; "Track Viewport" only renders messages near the viewport',
       iframeRenderRange: 'Render Range',
       layers: 'layers',
-      iframeRenderRangeHint: 'Set the number of floors to render. Lower values use less memory but may require re-rendering when scrolling',
-      tuningTip: 'When dragging sliders, the page will become transparent, leaving only this panel opaque for real-time preview.',
+      iframeRenderRangeHint:
+        'Set the number of floors to render. Lower values use less memory but may require re-rendering when scrolling',
+      tuningTip:
+        'When dragging sliders, the page will become transparent, leaving only this panel opaque for real-time preview.',
     },
   },
 
@@ -789,24 +814,24 @@ const enUS = {
     title: 'App Settings',
     optionsTitle: 'Options',
     optionsDesc: 'Same settings as Home Options: Theme switch between "System/Light/Dark".',
-    
+
     language: {
       label: 'Language',
       zhCN: '简体中文',
       enUS: 'English',
       jaJP: '日本語',
     },
-    
+
     theme: {
       label: 'Theme',
       current: 'Currently using',
     },
-    
+
     backend: {
       label: 'Backend API URL',
       placeholder: 'http://localhost:8050',
     },
-    
+
     uiScale: {
       label: 'UI Scale',
       placeholder: '1.0',
@@ -830,17 +855,17 @@ const enUS = {
       imported: 'Imported plugin: {name}',
       importAutoLoadFailed: 'Plugin imported, but auto-load failed: {error}',
     },
-    
+
     save: {
       success: 'Save successful',
       failed: 'Save failed: {error}',
     },
-    
+
     import: {
       success: 'Import successful',
       failed: 'Import failed: {error}',
     },
-    
+
     export: {
       success: 'Export successful',
       failed: 'Export failed: {error}',
@@ -852,7 +877,7 @@ const enUS = {
     title: 'Language Settings',
     current: 'Current Language',
     select: 'Select Language',
-    
+
     // Language Names
     zhCN: '简体中文',
     zhTW: '繁體中文',
@@ -1024,7 +1049,7 @@ const enUS = {
       options: 'Options',
     },
   },
-  
+
   // ==================== Home Components ====================
   home: {
     // Home Menu Buttons
@@ -1065,10 +1090,12 @@ const enUS = {
       creating: 'Creating…',
       nameLabel: 'New Chat Name',
       namePlaceholder: 'Enter chat name',
-      nameHelp: 'Allowed characters: letters, numbers, spaces, Chinese, -, _; Special characters (/ \\ : * ? " < > |) will be replaced with "-".',
+      nameHelp:
+        'Allowed characters: letters, numbers, spaces, Chinese, -, _; Special characters (/ \\ : * ? " < > |) will be replaced with "-".',
       nameReplaced: 'Disallowed characters replaced with "-" for file name safety.',
       nameDupFile: 'File name taken: {name}.json already exists, please use a different name.',
-      nameDupTitle: 'Internal name taken: A chat with name "{name}" already exists, please use a different name.',
+      nameDupTitle:
+        'Internal name taken: A chat with name "{name}" already exists, please use a different name.',
       descLabel: 'Description (optional)',
       descPlaceholder: 'Enter chat description',
       llmConfigLabel: 'AI Config (optional)',
@@ -1083,14 +1110,16 @@ const enUS = {
       worldbookLabel: 'World Book (optional)',
       optional: '(optional)',
       configPanelTitle: 'Conversation Setup',
-      configPanelSubtitle: 'Preset (required) · Character (required) · Persona (required) · Regex (optional) · World Book (optional) · AI Config (optional)',
+      configPanelSubtitle:
+        'Preset (required) · Character (required) · Persona (required) · Regex (optional) · World Book (optional) · AI Config (optional)',
       typeLabel: 'Chat Type',
       typeThreaded: 'Threaded Chat',
       typeThreadedSub: 'Threaded Chat',
       typeSandbox: 'Frontend Sandbox',
       typeSandboxSub: 'Frontend Sandbox',
       requiredError: 'Please enter a name and select: Preset, Character, Persona (required)',
-      duplicateError: 'Duplicate chat name: Please use a different name (file name or internal name cannot be duplicated)',
+      duplicateError:
+        'Duplicate chat name: Please use a different name (file name or internal name cannot be duplicated)',
       createFailed: 'Failed to create chat',
       listFailed: 'Failed to load list',
       convListFailed: 'Failed to load conversation list',
@@ -1257,7 +1286,7 @@ const enUS = {
       placeholder: 'Enter message… (Enter to send, Shift+Enter for new line)',
       sendShortcut: 'Send (Enter)',
     },
-    
+
     message: {
       avatarAlt: "{name}'s avatar",
       floorIndex: 'Floor Index',
@@ -1269,7 +1298,7 @@ const enUS = {
       editPlaceholder: 'Enter message content…',
       saveShortcut: 'Save (Ctrl+Enter)',
       cancelShortcut: 'Cancel (Esc)',
-      
+
       // Status
       waiting: 'Waiting…{seconds}s',
       waitingAI: 'Waiting for AI response ({seconds}s)',
@@ -1282,7 +1311,7 @@ const enUS = {
       saveSuccess: 'Saved successfully',
       saveFailed: 'Save failed',
     },
-    
+
     branch: {
       switching: 'Switching…',
       switched: 'Switched',
@@ -1290,7 +1319,7 @@ const enUS = {
       nextBranch: 'Switch to next branch',
       createNew: 'Create new branch (retry)',
     },
-    
+
     errors: {
       aiCallFailed: 'AI call failed',
       noConversationFile: 'No conversation file, skipping branch info load',

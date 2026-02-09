@@ -10,19 +10,28 @@ import { useChatVariablesStore } from '@/stores/chatVariables'
 
 // ===== Backend base helpers (match other services) =====
 declare global {
-  interface Window { ST_BACKEND_BASE?: string }
-  interface ImportMetaEnv { VITE_API_BASE?: string }
+  interface Window {
+    ST_BACKEND_BASE?: string
+  }
+  interface ImportMetaEnv {
+    VITE_API_BASE?: string
+  }
 }
 
-const DEFAULT_BACKEND: string = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050')
+const DEFAULT_BACKEND: string =
+  import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050')
 
 function _readLS(key: string): string | null {
-  try { return (typeof window !== 'undefined') ? localStorage.getItem(key) : null } catch (_) { return null }
+  try {
+    return typeof window !== 'undefined' ? localStorage.getItem(key) : null
+  } catch (_) {
+    return null
+  }
 }
 
 function getBackendBase(): string {
   const fromLS = _readLS('st.backend_base')
-  const fromWin = (typeof window !== 'undefined') ? (window as any).ST_BACKEND_BASE : null
+  const fromWin = typeof window !== 'undefined' ? (window as any).ST_BACKEND_BASE : null
   const base = String(fromLS || fromWin || DEFAULT_BACKEND)
   return base.replace(/\/+$/, '')
 }
@@ -92,7 +101,7 @@ interface PostprocessPromptResult {
 
 /**
  * 提示词装配（RAW：prefix + in-chat）
- * 
+ *
  * @param params - 参数对象
  * @param params.presets - 预设文档对象，包含 prompts 数组
  * @param params.world_books - 世界书条目数组/嵌套数组/对象
@@ -100,9 +109,9 @@ interface PostprocessPromptResult {
  * @param params.character - 可选，角色文档对象
  * @param params.persona - 可选，用户画像文档对象
  * @param params.variables - 可选，变量对象
- * 
+ *
  * @returns { messages: [...] } - 完整提示词数组，每条结构 {role, content, source}
- * 
+ *
  * @example
  * const result = await assemblePrompt({
  *   presets: { prompts: [...] },
@@ -120,7 +129,7 @@ export async function assemblePrompt({
   history,
   character,
   persona,
-  variables
+  variables,
 }: AssemblePromptParams): Promise<AssemblePromptResult> {
   // 参数验证
   if (!presets || typeof presets !== 'object') {
@@ -134,7 +143,7 @@ export async function assemblePrompt({
   const params: any = {
     presets,
     world_books: world_books || [],
-    history
+    history,
   }
 
   // 添加可选参数
@@ -145,9 +154,9 @@ export async function assemblePrompt({
   const response = await fetch(`${ensureWorkflowBase()}/smarttavern/prompt_raw/assemble_full`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
-    body: JSON.stringify(params)
+    body: JSON.stringify(params),
   })
 
   if (!response.ok) {
@@ -161,14 +170,14 @@ export async function assemblePrompt({
 /**
  * 使用当前对话配置进行提示词装配
  * 自动从 stores 读取当前的 preset、world_books、character、persona、variables
- * 
+ *
  * @param params - 参数对象
  * @param params.history - 必需，OpenAI Chat messages 数组 [{role, content}]
- * 
+ *
  * @returns { messages: [...] } - 完整提示词数组
- * 
+ *
  * @throws Error 如果缺少必需的配置
- * 
+ *
  * @example
  * // 只需提供 history，其他配置自动读取
  * const result = await assemblePromptWithCurrentConfig({
@@ -180,7 +189,7 @@ export async function assemblePrompt({
  * console.log(result.messages)
  */
 export async function assemblePromptWithCurrentConfig({
-  history
+  history,
 }: {
   history: ChatMessage[]
 }): Promise<AssemblePromptResult> {
@@ -203,7 +212,9 @@ export async function assemblePromptWithCurrentConfig({
   }
 
   // 获取 world_books（获取完整的文档数组）
-  const world_books = Object.values(worldBooksStore.metas).filter((m): m is WorldBookDocument => m !== null)
+  const world_books = Object.values(worldBooksStore.metas).filter(
+    (m): m is WorldBookDocument => m !== null,
+  )
 
   // 获取 character（获取完整文档）
   const character = characterStore.meta || undefined
@@ -221,21 +232,21 @@ export async function assemblePromptWithCurrentConfig({
     world_books,
     character,
     persona,
-    variables
+    variables,
   })
 }
 
 /**
  * 提示词后处理（单视图：正则 + 宏）
- * 
+ *
  * @param params - 参数对象
  * @param params.messages - OpenAI Chat 消息数组 [{role, content, source?}]
  * @param params.regex_rules - 正则规则（数组或 {"regex_rules":[...]}）
  * @param params.view - 视图选择 ('user_view' | 'assistant_view')
  * @param params.variables - 可选，变量对象
- * 
+ *
  * @returns { message: [...], variables: { initial: {}, final: {} } }
- * 
+ *
  * @example
  * const result = await postprocessPrompt({
  *   messages: [{ role: 'user', content: 'Hello {{name}}!' }],
@@ -250,7 +261,7 @@ export async function postprocessPrompt({
   messages,
   regex_rules,
   view,
-  variables
+  variables,
 }: PostprocessPromptParams): Promise<PostprocessPromptResult> {
   // 参数验证
   if (!Array.isArray(messages)) {
@@ -264,7 +275,7 @@ export async function postprocessPrompt({
   const params: any = {
     messages,
     regex_rules: regex_rules || [],
-    view
+    view,
   }
 
   // 添加可选参数
@@ -273,9 +284,9 @@ export async function postprocessPrompt({
   const response = await fetch(`${ensureWorkflowBase()}/smarttavern/prompt_postprocess/apply`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
-    body: JSON.stringify(params)
+    body: JSON.stringify(params),
   })
 
   if (!response.ok) {
@@ -289,15 +300,15 @@ export async function postprocessPrompt({
 /**
  * 使用当前对话配置进行提示词后处理
  * 自动从 stores 读取当前的 regex_rules 和 variables
- * 
+ *
  * @param params - 参数对象
  * @param params.messages - 必需，OpenAI Chat 消息数组 [{role, content}]
  * @param params.view - 必需，视图选择 ('user_view' | 'assistant_view')
- * 
+ *
  * @returns { message: [...], variables: { initial: {}, final: {} } }
- * 
+ *
  * @throws Error 如果缺少必需的配置
- * 
+ *
  * @example
  * // 只需提供 messages 和 view，其他配置自动读取
  * const result = await postprocessPromptWithCurrentConfig({
@@ -310,7 +321,7 @@ export async function postprocessPrompt({
  */
 export async function postprocessPromptWithCurrentConfig({
   messages,
-  view
+  view,
 }: {
   messages: ChatMessage[]
   view: 'user_view' | 'assistant_view'
@@ -338,6 +349,6 @@ export async function postprocessPromptWithCurrentConfig({
     messages,
     regex_rules,
     view,
-    variables
+    variables,
   })
 }

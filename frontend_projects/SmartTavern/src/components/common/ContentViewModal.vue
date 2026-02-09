@@ -32,29 +32,48 @@ function handleKeydown(e) {
   }
 }
 
-watch(() => props.show, (v) => {
-  if (v) {
-    document.addEventListener('keydown', handleKeydown)
-    document.body.style.overflow = 'hidden'
-  } else {
-    document.removeEventListener('keydown', handleKeydown)
-    document.body.style.overflow = ''
-  }
-}, { immediate: true })
+watch(
+  () => props.show,
+  (v) => {
+    if (v) {
+      document.addEventListener('keydown', handleKeydown)
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.removeEventListener('keydown', handleKeydown)
+      document.body.style.overflow = ''
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
   <Teleport to="body">
     <transition name="modal-fade">
       <div v-if="show" class="modal-overlay" @click.self="close">
-        <div ref="modalRef" class="modal-container glass" :class="{ 'is-auto-height': autoHeight }" role="dialog" aria-modal="true" aria-labelledby="content-view-modal-title">
+        <div
+          ref="modalRef"
+          class="modal-container glass"
+          :class="{ 'is-auto-height': autoHeight }"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="content-view-modal-title"
+        >
           <!-- 顶部栏 -->
           <header class="modal-header">
             <div id="content-view-modal-title" class="modal-title">
               <i v-if="icon" :data-lucide="icon" class="modal-icon icon-20" aria-hidden="true"></i>
               {{ effectiveTitle }}
             </div>
-            <button class="modal-close" type="button" :aria-label="t('components.modal.closeEsc')" :title="t('components.modal.closeEsc')" @click="close">✕</button>
+            <button
+              class="modal-close"
+              type="button"
+              :aria-label="t('components.modal.closeEsc')"
+              :title="t('components.modal.closeEsc')"
+              @click="close"
+            >
+              ✕
+            </button>
           </header>
 
           <!-- 内容区域 -->
@@ -105,7 +124,7 @@ watch(() => props.show, (v) => {
   max-height: 90vh;
 }
 
-[data-theme="dark"] .modal-container {
+[data-theme='dark'] .modal-container {
   background: var(--st-content-modal-bg-dark, rgb(24, 24, 26));
 }
 
@@ -143,7 +162,10 @@ watch(() => props.show, (v) => {
   font-size: var(--st-font-2xl);
   cursor: pointer;
   color: rgb(var(--st-color-text));
-  transition: transform var(--st-transition-fast), background var(--st-transition-fast), box-shadow var(--st-transition-fast);
+  transition:
+    transform var(--st-transition-fast),
+    background var(--st-transition-fast),
+    box-shadow var(--st-transition-fast);
   line-height: 1;
 }
 
@@ -191,7 +213,9 @@ watch(() => props.show, (v) => {
 
 .modal-fade-enter-active .modal-container,
 .modal-fade-leave-active .modal-container {
-  transition: transform var(--st-content-modal-transition, 0.3s) cubic-bezier(0.22, 0.61, 0.36, 1), opacity var(--st-transition-slow);
+  transition:
+    transform var(--st-content-modal-transition, 0.3s) cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity var(--st-transition-slow);
 }
 
 .modal-fade-enter-from .modal-container,
@@ -204,7 +228,7 @@ watch(() => props.show, (v) => {
   .modal-overlay {
     padding: 0;
   }
-  
+
   .modal-container {
     max-width: 100%;
     max-height: 100vh;

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 SmartTavern.macro 实现层
 
@@ -16,13 +15,15 @@ SmartTavern.macro 实现层
 - 输入可携带 variables（初值）；输出 variables 包含 initial/final 两份快照
 - policy（可选）：{"undefined_get":"error|empty","error_token":"[UndefinedVar:{name}]"}
 """
-from typing import Any, Dict, List, Optional, Tuple
-import core
+
 import random
 from datetime import datetime, timedelta
+from typing import Any
+
+import core
 
 DEFAULT_POLICY = {
-    "undefined_get": "error",             # "error" | "empty"
+    "undefined_get": "error",  # "error" | "empty"
     "error_token": "[UndefinedVar:{name}]",
 }
 
@@ -32,20 +33,21 @@ DEFAULT_POLICY = {
 #   - "a.b[2].c"
 #   - "a['复杂.key']" 或 "a[\"复杂.key\"]"
 #   - "a.b[0]['k']"
-from typing import Union
+_PathToken = str | int
 
-_PathToken = Union[str, int]
 
-def _parse_path(path: str) -> List[_PathToken]:
+def _parse_path(path: str) -> list[_PathToken]:
     s = str(path or "")
-    tokens: List[_PathToken] = []
+    tokens: list[_PathToken] = []
     i, n = 0, len(s)
-    buf: List[str] = []
+    buf: list[str] = []
+
     def flush_buf():
         nonlocal buf
         if buf:
             tokens.append("".join(buf))
             buf = []
+
     while i < n:
         ch = s[i]
         if ch == ".":
@@ -56,22 +58,29 @@ def _parse_path(path: str) -> List[_PathToken]:
             flush_buf()
             i += 1
             if i < n and s[i] in ("'", '"'):
-                quote = s[i]; i += 1
-                qbuf: List[str] = []
+                quote = s[i]
+                i += 1
+                qbuf: list[str] = []
                 while i < n and s[i] != quote:
-                    qbuf.append(s[i]); i += 1
+                    qbuf.append(s[i])
+                    i += 1
                 # skip closing quote
-                if i < n and s[i] == quote: i += 1
+                if i < n and s[i] == quote:
+                    i += 1
                 # skip closing ]
-                while i < n and s[i] != "]": i += 1
-                if i < n and s[i] == "]": i += 1
+                while i < n and s[i] != "]":
+                    i += 1
+                if i < n and s[i] == "]":
+                    i += 1
                 tokens.append("".join(qbuf))
             else:
                 # number or bare key until ]
-                nb: List[str] = []
+                nb: list[str] = []
                 while i < n and s[i] != "]":
-                    nb.append(s[i]); i += 1
-                if i < n and s[i] == "]": i += 1
+                    nb.append(s[i])
+                    i += 1
+                if i < n and s[i] == "]":
+                    i += 1
                 raw = "".join(nb).strip()
                 if raw.isdigit() or (raw.startswith("-") and raw[1:].isdigit()):
                     try:
@@ -88,7 +97,8 @@ def _parse_path(path: str) -> List[_PathToken]:
     # 清理空 token
     return [t for t in tokens if t != "" and t is not None]
 
-def _get_by_path(store: Dict[str, Any], path: str, policy: Dict[str, Any]) -> Any:
+
+def _get_by_path(store: dict[str, Any], path: str, policy: dict[str, Any]) -> Any:
     toks = _parse_path(path)
     cur: Any = store
     try:
@@ -106,13 +116,14 @@ def _get_by_path(store: Dict[str, Any], path: str, policy: Dict[str, Any]) -> An
         ug = str(policy.get("undefined_get", "error")).lower()
         return _error_token(path, policy) if ug == "error" else ""
 
-def _set_by_path(store: Dict[str, Any], path: str, value: Any) -> None:
+
+def _set_by_path(store: dict[str, Any], path: str, value: Any) -> None:
     toks = _parse_path(path)
     if not toks:
         return
     cur: Any = store
     for idx, t in enumerate(toks):
-        last = (idx == len(toks) - 1)
+        last = idx == len(toks) - 1
         if last:
             if isinstance(t, int):
                 if not isinstance(cur, list):
@@ -120,7 +131,6 @@ def _set_by_path(store: Dict[str, Any], path: str, value: Any) -> None:
                     # 若 cur 不是 list，则无法索引数字，创建 list 并丢弃原值
                     # 仅在不可用时覆盖（保守策略）
                     # 这里不做类型严格校验，尽量容错
-                    new_list: List[Any] = []
                     if isinstance(cur, dict):
                         # 不能将 dict 直接替换，放弃嵌套到 list 的能力
                         # 退化为在字典里用字符串索引
@@ -160,42 +170,82 @@ def _set_by_path(store: Dict[str, Any], path: str, value: Any) -> None:
 
 # 支持的传统宏名（小写）
 SUPPORTED_LEGACY_MACROS = {
-    "newline","noop","enable","trim",
-    "random","pick","roll",
-    "add","sub","mul","div","max","min",
-    "upper","lower","length","reverse",
-    "time","date","weekday","isotime","isodate","datetimeformat",
+    "newline",
+    "noop",
+    "enable",
+    "trim",
+    "random",
+    "pick",
+    "roll",
+    "add",
+    "sub",
+    "mul",
+    "div",
+    "max",
+    "min",
+    "upper",
+    "lower",
+    "length",
+    "reverse",
+    "time",
+    "date",
+    "weekday",
+    "isotime",
+    "isodate",
+    "datetimeformat",
     "time_utc",
-    "input","lastmessage","lastusermessage","lastcharmessage",
-    "messagecount","usermessagecount","conversationlength",
-    "user","char","description","personality","scenario","persona",
-    "getglobalvar","setglobalvar","addglobalvar","incglobalvar","decglobalvar",
-    "addvar","incvar","decvar",
-    "timediff", "keywords"
+    "input",
+    "lastmessage",
+    "lastusermessage",
+    "lastcharmessage",
+    "messagecount",
+    "usermessagecount",
+    "conversationlength",
+    "user",
+    "char",
+    "description",
+    "personality",
+    "scenario",
+    "persona",
+    "getglobalvar",
+    "setglobalvar",
+    "addglobalvar",
+    "incglobalvar",
+    "decglobalvar",
+    "addvar",
+    "incvar",
+    "decvar",
+    "timediff",
+    "keywords",
 }
 
 # ---- 自定义宏注册（供其他模块/插件通过 API 注册），按 name -> handler_api 存储 ----
-_CUSTOM_MACROS: Dict[str, str] = {}
+_CUSTOM_MACROS: dict[str, str] = {}
 
-def register_custom_macros(items: List[Dict[str, Any]]) -> None:
+
+def register_custom_macros(items: list[dict[str, Any]]) -> None:
     global _CUSTOM_MACROS
-    for it in (items or []):
+    for it in items or []:
         name = str((it or {}).get("name") or "").strip().lower()
         api = str((it or {}).get("handler_api") or "").strip()
         if name and api:
             _CUSTOM_MACROS[name] = api
 
-def list_custom_macros() -> Dict[str, str]:
+
+def list_custom_macros() -> dict[str, str]:
     return dict(_CUSTOM_MACROS)
+
 
 def clear_custom_macros() -> None:
     _CUSTOM_MACROS.clear()
 
-def _error_token(name: str, policy: Dict[str, Any]) -> str:
+
+def _error_token(name: str, policy: dict[str, Any]) -> str:
     tpl = str(policy.get("error_token", "[UndefinedVar:{name}]"))
     return tpl.replace("{name}", str(name))
 
-def _split_params(params: str) -> List[str]:
+
+def _split_params(params: str) -> list[str]:
     if params is None:
         return []
     s = str(params)
@@ -204,6 +254,7 @@ def _split_params(params: str) -> List[str]:
     else:
         parts = [p for p in s.split(",") if p is not None]
     return [p.strip() for p in parts]
+
 
 def _to_number(s: Any) -> float:
     try:
@@ -218,28 +269,33 @@ def _to_number(s: Any) -> float:
     except Exception:
         return 0.0
 
-def _ctx_last_by_role(all_msgs: List[Dict[str, Any]], idx: int, role: str) -> str:
-    j = min(max(idx - 1, -1), len(all_msgs)-1)
+
+def _ctx_last_by_role(all_msgs: list[dict[str, Any]], idx: int, role: str) -> str:
+    j = min(max(idx - 1, -1), len(all_msgs) - 1)
     for k in range(j, -1, -1):
         m = all_msgs[k]
-        if str(m.get("role","")).lower() == role:
-            return str(m.get("content","") or "")
+        if str(m.get("role", "")).lower() == role:
+            return str(m.get("content", "") or "")
     return ""
 
-def _ctx_last_message(all_msgs: List[Dict[str, Any]], idx: int) -> str:
+
+def _ctx_last_message(all_msgs: list[dict[str, Any]], idx: int) -> str:
     if idx <= 0 or idx > len(all_msgs):
         return ""
-    return str(all_msgs[idx-1].get("content","") or "")
+    return str(all_msgs[idx - 1].get("content", "") or "")
 
-def _ctx_count_by_role(all_msgs: List[Dict[str, Any]], role: str) -> int:
-    return sum(1 for m in all_msgs if str(m.get("role","")).lower() == role)
 
-def _ctx_conversation_length(all_msgs: List[Dict[str, Any]]) -> int:
+def _ctx_count_by_role(all_msgs: list[dict[str, Any]], role: str) -> int:
+    return sum(1 for m in all_msgs if str(m.get("role", "")).lower() == role)
+
+
+def _ctx_conversation_length(all_msgs: list[dict[str, Any]]) -> int:
     total = 0
     for m in all_msgs:
-        c = m.get("content","")
+        c = m.get("content", "")
         total += len(c or "")
     return total
+
 
 def _roll_expr(expr: str) -> str:
     try:
@@ -255,7 +311,10 @@ def _roll_expr(expr: str) -> str:
     except Exception:
         return "1"
 
-def _execute_legacy_macro(name: str, params: str, state: Dict[str, Any], policy: Dict[str, Any], all_msgs: List[Dict[str, Any]], idx: int) -> str:
+
+def _execute_legacy_macro(
+    name: str, params: str, state: dict[str, Any], policy: dict[str, Any], all_msgs: list[dict[str, Any]], idx: int
+) -> str:
     n = (name or "").strip().lower()
 
     # 注释宏（//...）直接为空
@@ -265,26 +324,26 @@ def _execute_legacy_macro(name: str, params: str, state: Dict[str, Any], policy:
     # 动态时区时间 time_UTC{offset}
     if n.startswith("time_utc"):
         try:
-            off = n[len("time_utc"):]
+            off = n[len("time_utc") :]
             offset = int(off) if off else 0
         except Exception:
             offset = 0
         return (datetime.now() + timedelta(hours=offset)).strftime("%H:%M:%S")
 
     # 系统变量（从单一变量表读取，未定义返回空串）
-    if n in ("user","char","description","personality","scenario","persona"):
+    if n in ("user", "char", "description", "personality", "scenario", "persona"):
         return str(state.get(n, "") if state.get(n, "") is not None else "")
 
     # 基础与无副作用宏
     if n == "newline":
         return "\n"
-    if n in ("noop","trim"):
+    if n in ("noop", "trim"):
         return ""
     if n == "enable":
         return "True"
 
     # 选择类
-    if n in ("random","pick"):
+    if n in ("random", "pick"):
         choices = _split_params(params)
         return str(random.choice(choices)) if choices else ""
 
@@ -293,7 +352,7 @@ def _execute_legacy_macro(name: str, params: str, state: Dict[str, Any], policy:
         return _roll_expr(params or "1d6")
 
     # 数学
-    if n in ("add","sub","mul","div","max","min"):
+    if n in ("add", "sub", "mul", "div", "max", "min"):
         parts = _split_params(params)
         a = _to_number(parts[0]) if len(parts) >= 1 else 0.0
         b = _to_number(parts[1]) if len(parts) >= 2 else 0.0
@@ -314,7 +373,7 @@ def _execute_legacy_macro(name: str, params: str, state: Dict[str, Any], policy:
             return str(min(a, b))
 
     # 变量操作（按单作用域实现）
-    if n in ("addvar","addglobalvar"):
+    if n in ("addvar", "addglobalvar"):
         parts = _split_params(params)
         var_name = parts[0] if parts else ""
         inc = parts[1] if len(parts) > 1 else "0"
@@ -323,19 +382,19 @@ def _execute_legacy_macro(name: str, params: str, state: Dict[str, Any], policy:
         b = _to_number(inc)
         # 若均为数字则相加，否则字符串拼接
         cur_s = "" if cur is None else str(cur)
-        if (str(cur_s).replace('.','',1).lstrip('-').isdigit() and str(inc).replace('.','',1).lstrip('-').isdigit()):
+        if str(cur_s).replace(".", "", 1).lstrip("-").isdigit() and str(inc).replace(".", "", 1).lstrip("-").isdigit():
             _set_by_path(state, var_name, str(a + b))
         else:
             _set_by_path(state, var_name, str(cur_s) + str(inc))
         return ""
 
-    if n in ("incvar","incglobalvar"):
+    if n in ("incvar", "incglobalvar"):
         var_name = (params or "").strip()
         cur = _to_number(_get_by_path(state, var_name, policy))
         _set_by_path(state, var_name, str(cur + 1))
         return ""
 
-    if n in ("decvar","decglobalvar"):
+    if n in ("decvar", "decglobalvar"):
         var_name = (params or "").strip()
         cur = _to_number(_get_by_path(state, var_name, policy))
         _set_by_path(state, var_name, str(cur - 1))
@@ -359,7 +418,7 @@ def _execute_legacy_macro(name: str, params: str, state: Dict[str, Any], policy:
         return ""
 
     # 字符串
-    if n in ("upper","lower","length","reverse"):
+    if n in ("upper", "lower", "length", "reverse"):
         s = params or ""
         if n == "upper":
             return s.upper()
@@ -379,12 +438,12 @@ def _execute_legacy_macro(name: str, params: str, state: Dict[str, Any], policy:
             return ""
 
     # 时间
-    if n in ("time","isotime"):
+    if n in ("time", "isotime"):
         return datetime.now().strftime("%H:%M:%S")
-    if n in ("date","isodate"):
+    if n in ("date", "isodate"):
         return datetime.now().strftime("%Y-%m-%d")
     if n == "weekday":
-        return ["星期一","星期二","星期三","星期四","星期五","星期六","星期日"][datetime.now().weekday()]
+        return ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"][datetime.now().weekday()]
 
     # 时间差
     if n == "timediff":
@@ -397,7 +456,8 @@ def _execute_legacy_macro(name: str, params: str, state: Dict[str, Any], policy:
             t1, t2 = "", ""
         t1 = t1.strip()
         t2 = t2.strip()
-        fmts = ['%Y-%m-%d %H:%M:%S','%Y-%m-%d','%H:%M:%S']
+        fmts = ["%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%H:%M:%S"]
+
         def _parse(s: str):
             for f in fmts:
                 try:
@@ -405,6 +465,7 @@ def _execute_legacy_macro(name: str, params: str, state: Dict[str, Any], policy:
                 except Exception:
                     continue
             return None
+
         dt1 = _parse(t1)
         dt2 = _parse(t2)
         if dt1 and dt2:
@@ -436,7 +497,7 @@ def _execute_legacy_macro(name: str, params: str, state: Dict[str, Any], policy:
     return ""
 
 
-def _recognize_macro(raw: str) -> Tuple[str, Any] | Tuple[None, None]:
+def _recognize_macro(raw: str) -> tuple[str, Any] | tuple[None, None]:
     """
     判断并解析宏内容
     返回: (kind, payload)
@@ -492,20 +553,20 @@ def _recognize_macro(raw: str) -> Tuple[str, Any] | Tuple[None, None]:
     idx = s.find(":")
     if idx >= 0:
         name = s[:idx].strip().lower()
-        params = s[idx+1:]
+        params = s[idx + 1 :]
     else:
         name = s.strip().lower()
         params = ""
-    
+
     if name in SUPPORTED_LEGACY_MACROS or name.startswith("time_utc"):
         return ("legacy", (name, params))
     if name in _CUSTOM_MACROS:
         return ("custom", (name, params))
-    
+
     return (None, None)
 
 
-def _find_next_recognized_span(text: str) -> Tuple[int, int, str] | None:
+def _find_next_recognized_span(text: str) -> tuple[int, int, str] | None:
     """
     查找从左到右的下一个“被识别”的最内层宏片段，返回 (start, end, inner)
     - start: 宏起始索引（含定界符）
@@ -514,11 +575,11 @@ def _find_next_recognized_span(text: str) -> Tuple[int, int, str] | None:
     若未找到，返回 None
     """
     n = len(text)
-    stack_curly: List[int] = []
-    stack_angle: List[int] = []
+    stack_curly: list[int] = []
+    stack_angle: list[int] = []
     i = 0
     while i < n - 1:
-        two = text[i:i+2]
+        two = text[i : i + 2]
         if two == "{{":
             stack_curly.append(i)
             i += 2
@@ -530,26 +591,26 @@ def _find_next_recognized_span(text: str) -> Tuple[int, int, str] | None:
         if two == "}}":
             if stack_curly:
                 start = stack_curly.pop()
-                inner = text[start+2:i]
+                inner = text[start + 2 : i]
                 kind, _ = _recognize_macro(inner)
                 if kind is not None:
-                    return (start, i+2, inner)
+                    return (start, i + 2, inner)
             i += 2
             continue
         if two == ">>":
             if stack_angle:
                 start = stack_angle.pop()
-                inner = text[start+2:i]
+                inner = text[start + 2 : i]
                 kind, _ = _recognize_macro(inner)
                 if kind is not None:
-                    return (start, i+2, inner)
+                    return (start, i + 2, inner)
             i += 2
             continue
         i += 1
     return None
 
 
-def _eval_python(expr: str, state: Dict[str, Any], policy: Dict[str, Any]) -> str:
+def _eval_python(expr: str, state: dict[str, Any], policy: dict[str, Any]) -> str:
     """
     使用 SmartTavern.python_sandbox 模块求值表达式
     - 仅通过 HTTP API 调用，避免函数直调耦合
@@ -564,7 +625,7 @@ def _eval_python(expr: str, state: Dict[str, Any], policy: Dict[str, Any]) -> st
     try:
         if isinstance(res, dict):
             # 同步变量（final）
-            vars_dict = ((res.get("variables") or {}).get("final") or {})
+            vars_dict = (res.get("variables") or {}).get("final") or {}
             if isinstance(vars_dict, dict):
                 state.clear()
                 state.update(vars_dict)
@@ -580,6 +641,7 @@ def _eval_python(expr: str, state: Dict[str, Any], policy: Dict[str, Any]) -> st
 def _py_literal(v: Any) -> str:
     """将 Python 值安全转为 Python 源码字面量（字符串带引号）"""
     return repr("" if v is None else str(v))
+
 
 def _legacy_to_python(name: str, params: str) -> str:
     """
@@ -616,7 +678,7 @@ def _legacy_to_python(name: str, params: str) -> str:
         return f"legacy_roll({_py_literal(expr)})"
 
     # 数学
-    if n in ("add","sub","mul","div","max","min"):
+    if n in ("add", "sub", "mul", "div", "max", "min"):
         parts = _split_params(p)
         a = parts[0] if len(parts) >= 1 else "0"
         b = parts[1] if len(parts) >= 2 else "0"
@@ -636,7 +698,7 @@ def _legacy_to_python(name: str, params: str) -> str:
             return f"min({A}, {B})"
 
     # 字符串
-    if n in ("upper","lower","length","reverse"):
+    if n in ("upper", "lower", "length", "reverse"):
         s = p
         if n == "upper":
             return f"legacy_upper({_py_literal(s)})"
@@ -658,7 +720,7 @@ def _legacy_to_python(name: str, params: str) -> str:
     if n == "weekday":
         return "legacy_weekday_cn()"
     if n.startswith("time_utc"):
-        rest = n[len("time_utc"):]
+        rest = n[len("time_utc") :]
         try:
             offset = int(rest) if rest else 0
         except Exception:
@@ -679,17 +741,17 @@ def _legacy_to_python(name: str, params: str) -> str:
             var_name, value = body, ""
         return f"setvar({_py_literal(var_name.strip())}, {_py_literal(value)})"
 
-    if n in ("addvar","addglobalvar"):
+    if n in ("addvar", "addglobalvar"):
         parts = _split_params(p)
         var_name = parts[0] if parts else ""
         inc = parts[1] if len(parts) > 1 else "0"
         return f"legacy_addvar({_py_literal(var_name)}, {_py_literal(inc)})"
 
-    if n in ("incvar","incglobalvar"):
+    if n in ("incvar", "incglobalvar"):
         var_name = p.strip()
         return f"legacy_inc({_py_literal(var_name)})"
 
-    if n in ("decvar","decglobalvar"):
+    if n in ("decvar", "decglobalvar"):
         var_name = p.strip()
         return f"legacy_dec({_py_literal(var_name)})"
 
@@ -712,6 +774,7 @@ def _legacy_to_python(name: str, params: str) -> str:
         s = (p or "").strip()
         if not s:
             return "'false'"
+
         def _has_expr(tok: str) -> str:
             return f"({_py_literal(tok)} in str(getvar('chat_history_text')))"
 
@@ -756,7 +819,7 @@ def _legacy_to_python(name: str, params: str) -> str:
             # include/exclude → 包含全部 includes 且不包含任一 excludes
             if mode == "include":
                 includes = _split_params(parts[1] if len(parts) > 1 else "")
-                excludes: List[str] = []
+                excludes: list[str] = []
                 if len(parts) >= 3 and parts[2].lower() == "exclude":
                     excludes = _split_params(parts[3] if len(parts) > 3 else "")
                 inc_expr = " and ".join(_has_expr(k) for k in includes) if includes else "True"
@@ -770,8 +833,9 @@ def _legacy_to_python(name: str, params: str) -> str:
                 # 继续走表达式解析
 
         # 表达式语法：支持 & | ! ^ 与括号；标记之间可用逗号/空白分隔
-        buf: List[str] = []
-        out_parts: List[str] = []
+        buf: list[str] = []
+        out_parts: list[str] = []
+
         def flush_buf():
             nonlocal buf, out_parts
             token = "".join(buf).strip()
@@ -841,7 +905,7 @@ def _legacy_to_python(name: str, params: str) -> str:
     return "''"
 
 
-def _call_custom_macro(name: str, params: str, state: Dict[str, Any], policy: Dict[str, Any]) -> str:
+def _call_custom_macro(name: str, params: str, state: dict[str, Any], policy: dict[str, Any]) -> str:
     try:
         low = str(name or "").strip().lower()
         api_spec = _CUSTOM_MACROS.get(low)
@@ -852,7 +916,7 @@ def _call_custom_macro(name: str, params: str, state: Dict[str, Any], policy: Di
         # 支持 "plugins:path" / "modules:path" / "workflow:path" 前缀
         if ":" in api_spec:
             parts = api_spec.split(":", 1)
-            if parts[0] in ("plugins","modules","workflow"):
+            if parts[0] in ("plugins", "modules", "workflow"):
                 ns = parts[0]
                 api = parts[1]
         payload = {
@@ -867,7 +931,8 @@ def _call_custom_macro(name: str, params: str, state: Dict[str, Any], policy: Di
             vars_obj = res.get("variables")
             if isinstance(vars_obj, dict):
                 try:
-                    state.clear(); state.update(vars_obj)
+                    state.clear()
+                    state.update(vars_obj)
                 except Exception:
                     pass
             txt = res.get("text")
@@ -879,7 +944,10 @@ def _call_custom_macro(name: str, params: str, state: Dict[str, Any], policy: Di
         return ""
     return ""
 
-def _process_text(content: str, state: Dict[str, Any], policy: Dict[str, Any], all_msgs: List[Dict[str, Any]], idx: int) -> str:
+
+def _process_text(
+    content: str, state: dict[str, Any], policy: dict[str, Any], all_msgs: list[dict[str, Any]], idx: int
+) -> str:
     """
     处理单条文本中的宏（支持嵌套）
     - 迭代寻找下一个“已识别”的最内层宏，替换为结果，直至无可替换项
@@ -922,22 +990,22 @@ def _process_text(content: str, state: Dict[str, Any], policy: Dict[str, Any], a
     return text
 
 
-def process_messages(messages: List[Dict[str, Any]],
-                     variables: Optional[Dict[str, Any]] = None,
-                     policy: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def process_messages(
+    messages: list[dict[str, Any]], variables: dict[str, Any] | None = None, policy: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     处理消息列表中的宏。
     - 仅修改 content；保留其他字段（尤其 source）不变
     - 返回处理后的 messages 以及变量表 {initial, final}
     """
     msgs = messages or []
-    init_state: Dict[str, Any] = dict(variables or {})
-    state: Dict[str, Any] = dict(init_state)
-    pol: Dict[str, Any] = dict(DEFAULT_POLICY)
+    init_state: dict[str, Any] = dict(variables or {})
+    state: dict[str, Any] = dict(init_state)
+    pol: dict[str, Any] = dict(DEFAULT_POLICY)
     if isinstance(policy, dict):
         pol.update(policy)
 
-    out: List[Dict[str, Any]] = []
+    out: list[dict[str, Any]] = []
     for idx, m in enumerate(msgs):
         try:
             if not isinstance(m, dict):
@@ -954,21 +1022,22 @@ def process_messages(messages: List[Dict[str, Any]],
         "variables": {
             "initial": init_state,
             "final": state,
-        }
+        },
     }
 
-def process_text_value(text: str,
-                       variables: Optional[Dict[str, Any]] = None,
-                       policy: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+
+def process_text_value(
+    text: str, variables: dict[str, Any] | None = None, policy: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     处理单个纯文本中的宏，返回处理后的文本与变量表。
     - 按照与 process_messages 相同的规则，支持 {{...}} 与 <<...>>
     - 严格模式默认：未定义 getvar 输出 [UndefinedVar:{name}]
     - 不提供对话上下文（lastmessage 等历史相关宏将返回空）
     """
-    init_state: Dict[str, Any] = dict(variables or {})
-    state: Dict[str, Any] = dict(init_state)
-    pol: Dict[str, Any] = dict(DEFAULT_POLICY)
+    init_state: dict[str, Any] = dict(variables or {})
+    state: dict[str, Any] = dict(init_state)
+    pol: dict[str, Any] = dict(DEFAULT_POLICY)
     if isinstance(policy, dict):
         pol.update(policy)
     out_text = _process_text(text, state, pol, [], 0)
@@ -977,5 +1046,5 @@ def process_text_value(text: str,
         "variables": {
             "initial": init_state,
             "final": state,
-        }
+        },
     }

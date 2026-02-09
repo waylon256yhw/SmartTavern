@@ -6,7 +6,8 @@
     :allow="allow"
     allowfullscreen
     :srcdoc="computedSrcdoc"
-    :style="autoHeight && heightPx > 0 ? { height: heightPx + 'px' } : null">
+    :style="autoHeight && heightPx > 0 ? { height: heightPx + 'px' } : null"
+  >
   </iframe>
 </template>
 
@@ -17,12 +18,20 @@ import { generateSandboxBridgeScript } from '@/utils/sandboxBridge'
 const props = defineProps({
   html: { type: String, default: '' },
   baseUrl: { type: String, default: '' },
-  sandbox: { type: String, default: 'allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-popups-to-escape-sandbox allow-presentation allow-pointer-lock allow-orientation-lock allow-top-navigation-by-user-activation allow-storage-access-by-user-activation' },
-  allow: { type: String, default: 'fullscreen *; clipboard-read *; clipboard-write *; geolocation *; microphone *; camera *; autoplay *; encrypted-media *; payment *; usb *; serial *; midi *; gyroscope *; magnetometer *; xr-spatial-tracking *; display-capture *; gamepad *; idle-detection *' },
+  sandbox: {
+    type: String,
+    default:
+      'allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-popups-to-escape-sandbox allow-presentation allow-pointer-lock allow-orientation-lock allow-top-navigation-by-user-activation allow-storage-access-by-user-activation',
+  },
+  allow: {
+    type: String,
+    default:
+      'fullscreen *; clipboard-read *; clipboard-write *; geolocation *; microphone *; camera *; autoplay *; encrypted-media *; payment *; usb *; serial *; midi *; gyroscope *; magnetometer *; xr-spatial-tracking *; display-capture *; gamepad *; idle-detection *',
+  },
   injectCss: { type: String, default: '' },
   csp: { type: String, default: '' },
   // 新增：自适应高度模式（默认开启）
-  autoHeight: { type: Boolean, default: true }
+  autoHeight: { type: Boolean, default: true },
 })
 
 const emit = defineEmits(['iframe-loaded'])
@@ -60,14 +69,16 @@ function __measure() {
     de.scrollHeight,
     body.offsetHeight,
     de.offsetHeight,
-    body.getBoundingClientRect().height
+    body.getBoundingClientRect().height,
   )
   heightPx.value = Math.max(1, Math.round(h))
 }
 
 function __disposeObservers() {
   if (__ro) {
-    try { __ro.disconnect() } catch (_) {}
+    try {
+      __ro.disconnect()
+    } catch (_) {}
     __ro = null
   }
 }
@@ -114,16 +125,21 @@ onMounted(() => {
 onBeforeUnmount(() => {
   const f = frame.value
   if (f && __onLoad) {
-    try { f.removeEventListener('load', __onLoad) } catch (_) {}
+    try {
+      f.removeEventListener('load', __onLoad)
+    } catch (_) {}
   }
   __onLoad = null
   __disposeObservers()
 })
 
 // 当 html 更新，等待 load 回调重建观察；这里清零高度避免短暂旧高度残留
-watch(() => props.html, () => {
-  if (props.autoHeight) heightPx.value = 0
-})
+watch(
+  () => props.html,
+  () => {
+    if (props.autoHeight) heightPx.value = 0
+  },
+)
 </script>
 
 <style scoped>

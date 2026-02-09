@@ -7,7 +7,13 @@ import { useI18n } from '@/locales'
 
 const { t } = useI18n()
 
-const emit = defineEmits(['new-game', 'open-load', 'open-appearance', 'open-plugins', 'open-options'])
+const emit = defineEmits([
+  'new-game',
+  'open-load',
+  'open-appearance',
+  'open-plugins',
+  'open-options',
+])
 
 // 翻译按钮标签
 // 优先使用 labelKey 动态翻译（支持语言切换），若无则使用静态 label
@@ -29,33 +35,44 @@ const __eventOffs = [] // 事件监听清理器
 
 async function refreshServerHasSaves() {
   const tag = `check_saves_${Date.now()}`
-  
+
   try {
     // 监听对话列表结果（一次性）
-    const offOk = Host.events.on(Conversation.EVT_CONVERSATION_LIST_OK, ({ items, tag: resTag }) => {
-      if (resTag !== tag) return
-      
-      const arr = Array.isArray(items) ? items : []
-      serverHasSaves.value = arr.length > 0
-      ctxTick.value++
-      
-      try { offOk?.() } catch (_) {}
-      try { offFail?.() } catch (_) {}
-    })
-    
+    const offOk = Host.events.on(
+      Conversation.EVT_CONVERSATION_LIST_OK,
+      ({ items, tag: resTag }) => {
+        if (resTag !== tag) return
+
+        const arr = Array.isArray(items) ? items : []
+        serverHasSaves.value = arr.length > 0
+        ctxTick.value++
+
+        try {
+          offOk?.()
+        } catch (_) {}
+        try {
+          offFail?.()
+        } catch (_) {}
+      },
+    )
+
     const offFail = Host.events.on(Conversation.EVT_CONVERSATION_LIST_FAIL, ({ tag: resTag }) => {
       if (resTag && resTag !== tag) return
-      
+
       console.warn('[HomeMenu] list_conversations failed')
       serverHasSaves.value = false
       ctxTick.value++
-      
-      try { offOk?.() } catch (_) {}
-      try { offFail?.() } catch (_) {}
+
+      try {
+        offOk?.()
+      } catch (_) {}
+      try {
+        offFail?.()
+      } catch (_) {}
     })
-    
+
     __eventOffs.push(offOk, offFail)
-    
+
     // 发送列表请求事件
     Host.events.emit(Conversation.EVT_CONVERSATION_LIST_REQ, { tag })
   } catch (e) {
@@ -81,29 +98,49 @@ let __onResize = null
 let __onStorage = null
 let __onFocus = null
 onMounted(() => {
-  __onResize = () => { ctxTick.value++ }
+  __onResize = () => {
+    ctxTick.value++
+  }
   // storage 事件保留用于其它上下文字段刷新，但不再决定 hasSaves
-  __onStorage = (e) => { if (!e || e.key === 'st:saves.count') ctxTick.value++ }
-  __onFocus = () => { refreshServerHasSaves() }
+  __onStorage = (e) => {
+    if (!e || e.key === 'st:saves.count') ctxTick.value++
+  }
+  __onFocus = () => {
+    refreshServerHasSaves()
+  }
   window.addEventListener('resize', __onResize)
   window.addEventListener('storage', __onStorage)
   window.addEventListener('focus', __onFocus)
   // 首次挂载主动拉取服务端会话列表
   refreshServerHasSaves()
   // 初次渲染后刷新图标
-  nextTick(() => { try { window?.lucide?.createIcons?.() } catch (_) {} })
+  nextTick(() => {
+    try {
+      window?.lucide?.createIcons?.()
+    } catch (_) {}
+  })
 })
 onUnmounted(() => {
   if (__onResize) window.removeEventListener('resize', __onResize)
   if (__onStorage) window.removeEventListener('storage', __onStorage)
   if (__onFocus) window.removeEventListener('focus', __onFocus)
   try {
-    __eventOffs?.forEach(fn => { try { fn?.() } catch (_) {} })
+    __eventOffs?.forEach((fn) => {
+      try {
+        fn?.()
+      } catch (_) {}
+    })
     __eventOffs.length = 0
   } catch (_) {}
 })
 // 当按钮列表发生变化时，刷新图标
-watch(buttons, () => nextTick(() => { try { window?.lucide?.createIcons?.() } catch (_) {} }))
+watch(buttons, () =>
+  nextTick(() => {
+    try {
+      window?.lucide?.createIcons?.()
+    } catch (_) {}
+  }),
+)
 
 function onClick(btn) {
   try {
@@ -115,22 +152,31 @@ function onClick(btn) {
   // 兼容现有父层事件（最小化改造：仍然向上传递旧事件）
   switch (btn.actionId) {
     case 'ui.home.newGame':
-      emit('new-game'); break
+      emit('new-game')
+      break
     case 'ui.home.openLoad':
-      emit('open-load'); break
+      emit('open-load')
+      break
     case 'ui.home.openAppearance':
-      emit('open-appearance'); break
+      emit('open-appearance')
+      break
     case 'ui.home.openPlugins':
-      emit('open-plugins'); break
+      emit('open-plugins')
+      break
     case 'ui.home.openOptions':
-      emit('open-options'); break
+      emit('open-options')
+      break
     default:
       // 其他 actionId 由 Host.events.emit 处理
       break
   }
 
   // 刷新 lucide 图标（动态渲染后）
-  nextTick(() => { try { window?.lucide?.createIcons?.() } catch (_) {} })
+  nextTick(() => {
+    try {
+      window?.lucide?.createIcons?.()
+    } catch (_) {}
+  })
 }
 </script>
 
@@ -180,7 +226,7 @@ function onClick(btn) {
   font-family: var(--st-font-myth);
   font-weight: 800;
   font-size: var(--st-font-3xl);
-  letter-spacing: .8px;
+  letter-spacing: 0.8px;
   cursor: pointer;
   transition:
     transform var(--st-transition-fast),
@@ -193,7 +239,11 @@ function onClick(btn) {
   border-color: rgba(255, 255, 255, 0.9);
   color: var(--menu-fg, rgba(255, 255, 255, 1));
 }
-.icon-20 { width: var(--st-icon-2xl); height: var(--st-icon-2xl); stroke: currentColor; }
+.icon-20 {
+  width: var(--st-icon-2xl);
+  height: var(--st-icon-2xl);
+  stroke: currentColor;
+}
 
 /* 无历史对话时按钮禁用态：变暗且不可交互 */
 .menu-btn:disabled {

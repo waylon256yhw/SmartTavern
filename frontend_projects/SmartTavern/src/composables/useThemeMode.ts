@@ -31,9 +31,11 @@ export function useThemeMode(): UseThemeModeAPI {
     try {
       const attrTheme = document?.documentElement?.getAttribute?.('data-theme')
       const savedTheme = localStorage.getItem('st.theme')
-      return (attrTheme === 'dark' || attrTheme === 'light') ? attrTheme
-           : (savedTheme === 'dark' || savedTheme === 'light' || savedTheme === 'system') ? savedTheme as ThemeMode
-           : 'system'
+      return attrTheme === 'dark' || attrTheme === 'light'
+        ? attrTheme
+        : savedTheme === 'dark' || savedTheme === 'light' || savedTheme === 'system'
+          ? (savedTheme as ThemeMode)
+          : 'system'
     } catch (_) {
       return 'system'
     }
@@ -43,8 +45,8 @@ export function useThemeMode(): UseThemeModeAPI {
     const root = document.documentElement
     // detach previous system watcher if any
     if (__themeMql && t !== 'system' && __onSchemeChange) {
-      try { 
-        __themeMql.removeEventListener('change', __onSchemeChange) 
+      try {
+        __themeMql.removeEventListener('change', __onSchemeChange)
       } catch (_) {
         // Ignore errors
       }
@@ -66,8 +68,8 @@ export function useThemeMode(): UseThemeModeAPI {
     setByMql(mql)
     if (mql) {
       __onSchemeChange = (e: MediaQueryListEvent) => setByMql(e)
-      try { 
-        mql.addEventListener('change', __onSchemeChange) 
+      try {
+        mql.addEventListener('change', __onSchemeChange)
       } catch (_) {
         // Ignore errors
       }
@@ -78,13 +80,13 @@ export function useThemeMode(): UseThemeModeAPI {
   function onThemeUpdate(t: ThemeMode): void {
     theme.value = t
     applyTheme(t)
-    try { 
-      ThemeManager.setColorMode?.(t) 
+    try {
+      ThemeManager.setColorMode?.(t)
     } catch (_) {
       // Ignore errors
     }
-    try { 
-      localStorage.setItem('st.theme', t) 
+    try {
+      localStorage.setItem('st.theme', t)
     } catch (_) {
       // Ignore errors
     }
@@ -96,8 +98,8 @@ export function useThemeMode(): UseThemeModeAPI {
       theme.value = init
     }
     applyTheme(theme.value)
-    try { 
-      ThemeManager.setColorMode?.(theme.value) 
+    try {
+      ThemeManager.setColorMode?.(theme.value)
     } catch (_) {
       // Ignore errors
     }

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 实现层：通用 LLM 能力（统一非流/流式封装 + 管理器本体）
 - 本文件合并了原 llm_api_manager.py 的完整实现（LLMAPIManager/数据类等）
@@ -10,16 +9,15 @@
   • health_impl()              → 健康检查
 """
 
-import os
 import json
-import time
-import asyncio
-import aiohttp
-import requests
-from typing import Dict, List, Any, Optional, Union, AsyncGenerator, Iterator
-from dataclasses import dataclass, field
-from enum import Enum
 import logging
+import time
+from collections.abc import Iterator
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any
+
+import requests
 
 from . import variables as v
 
@@ -27,6 +25,7 @@ from . import variables as v
 logger = logging.getLogger(__name__)
 
 # ========== 数据类/枚举（来自原 llm_api_manager.py） ==========
+
 
 class ResponseType(Enum):
     STREAMING = "streaming"
@@ -36,32 +35,35 @@ class ResponseType(Enum):
 @dataclass
 class APIResponse:
     """API响应结果"""
+
     success: bool
     content: str = ""
-    error: Optional[str] = None
-    usage: Optional[Dict[str, Any]] = None
+    error: str | None = None
+    usage: dict[str, Any] | None = None
     response_time: float = 0.0
-    model_used: Optional[str] = None
-    finish_reason: Optional[str] = None
-    raw_response: Optional[Dict[str, Any]] = None
-    provider: Optional[str] = None
+    model_used: str | None = None
+    finish_reason: str | None = None
+    raw_response: dict[str, Any] | None = None
+    provider: str | None = None
 
 
 @dataclass
 class StreamChunk:
     """流式响应块"""
+
     content: str
-    finish_reason: Optional[str] = None
-    usage: Optional[Dict[str, Any]] = None
+    finish_reason: str | None = None
+    usage: dict[str, Any] | None = None
 
 
 @dataclass
 class APIConfiguration:
     """API配置"""
+
     provider: str
     api_key: str
     base_url: str
-    models: List[str]
+    models: list[str]
     enabled: bool = True
     timeout: int = v.DEFAULT_TIMEOUT
     connect_timeout: int = v.DEFAULT_CONNECT_TIMEOUT
@@ -69,6 +71,7 @@ class APIConfiguration:
 
 
 # ========== 核心 LLMAPIManager（来自原 llm_api_manager.py，保持逻辑一致） ==========
+
 
 class LLMAPIManager:
     """通用LLM API管理器"""
@@ -84,35 +87,28 @@ class LLMAPIManager:
         else:
             logging.basicConfig(level=getattr(logging, v.DEFAULT_LOG_LEVEL))
 
-    def get_available_models(self) -> List[str]:
+    def get_available_models(self) -> list[str]:
         """获取可用模型列表"""
         return self.config.models or v.DEFAULT_MODELS.get(self.config.provider, [])
 
     def is_available(self) -> bool:
         """检查API是否可用"""
-        return (
-            self.config.enabled and
-            self.config.api_key != '' and
-            self.config.base_url != ''
-        )
+        return self.config.enabled and self.config.api_key != "" and self.config.base_url != ""
 
-    def _get_headers(self) -> Dict[str, str]:
+    def _get_headers(self) -> dict[str, str]:
         """构建请求头"""
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": "ModularFlow-LLM-API/1.0"
-        }
+        headers = {"Content-Type": "application/json", "User-Agent": "ModularFlow-LLM-API/1.0"}
 
         # 根据提供商类型设置认证头
-        if self.config.provider == 'openai':
+        if self.config.provider == "openai":
             headers["Authorization"] = f"Bearer {self.config.api_key}"
-        elif self.config.provider == 'anthropic':
+        elif self.config.provider == "anthropic":
             headers["x-api-key"] = self.config.api_key
             headers["anthropic-version"] = "2023-06-01"
-        elif self.config.provider == 'gemini':
+        elif self.config.provider == "gemini":
             # Gemini使用API密钥作为URL参数，不需要特殊头
             pass
-        elif self.config.provider == 'openai_compatible':
+        elif self.config.provider == "openai_compatible":
             # OpenAI兼容格式使用Bearer认证
             headers["Authorization"] = f"Bearer {self.config.api_key}"
         else:
@@ -121,17 +117,20 @@ class LLMAPIManager:
 
         return headers
 
-    def _build_request_payload(self, messages: List[Dict[str, str]],
-                             model: str,
-                             max_tokens: int = None,
-                             temperature: float = None,
-                             stream: bool = False,
-                             **kwargs) -> Dict[str, Any]:
+    def _build_request_payload(
+        self,
+        messages: list[dict[str, str]],
+        model: str,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+        stream: bool = False,
+        **kwargs,
+    ) -> dict[str, Any]:
         """构建API请求体（不使用默认参数，完全依赖配置文件）"""
 
-        if self.config.provider == 'gemini':
+        if self.config.provider == "gemini":
             return self._build_gemini_payload(messages, model, max_tokens, temperature, stream, **kwargs)
-        elif self.config.provider == 'anthropic':
+        elif self.config.provider == "anthropic":
             return self._build_anthropic_payload(messages, model, max_tokens, temperature, stream, **kwargs)
 
         # 标准OpenAI格式（适用于OpenAI、openai_compatible和大多数自定义提供商）
@@ -140,7 +139,7 @@ class LLMAPIManager:
             "model": model,
             "stream": stream,
         }
-        
+
         # 只添加非 None 的参数
         if max_tokens is not None:
             payload["max_tokens"] = max_tokens
@@ -166,12 +165,15 @@ class LLMAPIManager:
 
         return payload
 
-    def _build_gemini_payload(self, messages: List[Dict[str, str]],
-                            model: str,
-                            max_tokens: int = None,
-                            temperature: float = None,
-                            stream: bool = False,
-                            **kwargs) -> Dict[str, Any]:
+    def _build_gemini_payload(
+        self,
+        messages: list[dict[str, str]],
+        model: str,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+        stream: bool = False,
+        **kwargs,
+    ) -> dict[str, Any]:
         """构建Gemini特定的请求体（不使用默认参数）"""
         # 分离系统消息和对话消息
         system_instruction = None
@@ -195,21 +197,14 @@ class LLMAPIManager:
 
             # Gemini角色映射: user -> user, assistant -> model
             gemini_role = "model" if role == "assistant" else "user"
-            gemini_contents.append({
-                "role": gemini_role,
-                "parts": [{"text": content}]
-            })
+            gemini_contents.append({"role": gemini_role, "parts": [{"text": content}]})
 
         # 构建Gemini请求体 - 使用新的顶层参数格式
-        payload = {
-            "contents": gemini_contents
-        }
+        payload = {"contents": gemini_contents}
 
         # 添加系统指令（如果有）
         if system_instruction:
-            payload["systemInstruction"] = {
-                "parts": [{"text": system_instruction}]
-            }
+            payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
 
         # 添加生成配置 - 直接放在顶层（只添加非 None 的参数）
         generation_config = {}
@@ -246,12 +241,15 @@ class LLMAPIManager:
 
         return payload
 
-    def _build_anthropic_payload(self, messages: List[Dict[str, str]],
-                               model: str,
-                               max_tokens: int = None,
-                               temperature: float = None,
-                               stream: bool = False,
-                               **kwargs) -> Dict[str, Any]:
+    def _build_anthropic_payload(
+        self,
+        messages: list[dict[str, str]],
+        model: str,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+        stream: bool = False,
+        **kwargs,
+    ) -> dict[str, Any]:
         """构建Anthropic特定的请求体（不使用默认参数）"""
         # 分离系统消息和对话消息
         system_messages = []
@@ -264,12 +262,8 @@ class LLMAPIManager:
                 conversation_messages.append(msg)
 
         # 构建Anthropic请求体（只添加非 None 的参数）
-        payload = {
-            "model": model,
-            "messages": conversation_messages,
-            "stream": stream
-        }
-        
+        payload = {"model": model, "messages": conversation_messages, "stream": stream}
+
         # 只添加非 None 的参数
         if max_tokens is not None:
             payload["max_tokens"] = max_tokens
@@ -291,10 +285,7 @@ class LLMAPIManager:
 
         # 添加thinking配置（如果支持）
         if kwargs.get("enable_thinking"):
-            payload["thinking"] = {
-                "type": "enabled",
-                "budget_tokens": kwargs.get("thinking_budget", 16000)
-            }
+            payload["thinking"] = {"type": "enabled", "budget_tokens": kwargs.get("thinking_budget", 16000)}
 
         # 合并自定义字段（如果有的话）
         custom_params = kwargs.get("custom_params", {})
@@ -306,7 +297,7 @@ class LLMAPIManager:
 
         return payload
 
-    def _validate_request(self, messages: List[Dict[str, str]]) -> bool:
+    def _validate_request(self, messages: list[dict[str, str]]) -> bool:
         """验证请求数据"""
         if not messages:
             raise ValueError("消息列表不能为空")
@@ -320,7 +311,7 @@ class LLMAPIManager:
                 raise ValueError(f"无效的角色: {msg['role']}")
 
         # 检查请求大小
-        request_size = len(json.dumps(messages, ensure_ascii=False).encode('utf-8'))
+        request_size = len(json.dumps(messages, ensure_ascii=False).encode("utf-8"))
         if request_size > v.MAX_REQUEST_SIZE:
             raise ValueError(f"请求大小超过限制: {request_size} > {v.MAX_REQUEST_SIZE}")
 
@@ -328,9 +319,9 @@ class LLMAPIManager:
 
     def _get_request_url(self, model: str, stream: bool = False) -> str:
         """构建请求URL"""
-        base_url = self.config.base_url.rstrip('/')
+        base_url = self.config.base_url.rstrip("/")
 
-        if self.config.provider == 'gemini':
+        if self.config.provider == "gemini":
             # Gemini使用特殊的URL格式
             if stream:
                 url = f"{base_url}/models/{model}:streamGenerateContent"
@@ -339,18 +330,21 @@ class LLMAPIManager:
             # Gemini使用API密钥作为URL参数
             url += f"?key={self.config.api_key}"
             return url
-        elif self.config.provider == 'anthropic':
+        elif self.config.provider == "anthropic":
             return f"{base_url}/messages"
         else:
             # OpenAI、openai_compatible和其他兼容提供商
             return f"{base_url}/chat/completions"
 
-    def call_api(self, messages: List[Dict[str, str]],
-                 model: str = None,
-                 max_tokens: int = None,
-                 temperature: float = None,
-                 stream: bool = False,
-                 **kwargs) -> Union[APIResponse, Iterator[StreamChunk]]:
+    def call_api(
+        self,
+        messages: list[dict[str, str]],
+        model: str | None = None,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+        stream: bool = False,
+        **kwargs,
+    ) -> APIResponse | Iterator[StreamChunk]:
         """同步调用API"""
         start_time = time.time()
 
@@ -361,7 +355,7 @@ class LLMAPIManager:
                     success=False,
                     error=f"API提供商 {self.config.provider} 不可用或未正确配置",
                     response_time=time.time() - start_time,
-                    provider=self.config.provider
+                    provider=self.config.provider,
                 )
 
             # 使用默认模型如果未指定
@@ -372,7 +366,7 @@ class LLMAPIManager:
                         success=False,
                         error=f"提供商 {self.config.provider} 没有可用的模型",
                         response_time=time.time() - start_time,
-                        provider=self.config.provider
+                        provider=self.config.provider,
                     )
                 model = available_models[0]
 
@@ -385,11 +379,11 @@ class LLMAPIManager:
             payload = self._build_request_payload(messages, model, max_tokens, temperature, stream, **kwargs)
 
             # 打印请求信息（使用WARNING级别确保显示，但不误导为错误）
-            logger.warning(f"\n{'='*60}")
-            logger.warning(f"LLM API 请求")
-            logger.warning(f"{'='*60}")
+            logger.warning(f"\n{'=' * 60}")
+            logger.warning("LLM API 请求")
+            logger.warning(f"{'=' * 60}")
             logger.warning(f"URL: {url}")
-            safe_headers = {k: v for k, v in headers.items() if k.lower() not in ['authorization', 'x-api-key']}
+            safe_headers = {k: v for k, v in headers.items() if k.lower() not in ["authorization", "x-api-key"]}
             logger.warning(f"Headers:\n{json.dumps(safe_headers, ensure_ascii=False, indent=2)}")
             logger.warning(f"Request Body:\n{json.dumps(payload, ensure_ascii=False, indent=2)}")
 
@@ -399,11 +393,11 @@ class LLMAPIManager:
                 headers=headers,
                 json=payload,
                 timeout=(self.config.connect_timeout, self.config.timeout),
-                stream=stream
+                stream=stream,
             )
 
             # 打印响应状态
-            logger.info(f"=== LLM API 响应 ===")
+            logger.info("=== LLM API 响应 ===")
             logger.info(f"Status Code: {response.status_code}")
             logger.info(f"Response Headers: {json.dumps(dict(response.headers), ensure_ascii=False, indent=2)}")
 
@@ -417,24 +411,18 @@ class LLMAPIManager:
 
         except requests.exceptions.Timeout:
             return APIResponse(
-                success=False,
-                error="请求超时",
-                response_time=time.time() - start_time,
-                provider=self.config.provider
+                success=False, error="请求超时", response_time=time.time() - start_time, provider=self.config.provider
             )
         except requests.exceptions.ConnectionError:
             return APIResponse(
-                success=False,
-                error="连接失败",
-                response_time=time.time() - start_time,
-                provider=self.config.provider
+                success=False, error="连接失败", response_time=time.time() - start_time, provider=self.config.provider
             )
         except Exception as e:
             return APIResponse(
                 success=False,
-                error=f"未知错误: {str(e)}",
+                error=f"未知错误: {e!s}",
                 response_time=time.time() - start_time,
-                provider=self.config.provider
+                provider=self.config.provider,
             )
 
     def _handle_error(self, response, start_time: float) -> APIResponse:
@@ -447,13 +435,13 @@ class LLMAPIManager:
             error_body_text = response.text
             error_data = json.loads(error_body_text)
             logger.error(f"Response Body (Error):\n{json.dumps(error_data, indent=2, ensure_ascii=False)}")
-            
+
             # 将完整的JSON作为字符串返回，让前端自己处理
             error_msg = json.dumps(error_data, ensure_ascii=False)
-            
+
         except Exception as parse_err:
             # 如果无法解析JSON，返回原始文本
-            error_body_text = response.text if hasattr(response, 'text') else ''
+            error_body_text = response.text if hasattr(response, "text") else ""
             logger.error(f"Response Body (Error, 原始文本): {error_body_text}")
             logger.error(f"解析错误响应失败: {parse_err}")
             error_msg = error_body_text if error_body_text else default_error_msg
@@ -461,10 +449,7 @@ class LLMAPIManager:
         logger.error(f"API请求失败 ({self.config.provider}): Status {response.status_code}")
 
         return APIResponse(
-            success=False,
-            error=error_msg,
-            response_time=time.time() - start_time,
-            provider=self.config.provider
+            success=False, error=error_msg, response_time=time.time() - start_time, provider=self.config.provider
         )
 
     def _handle_non_streaming_response(self, response, start_time: float) -> APIResponse:
@@ -476,9 +461,9 @@ class LLMAPIManager:
                 logger.info(f"收到响应: {json.dumps(data, indent=2, ensure_ascii=False)}")
 
             # 根据提供商处理不同的响应格式
-            if self.config.provider == 'gemini':
+            if self.config.provider == "gemini":
                 return self._handle_gemini_response(data, start_time)
-            elif self.config.provider == 'anthropic':
+            elif self.config.provider == "anthropic":
                 return self._handle_anthropic_response(data, start_time)
             else:
                 return self._handle_openai_response(data, start_time)
@@ -488,24 +473,24 @@ class LLMAPIManager:
                 success=False,
                 error="响应JSON解析失败",
                 response_time=time.time() - start_time,
-                provider=self.config.provider
+                provider=self.config.provider,
             )
         except Exception as e:
             return APIResponse(
                 success=False,
-                error=f"响应处理失败: {str(e)}",
+                error=f"响应处理失败: {e!s}",
                 response_time=time.time() - start_time,
-                provider=self.config.provider
+                provider=self.config.provider,
             )
 
-    def _handle_openai_response(self, data: Dict[str, Any], start_time: float) -> APIResponse:
+    def _handle_openai_response(self, data: dict[str, Any], start_time: float) -> APIResponse:
         """处理OpenAI格式的响应"""
         content = ""
         finish_reason = None
         usage = data.get("usage")
         model_used = data.get("model")
 
-        if "choices" in data and data["choices"]:
+        if data.get("choices"):
             choice = data["choices"][0]
             if "message" in choice:
                 content = choice["message"].get("content", "")
@@ -519,10 +504,10 @@ class LLMAPIManager:
             model_used=model_used,
             finish_reason=finish_reason,
             raw_response=data,
-            provider=self.config.provider
+            provider=self.config.provider,
         )
 
-    def _handle_gemini_response(self, data: Dict[str, Any], start_time: float) -> APIResponse:
+    def _handle_gemini_response(self, data: dict[str, Any], start_time: float) -> APIResponse:
         """处理Gemini格式的响应"""
         content = ""
         finish_reason = None
@@ -530,7 +515,7 @@ class LLMAPIManager:
         model_used = None
 
         # Gemini响应格式: {"candidates": [{"content": {"parts": [{"text": "..."}], "role": "model"}, "finishReason": "STOP"}]}
-        if "candidates" in data and data["candidates"]:
+        if data.get("candidates"):
             candidate = data["candidates"][0]
             if "content" in candidate and "parts" in candidate["content"]:
                 # 合并所有parts的文本
@@ -547,7 +532,7 @@ class LLMAPIManager:
             usage = {
                 "prompt_tokens": usage_metadata.get("promptTokenCount", 0),
                 "completion_tokens": usage_metadata.get("candidatesTokenCount", 0),
-                "total_tokens": usage_metadata.get("totalTokenCount", 0)
+                "total_tokens": usage_metadata.get("totalTokenCount", 0),
             }
 
         return APIResponse(
@@ -558,10 +543,10 @@ class LLMAPIManager:
             model_used=model_used,
             finish_reason=finish_reason,
             raw_response=data,
-            provider=self.config.provider
+            provider=self.config.provider,
         )
 
-    def _handle_anthropic_response(self, data: Dict[str, Any], start_time: float) -> APIResponse:
+    def _handle_anthropic_response(self, data: dict[str, Any], start_time: float) -> APIResponse:
         """处理Anthropic格式的响应"""
         content = ""
         finish_reason = None
@@ -569,7 +554,7 @@ class LLMAPIManager:
         model_used = data.get("model")
 
         # Anthropic响应格式: {"content": [{"type": "text", "text": "..."}], "stop_reason": "end_turn"}
-        if "content" in data and data["content"]:
+        if data.get("content"):
             # 合并所有content blocks的文本
             for content_block in data["content"]:
                 if content_block.get("type") == "text":
@@ -583,7 +568,7 @@ class LLMAPIManager:
             usage = {
                 "prompt_tokens": usage_data.get("input_tokens", 0),
                 "completion_tokens": usage_data.get("output_tokens", 0),
-                "total_tokens": usage_data.get("input_tokens", 0) + usage_data.get("output_tokens", 0)
+                "total_tokens": usage_data.get("input_tokens", 0) + usage_data.get("output_tokens", 0),
             }
 
         return APIResponse(
@@ -594,16 +579,16 @@ class LLMAPIManager:
             model_used=model_used,
             finish_reason=finish_reason,
             raw_response=data,
-            provider=self.config.provider
+            provider=self.config.provider,
         )
 
     def _handle_streaming_response(self, response, start_time: float) -> Iterator[StreamChunk]:
         """处理流式响应"""
         try:
             # 根据提供商处理不同的流式响应格式
-            if self.config.provider == 'anthropic':
+            if self.config.provider == "anthropic":
                 yield from self._handle_anthropic_streaming_response(response, start_time)
-            elif self.config.provider == 'gemini':
+            elif self.config.provider == "gemini":
                 yield from self._handle_gemini_streaming_response(response, start_time)
             else:
                 yield from self._handle_openai_streaming_response(response, start_time)
@@ -620,18 +605,18 @@ class LLMAPIManager:
 
         for line in response.iter_lines():
             if line:
-                line = line.decode('utf-8')
+                line = line.decode("utf-8")
 
-                if line.startswith('data: '):
+                if line.startswith("data: "):
                     data_str = line[6:]  # 移除 'data: ' 前缀
 
-                    if data_str.strip() == '[DONE]':
+                    if data_str.strip() == "[DONE]":
                         break
 
                     try:
                         data = json.loads(data_str)
 
-                        if "choices" in data and data["choices"]:
+                        if data.get("choices"):
                             choice = data["choices"][0]
                             delta = choice.get("delta", {})
 
@@ -639,19 +624,12 @@ class LLMAPIManager:
                                 content = delta["content"]
                                 full_content += content
 
-                                yield StreamChunk(
-                                    content=content,
-                                    finish_reason=choice.get("finish_reason")
-                                )
+                                yield StreamChunk(content=content, finish_reason=choice.get("finish_reason"))
 
                             # 检查是否完成
                             if choice.get("finish_reason"):
                                 usage = data.get("usage")
-                                yield StreamChunk(
-                                    content="",
-                                    finish_reason=choice.get("finish_reason"),
-                                    usage=usage
-                                )
+                                yield StreamChunk(content="", finish_reason=choice.get("finish_reason"), usage=usage)
                                 break
 
                     except json.JSONDecodeError:
@@ -666,11 +644,11 @@ class LLMAPIManager:
 
         for line in response.iter_lines():
             if line:
-                line = line.decode('utf-8')
+                line = line.decode("utf-8")
 
-                if line.startswith('event: '):
-                    event_type = line[7:].strip()  # 移除 'event: ' 前缀
-                elif line.startswith('data: '):
+                if line.startswith("event: "):
+                    line[7:].strip()  # 移除 'event: ' 前缀
+                elif line.startswith("data: "):
                     data_str = line[6:]  # 移除 'data: ' 前缀
 
                     if data_str.strip():
@@ -684,10 +662,7 @@ class LLMAPIManager:
                                     content = delta.get("text", "")
                                     full_content += content
 
-                                    yield StreamChunk(
-                                        content=content,
-                                        finish_reason=None
-                                    )
+                                    yield StreamChunk(content=content, finish_reason=None)
 
                             elif data.get("type") == "message_delta":
                                 # 消息完成
@@ -700,14 +675,11 @@ class LLMAPIManager:
                                     usage = {
                                         "prompt_tokens": usage_data.get("input_tokens", 0),
                                         "completion_tokens": usage_data.get("output_tokens", 0),
-                                        "total_tokens": usage_data.get("input_tokens", 0) + usage_data.get("output_tokens", 0)
+                                        "total_tokens": usage_data.get("input_tokens", 0)
+                                        + usage_data.get("output_tokens", 0),
                                     }
 
-                                    yield StreamChunk(
-                                        content="",
-                                        finish_reason=stop_reason,
-                                        usage=usage
-                                    )
+                                    yield StreamChunk(content="", finish_reason=stop_reason, usage=usage)
 
                             elif data.get("type") == "message_stop":
                                 # 流式响应结束
@@ -725,9 +697,9 @@ class LLMAPIManager:
 
         for line in response.iter_lines():
             if line:
-                line = line.decode('utf-8')
+                line = line.decode("utf-8")
 
-                if line.startswith('data: '):
+                if line.startswith("data: "):
                     data_str = line[6:]  # 移除 'data: ' 前缀
 
                     if data_str.strip():
@@ -735,7 +707,7 @@ class LLMAPIManager:
                             data = json.loads(data_str)
 
                             # Gemini流式响应格式
-                            if "candidates" in data and data["candidates"]:
+                            if data.get("candidates"):
                                 candidate = data["candidates"][0]
 
                                 if "content" in candidate and "parts" in candidate["content"]:
@@ -748,10 +720,7 @@ class LLMAPIManager:
 
                                     if content:
                                         full_content += content
-                                        yield StreamChunk(
-                                            content=content,
-                                            finish_reason=None
-                                        )
+                                        yield StreamChunk(content=content, finish_reason=None)
 
                                 # 检查完成状态
                                 finish_reason = candidate.get("finishReason")
@@ -766,14 +735,10 @@ class LLMAPIManager:
                                         usage = {
                                             "prompt_tokens": usage_metadata.get("promptTokenCount", 0),
                                             "completion_tokens": usage_metadata.get("candidatesTokenCount", 0),
-                                            "total_tokens": usage_metadata.get("totalTokenCount", 0)
+                                            "total_tokens": usage_metadata.get("totalTokenCount", 0),
                                         }
 
-                                    yield StreamChunk(
-                                        content="",
-                                        finish_reason=finish_reason,
-                                        usage=usage
-                                    )
+                                    yield StreamChunk(content="", finish_reason=finish_reason, usage=usage)
                                     break
 
                         except json.JSONDecodeError:
@@ -782,7 +747,7 @@ class LLMAPIManager:
         if self.config.enable_logging:
             logger.info(f"Gemini流式响应完成，总长度: {len(full_content)}")
 
-    def list_models(self, limit: Optional[int] = None, page_token: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    def list_models(self, limit: int | None = None, page_token: str | None = None, **kwargs) -> dict[str, Any]:
         """获取可用模型列表
 
         Args:
@@ -800,50 +765,48 @@ class LLMAPIManager:
                 return {
                     "success": False,
                     "error": f"API提供商 {self.config.provider} 不可用或未正确配置",
-                    "provider": self.config.provider
+                    "provider": self.config.provider,
                 }
 
             # 构建请求URL和参数
-            if self.config.provider == 'anthropic':
+            if self.config.provider == "anthropic":
                 return self._list_anthropic_models(limit, page_token, **kwargs)
-            elif self.config.provider == 'gemini':
+            elif self.config.provider == "gemini":
                 return self._list_gemini_models(limit, page_token, **kwargs)
             else:
                 # OpenAI和其他提供商通常使用标准endpoint
                 return self._list_openai_models(limit, page_token, **kwargs)
 
         except Exception as e:
-            logger.error(f"获取模型列表失败: {str(e)}")
-            return {
-                "success": False,
-                "error": f"获取模型列表失败: {str(e)}",
-                "provider": self.config.provider
-            }
+            logger.error(f"获取模型列表失败: {e!s}")
+            return {"success": False, "error": f"获取模型列表失败: {e!s}", "provider": self.config.provider}
 
-    def _list_anthropic_models(self, limit: Optional[int] = None, page_token: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    def _list_anthropic_models(
+        self, limit: int | None = None, page_token: str | None = None, **kwargs
+    ) -> dict[str, Any]:
         """获取Anthropic模型列表"""
-        base_url = self.config.base_url.rstrip('/')
+        base_url = self.config.base_url.rstrip("/")
         url = f"{base_url}/v1/models"
 
         # 构建查询参数
         params = {}
         if limit is not None:
             # Anthropic限制: 1-1000
-            params['limit'] = max(1, min(limit, 1000))
+            params["limit"] = max(1, min(limit, 1000))
 
         # 处理分页参数
         if page_token:
-            params['after_id'] = page_token
-        if kwargs.get('before_id'):
-            params['before_id'] = kwargs['before_id']
-        if kwargs.get('after_id'):
-            params['after_id'] = kwargs['after_id']
+            params["after_id"] = page_token
+        if kwargs.get("before_id"):
+            params["before_id"] = kwargs["before_id"]
+        if kwargs.get("after_id"):
+            params["after_id"] = kwargs["after_id"]
 
         # 构建请求头
         headers = {
             "anthropic-version": "2023-06-01",
             "x-api-key": self.config.api_key,
-            "User-Agent": "ModularFlow-LLM-API/1.0"
+            "User-Agent": "ModularFlow-LLM-API/1.0",
         }
 
         if self.config.enable_logging:
@@ -851,10 +814,7 @@ class LLMAPIManager:
 
         try:
             response = requests.get(
-                url,
-                headers=headers,
-                params=params,
-                timeout=(self.config.connect_timeout, self.config.timeout)
+                url, headers=headers, params=params, timeout=(self.config.connect_timeout, self.config.timeout)
             )
 
             if not response.ok:
@@ -873,7 +833,7 @@ class LLMAPIManager:
                     "success": False,
                     "error": error_msg,
                     "provider": self.config.provider,
-                    "status_code": response.status_code
+                    "status_code": response.status_code,
                 }
 
             data = response.json()
@@ -887,52 +847,37 @@ class LLMAPIManager:
                 "first_id": data.get("first_id"),
                 "last_id": data.get("last_id"),
                 "has_more": data.get("has_more", False),
-                "raw_response": data
+                "raw_response": data,
             }
 
         except requests.exceptions.Timeout:
-            return {
-                "success": False,
-                "error": "请求超时",
-                "provider": self.config.provider
-            }
+            return {"success": False, "error": "请求超时", "provider": self.config.provider}
         except requests.exceptions.ConnectionError:
-            return {
-                "success": False,
-                "error": "连接失败",
-                "provider": self.config.provider
-            }
+            return {"success": False, "error": "连接失败", "provider": self.config.provider}
 
-    def _list_gemini_models(self, limit: Optional[int] = None, page_token: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    def _list_gemini_models(self, limit: int | None = None, page_token: str | None = None, **kwargs) -> dict[str, Any]:
         """获取Gemini模型列表"""
         url = "https://generativelanguage.googleapis.com/v1beta/models"
 
         # 构建查询参数
-        params = {
-            "key": self.config.api_key
-        }
+        params = {"key": self.config.api_key}
 
         if limit is not None:
             # Gemini限制: 1-1000
-            params['pageSize'] = max(1, min(limit, 1000))
+            params["pageSize"] = max(1, min(limit, 1000))
 
         if page_token:
-            params['pageToken'] = page_token
+            params["pageToken"] = page_token
 
         # 构建请求头
-        headers = {
-            "User-Agent": "ModularFlow-LLM-API/1.0"
-        }
+        headers = {"User-Agent": "ModularFlow-LLM-API/1.0"}
 
         if self.config.enable_logging:
             logger.info(f"Gemini获取模型列表: {url}, 参数: {params}")
 
         try:
             response = requests.get(
-                url,
-                headers=headers,
-                params=params,
-                timeout=(self.config.connect_timeout, self.config.timeout)
+                url, headers=headers, params=params, timeout=(self.config.connect_timeout, self.config.timeout)
             )
 
             if not response.ok:
@@ -951,7 +896,7 @@ class LLMAPIManager:
                     "success": False,
                     "error": error_msg,
                     "provider": self.config.provider,
-                    "status_code": response.status_code
+                    "status_code": response.status_code,
                 }
 
             data = response.json()
@@ -963,25 +908,17 @@ class LLMAPIManager:
                 "provider": self.config.provider,
                 "models": data.get("models", []),
                 "next_page_token": data.get("nextPageToken"),
-                "raw_response": data
+                "raw_response": data,
             }
 
         except requests.exceptions.Timeout:
-            return {
-                "success": False,
-                "error": "请求超时",
-                "provider": self.config.provider
-            }
+            return {"success": False, "error": "请求超时", "provider": self.config.provider}
         except requests.exceptions.ConnectionError:
-            return {
-                "success": False,
-                "error": "连接失败",
-                "provider": self.config.provider
-            }
+            return {"success": False, "error": "连接失败", "provider": self.config.provider}
 
-    def _list_openai_models(self, limit: Optional[int] = None, page_token: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    def _list_openai_models(self, limit: int | None = None, page_token: str | None = None, **kwargs) -> dict[str, Any]:
         """获取OpenAI格式的模型列表"""
-        base_url = self.config.base_url.rstrip('/')
+        base_url = self.config.base_url.rstrip("/")
         url = f"{base_url}/models"
 
         # 构建请求头
@@ -991,11 +928,7 @@ class LLMAPIManager:
             logger.info(f"OpenAI获取模型列表: {url}")
 
         try:
-            response = requests.get(
-                url,
-                headers=headers,
-                timeout=(self.config.connect_timeout, self.config.timeout)
-            )
+            response = requests.get(url, headers=headers, timeout=(self.config.connect_timeout, self.config.timeout))
 
             if not response.ok:
                 error_msg = f"HTTP {response.status_code}"
@@ -1013,7 +946,7 @@ class LLMAPIManager:
                     "success": False,
                     "error": error_msg,
                     "provider": self.config.provider,
-                    "status_code": response.status_code
+                    "status_code": response.status_code,
                 }
 
             data = response.json()
@@ -1024,29 +957,19 @@ class LLMAPIManager:
                 "success": True,
                 "provider": self.config.provider,
                 "data": data.get("data", []),
-                "raw_response": data
+                "raw_response": data,
             }
 
         except requests.exceptions.Timeout:
-            return {
-                "success": False,
-                "error": "请求超时",
-                "provider": self.config.provider
-            }
+            return {"success": False, "error": "请求超时", "provider": self.config.provider}
         except requests.exceptions.ConnectionError:
-            return {
-                "success": False,
-                "error": "连接失败",
-                "provider": self.config.provider
-            }
+            return {"success": False, "error": "连接失败", "provider": self.config.provider}
 
 
 # ========== 封装函数（供注册层调用） ==========
 
-from typing import Tuple  # late import keepers
 
-
-def _normalize_messages(messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
+def _normalize_messages(messages: list[dict[str, str]]) -> list[dict[str, str]]:
     """
     规范化/校验对话消息
     - 必须为数组，元素包含 {role, content}
@@ -1054,7 +977,7 @@ def _normalize_messages(messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
     """
     if not isinstance(messages, list) or not messages:
         raise ValueError("messages 必须为非空数组")
-    out: List[Dict[str, str]] = []
+    out: list[dict[str, str]] = []
     for i, msg in enumerate(messages):
         if not isinstance(msg, dict):
             raise ValueError(f"messages[{i}] 必须为对象")
@@ -1068,7 +991,7 @@ def _normalize_messages(messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
     return out
 
 
-def _ensure_models(provider: str, models: Optional[List[str]]) -> List[str]:
+def _ensure_models(provider: str, models: list[str] | None) -> list[str]:
     """
     若未提供 models，则回落到默认模型映射
     """
@@ -1081,9 +1004,9 @@ def create_manager(
     provider: str,
     api_key: str,
     base_url: str,
-    models: Optional[List[str]] = None,
-    timeout: Optional[int] = None,
-    connect_timeout: Optional[int] = None,
+    models: list[str] | None = None,
+    timeout: int | None = None,
+    connect_timeout: int | None = None,
     enable_logging: bool = False,
 ) -> LLMAPIManager:
     """
@@ -1106,21 +1029,21 @@ def call_chat_non_streaming(
     provider: str,
     api_key: str,
     base_url: str,
-    messages: List[Dict[str, str]],
-    model: Optional[str] = None,
-    max_tokens: Optional[int] = None,
-    temperature: Optional[float] = None,
-    top_p: Optional[float] = None,
-    presence_penalty: Optional[float] = None,
-    frequency_penalty: Optional[float] = None,
-    custom_params: Optional[Dict[str, Any]] = None,
-    safety_settings: Optional[Dict[str, Any]] = None,
-    timeout: Optional[int] = None,
-    connect_timeout: Optional[int] = None,
+    messages: list[dict[str, str]],
+    model: str | None = None,
+    max_tokens: int | None = None,
+    temperature: float | None = None,
+    top_p: float | None = None,
+    presence_penalty: float | None = None,
+    frequency_penalty: float | None = None,
+    custom_params: dict[str, Any] | None = None,
+    safety_settings: dict[str, Any] | None = None,
+    timeout: int | None = None,
+    connect_timeout: int | None = None,
     enable_logging: bool = False,
-    models: Optional[List[str]] = None,
+    models: list[str] | None = None,
     **kwargs: Any,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     非流式调用：返回一次性 JSON。参数 timeout/connect_timeout 未传时使用 create_manager 的内部默认值。
     """
@@ -1135,7 +1058,7 @@ def call_chat_non_streaming(
         enable_logging=enable_logging,
     )
 
-    extra: Dict[str, Any] = {}
+    extra: dict[str, Any] = {}
     if top_p is not None:
         extra["top_p"] = top_p
     if presence_penalty is not None:
@@ -1147,7 +1070,7 @@ def call_chat_non_streaming(
     if custom_params:
         extra["custom_params"] = custom_params
 
-    resp: Union[APIResponse, Iterator[StreamChunk]] = mgr.call_api(
+    resp: APIResponse | Iterator[StreamChunk] = mgr.call_api(
         messages=msgs,
         model=model,
         max_tokens=max_tokens,
@@ -1180,19 +1103,19 @@ def stream_chat_chunks(
     provider: str,
     api_key: str,
     base_url: str,
-    messages: List[Dict[str, str]],
-    model: Optional[str] = None,
-    max_tokens: Optional[int] = None,
-    temperature: Optional[float] = None,
-    top_p: Optional[float] = None,
-    presence_penalty: Optional[float] = None,
-    frequency_penalty: Optional[float] = None,
-    custom_params: Optional[Dict[str, Any]] = None,
-    safety_settings: Optional[Dict[str, Any]] = None,
-    timeout: Optional[int] = None,
-    connect_timeout: Optional[int] = None,
+    messages: list[dict[str, str]],
+    model: str | None = None,
+    max_tokens: int | None = None,
+    temperature: float | None = None,
+    top_p: float | None = None,
+    presence_penalty: float | None = None,
+    frequency_penalty: float | None = None,
+    custom_params: dict[str, Any] | None = None,
+    safety_settings: dict[str, Any] | None = None,
+    timeout: int | None = None,
+    connect_timeout: int | None = None,
     enable_logging: bool = False,
-    models: Optional[List[str]] = None,
+    models: list[str] | None = None,
     **kwargs: Any,
 ) -> Iterator[StreamChunk]:
     """
@@ -1209,7 +1132,7 @@ def stream_chat_chunks(
         enable_logging=enable_logging,
     )
 
-    extra: Dict[str, Any] = {}
+    extra: dict[str, Any] = {}
     if top_p is not None:
         extra["top_p"] = top_p
     if presence_penalty is not None:
@@ -1230,9 +1153,7 @@ def stream_chat_chunks(
         **extra,
     )
     if isinstance(resp, Iterator):
-        for chunk in resp:
-            # 透传 manager 的流式分片
-            yield chunk
+        yield from resp
     else:
         # 若返回 APIResponse（通常是错误），直接传递原始错误信息
         if isinstance(resp, APIResponse):
@@ -1245,15 +1166,15 @@ def stream_chat_chunks(
 def list_models_impl(
     provider: str,
     api_key: str,
-    base_url: Optional[str] = None,
-    limit: Optional[int] = None,
-    page_token: Optional[str] = None,
-    before_id: Optional[str] = None,
-    after_id: Optional[str] = None,
-    timeout: Optional[int] = None,
-    connect_timeout: Optional[int] = None,
+    base_url: str | None = None,
+    limit: int | None = None,
+    page_token: str | None = None,
+    before_id: str | None = None,
+    after_id: str | None = None,
+    timeout: int | None = None,
+    connect_timeout: int | None = None,
     enable_logging: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     获取远端可用模型
     """
@@ -1274,7 +1195,7 @@ def list_models_impl(
     )
 
 
-def get_defaults_impl() -> Dict[str, Any]:
+def get_defaults_impl() -> dict[str, Any]:
     """
     返回静态默认值：支持的提供商、默认模型映射、HTTP 错误映射、默认超时等
     """
@@ -1291,7 +1212,7 @@ def get_defaults_impl() -> Dict[str, Any]:
     }
 
 
-def health_impl() -> Dict[str, Any]:
+def health_impl() -> dict[str, Any]:
     """
     简单健康检查
     """

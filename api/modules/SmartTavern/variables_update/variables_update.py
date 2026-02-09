@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 API 封装层：SmartTavern.variables_update
 
@@ -22,8 +21,11 @@ API 封装层：SmartTavern.variables_update
     - 若对象无法从 array_key 取到标识，则退化为按 JSON 值去重
 
 """
-from typing import Any, Dict, Optional
+
+from typing import Any
+
 import core
+
 from .impl import apply_operation as _apply_operation
 
 
@@ -44,42 +46,40 @@ from .impl import apply_operation as _apply_operation
             "overrides": {"type": "object", "additionalProperties": True},
             "operation": {
                 "type": "string",
-                "enum": ["replace", "shallow_merge", "merge", "deep_merge", "append", "union", "remove"]
+                "enum": ["replace", "shallow_merge", "merge", "deep_merge", "append", "union", "remove"],
             },
             "options": {
                 "type": "object",
                 "properties": {
                     "array_strategy": {
                         "type": "string",
-                        "enum": ["replace", "concat", "union", "prepend", "union_by_key"]
+                        "enum": ["replace", "concat", "union", "prepend", "union_by_key"],
                     },
                     "array_key": {
                         "type": "string",
-                        "description": "当 array_strategy=union_by_key 时，数组项对象的唯一键路径（支持 a.b[0].id / ['k'] 等）"
+                        "description": "当 array_strategy=union_by_key 时，数组项对象的唯一键路径（支持 a.b[0].id / ['k'] 等）",
                     },
-                    "remove_paths": {"type": "array", "items": {"type": ["string","integer"]}}
+                    "remove_paths": {"type": "array", "items": {"type": ["string", "integer"]}},
                 },
-                "additionalProperties": True
-            }
+                "additionalProperties": True,
+            },
         },
         "required": ["base", "overrides", "operation"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
     output_schema={
         "type": "object",
-        "properties": {
-            "result": {"type": "object", "additionalProperties": True}
-        },
+        "properties": {"result": {"type": "object", "additionalProperties": True}},
         "required": ["result"],
-        "additionalProperties": False
+        "additionalProperties": False,
     },
 )
 def apply(
-    base: Dict[str, Any],
-    overrides: Dict[str, Any],
+    base: dict[str, Any],
+    overrides: dict[str, Any],
     operation: str,
-    options: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    options: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """
     常用策略：
       - replace：直接替换为 overrides

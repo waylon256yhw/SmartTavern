@@ -14,56 +14,56 @@ export type MessageRole = 'user' | 'assistant' | 'system'
 
 /** 发送消息请求 Payload */
 export interface MessageSendRequestPayload {
-  conversationFile: string;
-  parentId: string;
-  nodeId?: string;
-  role: MessageRole;
-  content: string;
-  tag?: string;
+  conversationFile: string
+  parentId: string
+  nodeId?: string
+  role: MessageRole
+  content: string
+  tag?: string
 }
 
 /** 发送消息成功 Payload */
 export interface MessageSendSuccessPayload {
-  conversationFile: string;
-  nodeId: string;
-  role: string;
-  content: string;
-  doc?: any;
-  tag?: string;
+  conversationFile: string
+  nodeId: string
+  role: string
+  content: string
+  doc?: any
+  tag?: string
 }
 
 /** 发送消息失败 Payload */
 export interface MessageSendFailurePayload {
-  conversationFile?: string;
-  message: string;
-  detail?: any;
-  tag?: string;
+  conversationFile?: string
+  message: string
+  detail?: any
+  tag?: string
 }
 
 /** 编辑消息请求 Payload */
 export interface MessageEditRequestPayload {
-  conversationFile: string;
-  nodeId: string;
-  content: string;
-  tag?: string;
+  conversationFile: string
+  nodeId: string
+  content: string
+  tag?: string
 }
 
 /** 编辑消息成功 Payload */
 export interface MessageEditSuccessPayload {
-  conversationFile: string;
-  nodeId: string;
-  content: string;
-  doc?: any;
-  tag?: string;
+  conversationFile: string
+  nodeId: string
+  content: string
+  doc?: any
+  tag?: string
 }
 
 /** 编辑消息失败 Payload */
 export interface MessageEditFailurePayload {
-  conversationFile?: string;
-  nodeId?: string;
-  message: string;
-  detail?: any;
-  tag?: string;
+  conversationFile?: string
+  nodeId?: string
+  message: string
+  detail?: any
+  tag?: string
 }
 
 // ============ Event Constants ============

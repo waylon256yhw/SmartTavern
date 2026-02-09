@@ -5,19 +5,28 @@ import { useMessagesStore } from '../stores/chatMessages'
 
 // ===== Backend base helpers (match other services) =====
 declare global {
-  interface Window { ST_BACKEND_BASE?: string }
-  interface ImportMetaEnv { VITE_API_BASE?: string }
+  interface Window {
+    ST_BACKEND_BASE?: string
+  }
+  interface ImportMetaEnv {
+    VITE_API_BASE?: string
+  }
 }
 
-const DEFAULT_BACKEND: string = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050')
+const DEFAULT_BACKEND: string =
+  import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050')
 
 function _readLS(key: string): string | null {
-  try { return (typeof window !== 'undefined') ? localStorage.getItem(key) : null } catch (_) { return null }
+  try {
+    return typeof window !== 'undefined' ? localStorage.getItem(key) : null
+  } catch (_) {
+    return null
+  }
 }
 
 function getBackendBase(): string {
   const fromLS = _readLS('st.backend_base')
-  const fromWin = (typeof window !== 'undefined') ? (window as any).ST_BACKEND_BASE : null
+  const fromWin = typeof window !== 'undefined' ? (window as any).ST_BACKEND_BASE : null
   const base = String(fromLS || fromWin || DEFAULT_BACKEND)
   return base.replace(/\/+$/, '')
 }
@@ -111,7 +120,7 @@ interface CompleteResult {
 export async function routePromptWithHooks({
   conversation_file,
   view = 'user_view',
-  output = 'full'
+  output = 'full',
 }: RoutePromptWithHooksParams = {}): Promise<RoutePromptResult> {
   // 如果没有传 conversation_file，使用当前对话文件
   let targetFile = conversation_file
@@ -119,22 +128,27 @@ export async function routePromptWithHooks({
     const messagesStore = useMessagesStore()
     const currentFile = messagesStore.conversationFile
     if (!currentFile) {
-      throw new Error('No conversation loaded. Please load a conversation first or provide conversation_file parameter.')
+      throw new Error(
+        'No conversation loaded. Please load a conversation first or provide conversation_file parameter.',
+      )
     }
     targetFile = currentFile
   }
 
-  const response = await fetch(`${ensureWorkflowBase()}/smarttavern/prompt_router/route_with_hooks`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
+  const response = await fetch(
+    `${ensureWorkflowBase()}/smarttavern/prompt_router/route_with_hooks`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        conversation_file: targetFile,
+        view,
+        output,
+      }),
     },
-    body: JSON.stringify({
-      conversation_file: targetFile,
-      view,
-      output
-    })
-  })
+  )
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}))
@@ -146,39 +160,39 @@ export async function routePromptWithHooks({
 
 /**
  * 使用后端路由进行 AI 调用（带完整 Hook 执行）
- * 
+ *
  * 该函数会：
  * 1. 执行所有提示词处理 Hook（11个Hook点）
  * 2. 执行所有 LLM Hook（4个Hook点）
  * 3. 调用 AI API 并返回结果
- * 
+ *
  * Hook 执行顺序：
  * 提示词处理 Hook（11个） + LLM Hook（4个）：
  * - beforeLLMCall
  * - afterLLMCall
  * - beforeStreamChunk
  * - afterStreamChunk
- * 
+ *
  * @param params - 参数对象
  * @param params.conversation_file - 必需，对话文件路径
  * @param params.stream - 可选，是否流式返回（默认 false）
- * 
+ *
  * @returns 非流式：Promise<{success, content, usage, ...}>
  * @returns 流式：Promise<CustomEventSource>
- * 
+ *
  * @example
  * // 非流式调用
  * const result = await completeWithHooks({
  *   conversation_file: 'data/conversations/my-chat/conversation.json'
  * })
  * console.log(result.content)
- * 
+ *
  * // 流式调用
  * const eventSource = await completeWithHooks({
  *   conversation_file: 'data/conversations/my-chat/conversation.json',
  *   stream: true
  * })
- * 
+ *
  * eventSource.addEventListener('message', (e) => {
  *   const data = JSON.parse(e.data)
  *   if (data.type === 'chunk') {
@@ -190,109 +204,115 @@ export async function routePromptWithHooks({
  */
 export async function completeWithHooks({
   conversation_file,
-  stream = false
+  stream = false,
 }: CompleteWithHooksParams): Promise<CompleteResult | CustomEventSource> {
   if (stream) {
     // 流式调用
     const url = `${ensureWorkflowBase()}/smarttavern/prompt_router/complete_with_hooks`
-    
+
     return new Promise((resolve, reject) => {
       fetch(url, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           conversation_file,
-          stream: true
-        })
-      }).then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`)
-        }
-        
-        const reader = response.body?.getReader()
-        if (!reader) {
-          throw new Error('No response body reader')
-        }
-        
-        const decoder = new TextDecoder()
-        
-        const eventSource: CustomEventSource = {
-          _reader: reader,
-          _decoder: decoder,
-          _listeners: {},
-          
-          addEventListener(type: string, callback: (event: any) => void) {
-            if (!this._listeners[type]) {
-              this._listeners[type] = []
-            }
-            this._listeners[type].push(callback)
-          },
-          
-          removeEventListener(type: string, callback: (event: any) => void) {
-            if (this._listeners[type]) {
-              this._listeners[type] = this._listeners[type].filter(cb => cb !== callback)
-            }
-          },
-          
-          close() {
-            if (this._reader) {
-              this._reader.cancel()
-            }
-          },
-          
-          async _start() {
-            try {
-              while (true) {
-                if (!this._reader) break
-                const { done, value } = await this._reader.read()
-                if (done) break
-                
-                const chunk = this._decoder.decode(value, { stream: true })
-                const lines = chunk.split('\n')
-                
-                for (const line of lines) {
-                  if (line.startsWith('data: ')) {
-                    const data = line.slice(6)
-                    if (data.trim()) {
-                      const event = { data }
-                      if (this._listeners['message']) {
-                        this._listeners['message'].forEach(cb => cb(event))
+          stream: true,
+        }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`)
+          }
+
+          const reader = response.body?.getReader()
+          if (!reader) {
+            throw new Error('No response body reader')
+          }
+
+          const decoder = new TextDecoder()
+
+          const eventSource: CustomEventSource = {
+            _reader: reader,
+            _decoder: decoder,
+            _listeners: {},
+
+            addEventListener(type: string, callback: (event: any) => void) {
+              if (!this._listeners[type]) {
+                this._listeners[type] = []
+              }
+              this._listeners[type].push(callback)
+            },
+
+            removeEventListener(type: string, callback: (event: any) => void) {
+              if (this._listeners[type]) {
+                this._listeners[type] = this._listeners[type].filter((cb) => cb !== callback)
+              }
+            },
+
+            close() {
+              if (this._reader) {
+                this._reader.cancel()
+              }
+            },
+
+            async _start() {
+              try {
+                while (true) {
+                  if (!this._reader) break
+                  const { done, value } = await this._reader.read()
+                  if (done) break
+
+                  const chunk = this._decoder.decode(value, { stream: true })
+                  const lines = chunk.split('\n')
+
+                  for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                      const data = line.slice(6)
+                      if (data.trim()) {
+                        const event = { data }
+                        if (this._listeners['message']) {
+                          this._listeners['message'].forEach((cb) => cb(event))
+                        }
                       }
                     }
                   }
                 }
+              } catch (err) {
+                if (this._listeners['error']) {
+                  this._listeners['error'].forEach((cb) => cb(err))
+                }
               }
-            } catch (err) {
-              if (this._listeners['error']) {
-                this._listeners['error'].forEach(cb => cb(err))
-              }
-            }
+            },
           }
-        }
-        
-        eventSource._start()
-        resolve(eventSource)
-      }).catch(reject)
+
+          eventSource._start()
+          resolve(eventSource)
+        })
+        .catch(reject)
     })
   } else {
     // 非流式调用
-  const response = await fetch(`${ensureWorkflowBase()}/smarttavern/prompt_router/complete_with_hooks`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
+    const response = await fetch(
+      `${ensureWorkflowBase()}/smarttavern/prompt_router/complete_with_hooks`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          conversation_file,
+          stream: false,
+        }),
       },
-      body: JSON.stringify({
-        conversation_file,
-        stream: false
-      })
-    })
+    )
 
     if (!response.ok) {
       // 尝试从响应体中获取详细错误信息
       const errorData = await response.json().catch(() => ({}))
-      const errorMessage = errorData.detail || errorData.error || errorData.message || `HTTP ${response.status}`
+      const errorMessage =
+        errorData.detail || errorData.error || errorData.message || `HTTP ${response.status}`
       throw new Error(errorMessage)
     }
 
@@ -302,48 +322,48 @@ export async function completeWithHooks({
 
 /**
  * 使用当前对话配置进行 AI 调用（带完整 Hook 执行）
- * 
+ *
  * 该函数会自动使用当前加载的对话文件，无需手动指定路径。
  * 其他行为与 completeWithHooks 完全相同。
- * 
+ *
  * @param params - 参数对象
  * @param params.stream - 可选，是否流式返回（默认 false）
- * 
+ *
  * @returns 非流式：Promise<{success, content, usage, ...}>
  * @returns 流式：Promise<CustomEventSource>
- * 
+ *
  * @throws Error 如果没有加载对话
- * 
+ *
  * @example
  * // 非流式调用
  * const result = await completeWithHooksAndCurrentConfig()
  * console.log(result.content)
- * 
+ *
  * // 流式调用
  * const eventSource = await completeWithHooksAndCurrentConfig({ stream: true })
- * 
+ *
  * let fullText = ''
  * eventSource.addEventListener('message', (e) => {
  *   const data = JSON.parse(e.data)
- *   
+ *
  *   switch(data.type) {
  *     case 'chunk':
  *       fullText += data.content
  *       console.log(data.content)
  *       break
- *       
+ *
  *     case 'finish':
  *       console.log('Finish reason:', data.finish_reason)
  *       break
- *       
+ *
  *     case 'usage':
  *       console.log('Token usage:', data.usage)
  *       break
- *       
+ *
  *     case 'error':
  *       console.error('Error:', data.message)
  *       break
- *       
+ *
  *     case 'end':
  *       console.log('Stream ended. Full text:', fullText)
  *       eventSource.close()
@@ -352,7 +372,7 @@ export async function completeWithHooks({
  * })
  */
 export async function completeWithHooksAndCurrentConfig({
-  stream = false
+  stream = false,
 }: {
   stream?: boolean
 } = {}): Promise<CompleteResult | CustomEventSource> {
@@ -366,6 +386,6 @@ export async function completeWithHooksAndCurrentConfig({
 
   return await completeWithHooks({
     conversation_file: conversationFile,
-    stream
+    stream,
   })
 }

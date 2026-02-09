@@ -49,52 +49,66 @@ async function loadPlugins() {
   try {
     const sw = await DataCatalog.getPluginsSwitch()
     if (!Array.isArray(sw?.enabled)) {
-      Host.pushToast?.({ type: 'error', message: '缺失插件开关文件（plugins_switch.json）', timeout: 2800 })
+      Host.pushToast?.({
+        type: 'error',
+        message: '缺失插件开关文件（plugins_switch.json）',
+        timeout: 2800,
+      })
       plugins.value = []
       return
     }
-    const enabledArr = sw.enabled.map(x => String(x))
+    const enabledArr = sw.enabled.map((x) => String(x))
     const enabledSet = new Set(enabledArr)
 
     const res = await DataCatalog.listPlugins()
     const arr = Array.isArray(res?.items) ? res.items : []
     const errs = Array.isArray(res?.errors) ? res.errors : []
     for (const er of errs) {
-      Host.pushToast?.({ type: 'warning', message: `插件目录缺失：${er?.file || ''}`, timeout: 2600 })
+      Host.pushToast?.({
+        type: 'warning',
+        message: `插件目录缺失：${er?.file || ''}`,
+        timeout: 2600,
+      })
     }
 
-    const items = await Promise.all(arr.map(async (it) => {
-      const dir = String(it.dir || '')
-      const name = it.name || (dir.split('/').pop() || '未命名')
-      const desc = it.description || ''
-      const plugName = dir.split('/').pop() || dir
-      const obj = {
-        key: dir,
-        icon: 'puzzle',
-        name,
-        desc,
-        dir,
-        enabled: (enabledSet === null ? true : enabledSet.has(plugName)),
-        avatarUrl: null,
-      }
-      // 加载图标
-      const iconPath = dir ? `${dir}/icon.png` : ''
-      if (iconPath) {
-        try {
-          const { blob } = await DataCatalog.getPluginsAssetBlob(iconPath)
-          obj.avatarUrl = URL.createObjectURL(blob)
-        } catch (_) {
-          // ignore
+    const items = await Promise.all(
+      arr.map(async (it) => {
+        const dir = String(it.dir || '')
+        const name = it.name || dir.split('/').pop() || '未命名'
+        const desc = it.description || ''
+        const plugName = dir.split('/').pop() || dir
+        const obj = {
+          key: dir,
+          icon: 'puzzle',
+          name,
+          desc,
+          dir,
+          enabled: enabledSet === null ? true : enabledSet.has(plugName),
+          avatarUrl: null,
         }
-      }
-      return obj
-    }))
+        // 加载图标
+        const iconPath = dir ? `${dir}/icon.png` : ''
+        if (iconPath) {
+          try {
+            const { blob } = await DataCatalog.getPluginsAssetBlob(iconPath)
+            obj.avatarUrl = URL.createObjectURL(blob)
+          } catch (_) {
+            // ignore
+          }
+        }
+        return obj
+      }),
+    )
     plugins.value = items
   } catch (e) {
     console.warn('[PluginsView] loadPlugins failed:', e)
   } finally {
     loading.value = false
-    nextTick(() => { try { window?.lucide?.createIcons?.() } catch (_) {} })
+    nextTick(() => {
+      try {
+        window?.lucide?.createIcons?.()
+      } catch (_) {}
+    })
   }
 }
 
@@ -107,21 +121,32 @@ async function onToggle(it) {
   pending.value[id] = true
 
   const name = dir.split('/').pop() || dir
-  const allNames = (plugins.value || []).map(x => (String(x.dir || x.key || '').split('/').pop() || x.name || ''))
+  const allNames = (plugins.value || []).map(
+    (x) =>
+      String(x.dir || x.key || '')
+        .split('/')
+        .pop() ||
+      x.name ||
+      '',
+  )
   try {
     const sw = await DataCatalog.getPluginsSwitch()
     if (!Array.isArray(sw?.enabled)) {
-      Host.pushToast?.({ type: 'error', message: '缺失插件开关文件（plugins_switch.json）', timeout: 2800 })
+      Host.pushToast?.({
+        type: 'error',
+        message: '缺失插件开关文件（plugins_switch.json）',
+        timeout: 2800,
+      })
       return
     }
-    const set = new Set(sw.enabled.map(x => String(x)))
+    const set = new Set(sw.enabled.map((x) => String(x)))
 
     let nextEnabled = []
     if (it.enabled) {
       // 禁用
       set.delete(name)
       nextEnabled = Array.from(set)
-      const nextDisabled = allNames.filter(n => nextEnabled.indexOf(n) === -1)
+      const nextDisabled = allNames.filter((n) => nextEnabled.indexOf(n) === -1)
       await DataCatalog.updatePluginsSwitch({ enabled: nextEnabled, disabled: nextDisabled })
       await PluginLoader.unload(id)
       it.enabled = false
@@ -130,7 +155,7 @@ async function onToggle(it) {
       // 启用
       set.add(name)
       nextEnabled = Array.from(set)
-      const nextDisabled = allNames.filter(n => nextEnabled.indexOf(n) === -1)
+      const nextDisabled = allNames.filter((n) => nextEnabled.indexOf(n) === -1)
       await DataCatalog.updatePluginsSwitch({ enabled: nextEnabled, disabled: nextDisabled })
       await PluginLoader.loadPluginByDir(dir, { id, replace: true })
       it.enabled = true
@@ -141,7 +166,11 @@ async function onToggle(it) {
     Host.pushToast?.({ type: 'error', message: `操作失败：${e?.message || e}`, timeout: 2200 })
   } finally {
     delete pending.value[id]
-    nextTick(() => { try { window?.lucide?.createIcons?.() } catch (_) {} })
+    nextTick(() => {
+      try {
+        window?.lucide?.createIcons?.()
+      } catch (_) {}
+    })
   }
 }
 
@@ -149,20 +178,28 @@ async function onToggle(it) {
 async function onViewPlugin(it) {
   const dir = String(it?.dir || it?.key || '')
   if (!dir) return
-  
+
   try {
     const result = await DataCatalog.getPluginDetail(dir)
     if (result.error) {
-      Host.pushToast?.({ type: 'error', message: `获取插件详情失败：${result.message || result.error}`, timeout: 2200 })
+      Host.pushToast?.({
+        type: 'error',
+        message: `获取插件详情失败：${result.message || result.error}`,
+        timeout: 2200,
+      })
       return
     }
-    
+
     detailPlugin.value = result.content || {}
     detailPluginDir.value = dir
     showDetailModal.value = true
   } catch (err) {
     console.error('[PluginsView] Get plugin detail error:', err)
-    Host.pushToast?.({ type: 'error', message: `获取插件详情失败：${err.message || err}`, timeout: 2200 })
+    Host.pushToast?.({
+      type: 'error',
+      message: `获取插件详情失败：${err.message || err}`,
+      timeout: 2200,
+    })
   }
 }
 
@@ -181,7 +218,7 @@ function handlePluginSaved() {
 function onDeletePlugin(it) {
   const dir = String(it?.dir || it?.key || '')
   if (!dir) return
-  
+
   deleteTarget.value = {
     key: dir,
     name: it.name || getFolderName(dir),
@@ -197,28 +234,40 @@ function closeDeleteConfirmModal() {
 
 async function handleDeleteConfirm() {
   if (!deleteTarget.value) return
-  
+
   const dir = deleteTarget.value.key
   const id = mkId(dir)
-  
+
   deleting.value = true
   try {
     // 先卸载插件
     try {
       await PluginLoader.unload(id)
     } catch (_) {}
-    
+
     // 删除插件目录
     const result = await DataCatalog.deleteDataFolder(deleteTarget.value.folderPath)
     if (result.success) {
       await loadPlugins()
-      Host.pushToast?.({ type: 'success', message: `已删除插件：${deleteTarget.value.name}`, timeout: 1800 })
+      Host.pushToast?.({
+        type: 'success',
+        message: `已删除插件：${deleteTarget.value.name}`,
+        timeout: 1800,
+      })
     } else {
-      Host.pushToast?.({ type: 'error', message: result.message || t('error.deleteFailed', { error: result.error || '' }), timeout: 2200 })
+      Host.pushToast?.({
+        type: 'error',
+        message: result.message || t('error.deleteFailed', { error: result.error || '' }),
+        timeout: 2200,
+      })
     }
   } catch (err) {
     console.error('[PluginsView] Delete error:', err)
-    Host.pushToast?.({ type: 'error', message: t('error.deleteFailed', { error: err.message || '' }), timeout: 2200 })
+    Host.pushToast?.({
+      type: 'error',
+      message: t('error.deleteFailed', { error: err.message || '' }),
+      timeout: 2200,
+    })
   } finally {
     deleting.value = false
     closeDeleteConfirmModal()
@@ -227,7 +276,11 @@ async function handleDeleteConfirm() {
 
 onMounted(async () => {
   await loadPlugins()
-  setTimeout(() => { try { window?.lucide?.createIcons?.() } catch (_) {} }, 50)
+  setTimeout(() => {
+    try {
+      window?.lucide?.createIcons?.()
+    } catch (_) {}
+  }, 50)
 })
 </script>
 
@@ -259,15 +312,28 @@ onMounted(async () => {
           <div class="plugin-info">
             <div class="plugin-name">{{ plugin.name }}</div>
             <div class="plugin-folder">
-              <svg class="folder-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              <svg
+                class="folder-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                ></path>
               </svg>
               <span>{{ getFolderName(plugin.dir) }}</span>
             </div>
             <div class="plugin-desc">{{ plugin.desc }}</div>
           </div>
         </div>
-        
+
         <div class="plugin-actions">
           <button
             class="plugin-btn"
@@ -297,7 +363,7 @@ onMounted(async () => {
         </div>
       </div>
     </div>
-    
+
     <!-- 删除确认弹窗 -->
     <DeleteConfirmModal
       :show="showDeleteConfirmModal"
@@ -307,7 +373,7 @@ onMounted(async () => {
       @close="closeDeleteConfirmModal"
       @confirm="handleDeleteConfirm"
     />
-    
+
     <!-- 详情面板 -->
     <ContentViewModal
       :show="showDetailModal"
@@ -363,7 +429,11 @@ onMounted(async () => {
   padding: var(--st-spacing-xl);
   min-height: var(--st-preview-height-sm);
   overflow: hidden;
-  transition: background var(--st-transition-normal), border-color var(--st-transition-normal), transform var(--st-transition-normal), box-shadow var(--st-transition-normal);
+  transition:
+    background var(--st-transition-normal),
+    border-color var(--st-transition-normal),
+    transform var(--st-transition-normal),
+    box-shadow var(--st-transition-normal);
 }
 
 .plugin-card:hover {
@@ -392,9 +462,13 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   font-size: var(--st-font-xl);
-  background: linear-gradient(135deg, var(--st-panel-avatar-gradient-start, rgba(var(--st-primary),0.12)), var(--st-panel-avatar-gradient-end, rgba(var(--st-accent),0.12)));
+  background: linear-gradient(
+    135deg,
+    var(--st-panel-avatar-gradient-start, rgba(var(--st-primary), 0.12)),
+    var(--st-panel-avatar-gradient-end, rgba(var(--st-accent), 0.12))
+  );
   border: 1px solid rgba(var(--st-border), 0.9);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .plugin-avatar i {
@@ -473,7 +547,11 @@ onMounted(async () => {
   border-radius: var(--st-radius-lg);
   font-size: var(--st-font-sm);
   cursor: pointer;
-  transition: transform var(--st-transition-normal), box-shadow var(--st-transition-normal), background var(--st-transition-normal), border-color var(--st-transition-normal);
+  transition:
+    transform var(--st-transition-normal),
+    box-shadow var(--st-transition-normal),
+    background var(--st-transition-normal),
+    border-color var(--st-transition-normal);
   min-width: var(--st-btn-min-width);
   text-align: center;
 }
@@ -514,7 +592,7 @@ onMounted(async () => {
   .plugin-card {
     grid-template-columns: 1fr;
   }
-  
+
   .plugin-actions {
     flex-direction: row;
   }

@@ -62,7 +62,9 @@ function createEmitter(): EventEmitter {
     on(event: string, cb: EventCallback): () => void {
       if (!all[event]) all[event] = new Set()
       all[event].add(cb)
-      return () => { all[event]?.delete(cb) }
+      return () => {
+        all[event]?.delete(cb)
+      }
     },
     off(event: string, cb: EventCallback): void {
       all[event]?.delete(cb)
@@ -70,7 +72,11 @@ function createEmitter(): EventEmitter {
     emit(event: string, payload?: any): void {
       if (!all[event]) return
       for (const cb of all[event]) {
-        try { cb(payload) } catch (e) { console.error('[ThemeStore] listener error:', e) }
+        try {
+          cb(payload)
+        } catch (e) {
+          console.error('[ThemeStore] listener error:', e)
+        }
       }
     },
   }
@@ -112,7 +118,7 @@ const ThemeStore = (() => {
   let state: ThemeStoreState = {
     version: VERSION,
     // current theme pack (null = none)
-    pack: null,            // { id, name, version, tokens, css, tokensLight?, tokensDark?, cssLight?, cssDark?, script? }
+    pack: null, // { id, name, version, tokens, css, tokensLight?, tokensDark?, cssLight?, cssDark?, script? }
     // bookkeeping for DOM cleanup
     styleId: STYLE_TAG_ID,
     metaId: META_TAG_ID,
@@ -122,7 +128,9 @@ const ThemeStore = (() => {
   // media query listener for system mode
   let __mql: MediaQueryList | null = null
 
-  function getVersion(): string { return state.version }
+  function getVersion(): string {
+    return state.version
+  }
 
   function getState(): ThemeStoreState {
     return { ...state, pack: state.pack ? { ...state.pack } : null }
@@ -135,22 +143,24 @@ const ThemeStore = (() => {
   // Persistence
   function saveToStorage(): void {
     try {
-      const payload: PersistedThemePack | null = state.pack ? {
-        version: state.version,
-        pack: {
-          id: state.pack.id ?? null,
-          name: state.pack.name ?? null,
-          version: state.pack.version ?? null,
-          tokens: state.pack.tokens ?? undefined,
-          css: state.pack.css ?? undefined,
-          // Persist per-mode overrides if present
-          tokensLight: state.pack.tokensLight ?? undefined,
-          tokensDark: state.pack.tokensDark ?? undefined,
-          cssLight: state.pack.cssLight ?? undefined,
-          cssDark: state.pack.cssDark ?? undefined,
-          // DO NOT persist script by default for safety
-        }
-      } : null
+      const payload: PersistedThemePack | null = state.pack
+        ? {
+            version: state.version,
+            pack: {
+              id: state.pack.id ?? null,
+              name: state.pack.name ?? null,
+              version: state.pack.version ?? null,
+              tokens: state.pack.tokens ?? undefined,
+              css: state.pack.css ?? undefined,
+              // Persist per-mode overrides if present
+              tokensLight: state.pack.tokensLight ?? undefined,
+              tokensDark: state.pack.tokensDark ?? undefined,
+              cssLight: state.pack.cssLight ?? undefined,
+              cssDark: state.pack.cssDark ?? undefined,
+              // DO NOT persist script by default for safety
+            },
+          }
+        : null
       if (!payload) {
         localStorage.removeItem(STORAGE_KEY)
       } else {
@@ -226,7 +236,9 @@ const ThemeStore = (() => {
 
   function clearMql(): void {
     if (__mql) {
-      try { __mql.removeEventListener('change', onSystemSchemeChange) } catch (_) {}
+      try {
+        __mql.removeEventListener('change', onSystemSchemeChange)
+      } catch (_) {}
       __mql = null
     }
   }
@@ -257,15 +269,19 @@ const ThemeStore = (() => {
     if (pack.tokens) applyTokens(pack.tokens)
 
     // 2) Apply mode-specific tokens (if provided by pack)
-    const modeTokens = effMode === 'dark' ? (pack.tokensDark || null) : (pack.tokensLight || null)
+    const modeTokens = effMode === 'dark' ? pack.tokensDark || null : pack.tokensLight || null
     if (modeTokens) applyTokens(modeTokens)
 
     // 3) Inject CSS: base + mode-specific CSS appended
     const cssCombined =
       (pack.css ? String(pack.css) + '\n' : '') +
       (effMode === 'dark'
-        ? (pack.cssDark ? String(pack.cssDark) : '')
-        : (pack.cssLight ? String(pack.cssLight) : ''))
+        ? pack.cssDark
+          ? String(pack.cssDark)
+          : ''
+        : pack.cssLight
+          ? String(pack.cssLight)
+          : '')
     if (cssCombined.trim()) injectCSS(cssCombined)
     else clearCSS()
 
@@ -276,7 +292,7 @@ const ThemeStore = (() => {
 
   // Public: set color mode preference
   function setColorMode(mode: ColorMode = 'system'): void {
-    const next: ColorMode = (mode === 'dark' || mode === 'light') ? mode : 'system'
+    const next: ColorMode = mode === 'dark' || mode === 'light' ? mode : 'system'
     if (state.currentMode === next) {
       // still ensure system listener if needed
       if (next === 'system' && !__mql) ensureMql()
@@ -303,7 +319,10 @@ const ThemeStore = (() => {
   // options:
   //  - persist: boolean = true
   //  - allowScript: boolean = false (reserved; not executed by default)
-  async function applyThemePack(pack: ThemePackV1, options: ThemeApplyOptions = {}): Promise<ThemePackV1 | null> {
+  async function applyThemePack(
+    pack: ThemePackV1,
+    options: ThemeApplyOptions = {},
+  ): Promise<ThemePackV1 | null> {
     const { persist = true, allowScript = false } = options
     const nextPack: ThemePackV1 = { ...pack }
 
@@ -339,7 +358,7 @@ const ThemeStore = (() => {
       clearTokens(state.pack.tokensLight)
       clearTokens(state.pack.tokensDark)
     }
-    
+
     clearCSS()
     clearMql()
 
@@ -354,7 +373,11 @@ const ThemeStore = (() => {
   }
 
   // Utility to update a single token dynamically (and remember into current pack if present)
-  function setToken(name: string, value: string | number, options: { persist?: boolean } = {}): void {
+  function setToken(
+    name: string,
+    value: string | number,
+    options: { persist?: boolean } = {},
+  ): void {
     if (!name || !name.startsWith?.('--')) return
     applyTokens({ [name]: value })
     if (state.pack) {
@@ -366,11 +389,17 @@ const ThemeStore = (() => {
   }
 
   // Subscribe helper
-  function on(event: string, cb: EventCallback): () => void { return emitter.on(event, cb) }
-  function off(event: string, cb: EventCallback): void { return emitter.off(event, cb) }
+  function on(event: string, cb: EventCallback): () => void {
+    return emitter.on(event, cb)
+  }
+  function off(event: string, cb: EventCallback): void {
+    return emitter.off(event, cb)
+  }
 
   // Back-compat alias
-  function subscribe(cb: EventCallback): () => void { return on('change', cb) }
+  function subscribe(cb: EventCallback): () => void {
+    return on('change', cb)
+  }
 
   return {
     // lifecycle
@@ -387,7 +416,9 @@ const ThemeStore = (() => {
     // color mode
     setColorMode,
     // events
-    on, off, subscribe,
+    on,
+    off,
+    subscribe,
     // low-level helpers (exported for advanced usage)
     applyTokens,
     injectCSS,

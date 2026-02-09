@@ -13,18 +13,18 @@ const emit = defineEmits<{
 
 const current = computed({
   get: () => props.modelValue,
-  set: (v: TabKey) => emit('update:modelValue', v)
+  set: (v: TabKey) => emit('update:modelValue', v),
 })
 
 // 导航项定义（将“文件 Files”置于“预设 Presets”之前）
 const items: { key: TabKey; icon: string; label: string; sub: string }[] = [
-  { key: 'files',      icon: 'folder',    label: '文件',     sub: 'Files' },
-  { key: 'presets',    icon: 'list',      label: '预设',     sub: 'Presets' },
-  { key: 'worldbook',  icon: 'book-open', label: '世界书',   sub: 'World Book' },
-  { key: 'characters', icon: 'user',      label: '角色卡',   sub: 'Characters' },
-  { key: 'regex',      icon: 'code',      label: '正则',     sub: 'Regex' },
-  { key: 'user',       icon: 'id-card',   label: '用户信息', sub: 'User' },
-  { key: 'history',    icon: 'history',   label: '对话历史', sub: 'History' },
+  { key: 'files', icon: 'folder', label: '文件', sub: 'Files' },
+  { key: 'presets', icon: 'list', label: '预设', sub: 'Presets' },
+  { key: 'worldbook', icon: 'book-open', label: '世界书', sub: 'World Book' },
+  { key: 'characters', icon: 'user', label: '角色卡', sub: 'Characters' },
+  { key: 'regex', icon: 'code', label: '正则', sub: 'Regex' },
+  { key: 'user', icon: 'id-card', label: '用户信息', sub: 'User' },
+  { key: 'history', icon: 'history', label: '对话历史', sub: 'History' },
 ]
 </script>
 
@@ -38,7 +38,10 @@ const items: { key: TabKey; icon: string; label: string; sub: string }[] = [
           @click="current = it.key"
         >
           <div class="flex items-center space-x-2">
-            <i :data-lucide="it.icon" class="w-4 h-4 text-black transition-transform duration-200 ease-soft group-hover:translate-x-0.5"></i>
+            <i
+              :data-lucide="it.icon"
+              class="w-4 h-4 text-black transition-transform duration-200 ease-soft group-hover:translate-x-0.5"
+            ></i>
             <span class="text-sm">{{ it.label }}</span>
           </div>
           <span class="text-xs text-black/50">{{ it.sub }}</span>

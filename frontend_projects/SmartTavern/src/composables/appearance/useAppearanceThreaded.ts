@@ -46,7 +46,7 @@ interface AppearanceThreadedState {
   thRadius: Ref<number>
   threadedDisplayModeSel: Ref<string>
   // 新增：iframe 渲染优化配置
-  iframeRenderMode: Ref<string>  // 'all' | 'track_latest' | 'track_viewport'
+  iframeRenderMode: Ref<string> // 'all' | 'track_latest' | 'track_viewport'
   iframeRenderRange: Ref<number> // 渲染层数范围（默认10）
 }
 
@@ -74,8 +74,8 @@ interface AppearanceThreadedSnapshot {
   thRadius: number
   threadedDisplayModeSel: string
   // 新增：iframe 渲染优化配置
-  iframeRenderMode: string       // 'all' | 'track_latest' | 'track_viewport'
-  iframeRenderRange: number      // 渲染层数范围（默认10）
+  iframeRenderMode: string // 'all' | 'track_latest' | 'track_viewport'
+  iframeRenderRange: number // 渲染层数范围（默认10）
 }
 
 // CSS helpers
@@ -93,7 +93,10 @@ function readCssVarFloat(name: string, fallback: number): number {
 }
 function setRootVar(name: string, value: number | string): void {
   const suffix = name === '--st-chat-width' ? '%' : 'px'
-  document.documentElement.style.setProperty(name, typeof value === 'number' ? value + suffix : String(value))
+  document.documentElement.style.setProperty(
+    name,
+    typeof value === 'number' ? value + suffix : String(value),
+  )
 }
 function setRootVarUnitless(name: string, value: number | string): void {
   document.documentElement.style.setProperty(name, String(value))
@@ -152,19 +155,34 @@ function createState(): AppearanceThreadedState {
 
   // 新增：楼层 HTML 舞台显示模式（'auto' | 'fixed' | 'inline'）
   const threadedDisplayModeSel = ref('auto')
-  
+
   // 新增：iframe 渲染优化配置
-  const iframeRenderMode = ref('all')       // 'all' | 'track_latest' | 'track_viewport'
-  const iframeRenderRange = ref(10)         // 渲染层数范围（默认10）
- 
+  const iframeRenderMode = ref('all') // 'all' | 'track_latest' | 'track_viewport'
+  const iframeRenderRange = ref(10) // 渲染层数范围（默认10）
+
   return {
-    contentFontSize, nameFontSize, badgeFontSize, floorFontSize, avatarSize,
-    chatWidth, inputHeight, inputBottomMargin,
-    contentLineHeight, messageGap, cardRadius, stripeWidth,
-    threadedBgOpacityPct, threadedListBgOpacityPct, threadedInputBgOpacityPct,
+    contentFontSize,
+    nameFontSize,
+    badgeFontSize,
+    floorFontSize,
+    avatarSize,
+    chatWidth,
+    inputHeight,
+    inputBottomMargin,
+    contentLineHeight,
+    messageGap,
+    cardRadius,
+    stripeWidth,
+    threadedBgOpacityPct,
+    threadedListBgOpacityPct,
+    threadedInputBgOpacityPct,
     // 新增
     threadedBgBlurPx,
-    thAspectX, thAspectY, thMaxWidthPct, thPadding, thRadius,
+    thAspectX,
+    thAspectY,
+    thMaxWidthPct,
+    thPadding,
+    thRadius,
     threadedDisplayModeSel,
     // iframe 渲染优化
     iframeRenderMode,
@@ -188,13 +206,13 @@ function buildSnapshot(state: AppearanceThreadedState): AppearanceThreadedSnapsh
     messageGap: Number(state.messageGap.value),
     cardRadius: Number.isFinite(state.cardRadius.value) ? Number(state.cardRadius.value) : null,
     stripeWidth: Number(state.stripeWidth.value),
- 
+
     threadedBgOpacityPct: Number(state.threadedBgOpacityPct.value),
     threadedListBgOpacityPct: Number(state.threadedListBgOpacityPct.value),
     threadedInputBgOpacityPct: Number(state.threadedInputBgOpacityPct.value),
     // 新增：背景遮罩模糊（px）
     threadedBgBlurPx: Number(state.threadedBgBlurPx.value),
- 
+
     thAspectX: Number(state.thAspectX.value),
     thAspectY: Number(state.thAspectY.value),
     thMaxWidthPct: Number(state.thMaxWidthPct.value),
@@ -203,7 +221,7 @@ function buildSnapshot(state: AppearanceThreadedState): AppearanceThreadedSnapsh
 
     // 新增：楼层 HTML 舞台显示模式（持久化）
     threadedDisplayModeSel: String(state.threadedDisplayModeSel.value),
-    
+
     // iframe 渲染优化配置
     iframeRenderMode: String(state.iframeRenderMode.value),
     iframeRenderRange: Number(state.iframeRenderRange.value),
@@ -211,57 +229,85 @@ function buildSnapshot(state: AppearanceThreadedState): AppearanceThreadedSnapsh
 }
 
 // Apply state from snapshot into refs + write CSS variables
-function applyState(state: AppearanceThreadedState, s: Partial<AppearanceThreadedSnapshot> | null | undefined): void {
+function applyState(
+  state: AppearanceThreadedState,
+  s: Partial<AppearanceThreadedSnapshot> | null | undefined,
+): void {
   if (!s || typeof s !== 'object') return
   const num = (v: any, f: number): number => (typeof v === 'number' ? v : f)
 
-  state.contentFontSize.value = num(s.contentFontSize, 18); setRootVar('--st-content-font-size', state.contentFontSize.value)
-  state.nameFontSize.value = num(s.nameFontSize, 16); setRootVar('--st-name-font-size', state.nameFontSize.value)
-  state.badgeFontSize.value = num(s.badgeFontSize, 11); setRootVar('--st-badge-font-size', state.badgeFontSize.value)
-  state.floorFontSize.value = num(s.floorFontSize, 16); setRootVar('--st-floor-font-size', state.floorFontSize.value)
-  state.avatarSize.value = num(s.avatarSize, 56); setRootVar('--st-avatar-size', state.avatarSize.value)
-  state.chatWidth.value = num(s.chatWidth, 80); setRootVar('--st-chat-width', state.chatWidth.value)
-  state.inputHeight.value = num(s.inputHeight, 100); setRootVar('--st-input-height', state.inputHeight.value)
-  state.inputBottomMargin.value = num(s.inputBottomMargin, 0); setRootVar('--st-input-bottom-margin', state.inputBottomMargin.value)
+  state.contentFontSize.value = num(s.contentFontSize, 18)
+  setRootVar('--st-content-font-size', state.contentFontSize.value)
+  state.nameFontSize.value = num(s.nameFontSize, 16)
+  setRootVar('--st-name-font-size', state.nameFontSize.value)
+  state.badgeFontSize.value = num(s.badgeFontSize, 11)
+  setRootVar('--st-badge-font-size', state.badgeFontSize.value)
+  state.floorFontSize.value = num(s.floorFontSize, 16)
+  setRootVar('--st-floor-font-size', state.floorFontSize.value)
+  state.avatarSize.value = num(s.avatarSize, 56)
+  setRootVar('--st-avatar-size', state.avatarSize.value)
+  state.chatWidth.value = num(s.chatWidth, 80)
+  setRootVar('--st-chat-width', state.chatWidth.value)
+  state.inputHeight.value = num(s.inputHeight, 100)
+  setRootVar('--st-input-height', state.inputHeight.value)
+  state.inputBottomMargin.value = num(s.inputBottomMargin, 0)
+  setRootVar('--st-input-bottom-margin', state.inputBottomMargin.value)
 
-  state.contentLineHeight.value = num(s.contentLineHeight, 1.75); setRootVarUnitless('--st-content-line-height', String(state.contentLineHeight.value))
-  state.messageGap.value = num(s.messageGap, 0); setRootVar('--st-message-gap', state.messageGap.value)
+  state.contentLineHeight.value = num(s.contentLineHeight, 1.75)
+  setRootVarUnitless('--st-content-line-height', String(state.contentLineHeight.value))
+  state.messageGap.value = num(s.messageGap, 0)
+  setRootVar('--st-message-gap', state.messageGap.value)
 
   if (s.cardRadius === null) {
     state.cardRadius.value = NaN
     document.documentElement.style.removeProperty('--st-card-radius')
   } else {
     state.cardRadius.value = num(s.cardRadius, NaN)
-    if (Number.isFinite(state.cardRadius.value)) setRootVar('--st-card-radius', state.cardRadius.value)
+    if (Number.isFinite(state.cardRadius.value))
+      setRootVar('--st-card-radius', state.cardRadius.value)
   }
-  state.stripeWidth.value = num(s.stripeWidth, 8); setRootVar('--st-stripe-width', state.stripeWidth.value)
+  state.stripeWidth.value = num(s.stripeWidth, 8)
+  setRootVar('--st-stripe-width', state.stripeWidth.value)
 
-  state.threadedBgOpacityPct.value = num(s.threadedBgOpacityPct, 12); setRootVarUnitless('--st-threaded-bg-opacity', String(state.threadedBgOpacityPct.value / 100))
-  state.threadedListBgOpacityPct.value = num(s.threadedListBgOpacityPct, 62); setRootVarUnitless('--st-threaded-list-bg-opacity', String(state.threadedListBgOpacityPct.value / 100))
-  state.threadedInputBgOpacityPct.value = num(s.threadedInputBgOpacityPct, 80); setRootVarUnitless('--st-threaded-input-bg-opacity', String(state.threadedInputBgOpacityPct.value / 100))
-  
+  state.threadedBgOpacityPct.value = num(s.threadedBgOpacityPct, 12)
+  setRootVarUnitless('--st-threaded-bg-opacity', String(state.threadedBgOpacityPct.value / 100))
+  state.threadedListBgOpacityPct.value = num(s.threadedListBgOpacityPct, 62)
+  setRootVarUnitless(
+    '--st-threaded-list-bg-opacity',
+    String(state.threadedListBgOpacityPct.value / 100),
+  )
+  state.threadedInputBgOpacityPct.value = num(s.threadedInputBgOpacityPct, 80)
+  setRootVarUnitless(
+    '--st-threaded-input-bg-opacity',
+    String(state.threadedInputBgOpacityPct.value / 100),
+  )
+
   // 楼层消息背景固定为完全透明
   setRootVarUnitless('--st-threaded-msg-bg-opacity', '0')
 
   // 新增：背景遮罩模糊
-  state.threadedBgBlurPx.value = num(s.threadedBgBlurPx, 0); setRootVar('--st-threaded-bg-blur', state.threadedBgBlurPx.value)
+  state.threadedBgBlurPx.value = num(s.threadedBgBlurPx, 0)
+  setRootVar('--st-threaded-bg-blur', state.threadedBgBlurPx.value)
 
   state.thAspectX.value = num(s.thAspectX, 16)
   state.thAspectY.value = num(s.thAspectY, 9)
-  setRootVarUnitless('--st-threaded-stage-aspect', `${state.thAspectX.value} / ${state.thAspectY.value}`)
-  state.thMaxWidthPct.value = num(s.thMaxWidthPct, 100); setRootVarUnitless('--st-threaded-stage-maxw', state.thMaxWidthPct.value)
-  state.thPadding.value = num(s.thPadding, 8); setRootVar('--st-threaded-stage-padding', state.thPadding.value)
-  state.thRadius.value = num(s.thRadius, 12); setRootVar('--st-threaded-stage-radius', state.thRadius.value)
+  setRootVarUnitless(
+    '--st-threaded-stage-aspect',
+    `${state.thAspectX.value} / ${state.thAspectY.value}`,
+  )
+  state.thMaxWidthPct.value = num(s.thMaxWidthPct, 100)
+  setRootVarUnitless('--st-threaded-stage-maxw', state.thMaxWidthPct.value)
+  state.thPadding.value = num(s.thPadding, 8)
+  setRootVar('--st-threaded-stage-padding', state.thPadding.value)
+  state.thRadius.value = num(s.thRadius, 12)
+  setRootVar('--st-threaded-stage-radius', state.thRadius.value)
 
   // 新增：楼层 HTML 舞台显示模式（不涉及 CSS 变量，纯持久化与消费者读取）
-  state.threadedDisplayModeSel.value = typeof s.threadedDisplayModeSel === 'string'
-    ? s.threadedDisplayModeSel
-    : 'auto'
-  
+  state.threadedDisplayModeSel.value =
+    typeof s.threadedDisplayModeSel === 'string' ? s.threadedDisplayModeSel : 'auto'
+
   // iframe 渲染优化配置
-  state.iframeRenderMode.value = typeof s.iframeRenderMode === 'string'
-    ? s.iframeRenderMode
-    : 'all'
+  state.iframeRenderMode.value = typeof s.iframeRenderMode === 'string' ? s.iframeRenderMode : 'all'
   state.iframeRenderRange.value = num(s.iframeRenderRange, 10)
 }
 
@@ -283,7 +329,9 @@ function initFromCSS(state: AppearanceThreadedState): void {
   state.floorFontSize.value = readCssVar('--st-floor-font-size', 16)
   state.avatarSize.value = readCssVar('--st-avatar-size', 56)
   {
-    const widthVar = getComputedStyle(document.documentElement).getPropertyValue('--st-chat-width')?.trim()
+    const widthVar = getComputedStyle(document.documentElement)
+      .getPropertyValue('--st-chat-width')
+      ?.trim()
     state.chatWidth.value = widthVar ? parseInt(widthVar, 10) : 80
   }
   state.inputHeight.value = readCssVar('--st-input-height', 100)
@@ -297,20 +345,29 @@ function initFromCSS(state: AppearanceThreadedState): void {
   }
   state.stripeWidth.value = readCssVarFloat('--st-stripe-width', 8)
 
-  state.threadedBgOpacityPct.value = Math.round(readCssVarFloat('--st-threaded-bg-opacity', 0.12) * 100)
-  state.threadedListBgOpacityPct.value = Math.round(readCssVarFloat('--st-threaded-list-bg-opacity', 0.62) * 100)
-  state.threadedInputBgOpacityPct.value = Math.round(readCssVarFloat('--st-threaded-input-bg-opacity', 0.80) * 100)
+  state.threadedBgOpacityPct.value = Math.round(
+    readCssVarFloat('--st-threaded-bg-opacity', 0.12) * 100,
+  )
+  state.threadedListBgOpacityPct.value = Math.round(
+    readCssVarFloat('--st-threaded-list-bg-opacity', 0.62) * 100,
+  )
+  state.threadedInputBgOpacityPct.value = Math.round(
+    readCssVarFloat('--st-threaded-input-bg-opacity', 0.8) * 100,
+  )
 
   // 背景遮罩模糊（px）
   state.threadedBgBlurPx.value = readCssVar('--st-threaded-bg-blur', 0)
 
   // 楼层 HTML 舞台
   {
-    const asp = getComputedStyle(document.documentElement).getPropertyValue('--st-threaded-stage-aspect')?.trim()
+    const asp = getComputedStyle(document.documentElement)
+      .getPropertyValue('--st-threaded-stage-aspect')
+      ?.trim()
     if (asp && asp.includes('/')) {
       const parts = asp.split('/')
       if (parts[0] && parts[1]) {
-        const ax = parseFloat(parts[0]); const ay = parseFloat(parts[1])
+        const ax = parseFloat(parts[0])
+        const ay = parseFloat(parts[1])
         if (Number.isFinite(ax) && Number.isFinite(ay) && ax > 0 && ay > 0) {
           state.thAspectX.value = Math.round(ax)
           state.thAspectY.value = Math.round(ay)
@@ -333,25 +390,40 @@ function initFromCSS(state: AppearanceThreadedState): void {
   setRootVar('--st-input-bottom-margin', state.inputBottomMargin.value)
   setRootVarUnitless('--st-content-line-height', String(state.contentLineHeight.value))
   setRootVar('--st-message-gap', state.messageGap.value)
-  if (Number.isFinite(state.cardRadius.value)) setRootVar('--st-card-radius', state.cardRadius.value)
+  if (Number.isFinite(state.cardRadius.value))
+    setRootVar('--st-card-radius', state.cardRadius.value)
   setRootVar('--st-stripe-width', state.stripeWidth.value)
   setRootVarUnitless('--st-threaded-bg-opacity', String(state.threadedBgOpacityPct.value / 100))
-  setRootVarUnitless('--st-threaded-list-bg-opacity', String(state.threadedListBgOpacityPct.value / 100))
-  setRootVarUnitless('--st-threaded-input-bg-opacity', String(state.threadedInputBgOpacityPct.value / 100))
+  setRootVarUnitless(
+    '--st-threaded-list-bg-opacity',
+    String(state.threadedListBgOpacityPct.value / 100),
+  )
+  setRootVarUnitless(
+    '--st-threaded-input-bg-opacity',
+    String(state.threadedInputBgOpacityPct.value / 100),
+  )
   // 楼层消息背景固定为完全透明
   setRootVarUnitless('--st-threaded-msg-bg-opacity', '0')
   setRootVar('--st-threaded-bg-blur', state.threadedBgBlurPx.value)
-  setRootVarUnitless('--st-threaded-stage-aspect', `${state.thAspectX.value} / ${state.thAspectY.value}`)
+  setRootVarUnitless(
+    '--st-threaded-stage-aspect',
+    `${state.thAspectX.value} / ${state.thAspectY.value}`,
+  )
   setRootVarUnitless('--st-threaded-stage-maxw', state.thMaxWidthPct.value)
   setRootVar('--st-threaded-stage-padding', state.thPadding.value)
   setRootVar('--st-threaded-stage-radius', state.thRadius.value)
 
   // 持久化一次，确保后续刷新可以完整恢复
-  try { saveSnapshotLS(buildSnapshot(state)) } catch (_) {}
+  try {
+    saveSnapshotLS(buildSnapshot(state))
+  } catch (_) {}
 }
 
 // Auto save timer
-function startAutoSave(state: AppearanceThreadedState, { intervalMs = 1000 }: { intervalMs?: number } = {}): () => void {
+function startAutoSave(
+  state: AppearanceThreadedState,
+  { intervalMs = 1000 }: { intervalMs?: number } = {},
+): () => void {
   let last = ''
   function tick(): void {
     try {
@@ -362,7 +434,9 @@ function startAutoSave(state: AppearanceThreadedState, { intervalMs = 1000 }: { 
         last = str
       }
       // Broadcast snapshot for theme extensions (optional)
-      try { ThemeManager?.applyAppearanceSnapshot?.(snap) } catch (_) {}
+      try {
+        ThemeManager?.applyAppearanceSnapshot?.(snap)
+      } catch (_) {}
     } catch (_) {}
   }
   const timer = setInterval(tick, intervalMs)
@@ -371,7 +445,9 @@ function startAutoSave(state: AppearanceThreadedState, { intervalMs = 1000 }: { 
   }
 }
 function stopAutoSave(stopFn: (() => void) | undefined): void {
-  try { typeof stopFn === 'function' && stopFn() } catch (_) {}
+  try {
+    typeof stopFn === 'function' && stopFn()
+  } catch (_) {}
 }
 
 // Composable entry
@@ -381,7 +457,8 @@ export default function useAppearanceThreaded() {
     state,
     // lifecycle helpers
     initFromCSS: (): void => initFromCSS(state),
-    applyState: (snap: Partial<AppearanceThreadedSnapshot> | null | undefined): void => applyState(state, snap),
+    applyState: (snap: Partial<AppearanceThreadedSnapshot> | null | undefined): void =>
+      applyState(state, snap),
     buildSnapshot: (): AppearanceThreadedSnapshot => buildSnapshot(state),
     saveSnapshotLS: (snap: AppearanceThreadedSnapshot): boolean => saveSnapshotLS(snap),
     loadSnapshotLS,

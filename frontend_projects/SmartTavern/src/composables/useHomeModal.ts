@@ -30,22 +30,26 @@ export function useHomeModal(): HomeModalAPI {
   function openHomeModal(type: Exclude<HomeModalType, ''>): void {
     homeModalType.value = type
     homeModalTitle.value =
-      type === 'load' ? i18n.t('app.modal.loadGame')
-      : type === 'appearance' ? i18n.t('app.modal.appearance')
-      : type === 'plugins' ? i18n.t('app.modal.plugins')
-      : type === 'options' ? i18n.t('app.modal.options')
-      : ' '
+      type === 'load'
+        ? i18n.t('app.modal.loadGame')
+        : type === 'appearance'
+          ? i18n.t('app.modal.appearance')
+          : type === 'plugins'
+            ? i18n.t('app.modal.plugins')
+            : type === 'options'
+              ? i18n.t('app.modal.options')
+              : ' '
     homeModalOpen.value = true
 
     nextTick(() => {
-      try { 
-        (window as any)?.lucide?.createIcons?.() 
+      try {
+        ;(window as any)?.lucide?.createIcons?.()
       } catch (_) {
         // Ignore errors
       }
       if (typeof (window as any).initFlowbite === 'function') {
-        try { 
-          (window as any).initFlowbite() 
+        try {
+          ;(window as any).initFlowbite()
         } catch (_) {
           // Ignore errors
         }

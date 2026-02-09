@@ -71,12 +71,11 @@ function dirname(p: string): string {
 function buildDefaultAssistantAvatar(letter?: string): string {
   const defaultLetter = letter || i18n.t('stores.character.defaultAvatarLetter')
   const size = 256
-  const bg = '#E5E7EB'     // tailwind: gray-200
-  const fg = '#111827'     // tailwind: gray-900
+  const bg = '#E5E7EB' // tailwind: gray-200
+  const fg = '#111827' // tailwind: gray-900
   const fontSize = 112
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-      <rect x="0" y="0" width="${size}" height="${size}" rx="${Math.round(size*0.18)}" fill="${bg}" />
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <rect x="0" y="0" width="${size}" height="${size}" rx="${Math.round(size * 0.18)}" fill="${bg}" />
       <text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle"
         fill="${fg}" font-size="${fontSize}" font-weight="700" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', 'WenQuanYi Micro Hei', sans-serif">${defaultLetter}</text>
     </svg>`
@@ -104,17 +103,19 @@ async function readJsonFromBlob(blob: Blob): Promise<CharacterMeta | null> {
 /** 安全释放旧的 ObjectURL */
 function safeRevoke(url: string | null): void {
   if (!url) return
-  try { URL.revokeObjectURL(url) } catch {}
+  try {
+    URL.revokeObjectURL(url)
+  } catch {}
 }
 
 // ========== Pinia Store 定义 ==========
 
 export const useCharacterStore = defineStore('character', () => {
   // 状态
-  const currentCharacterFile = ref<string | null>(null)   // backend_projects/.../characters/.../character.json
-  const avatarUrl = ref<string | null>(null)              // ObjectURL 或 data:URL
-  const iconUrl = ref<string | null>(null)                // ObjectURL 或 data:URL（可选）
-  const meta = ref<CharacterMeta | null>(null)            // 角色卡 JSON（可选）
+  const currentCharacterFile = ref<string | null>(null) // backend_projects/.../characters/.../character.json
+  const avatarUrl = ref<string | null>(null) // ObjectURL 或 data:URL
+  const iconUrl = ref<string | null>(null) // ObjectURL 或 data:URL（可选）
+  const meta = ref<CharacterMeta | null>(null) // 角色卡 JSON（可选）
   const loading = ref<boolean>(false)
   const error = ref<string>('')
 
@@ -127,7 +128,7 @@ export const useCharacterStore = defineStore('character', () => {
     // 不再需要手动处理，由 watch 自动监听 chatSettings.characterFile
     // 这个方法保留是为了保持 API 兼容性
   }
-  
+
   // 监听 chatSettings.characterFile 的变化，自动加载角色卡
   const chatSettingsStore = useChatSettingsStore()
   watch(
@@ -149,7 +150,7 @@ export const useCharacterStore = defineStore('character', () => {
         loading.value = false
       }
     },
-    { immediate: true }
+    { immediate: true },
   )
 
   /** 直接从"角色卡文件路径"刷新状态（绕过 settings） */
@@ -165,7 +166,9 @@ export const useCharacterStore = defineStore('character', () => {
 
       // 头像
       try {
-        const { blob } = await DataCatalogTyped.getDataAssetBlob(`${dir}character.png`) as DataCatalogBlobResponse
+        const { blob } = (await DataCatalogTyped.getDataAssetBlob(
+          `${dir}character.png`,
+        )) as DataCatalogBlobResponse
         const url = URL.createObjectURL(blob)
         nextAvatar = url
       } catch {
@@ -174,7 +177,9 @@ export const useCharacterStore = defineStore('character', () => {
 
       // 图标（可选）
       try {
-        const { blob } = await DataCatalogTyped.getDataAssetBlob(`${dir}icon.png`) as DataCatalogBlobResponse
+        const { blob } = (await DataCatalogTyped.getDataAssetBlob(
+          `${dir}icon.png`,
+        )) as DataCatalogBlobResponse
         const url = URL.createObjectURL(blob)
         nextIcon = url
       } catch {
@@ -183,7 +188,7 @@ export const useCharacterStore = defineStore('character', () => {
 
       // 元数据（可选）
       try {
-        const { blob } = await DataCatalogTyped.getDataAssetBlob(cf) as DataCatalogBlobResponse
+        const { blob } = (await DataCatalogTyped.getDataAssetBlob(cf)) as DataCatalogBlobResponse
         nextMeta = await readJsonFromBlob(blob)
       } catch {
         nextMeta = null
@@ -202,7 +207,7 @@ export const useCharacterStore = defineStore('character', () => {
     cf: string | null,
     nextAvatar: string | null,
     nextIcon: string | null,
-    nextMeta: CharacterMeta | null
+    nextMeta: CharacterMeta | null,
   ): void {
     currentCharacterFile.value = cf || null
 
@@ -304,7 +309,9 @@ export interface RegisterGlobalFunctionsOptions {
   exposeToWindow?: boolean
 }
 
-export function registerGlobalFunctions({ exposeToWindow = true }: RegisterGlobalFunctionsOptions = {}): void {
+export function registerGlobalFunctions({
+  exposeToWindow = true,
+}: RegisterGlobalFunctionsOptions = {}): void {
   if (typeof window === 'undefined') return
   if (exposeToWindow) {
     try {
@@ -326,8 +333,8 @@ export function registerGlobalFunctions({ exposeToWindow = true }: RegisterGloba
       })
     } catch {
       // 回退直接赋值
-      (window as any).getCharAvatarPath = async (name?: string) => await getCharAvatarPath(name);
-      (window as any).getChar = (key?: string) => getChar(key)
+      ;(window as any).getCharAvatarPath = async (name?: string) => await getCharAvatarPath(name)
+      ;(window as any).getChar = (key?: string) => getChar(key)
     }
   }
 }

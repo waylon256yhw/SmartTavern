@@ -5,7 +5,7 @@ import { useI18n } from '@/locales'
 const { t } = useI18n()
 
 const props = defineProps({
-  rule: { type: Object, required: true }
+  rule: { type: Object, required: true },
 })
 
 const emit = defineEmits(['update', 'delete'])
@@ -19,8 +19,8 @@ const draftEnabled = ref(props.rule.enabled ? 'true' : 'false')
 const draftPlacement = ref(props.rule.placement)
 const draftFind = ref(props.rule.find_regex)
 const draftReplace = ref(props.rule.replace_regex)
-const draftMode = ref((props.rule).mode ?? 'always')
-const draftCondition = ref(String((props.rule).condition ?? ''))
+const draftMode = ref(props.rule.mode ?? 'always')
+const draftCondition = ref(String(props.rule.condition ?? ''))
 
 /* 选项枚举 */
 const TARGET_PREFIXES = ['preset', 'world_book', 'history', 'char', 'persona']
@@ -77,10 +77,10 @@ function resetDraft() {
   draftPlacement.value = props.rule.placement
   draftFind.value = props.rule.find_regex
   draftReplace.value = props.rule.replace_regex
-  draftMode.value = (props.rule.mode ?? 'always')
+  draftMode.value = props.rule.mode ?? 'always'
   draftCondition.value = String(props.rule.condition ?? '')
-  
-  const arrT = (props.rule.targets || []).map(x => String(x))
+
+  const arrT = (props.rule.targets || []).map((x) => String(x))
   selectedTargets.value = {
     preset: arrT.includes('preset'),
     world_book: arrT.includes('world_book'),
@@ -88,13 +88,13 @@ function resetDraft() {
     char: arrT.includes('char'),
     persona: arrT.includes('persona'),
   }
-  
-  const arrV = (props.rule.views || []).map(x => String(x))
+
+  const arrV = (props.rule.views || []).map((x) => String(x))
   selectedViews.value = {
     user_view: arrV.includes('user_view'),
     assistant_view: arrV.includes('assistant_view'),
   }
-  
+
   selectedSourceTypes.value = {
     'history.user': arrT.includes('history.user'),
     'history.assistant': arrT.includes('history.assistant'),
@@ -107,7 +107,7 @@ function resetDraft() {
     'char.description': arrT.includes('char.description'),
     'persona.description': arrT.includes('persona.description'),
   }
-  
+
   draftMinDepth.value = props.rule.min_depth != null ? String(props.rule.min_depth) : ''
   draftMaxDepth.value = props.rule.max_depth != null ? String(props.rule.max_depth) : ''
   draftDescription.value = props.rule.description ?? ''
@@ -118,7 +118,7 @@ watch(
   () => {
     if (!editing.value) resetDraft()
   },
-  { deep: false }
+  { deep: false },
 )
 
 function onEdit() {
@@ -150,17 +150,18 @@ function onSave() {
     find_regex: draftFind.value,
     replace_regex: draftReplace.value,
     targets: [
-      ...TARGET_PREFIXES.filter(k => selectedTargets.value[k]),
-      ...SOURCE_TYPES.filter(s => selectedSourceTypes.value[s]),
+      ...TARGET_PREFIXES.filter((k) => selectedTargets.value[k]),
+      ...SOURCE_TYPES.filter((s) => selectedSourceTypes.value[s]),
     ],
-    placement: (draftPlacement.value === 'before_macro' || draftPlacement.value === 'after_macro')
-      ? draftPlacement.value
-      : 'after_macro',
-    views: VIEWS.filter(v => selectedViews.value[v]),
-    mode: (draftMode.value === 'conditional') ? 'conditional' : 'always',
-    condition: (draftMode.value === 'conditional') ? draftCondition.value : ''
+    placement:
+      draftPlacement.value === 'before_macro' || draftPlacement.value === 'after_macro'
+        ? draftPlacement.value
+        : 'after_macro',
+    views: VIEWS.filter((v) => selectedViews.value[v]),
+    mode: draftMode.value === 'conditional' ? 'conditional' : 'always',
+    condition: draftMode.value === 'conditional' ? draftCondition.value : '',
   }
-  
+
   const minD = toNumOrUndef(draftMinDepth.value)
   const maxD = toNumOrUndef(draftMaxDepth.value)
   if (minD !== undefined) updated.min_depth = minD
@@ -174,7 +175,9 @@ function onSave() {
 </script>
 
 <template>
-  <div class="border border-gray-200 rounded-4 p-3 bg-white transition-all duration-200 ease-soft hover:shadow-elevate">
+  <div
+    class="border border-gray-200 rounded-4 p-3 bg-white transition-all duration-200 ease-soft hover:shadow-elevate"
+  >
     <div class="flex items-start justify-between">
       <div class="text-sm space-y-2">
         <!-- 第一行：名称与 ID -->
@@ -186,35 +189,61 @@ function onSave() {
         <!-- 第二行：阶段与深度 -->
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-xs text-black/60">{{ t('cards.regexRule.phase') }}</span>
-          <span class="text-xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent">{{ props.rule.placement || '—' }}</span>
-          <span v-if="props.rule.min_depth !== undefined" class="text-xs text-black/60">min: {{ props.rule.min_depth }}</span>
-          <span v-if="props.rule.max_depth !== undefined" class="text-xs text-black/60">max: {{ props.rule.max_depth }}</span>
+          <span
+            class="text-xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent"
+            >{{ props.rule.placement || '—' }}</span
+          >
+          <span v-if="props.rule.min_depth !== undefined" class="text-xs text-black/60"
+            >min: {{ props.rule.min_depth }}</span
+          >
+          <span v-if="props.rule.max_depth !== undefined" class="text-xs text-black/60"
+            >max: {{ props.rule.max_depth }}</span
+          >
         </div>
 
         <!-- 第三行：targets -->
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-xs text-black/60">{{ t('cards.regexRule.targets') }}</span>
-          <span v-for="t in props.rule.targets || []" :key="t" class="text-xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent">{{ t }}</span>
+          <span
+            v-for="t in props.rule.targets || []"
+            :key="t"
+            class="text-xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent"
+            >{{ t }}</span
+          >
         </div>
 
         <!-- 第四行：views -->
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-xs text-black/60">{{ t('cards.regexRule.views') }}</span>
-          <span v-for="v in props.rule.views || []" :key="v" class="text-xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent">{{ v }}</span>
+          <span
+            v-for="v in props.rule.views || []"
+            :key="v"
+            class="text-xs px-2 py-0.5 rounded-4 border border-gray-900 text-black bg-transparent"
+            >{{ v }}</span
+          >
         </div>
 
         <!-- 条件 -->
-        <div v-if="props.rule.mode === 'conditional' && props.rule.condition" class="flex flex-wrap items-center gap-2">
+        <div
+          v-if="props.rule.mode === 'conditional' && props.rule.condition"
+          class="flex flex-wrap items-center gap-2"
+        >
           <span class="text-xs text-black/60">{{ t('cards.regexRule.condition') }}</span>
-          <span class="text-xs text-black/70 font-mono break-all whitespace-pre-wrap">{{ props.rule.condition }}</span>
+          <span class="text-xs text-black/70 font-mono break-all whitespace-pre-wrap">{{
+            props.rule.condition
+          }}</span>
         </div>
 
         <!-- 描述 -->
-        <p v-if="props.rule.description" class="text-xs text-black/60">{{ props.rule.description }}</p>
+        <p v-if="props.rule.description" class="text-xs text-black/60">
+          {{ props.rule.description }}
+        </p>
       </div>
-      
+
       <div class="flex items-center gap-2 shrink-0">
-        <span class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black">{{ enabledLabel(props.rule.enabled) }}</span>
+        <span class="px-2 py-0.5 text-xs rounded-4 border border-gray-800 text-black">{{
+          enabledLabel(props.rule.enabled)
+        }}</span>
         <button
           v-if="!editing"
           class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black hover:bg-gray-100 active:bg-gray-200 transition-all duration-200 ease-soft text-xs"
@@ -230,8 +259,18 @@ function onSave() {
           {{ t('cards.common.edit') }}
         </button>
         <div v-else class="flex items-center gap-2">
-          <button class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100" @click="onSave">{{ t('cards.common.save') }}</button>
-          <button class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100" @click="onCancel">{{ t('cards.common.cancel') }}</button>
+          <button
+            class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
+            @click="onSave"
+          >
+            {{ t('cards.common.save') }}
+          </button>
+          <button
+            class="px-2 py-1 rounded-4 bg-transparent border border-gray-900 text-black text-xs hover:bg-gray-100"
+            @click="onCancel"
+          >
+            {{ t('cards.common.cancel') }}
+          </button>
         </div>
       </div>
     </div>
@@ -240,11 +279,17 @@ function onSave() {
     <div v-if="!editing" class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
       <div class="border border-gray-200 rounded-4 p-3">
         <div class="text-xs font-medium text-black mb-2">{{ t('cards.regexRule.findRegex') }}</div>
-        <div class="text-xs text-black/70 font-mono break-all whitespace-pre-wrap">{{ props.rule.find_regex }}</div>
+        <div class="text-xs text-black/70 font-mono break-all whitespace-pre-wrap">
+          {{ props.rule.find_regex }}
+        </div>
       </div>
       <div class="border border-gray-200 rounded-4 p-3">
-        <div class="text-xs font-medium text-black mb-2">{{ t('cards.regexRule.replaceRegex') }}</div>
-        <div class="text-xs text-black/70 font-mono break-all whitespace-pre-wrap">{{ props.rule.replace_regex === '' ? t('cards.common.empty') : props.rule.replace_regex }}</div>
+        <div class="text-xs font-medium text-black mb-2">
+          {{ t('cards.regexRule.replaceRegex') }}
+        </div>
+        <div class="text-xs text-black/70 font-mono break-all whitespace-pre-wrap">
+          {{ props.rule.replace_regex === '' ? t('cards.common.empty') : props.rule.replace_regex }}
+        </div>
       </div>
     </div>
 
@@ -260,7 +305,9 @@ function onSave() {
           />
         </div>
         <div>
-          <label class="block text-xs text-black/60 mb-1">{{ t('cards.regexRule.enabledStatus') }}</label>
+          <label class="block text-xs text-black/60 mb-1">{{
+            t('cards.regexRule.enabledStatus')
+          }}</label>
           <select
             v-model="draftEnabled"
             class="w-full px-3 py-2 border border-gray-300 rounded-4 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
@@ -271,7 +318,9 @@ function onSave() {
         </div>
 
         <div>
-          <label class="block text-xs text-black/60 mb-1">{{ t('cards.regexRule.placement') }}</label>
+          <label class="block text-xs text-black/60 mb-1">{{
+            t('cards.regexRule.placement')
+          }}</label>
           <select
             v-model="draftPlacement"
             class="w-full px-3 py-2 border border-gray-300 rounded-4 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-gray-800"
@@ -293,12 +342,18 @@ function onSave() {
         </div>
 
         <div class="md:col-span-2">
-          <label class="block text-xs text-black/60 mb-1">{{ t('cards.regexRule.targetCategories') }}</label>
+          <label class="block text-xs text-black/60 mb-1">{{
+            t('cards.regexRule.targetCategories')
+          }}</label>
           <div class="space-y-2">
             <!-- 大类前缀 -->
             <div class="flex flex-wrap items-center gap-3">
               <span class="text-xs text-black/60">{{ t('cards.regexRule.categoryLabel') }}</span>
-              <label class="inline-flex items-center gap-2 text-xs" v-for="k in TARGET_PREFIXES" :key="k">
+              <label
+                class="inline-flex items-center gap-2 text-xs"
+                v-for="k in TARGET_PREFIXES"
+                :key="k"
+              >
                 <input
                   type="checkbox"
                   v-model="selectedTargets[k]"
@@ -310,7 +365,11 @@ function onSave() {
             <!-- 细粒度来源类型 -->
             <div class="flex flex-wrap items-center gap-3">
               <span class="text-xs text-black/60">{{ t('cards.regexRule.detailLabel') }}</span>
-              <label class="inline-flex items-center gap-2 text-xs" v-for="s in SOURCE_TYPES" :key="s">
+              <label
+                class="inline-flex items-center gap-2 text-xs"
+                v-for="s in SOURCE_TYPES"
+                :key="s"
+              >
                 <input
                   type="checkbox"
                   v-model="selectedSourceTypes[s]"
@@ -323,7 +382,9 @@ function onSave() {
         </div>
 
         <div>
-          <label class="block text-xs text-black/60 mb-1">{{ t('cards.regexRule.viewsLabel') }}</label>
+          <label class="block text-xs text-black/60 mb-1">{{
+            t('cards.regexRule.viewsLabel')
+          }}</label>
           <div class="flex flex-wrap items-center gap-3">
             <label class="inline-flex items-center gap-2 text-xs" v-for="v in VIEWS" :key="v">
               <input
@@ -337,7 +398,9 @@ function onSave() {
         </div>
 
         <div v-if="draftMode === 'conditional'" class="md:col-span-2">
-          <label class="block text-xs text-black/60 mb-1">{{ t('cards.regexRule.conditionExpr') }}</label>
+          <label class="block text-xs text-black/60 mb-1">{{
+            t('cards.regexRule.conditionExpr')
+          }}</label>
           <input
             v-model="draftCondition"
             :placeholder="t('cards.regexRule.conditionPlaceholder')"
@@ -346,7 +409,9 @@ function onSave() {
         </div>
 
         <div>
-          <label class="block text-xs text-black/60 mb-1">{{ t('cards.regexRule.minDepth') }}</label>
+          <label class="block text-xs text-black/60 mb-1">{{
+            t('cards.regexRule.minDepth')
+          }}</label>
           <input
             type="number"
             v-model="draftMinDepth"
@@ -355,7 +420,9 @@ function onSave() {
         </div>
 
         <div>
-          <label class="block text-xs text-black/60 mb-1">{{ t('cards.regexRule.maxDepth') }}</label>
+          <label class="block text-xs text-black/60 mb-1">{{
+            t('cards.regexRule.maxDepth')
+          }}</label>
           <input
             type="number"
             v-model="draftMaxDepth"
@@ -364,7 +431,9 @@ function onSave() {
         </div>
 
         <div class="md:col-span-2">
-          <label class="block text-xs text-black/60 mb-1">{{ t('cards.regexRule.description') }}</label>
+          <label class="block text-xs text-black/60 mb-1">{{
+            t('cards.regexRule.description')
+          }}</label>
           <textarea
             v-model="draftDescription"
             rows="2"
@@ -375,7 +444,9 @@ function onSave() {
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
-          <label class="block text-xs text-black/60 mb-1">{{ t('cards.regexRule.findRegex') }}</label>
+          <label class="block text-xs text-black/60 mb-1">{{
+            t('cards.regexRule.findRegex')
+          }}</label>
           <textarea
             v-model="draftFind"
             rows="3"
@@ -383,7 +454,9 @@ function onSave() {
           />
         </div>
         <div>
-          <label class="block text-xs text-black/60 mb-1">{{ t('cards.regexRule.replaceRegex') }}</label>
+          <label class="block text-xs text-black/60 mb-1">{{
+            t('cards.regexRule.replaceRegex')
+          }}</label>
           <textarea
             v-model="draftReplace"
             rows="3"

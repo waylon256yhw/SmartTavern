@@ -83,7 +83,7 @@ export const useSidebarStore = defineStore('workflow.sidebar', () => {
       console.warn(`[sidebar] id already exists: ${id}`)
       return () => {}
     }
-    
+
     // 规范化配置
     const normalized: NormalizedSidebarEntry = {
       id,
@@ -98,9 +98,9 @@ export const useSidebarStore = defineStore('workflow.sidebar', () => {
       visibleWhen: typeof entry.visibleWhen === 'function' ? entry.visibleWhen : null,
       disabledWhen: typeof entry.disabledWhen === 'function' ? entry.disabledWhen : null,
     }
-    
+
     _items.value.set(id, normalized)
-    
+
     // 返回卸载函数
     return () => {
       _items.value.delete(id)
@@ -126,7 +126,7 @@ export const useSidebarStore = defineStore('workflow.sidebar', () => {
     all.sort((a, b) => a.order - b.order)
     // 过滤不可见项
     return all
-      .filter(item => {
+      .filter((item) => {
         if (typeof item.visibleWhen === 'function') {
           try {
             return item.visibleWhen(ctx)
@@ -137,7 +137,7 @@ export const useSidebarStore = defineStore('workflow.sidebar', () => {
         }
         return true
       })
-      .map(item => {
+      .map((item) => {
         // 计算 disabled 状态
         let disabled = false
         if (typeof item.disabledWhen === 'function') {
@@ -157,7 +157,7 @@ export const useSidebarStore = defineStore('workflow.sidebar', () => {
   return {
     // state
     items,
-    
+
     // actions
     register,
     unregister,

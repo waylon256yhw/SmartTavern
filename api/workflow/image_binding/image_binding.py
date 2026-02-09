@@ -3,11 +3,11 @@ API 封装层：工作流能力对外接口 (api/workflow)
 新规范：斜杠 path + JSON Schema；工作流适配器转发调用模块级API。
 """
 
-import os
-from typing import Any, Dict, List, Optional
 from pathlib import Path
+from typing import Any
 
 import core
+
 
 # embed_files_to_image
 @core.register_api(
@@ -19,9 +19,9 @@ import core
         "properties": {
             "image_path": {"type": "string"},
             "file_paths": {"type": "array", "items": {"type": "string"}},
-            "output_path": {"type": "string"}
+            "output_path": {"type": "string"},
         },
-        "required": ["image_path", "file_paths"]
+        "required": ["image_path", "file_paths"],
     },
     output_schema={
         "type": "object",
@@ -29,18 +29,21 @@ import core
             "success": {"type": "boolean"},
             "message": {"type": "string"},
             "output_path": {"type": "string"},
-            "relative_path": {"type": "string"}
+            "relative_path": {"type": "string"},
         },
-        "required": ["success"]
-    }
+        "required": ["success"],
+    },
 )
-def api_embed_files_to_image(image_path: str, file_paths: List[str], output_path: Optional[str] = None) -> Dict[str, Any]:
+def api_embed_files_to_image(image_path: str, file_paths: list[str], output_path: str | None = None) -> dict[str, Any]:
     try:
         payload = {"image_path": image_path, "file_paths": file_paths, "output_path": output_path}
-        result = core.call_api("smarttavern/image_binding/embed_files_to_image", payload, method="POST", namespace="modules")
+        result = core.call_api(
+            "smarttavern/image_binding/embed_files_to_image", payload, method="POST", namespace="modules"
+        )
         return result if isinstance(result, dict) else {"success": False, "message": "接口返回非字典", "result": result}
     except Exception as e:
-        return {"success": False, "message": f"嵌入文件失败: {str(e)}"}
+        return {"success": False, "message": f"嵌入文件失败: {e!s}"}
+
 
 # extract_files_from_image
 @core.register_api(
@@ -52,83 +55,86 @@ def api_embed_files_to_image(image_path: str, file_paths: List[str], output_path
         "properties": {
             "image_path": {"type": "string"},
             "output_dir": {"type": "string"},
-            "filter_types": {"type": "array", "items": {"type": "string"}}
+            "filter_types": {"type": "array", "items": {"type": "string"}},
         },
-        "required": ["image_path"]
+        "required": ["image_path"],
     },
     output_schema={
         "type": "object",
         "properties": {
             "success": {"type": "boolean"},
             "message": {"type": "string"},
-            "files": {"type": "array", "items": {"type": "string"}}
+            "files": {"type": "array", "items": {"type": "string"}},
         },
-        "required": ["success"]
-    }
+        "required": ["success"],
+    },
 )
-def api_extract_files_from_image(image_path: str, output_dir: Optional[str] = None, filter_types: Optional[List[str]] = None) -> Dict[str, Any]:
+def api_extract_files_from_image(
+    image_path: str, output_dir: str | None = None, filter_types: list[str] | None = None
+) -> dict[str, Any]:
     try:
         payload = {"image_path": image_path, "output_dir": output_dir, "filter_types": filter_types}
-        result = core.call_api("smarttavern/image_binding/extract_files_from_image", payload, method="POST", namespace="modules")
+        result = core.call_api(
+            "smarttavern/image_binding/extract_files_from_image", payload, method="POST", namespace="modules"
+        )
         return result if isinstance(result, dict) else {"success": False, "message": "接口返回非字典", "result": result}
     except Exception as e:
-        return {"success": False, "message": f"提取文件失败: {str(e)}", "files": []}
+        return {"success": False, "message": f"提取文件失败: {e!s}", "files": []}
+
 
 # get_embedded_files_info
 @core.register_api(
     name="工作流:获取嵌入文件信息",
     description="获取PNG图片中嵌入的文件信息",
     path="image_binding/get_embedded_files_info",
-    input_schema={
-        "type": "object",
-        "properties": {"image_path": {"type": "string"}},
-        "required": ["image_path"]
-    },
+    input_schema={"type": "object", "properties": {"image_path": {"type": "string"}}, "required": ["image_path"]},
     output_schema={
         "type": "object",
         "properties": {
             "success": {"type": "boolean"},
             "message": {"type": "string"},
-            "files_info": {"type": "array", "items": {"type": "object", "additionalProperties": True}}
+            "files_info": {"type": "array", "items": {"type": "object", "additionalProperties": True}},
         },
-        "required": ["success"]
-    }
+        "required": ["success"],
+    },
 )
-def api_get_embedded_files_info(image_path: str) -> Dict[str, Any]:
+def api_get_embedded_files_info(image_path: str) -> dict[str, Any]:
     try:
         payload = {"image_path": image_path}
-        result = core.call_api("smarttavern/image_binding/get_embedded_files_info", payload, method="GET", namespace="modules")
+        result = core.call_api(
+            "smarttavern/image_binding/get_embedded_files_info", payload, method="GET", namespace="modules"
+        )
         return result if isinstance(result, dict) else {"success": False, "message": "接口返回非字典", "result": result}
     except Exception as e:
-        return {"success": False, "message": f"获取文件信息失败: {str(e)}", "files_info": []}
+        return {"success": False, "message": f"获取文件信息失败: {e!s}", "files_info": []}
+
 
 # is_image_with_embedded_files
 @core.register_api(
     name="工作流:检测图片是否包含嵌入文件",
     description="检查PNG图片是否包含嵌入文件",
     path="image_binding/is_image_with_embedded_files",
-    input_schema={
-        "type": "object",
-        "properties": {"image_path": {"type": "string"}},
-        "required": ["image_path"]
-    },
+    input_schema={"type": "object", "properties": {"image_path": {"type": "string"}}, "required": ["image_path"]},
     output_schema={
         "type": "object",
         "properties": {
             "success": {"type": "boolean"},
             "has_embedded_files": {"type": "boolean"},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
-        "required": ["success", "has_embedded_files"]
-    }
+        "required": ["success", "has_embedded_files"],
+    },
 )
-def api_is_image_with_embedded_files(image_path: str) -> Dict[str, Any]:
+def api_is_image_with_embedded_files(image_path: str) -> dict[str, Any]:
     try:
         payload = {"image_path": image_path}
-        result = core.call_api("smarttavern/image_binding/is_image_with_embedded_files", payload, method="GET", namespace="modules")
+        result = core.call_api(
+            "smarttavern/image_binding/is_image_with_embedded_files", payload, method="GET", namespace="modules"
+        )
         return result if isinstance(result, dict) else {"success": False, "message": "接口返回非字典", "result": result}
     except Exception as e:
-        return {"success": False, "has_embedded_files": False, "message": f"检查图片失败: {str(e)}"}
+        return {"success": False, "has_embedded_files": False, "message": f"检查图片失败: {e!s}"}
+
 
 # get_file_type_tags
 @core.register_api(
@@ -141,17 +147,18 @@ def api_is_image_with_embedded_files(image_path: str) -> Dict[str, Any]:
         "properties": {
             "success": {"type": "boolean"},
             "file_type_tags": {"type": "array", "items": {"type": "string"}},
-            "message": {"type": "string"}
+            "message": {"type": "string"},
         },
-        "required": ["success", "file_type_tags"]
-    }
+        "required": ["success", "file_type_tags"],
+    },
 )
-def api_get_file_type_tags() -> Dict[str, Any]:
+def api_get_file_type_tags() -> dict[str, Any]:
     try:
         result = core.call_api("smarttavern/image_binding/get_file_type_tags", None, method="GET", namespace="modules")
         return result if isinstance(result, dict) else {"success": False, "message": "接口返回非字典", "result": result}
     except Exception as e:
-        return {"success": False, "message": f"获取文件类型标签失败: {str(e)}"}
+        return {"success": False, "message": f"获取文件类型标签失败: {e!s}"}
+
 
 # test
 @core.register_api(
@@ -160,10 +167,7 @@ def api_get_file_type_tags() -> Dict[str, Any]:
     path="image_binding/test",
     input_schema={
         "type": "object",
-        "properties": {
-            "image_path": {"type": "string"},
-            "test_files": {"type": "array", "items": {"type": "string"}}
-        }
+        "properties": {"image_path": {"type": "string"}, "test_files": {"type": "array", "items": {"type": "string"}}},
     },
     output_schema={
         "type": "object",
@@ -174,12 +178,12 @@ def api_get_file_type_tags() -> Dict[str, Any]:
             "info_result": {"type": "object", "additionalProperties": True},
             "extract_result": {"type": "object", "additionalProperties": True},
             "test_output_image": {"type": "string"},
-            "test_output_dir": {"type": "string"}
+            "test_output_dir": {"type": "string"},
         },
-        "required": ["success"]
-    }
+        "required": ["success"],
+    },
 )
-def api_test_image_binding(image_path: Optional[str] = None, test_files: Optional[List[str]] = None) -> Dict[str, Any]:
+def api_test_image_binding(image_path: str | None = None, test_files: list[str] | None = None) -> dict[str, Any]:
     try:
         image_path = image_path or "shared/SmartTavern/测试图片.png"
         if not test_files:
@@ -187,7 +191,7 @@ def api_test_image_binding(image_path: Optional[str] = None, test_files: Optiona
                 "shared/SmartTavern/world_books/参考用main_world.json",
                 "shared/SmartTavern/regex_rules/remove_xml_tags.json",
                 "shared/SmartTavern/presets/Default.json",
-                "shared/SmartTavern/user_preferences.json"
+                "shared/SmartTavern/user_preferences.json",
             ]
         img = str(Path(image_path))
         files = [str(Path(p)) for p in test_files]
@@ -212,7 +216,7 @@ def api_test_image_binding(image_path: Optional[str] = None, test_files: Optiona
             "info_result": info_result,
             "extract_result": extract_result,
             "test_output_image": test_output_image,
-            "test_output_dir": test_output_dir
+            "test_output_dir": test_output_dir,
         }
     except Exception as e:
-        return {"success": False, "message": f"测试失败: {str(e)}"}
+        return {"success": False, "message": f"测试失败: {e!s}"}

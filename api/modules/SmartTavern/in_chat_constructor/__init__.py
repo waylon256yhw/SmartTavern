@@ -6,4 +6,5 @@ SmartTavern.in_chat_constructor 包
 
 说明: 按 DEVELOPMENT_NOTES 新规范，封装层通过 @core.register_api 注册斜杠路径 API。
 """
+
 __all__ = []

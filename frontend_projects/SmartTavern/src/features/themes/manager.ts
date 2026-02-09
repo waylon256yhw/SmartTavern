@@ -49,7 +49,9 @@ function registerExtension(ext: ThemeExtension): () => void {
 }
 
 function unregisterExtension(id: string): void {
-  try { __extensions.delete(id) } catch (_) {}
+  try {
+    __extensions.delete(id)
+  } catch (_) {}
 }
 
 function getExtensions(): ThemeExtension[] {
@@ -82,7 +84,7 @@ function base64Decode(str: string): string {
     const normalized = str.replace(/-/g, '+').replace(/_/g, '/')
     // atob 在非 ASCII 时需转码
     const bin = atob(normalized)
-    const bytes = Uint8Array.from(bin, c => c.charCodeAt(0))
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0))
     const decoder = new TextDecoder('utf-8')
     return decoder.decode(bytes)
   } catch (e) {
@@ -92,7 +94,9 @@ function base64Decode(str: string): string {
 }
 
 function parseJson(text: string): any {
-  try { return JSON.parse(text) } catch (e) {
+  try {
+    return JSON.parse(text)
+  } catch (e) {
     console.warn('[ThemeManager] JSON parse failed:', e)
     return null
   }
@@ -113,7 +117,7 @@ function normalizePack(input: any): ThemePackV1 {
     cssLight: typeof p.cssLight === 'string' ? p.cssLight : undefined,
     cssDark: typeof p.cssDark === 'string' ? p.cssDark : undefined,
   }
-  
+
   // Process script with proper type checking
   if (isObject(p.script)) {
     out.script = {
@@ -124,10 +128,12 @@ function normalizePack(input: any): ThemePackV1 {
             network: !!p.script.permissions.network,
           }
         : undefined,
-      scopes: Array.isArray(p.script.scopes) ? p.script.scopes.filter((s: any) => typeof s === 'string') : undefined,
+      scopes: Array.isArray(p.script.scopes)
+        ? p.script.scopes.filter((s: any) => typeof s === 'string')
+        : undefined,
     }
   }
-  
+
   return out
 }
 
@@ -209,7 +215,10 @@ async function init(options: ThemeManagerInitOptions = {}): Promise<any> {
 /**
  * 直接应用主题包对象
  */
-async function applyThemePack(pack: ThemePackV1, options: ThemeApplyOptions = {}): Promise<ThemePackV1 | null> {
+async function applyThemePack(
+  pack: ThemePackV1,
+  options: ThemeApplyOptions = {},
+): Promise<ThemePackV1 | null> {
   const safe = normalizePack(pack)
   const { persist = true, allowScript = false } = options
   // 安全：默认不执行脚本
@@ -226,7 +235,10 @@ async function resetTheme(options: { persist?: boolean } = {}): Promise<void> {
 /**
  * 从 JSON 文本导入并应用
  */
-async function importFromText(text: string, options: ThemeApplyOptions = {}): Promise<ThemePackV1 | null> {
+async function importFromText(
+  text: string,
+  options: ThemeApplyOptions = {},
+): Promise<ThemePackV1 | null> {
   const obj = parseJson(text)
   if (!obj) throw new Error('Invalid JSON')
   return applyThemePack(obj, options)
@@ -235,19 +247,28 @@ async function importFromText(text: string, options: ThemeApplyOptions = {}): Pr
 /**
  * 从文件导入并应用（.json 或 .sttheme.json）
  */
-async function importFromFile(file: File, options: ThemeApplyOptions = {}): Promise<ThemePackV1 | null> {
+async function importFromFile(
+  file: File,
+  options: ThemeApplyOptions = {},
+): Promise<ThemePackV1 | null> {
   if (!file) throw new Error('No file')
   const text = await file.text()
   return importFromText(text, options)
 }
 
 // 事件透传
-function on(event: string, cb: EventCallback): () => void { return ThemeStore.on(event, cb) }
-function off(event: string, cb: EventCallback): void { return ThemeStore.off(event, cb) }
+function on(event: string, cb: EventCallback): () => void {
+  return ThemeStore.on(event, cb)
+}
+function off(event: string, cb: EventCallback): void {
+  return ThemeStore.off(event, cb)
+}
 
 // Color mode control (system/light/dark) forwarded to store
 function setColorMode(mode: 'system' | 'light' | 'dark'): void {
-  try { ThemeStore?.setColorMode?.(mode) } catch (_) {}
+  try {
+    ThemeStore?.setColorMode?.(mode)
+  } catch (_) {}
 }
 
 const ThemeManager = {

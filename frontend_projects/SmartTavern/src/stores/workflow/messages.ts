@@ -80,7 +80,7 @@ export const useMessagesStore = defineStore('messages', {
      * 按 id 移除
      */
     remove(id: string): void {
-      const i = this.items.findIndex(x => x.id === id)
+      const i = this.items.findIndex((x) => x.id === id)
       if (i >= 0) this.items.splice(i, 1)
     },
   },

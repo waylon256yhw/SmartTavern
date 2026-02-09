@@ -40,7 +40,7 @@ function lighten(rgb: RGB, amt: number = 24): RGB {
   return {
     r: clamp(rgb.r + amt),
     g: clamp(rgb.g + amt),
-    b: clamp(rgb.b + amt)
+    b: clamp(rgb.b + amt),
   }
 }
 
@@ -73,14 +73,17 @@ async function extractPaletteFromImage(url: string): Promise<Palette | null> {
       img.onload = () => {
         try {
           const canvas = document.createElement('canvas')
-          const w = canvas.width = 24
-          const h = canvas.height = 24
+          const w = (canvas.width = 24)
+          const h = (canvas.height = 24)
           const ctx = canvas.getContext('2d', { willReadFrequently: true })
           if (!ctx) return resolve(null)
-          
+
           ctx.drawImage(img, 0, 0, w, h)
           const data = ctx.getImageData(0, 0, w, h).data
-          let r = 0, g = 0, b = 0, count = 0
+          let r = 0,
+            g = 0,
+            b = 0,
+            count = 0
           for (let i = 0; i < data.length; i += 4) {
             const a = data[i + 3] ?? 0
             if (a < 32) continue // 忽略透明像素
@@ -148,7 +151,7 @@ export function usePalette(): UsePaletteAPI {
    */
   function getPalette(idOrMsg: string | number | ChatMessage): Palette | null {
     const key = typeof idOrMsg === 'object' ? idOrMsg?.id : idOrMsg
-    return key != null ? palettes.value[key] ?? null : null
+    return key != null ? (palettes.value[key] ?? null) : null
   }
 
   return {

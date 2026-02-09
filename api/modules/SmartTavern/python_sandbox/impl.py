@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 SmartTavern.python_sandbox 实现层
 - 仅支持“表达式”求值（禁止赋值/导入/属性访问/推导式）
@@ -8,56 +7,67 @@ SmartTavern.python_sandbox 实现层
 - 可用函数：len/abs/min/max/sum/str/int/float/bool/round/sorted + getvar/setvar
 - 变量访问：vars["name"] 或 getvar("name")
 """
+
 import ast
-import types
-import threading
-import time
-from typing import Any, Dict, Set
-import random as _random
-import math as _math
 import datetime as _datetime
+import math as _math
+import random as _random
 import re as _re
+import time
+import types
+from typing import Any
 
 DEFAULT_POLICY = {
-    "undefined_get": "error",            # "error" | "empty"
+    "undefined_get": "error",  # "error" | "empty"
     "error_token": "[UndefinedVar:{name}]",
 }
 
 # ---------- Nested variable path helpers ----------
-from typing import List as _List, Union as _Union
+_PathToken = str | int
 
-_PathToken = _Union[str, int]
 
-def _parse_path(path: str) -> _List[_PathToken]:
+def _parse_path(path: str) -> list[_PathToken]:
     s = str(path or "")
-    tokens: _List[_PathToken] = []
+    tokens: list[_PathToken] = []
     i, n = 0, len(s)
-    buf: _List[str] = []
+    buf: list[str] = []
+
     def flush_buf():
         nonlocal buf
         if buf:
             tokens.append("".join(buf))
             buf = []
+
     while i < n:
         ch = s[i]
         if ch == ".":
-            flush_buf(); i += 1; continue
+            flush_buf()
+            i += 1
+            continue
         if ch == "[":
-            flush_buf(); i += 1
+            flush_buf()
+            i += 1
             if i < n and s[i] in ("'", '"'):
-                q = s[i]; i += 1
-                qb: _List[str] = []
+                q = s[i]
+                i += 1
+                qb: list[str] = []
                 while i < n and s[i] != q:
-                    qb.append(s[i]); i += 1
-                if i < n and s[i] == q: i += 1
-                while i < n and s[i] != "]": i += 1
-                if i < n and s[i] == "]": i += 1
+                    qb.append(s[i])
+                    i += 1
+                if i < n and s[i] == q:
+                    i += 1
+                while i < n and s[i] != "]":
+                    i += 1
+                if i < n and s[i] == "]":
+                    i += 1
                 tokens.append("".join(qb))
             else:
-                nb: _List[str] = []
+                nb: list[str] = []
                 while i < n and s[i] != "]":
-                    nb.append(s[i]); i += 1
-                if i < n and s[i] == "]": i += 1
+                    nb.append(s[i])
+                    i += 1
+                if i < n and s[i] == "]":
+                    i += 1
                 raw = "".join(nb).strip()
                 if raw.isdigit() or (raw.startswith("-") and raw[1:].isdigit()):
                     try:
@@ -67,11 +77,13 @@ def _parse_path(path: str) -> _List[_PathToken]:
                 else:
                     tokens.append(raw)
             continue
-        buf.append(ch); i += 1
+        buf.append(ch)
+        i += 1
     flush_buf()
     return [t for t in tokens if t != "" and t is not None]
 
-def _get_by_path(store: Dict[str, Any], path: str, policy: Dict[str, Any]) -> Any:
+
+def _get_by_path(store: dict[str, Any], path: str, policy: dict[str, Any]) -> Any:
     toks = _parse_path(path)
     cur: Any = store
     try:
@@ -89,13 +101,14 @@ def _get_by_path(store: Dict[str, Any], path: str, policy: Dict[str, Any]) -> An
         ug = str(policy.get("undefined_get", "error")).lower()
         return _make_error_token(path, policy) if ug == "error" else ""
 
-def _set_by_path(store: Dict[str, Any], path: str, value: Any) -> None:
+
+def _set_by_path(store: dict[str, Any], path: str, value: Any) -> None:
     toks = _parse_path(path)
     if not toks:
         return
     cur: Any = store
     for idx, t in enumerate(toks):
-        last = (idx == len(toks) - 1)
+        last = idx == len(toks) - 1
         if last:
             if isinstance(t, int):
                 if not isinstance(cur, list):
@@ -123,6 +136,7 @@ def _set_by_path(store: Dict[str, Any], path: str, value: Any) -> None:
                     cur[t] = [] if isinstance(nxt, int) else {}
                 cur = cur[t]
 
+
 ALLOWED_FUNCS = {
     "len": len,
     "abs": abs,
@@ -136,13 +150,22 @@ ALLOWED_FUNCS = {
     "round": round,
     "sorted": sorted,
 }
-ALLOWED_CALL_NAMES: Set[str] = set(ALLOWED_FUNCS.keys()) | {
-    "getvar", "setvar",
+ALLOWED_CALL_NAMES: set[str] = set(ALLOWED_FUNCS.keys()) | {
+    "getvar",
+    "setvar",
     # Legacy helper functions exposed to sandbox callers
-    "legacy_upper", "legacy_lower", "legacy_reverse",
+    "legacy_upper",
+    "legacy_lower",
+    "legacy_reverse",
     "legacy_roll",
-    "legacy_time", "legacy_time_utc", "legacy_weekday_cn", "legacy_timediff",
-    "legacy_num", "legacy_addvar", "legacy_inc", "legacy_dec"
+    "legacy_time",
+    "legacy_time_utc",
+    "legacy_weekday_cn",
+    "legacy_timediff",
+    "legacy_num",
+    "legacy_addvar",
+    "legacy_inc",
+    "legacy_dec",
 }
 
 # 允许的模块根与属性白名单
@@ -159,35 +182,90 @@ ALLOWED_SECOND_ATTRS = {
     ("datetime", "time"): set(),
 }
 
-ALLOWED_NODES: Set[type] = {
-    ast.Module, ast.Expr,
-    ast.Expression, ast.BinOp, ast.UnaryOp, ast.BoolOp, ast.Compare, ast.IfExp, ast.If,
-    ast.Call, ast.Name, ast.Load, ast.Store, ast.Constant, ast.Subscript, ast.Slice, ast.Index,
-    ast.Dict, ast.List, ast.Tuple, ast.Attribute,
-    ast.Assign, ast.AugAssign, ast.AnnAssign,
+ALLOWED_NODES: set[type] = {
+    ast.Module,
+    ast.Expr,
+    ast.Expression,
+    ast.BinOp,
+    ast.UnaryOp,
+    ast.BoolOp,
+    ast.Compare,
+    ast.IfExp,
+    ast.If,
+    ast.Call,
+    ast.Name,
+    ast.Load,
+    ast.Store,
+    ast.Constant,
+    ast.Subscript,
+    ast.Slice,
+    ast.Index,
+    ast.Dict,
+    ast.List,
+    ast.Tuple,
+    ast.Attribute,
+    ast.Assign,
+    ast.AugAssign,
+    ast.AnnAssign,
     # 操作符节点
-    ast.Add, ast.Sub, ast.Mult, ast.Div, ast.FloorDiv, ast.Mod, ast.Pow, ast.BitXor,
-    ast.UAdd, ast.USub, ast.Not,
-    ast.And, ast.Or,
-    ast.Eq, ast.NotEq, ast.Lt, ast.LtE, ast.Gt, ast.GtE, ast.In, ast.NotIn, ast.Is, ast.IsNot,
+    ast.Add,
+    ast.Sub,
+    ast.Mult,
+    ast.Div,
+    ast.FloorDiv,
+    ast.Mod,
+    ast.Pow,
+    ast.BitXor,
+    ast.UAdd,
+    ast.USub,
+    ast.Not,
+    ast.And,
+    ast.Or,
+    ast.Eq,
+    ast.NotEq,
+    ast.Lt,
+    ast.LtE,
+    ast.Gt,
+    ast.GtE,
+    ast.In,
+    ast.NotIn,
+    ast.Is,
+    ast.IsNot,
 }
 
-FORBIDDEN_NODES: Set[type] = {
-    ast.Import, ast.ImportFrom,
-    ast.Lambda, ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp,
-    ast.While, ast.For, ast.With, ast.Try, ast.FunctionDef, ast.ClassDef, ast.Return, ast.Yield, ast.YieldFrom,
-    ast.Delete, ast.Global, ast.Nonlocal, ast.Raise
+FORBIDDEN_NODES: set[type] = {
+    ast.Import,
+    ast.ImportFrom,
+    ast.Lambda,
+    ast.ListComp,
+    ast.SetComp,
+    ast.DictComp,
+    ast.GeneratorExp,
+    ast.While,
+    ast.For,
+    ast.With,
+    ast.Try,
+    ast.FunctionDef,
+    ast.ClassDef,
+    ast.Return,
+    ast.Yield,
+    ast.YieldFrom,
+    ast.Delete,
+    ast.Global,
+    ast.Nonlocal,
+    ast.Raise,
 }
 
 
-def _make_error_token(name: str, policy: Dict[str, Any]) -> str:
+def _make_error_token(name: str, policy: dict[str, Any]) -> str:
     tpl = str(policy.get("error_token", "[UndefinedVar:{name}]"))
     return tpl.replace("{name}", str(name))
 
 
 class VarProxy:
     """变量代理，支持路径读写（'a.b[1].c'）；未定义读取时按策略返回占位词或空串"""
-    def __init__(self, store: Dict[str, Any], policy: Dict[str, Any]):
+
+    def __init__(self, store: dict[str, Any], policy: dict[str, Any]):
         self._store = store
         self._policy = policy
 
@@ -231,7 +309,9 @@ class _SafeExprChecker(ast.NodeVisitor):
             if len(chain) == 2:
                 base = chain[0]
                 meth = chain[1]
-                return base in ALLOWED_FIRST_ATTRS["datetime"] and meth in ALLOWED_SECOND_ATTRS.get(("datetime", base), set())
+                return base in ALLOWED_FIRST_ATTRS["datetime"] and meth in ALLOWED_SECOND_ATTRS.get(
+                    ("datetime", base), set()
+                )
             return False
         else:
             # 其他模块仅允许一级属性
@@ -264,13 +344,15 @@ class _SafeExprChecker(ast.NodeVisitor):
         self.visit(node.slice)
 
 
-def eval_expr(code: str, variables: Dict[str, Any] = None, policy: Dict[str, Any] = None) -> Dict[str, Any]:
+def eval_expr(
+    code: str, variables: dict[str, Any] | None = None, policy: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """安全表达式/语句求值入口（受限模块 + 属性 + 赋值 + 超时测量）"""
     TIMEOUT_SEC = 5.0
     start_ts = time.time()
 
-    store: Dict[str, Any] = dict(variables or {})
-    pol: Dict[str, Any] = dict(DEFAULT_POLICY)
+    store: dict[str, Any] = dict(variables or {})
+    pol: dict[str, Any] = dict(DEFAULT_POLICY)
     if isinstance(policy, dict):
         pol.update(policy)
 
@@ -282,7 +364,7 @@ def eval_expr(code: str, variables: Dict[str, Any] = None, policy: Dict[str, Any
         return ""  # 作为表达式一部分时，不污染输出
 
     # 构造安全上下文
-    ctx_globals: Dict[str, Any] = {"__builtins__": {}}
+    ctx_globals: dict[str, Any] = {"__builtins__": {}}
     ctx_globals.update(ALLOWED_FUNCS)
 
     # 注入受限模块代理（仅暴露白名单函数/类型）
@@ -292,22 +374,20 @@ def eval_expr(code: str, variables: Dict[str, Any] = None, policy: Dict[str, Any
     math_proxy = types.SimpleNamespace(
         sqrt=_math.sqrt, sin=_math.sin, cos=_math.cos, tan=_math.tan, floor=_math.floor, ceil=_math.ceil
     )
-    datetime_proxy = types.SimpleNamespace(
-        datetime=_datetime.datetime, date=_datetime.date, time=_datetime.time
-    )
-    re_proxy = types.SimpleNamespace(
-        match=_re.match, search=_re.search, findall=_re.findall, sub=_re.sub
-    )
+    datetime_proxy = types.SimpleNamespace(datetime=_datetime.datetime, date=_datetime.date, time=_datetime.time)
+    re_proxy = types.SimpleNamespace(match=_re.match, search=_re.search, findall=_re.findall, sub=_re.sub)
 
-    ctx_globals.update({
-        "getvar": getvar,
-        "setvar": setvar,
-        "vars": VarProxy(store, pol),
-        "random": random_proxy,
-        "math": math_proxy,
-        "datetime": datetime_proxy,
-        "re": re_proxy,
-    })
+    ctx_globals.update(
+        {
+            "getvar": getvar,
+            "setvar": setvar,
+            "vars": VarProxy(store, pol),
+            "random": random_proxy,
+            "math": math_proxy,
+            "datetime": datetime_proxy,
+            "re": re_proxy,
+        }
+    )
 
     # Legacy-safe helper functions (whitelisted by name in ALLOWED_CALL_NAMES)
     def legacy_upper(s: Any) -> str:
@@ -368,14 +448,17 @@ def eval_expr(code: str, variables: Dict[str, Any] = None, policy: Dict[str, Any
 
     def legacy_weekday_cn() -> str:
         try:
-            return ["星期一","星期二","星期三","星期四","星期五","星期六","星期日"][_datetime.datetime.now().weekday()]
+            return ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"][
+                _datetime.datetime.now().weekday()
+            ]
         except Exception:
             return ""
 
     def legacy_timediff(t1: Any, t2: Any) -> str:
         s1 = "" if t1 is None else str(t1)
         s2 = "" if t2 is None else str(t2)
-        fmts = ['%Y-%m-%d %H:%M:%S','%Y-%m-%d','%H:%M:%S']
+        fmts = ["%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%H:%M:%S"]
+
         def _parse(s: str):
             for f in fmts:
                 try:
@@ -383,6 +466,7 @@ def eval_expr(code: str, variables: Dict[str, Any] = None, policy: Dict[str, Any
                 except Exception:
                     continue
             return None
+
         dt1 = _parse(s1)
         dt2 = _parse(s2)
         if dt1 and dt2:
@@ -415,12 +499,14 @@ def eval_expr(code: str, variables: Dict[str, Any] = None, policy: Dict[str, Any
             # Heuristic: if both parse cleanly and original strings look numeric, use numeric add
             cur_s = "" if cur is None else str(cur).strip()
             inc_s = "" if inc is None else str(inc).strip()
+
             def _is_num(x: str) -> bool:
                 try:
                     float(x)
                     return True
                 except Exception:
                     return False
+
             if _is_num(cur_s) and _is_num(inc_s):
                 setvar(name, str(a + b))
             else:
@@ -442,20 +528,22 @@ def eval_expr(code: str, variables: Dict[str, Any] = None, policy: Dict[str, Any
         return ""
 
     # expose helpers
-    ctx_globals.update({
-        "legacy_upper": legacy_upper,
-        "legacy_lower": legacy_lower,
-        "legacy_reverse": legacy_reverse,
-        "legacy_roll": legacy_roll,
-        "legacy_time": legacy_time,
-        "legacy_time_utc": legacy_time_utc,
-        "legacy_weekday_cn": legacy_weekday_cn,
-        "legacy_timediff": legacy_timediff,
-        "legacy_num": legacy_num,
-        "legacy_addvar": legacy_addvar,
-        "legacy_inc": legacy_inc,
-        "legacy_dec": legacy_dec,
-    })
+    ctx_globals.update(
+        {
+            "legacy_upper": legacy_upper,
+            "legacy_lower": legacy_lower,
+            "legacy_reverse": legacy_reverse,
+            "legacy_roll": legacy_roll,
+            "legacy_time": legacy_time,
+            "legacy_time_utc": legacy_time_utc,
+            "legacy_weekday_cn": legacy_weekday_cn,
+            "legacy_timediff": legacy_timediff,
+            "legacy_num": legacy_num,
+            "legacy_addvar": legacy_addvar,
+            "legacy_inc": legacy_inc,
+            "legacy_dec": legacy_dec,
+        }
+    )
 
     # 先尝试作为表达式
     try:
@@ -467,22 +555,34 @@ def eval_expr(code: str, variables: Dict[str, Any] = None, policy: Dict[str, Any
         elapsed = time.time() - start_ts
         if elapsed > TIMEOUT_SEC:
             return {
-                "success": False, "result": "", "error": f"Timeout: {elapsed:.2f}s",
-                "variables": {"initial": dict(variables or {}), "final": store}
+                "success": False,
+                "result": "",
+                "error": f"Timeout: {elapsed:.2f}s",
+                "variables": {"initial": dict(variables or {}), "final": store},
             }
-        return {"success": True, "result": out, "error": None, "variables": {"initial": dict(variables or {}), "final": store}}
+        return {
+            "success": True,
+            "result": out,
+            "error": None,
+            "variables": {"initial": dict(variables or {}), "final": store},
+        }
     except SyntaxError:
         # 回退为多语句执行（exec）
         pass
     except Exception as e:
-        return {"success": False, "result": "", "error": f"RuntimeError: {e}", "variables": {"initial": dict(variables or {}), "final": store}}
+        return {
+            "success": False,
+            "result": "",
+            "error": f"RuntimeError: {e}",
+            "variables": {"initial": dict(variables or {}), "final": store},
+        }
 
     # 多语句执行路径（支持赋值/简单控制流）
     try:
         tree = ast.parse(code, mode="exec")
         _SafeExprChecker().visit(tree)
         compiled = compile(tree, "<smarttavern_sandbox>", "exec")
-        _locals: Dict[str, Any] = {}
+        _locals: dict[str, Any] = {}
         exec(compiled, ctx_globals, _locals)
         # 优先从局部作用域读取 result，其次从全局
         value = _locals.get("result", ctx_globals.get("result", ""))
@@ -490,9 +590,21 @@ def eval_expr(code: str, variables: Dict[str, Any] = None, policy: Dict[str, Any
         elapsed = time.time() - start_ts
         if elapsed > TIMEOUT_SEC:
             return {
-                "success": False, "result": "", "error": f"Timeout: {elapsed:.2f}s",
-                "variables": {"initial": dict(variables or {}), "final": store}
+                "success": False,
+                "result": "",
+                "error": f"Timeout: {elapsed:.2f}s",
+                "variables": {"initial": dict(variables or {}), "final": store},
             }
-        return {"success": True, "result": out, "error": None, "variables": {"initial": dict(variables or {}), "final": store}}
+        return {
+            "success": True,
+            "result": out,
+            "error": None,
+            "variables": {"initial": dict(variables or {}), "final": store},
+        }
     except Exception as e:
-        return {"success": False, "result": "", "error": f"RuntimeError: {e}", "variables": {"initial": dict(variables or {}), "final": store}}
+        return {
+            "success": False,
+            "result": "",
+            "error": f"RuntimeError: {e}",
+            "variables": {"initial": dict(variables or {}), "final": store},
+        }

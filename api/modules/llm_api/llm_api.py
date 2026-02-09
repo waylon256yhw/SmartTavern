@@ -1,25 +1,26 @@
-# -*- coding: utf-8 -*-
 """
 API 封装层：通用 LLM 调用 (api/modules/llm_api)
 - 统一注册 llm_api/chat（支持 stream true/false）、llm_api/list_models、llm_api/get_defaults、llm_api/health
 - 当 stream=true 时返回 SSE（text/event-stream），事件为 data: {"type":"chunk","content":"..."}\n\n，最后发送 {"type":"end"}。
 """
 
-from typing import Any, Dict, List, Iterator, Optional
 import json
+from collections.abc import Iterator
+from typing import Any
 
 import core
+
 from .impl import (
+    StreamChunk,
     call_chat_non_streaming,
-    stream_chat_chunks,
-    list_models_impl,
     get_defaults_impl,
     health_impl,
+    list_models_impl,
+    stream_chat_chunks,
 )
-from .impl import StreamChunk
 
 
-def _sse_line(obj: Dict[str, Any]) -> str:
+def _sse_line(obj: dict[str, Any]) -> str:
     return "data: " + json.dumps(obj, ensure_ascii=False) + "\n\n"
 
 
@@ -59,10 +60,10 @@ def _make_sse_generator(chunks: Iterator[StreamChunk]) -> Iterator[str]:
                     "type": "object",
                     "properties": {
                         "role": {"type": "string", "enum": ["system", "user", "assistant"]},
-                        "content": {"type": "string"}
+                        "content": {"type": "string"},
                     },
-                    "required": ["role", "content"]
-                }
+                    "required": ["role", "content"],
+                },
             },
             "stream": {"type": "boolean", "default": False},
             "model": {"type": "string"},
@@ -76,9 +77,9 @@ def _make_sse_generator(chunks: Iterator[StreamChunk]) -> Iterator[str]:
             "timeout": {"type": "integer"},
             "connect_timeout": {"type": "integer"},
             "enable_logging": {"type": "boolean"},
-            "models": {"type": "array", "items": {"type": "string"}}
+            "models": {"type": "array", "items": {"type": "string"}},
         },
-        "required": ["provider", "api_key", "base_url", "messages"]
+        "required": ["provider", "api_key", "base_url", "messages"],
     },
     output_schema={
         "type": "object",
@@ -92,28 +93,28 @@ def _make_sse_generator(chunks: Iterator[StreamChunk]) -> Iterator[str]:
             "finish_reason": {"type": "string"},
             "raw_response": {"type": "object", "additionalProperties": True},
             "provider": {"type": "string"},
-            "error": {"type": "string"}
-        }
-    }
+            "error": {"type": "string"},
+        },
+    },
 )
 def chat(
     provider: str,
     api_key: str,
     base_url: str,
-    messages: List[Dict[str, str]],
+    messages: list[dict[str, str]],
     stream: bool = False,
-    model: Optional[str] = None,
+    model: str | None = None,
     max_tokens: int = 2048,
     temperature: float = 0.7,
-    top_p: Optional[float] = None,
-    presence_penalty: Optional[float] = None,
-    frequency_penalty: Optional[float] = None,
-    custom_params: Optional[Dict[str, Any]] = None,
-    safety_settings: Optional[Dict[str, Any]] = None,
-    timeout: Optional[int] = None,
-    connect_timeout: Optional[int] = None,
+    top_p: float | None = None,
+    presence_penalty: float | None = None,
+    frequency_penalty: float | None = None,
+    custom_params: dict[str, Any] | None = None,
+    safety_settings: dict[str, Any] | None = None,
+    timeout: int | None = None,
+    connect_timeout: int | None = None,
     enable_logging: bool = False,
-    models: Optional[List[str]] = None,
+    models: list[str] | None = None,
 ) -> Any:
     """
     统一聊天接口：
@@ -146,10 +147,7 @@ def chat(
         from fastapi.responses import StreamingResponse
     except Exception as e:
         # 快速失败为 JSON（提示未安装 FastAPI）
-        return {
-            "success": False,
-            "error": f"SSE 不可用（依赖 fastapi 未就绪）: {str(e)}"
-        }
+        return {"success": False, "error": f"SSE 不可用（依赖 fastapi 未就绪）: {e!s}"}
 
     chunk_iter = stream_chat_chunks(
         provider=provider,
@@ -197,24 +195,24 @@ def chat(
             "after_id": {"type": "string"},
             "timeout": {"type": "integer"},
             "connect_timeout": {"type": "integer"},
-            "enable_logging": {"type": "boolean"}
+            "enable_logging": {"type": "boolean"},
         },
-        "required": ["provider", "api_key"]
+        "required": ["provider", "api_key"],
     },
-    output_schema={"type": "object", "additionalProperties": True}
+    output_schema={"type": "object", "additionalProperties": True},
 )
 def list_models(
     provider: str,
     api_key: str,
-    base_url: Optional[str] = None,
-    limit: Optional[int] = None,
-    page_token: Optional[str] = None,
-    before_id: Optional[str] = None,
-    after_id: Optional[str] = None,
-    timeout: Optional[int] = None,
-    connect_timeout: Optional[int] = None,
+    base_url: str | None = None,
+    limit: int | None = None,
+    page_token: str | None = None,
+    before_id: str | None = None,
+    after_id: str | None = None,
+    timeout: int | None = None,
+    connect_timeout: int | None = None,
     enable_logging: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     return list_models_impl(
         provider=provider,
         api_key=api_key,
@@ -234,9 +232,9 @@ def list_models(
     description="返回支持提供商、默认模型映射、HTTP 错误映射与默认超时配置。",
     path="llm_api/get_defaults",
     input_schema={"type": "object", "properties": {}},
-    output_schema={"type": "object", "additionalProperties": True}
+    output_schema={"type": "object", "additionalProperties": True},
 )
-def get_defaults() -> Dict[str, Any]:
+def get_defaults() -> dict[str, Any]:
     return get_defaults_impl()
 
 
@@ -247,12 +245,9 @@ def get_defaults() -> Dict[str, Any]:
     input_schema={"type": "object", "properties": {}},
     output_schema={
         "type": "object",
-        "properties": {
-            "status": {"type": "string"},
-            "timestamp": {"type": "number"}
-        },
-        "required": ["status", "timestamp"]
-    }
+        "properties": {"status": {"type": "string"}, "timestamp": {"type": "number"}},
+        "required": ["status", "timestamp"],
+    },
 )
-def health() -> Dict[str, Any]:
+def health() -> dict[str, Any]:
     return health_impl()

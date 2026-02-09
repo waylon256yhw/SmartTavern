@@ -26,10 +26,10 @@ interface VariablesResponse {
 
 /**
  * 解析变量路径，支持三种格式：
- * 1. 点表示法: "user.name" 
+ * 1. 点表示法: "user.name"
  * 2. 方括号表示法: "user['name']" 或 "['user']['name']"
  * 3. 数组索引: "items[0].id"
- * 
+ *
  * @param obj - 要查询的对象
  * @param path - 路径字符串
  * @returns 路径对应的值，不存在则返回 undefined
@@ -256,7 +256,7 @@ function deleteValueByPath(obj: any, path: string): boolean {
   } else {
     delete target[finalKey]
   }
-  
+
   return true
 }
 
@@ -277,7 +277,7 @@ export const useChatVariablesStore = defineStore('chatVariables', () => {
     // 获取当前对话文件（从 messagesStore）
     const messagesStore = useMessagesStore()
     const currentFile = messagesStore.conversationFile
-    
+
     const targetFile = file || currentFile
     if (!targetFile) {
       throw new Error('No conversation file specified')
@@ -291,18 +291,18 @@ export const useChatVariablesStore = defineStore('chatVariables', () => {
     loading.value = true
     error.value = ''
     try {
-      const result = await (ChatBranches as any).variables({
+      const result = (await (ChatBranches as any).variables({
         action: 'get',
-        file: targetFile
-      }) as VariablesResponse
-      
+        file: targetFile,
+      })) as VariablesResponse
+
       const vars = result?.variables || {}
-      
+
       // 如果查询的是当前对话，更新缓存
       if (!file || file === messagesStore.conversationFile) {
         meta.value = vars
       }
-      
+
       return vars
     } catch (e) {
       error.value = (e as Error)?.message || String(e)
@@ -320,29 +320,29 @@ export const useChatVariablesStore = defineStore('chatVariables', () => {
   async function setVariable(key: string, value: any): Promise<void> {
     const messagesStore = useMessagesStore()
     const currentFile = messagesStore.conversationFile
-    
+
     if (!currentFile) {
       throw new Error('No conversation file specified')
     }
 
     loading.value = true
     error.value = ''
-    
+
     try {
       // 获取当前所有变量
       const currentVars = await fetchVariables()
-      
+
       // 创建副本并设置新值
       const updatedVars = JSON.parse(JSON.stringify(currentVars || {}))
       setValueByPath(updatedVars, key, value)
-      
+
       // 使用 merge 保存（保留其他变量）
-      const result = await (ChatBranches as any).variables({
+      const result = (await (ChatBranches as any).variables({
         action: 'merge',
         file: currentFile,
-        data: updatedVars
-      }) as VariablesResponse
-      
+        data: updatedVars,
+      })) as VariablesResponse
+
       // 更新缓存
       meta.value = result?.variables || updatedVars
     } catch (e) {
@@ -360,7 +360,7 @@ export const useChatVariablesStore = defineStore('chatVariables', () => {
   async function setVariables(data: Record<string, any>): Promise<void> {
     const messagesStore = useMessagesStore()
     const currentFile = messagesStore.conversationFile
-    
+
     if (!currentFile) {
       throw new Error('No conversation file specified')
     }
@@ -371,24 +371,24 @@ export const useChatVariablesStore = defineStore('chatVariables', () => {
 
     loading.value = true
     error.value = ''
-    
+
     try {
       // 获取当前所有变量
       const currentVars = await fetchVariables()
-      
+
       // 创建副本并批量设置
       const updatedVars = JSON.parse(JSON.stringify(currentVars || {}))
       for (const [key, value] of Object.entries(data)) {
         setValueByPath(updatedVars, key, value)
       }
-      
+
       // 使用 merge 保存
-      const result = await (ChatBranches as any).variables({
+      const result = (await (ChatBranches as any).variables({
         action: 'merge',
         file: currentFile,
-        data: updatedVars
-      }) as VariablesResponse
-      
+        data: updatedVars,
+      })) as VariablesResponse
+
       // 更新缓存
       meta.value = result?.variables || updatedVars
     } catch (e) {
@@ -406,33 +406,33 @@ export const useChatVariablesStore = defineStore('chatVariables', () => {
   async function deleteVariable(key: string): Promise<void> {
     const messagesStore = useMessagesStore()
     const currentFile = messagesStore.conversationFile
-    
+
     if (!currentFile) {
       throw new Error('No conversation file specified')
     }
 
     loading.value = true
     error.value = ''
-    
+
     try {
       // 获取当前所有变量
       const currentVars = await fetchVariables()
-      
+
       // 创建副本并删除
       const updatedVars = JSON.parse(JSON.stringify(currentVars || {}))
       const deleted = deleteValueByPath(updatedVars, key)
-      
+
       if (!deleted) {
         console.warn(`[deleteVariable] Key not found: ${key}`)
       }
-      
+
       // 使用 set 全量保存（因为是删除操作）
-      const result = await (ChatBranches as any).variables({
+      const result = (await (ChatBranches as any).variables({
         action: 'set',
         file: currentFile,
-        data: updatedVars
-      }) as VariablesResponse
-      
+        data: updatedVars,
+      })) as VariablesResponse
+
       // 更新缓存
       meta.value = result?.variables || updatedVars
     } catch (e) {
@@ -450,7 +450,7 @@ export const useChatVariablesStore = defineStore('chatVariables', () => {
   async function deleteVariables(keys: string[]): Promise<void> {
     const messagesStore = useMessagesStore()
     const currentFile = messagesStore.conversationFile
-    
+
     if (!currentFile) {
       throw new Error('No conversation file specified')
     }
@@ -461,11 +461,11 @@ export const useChatVariablesStore = defineStore('chatVariables', () => {
 
     loading.value = true
     error.value = ''
-    
+
     try {
       // 获取当前所有变量
       const currentVars = await fetchVariables()
-      
+
       // 创建副本并批量删除
       const updatedVars = JSON.parse(JSON.stringify(currentVars || {}))
       for (const key of keys) {
@@ -474,14 +474,14 @@ export const useChatVariablesStore = defineStore('chatVariables', () => {
           console.warn(`[deleteVariables] Key not found: ${key}`)
         }
       }
-      
+
       // 使用 set 全量保存
-      const result = await (ChatBranches as any).variables({
+      const result = (await (ChatBranches as any).variables({
         action: 'set',
         file: currentFile,
-        data: updatedVars
-      }) as VariablesResponse
-      
+        data: updatedVars,
+      })) as VariablesResponse
+
       // 更新缓存
       meta.value = result?.variables || updatedVars
     } catch (e) {
@@ -511,13 +511,16 @@ export const useChatVariablesStore = defineStore('chatVariables', () => {
 
   // 监听消息视图更新事件，自动同步 variables
   try {
-    Host.events.on('workflow.message.view.updated', ({ conversationFile, variables }: { conversationFile: string, variables?: Variables }) => {
-      const messagesStore = useMessagesStore()
-      // 只有当更新的对话文件是当前对话时才更新缓存
-      if (conversationFile === messagesStore.conversationFile && variables) {
-        _updateCache(variables)
-      }
-    })
+    Host.events.on(
+      'workflow.message.view.updated',
+      ({ conversationFile, variables }: { conversationFile: string; variables?: Variables }) => {
+        const messagesStore = useMessagesStore()
+        // 只有当更新的对话文件是当前对话时才更新缓存
+        if (conversationFile === messagesStore.conversationFile && variables) {
+          _updateCache(variables)
+        }
+      },
+    )
   } catch {}
 
   return {
@@ -562,7 +565,7 @@ export async function getVariables(...keys: string[]): Promise<Record<string, an
   try {
     const store = useChatVariablesStore()
     const vars = await store.fetchVariables()
-    
+
     const result: Record<string, any> = {}
     for (const key of keys) {
       result[key] = getValueByPath(vars, key)
@@ -655,7 +658,9 @@ export interface RegisterGlobalFunctionsOptions {
   exposeToWindow?: boolean
 }
 
-export function registerGlobalFunctions({ exposeToWindow = true }: RegisterGlobalFunctionsOptions = {}): void {
+export function registerGlobalFunctions({
+  exposeToWindow = true,
+}: RegisterGlobalFunctionsOptions = {}): void {
   if (typeof window === 'undefined') return
   if (exposeToWindow) {
     try {
@@ -717,13 +722,14 @@ export function registerGlobalFunctions({ exposeToWindow = true }: RegisterGloba
       })
     } catch {
       // 回退直接赋值
-      (window as any).getVariable = async (key: string) => await getVariable(key);
-      (window as any).getVariables = async (...keys: string[]) => await getVariables(...keys);
-      (window as any).getVariableJSON = async (key?: string) => await getVariableJSON(key);
-      (window as any).setVariable = async (key: string, value: any) => await setVariable(key, value);
-      (window as any).setVariables = async (data: Record<string, any>) => await setVariables(data);
-      (window as any).deleteVariable = async (key: string) => await deleteVariable(key);
-      (window as any).deleteVariables = async (keys: string[]) => await deleteVariables(keys)
+      ;(window as any).getVariable = async (key: string) => await getVariable(key)
+      ;(window as any).getVariables = async (...keys: string[]) => await getVariables(...keys)
+      ;(window as any).getVariableJSON = async (key?: string) => await getVariableJSON(key)
+      ;(window as any).setVariable = async (key: string, value: any) =>
+        await setVariable(key, value)
+      ;(window as any).setVariables = async (data: Record<string, any>) => await setVariables(data)
+      ;(window as any).deleteVariable = async (key: string) => await deleteVariable(key)
+      ;(window as any).deleteVariables = async (keys: string[]) => await deleteVariables(keys)
     }
   }
 }
