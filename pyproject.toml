@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest>=7.4.2"]
+dev = ["pytest>=7.4.2", "ruff>=0.11", "pre-commit>=4.2"]
 
 [project.scripts]
 smarttavern = "start_all_apis:main"
@@ -29,3 +29,20 @@ packages = ["core", "api", "orchestrators", "shared"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "start_all_apis.py" = "start_all_apis.py"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+src = ["api", "core", "orchestrators", "shared", "backend_projects"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["E501", "B008", "SIM108"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["core", "api", "orchestrators", "shared"]

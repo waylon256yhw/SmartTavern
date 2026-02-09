@@ -1,0 +1,24 @@
+# Python / backend
+*.py
+api/
+core/
+orchestrators/
+shared/
+backend_projects/
+
+# Dependencies
+node_modules/
+.venv/
+
+# Build output
+dist/
+build/
+
+# Data / generated JSON
+frontend_projects/SmartTavern/public/
+frontend_projects/PromptEditor/public/
+
+# Lock files
+uv.lock
+bun.lock
+package-lock.json
