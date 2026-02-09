@@ -41,16 +41,16 @@ function closeDeleteModal() {
 }
 
 async function handleDeleteConfirm() {
-  if (!deleteTarget.value) return
+  if (!deleteTarget.value || deleting.value) return
   deleting.value = true
   try {
     await ChatBranches.deleteConversation(deleteTarget.value.file)
+    closeDeleteModal()
     loadData()
   } catch (err) {
     console.error('[LoadGameView] delete failed:', err)
   } finally {
     deleting.value = false
-    closeDeleteModal()
   }
 }
 
