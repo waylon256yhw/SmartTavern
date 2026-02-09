@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.12
+    rev: v0.15.0
     hooks:
       - id: ruff
         args: [--fix]
@@ -10,4 +10,4 @@ repos:
     hooks:
       - id: prettier
         types_or: [vue, ts, tsx, javascript, css, html]
-        additional_dependencies: ['prettier@3']
+        additional_dependencies: ['prettier@3.8.1']
