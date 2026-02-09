@@ -1,14 +1,14 @@
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
-import useAppearanceOthers from '@/composables/appearance/useAppearanceOthers'
-import { useI18n } from '@/locales'
-import { useAppearanceSettingsStore } from '@/stores/appearanceSettings'
-import { storeToRefs } from 'pinia'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import useAppearanceOthers from '@/composables/appearance/useAppearanceOthers';
+import { useI18n } from '@/locales';
+import { useAppearanceSettingsStore } from '@/stores/appearanceSettings';
+import { storeToRefs } from 'pinia';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 // 获取 Pinia store 用于更新全局设置
-const appearanceStore = useAppearanceSettingsStore()
+const appearanceStore = useAppearanceSettingsStore();
 
 /**
  * 其他外观配置（拆分自 AppearancePanel）
@@ -20,61 +20,61 @@ const appearanceStore = useAppearanceSettingsStore()
  */
 
 // live tuning indicator + overlay suppression
-const tuning = ref(false)
-const activeTuningSlider = ref(null)
+const tuning = ref(false);
+const activeTuningSlider = ref(null);
 
 /* 强制隐藏半透明背板/浮标（行内样式最高优先级），结束时恢复 */
-let __tuningHiddenEls = []
+let __tuningHiddenEls = [];
 function __hideOverlaysForTuning() {
-  const selectors = ['.st-panel-backdrop', '.sd-backdrop', '.sd-fab']
-  __tuningHiddenEls = []
+  const selectors = ['.st-panel-backdrop', '.sd-backdrop', '.sd-fab'];
+  __tuningHiddenEls = [];
   selectors.forEach((sel) => {
     document.querySelectorAll(sel).forEach((el) => {
-      __tuningHiddenEls.push({ el, style: el.getAttribute('style') })
+      __tuningHiddenEls.push({ el, style: el.getAttribute('style') });
       try {
-        el.style.setProperty('display', 'none', 'important')
-        el.style.setProperty('visibility', 'hidden', 'important')
-        el.style.setProperty('pointer-events', 'none', 'important')
+        el.style.setProperty('display', 'none', 'important');
+        el.style.setProperty('visibility', 'hidden', 'important');
+        el.style.setProperty('pointer-events', 'none', 'important');
       } catch (_) {}
-    })
-  })
+    });
+  });
 }
 function __restoreOverlaysForTuning() {
   __tuningHiddenEls.forEach(({ el, style }) => {
     try {
-      if (style != null) el.setAttribute('style', style)
-      else el.removeAttribute('style')
+      if (style != null) el.setAttribute('style', style);
+      else el.removeAttribute('style');
     } catch (_) {}
-  })
-  __tuningHiddenEls = []
+  });
+  __tuningHiddenEls = [];
 }
 
 function onTuningStart(sliderName) {
-  tuning.value = true
-  activeTuningSlider.value = sliderName
-  document.body.classList.add('st-live-tuning')
-  document.body.setAttribute('data-active-slider', sliderName)
-  __hideOverlaysForTuning()
-  window.addEventListener('pointerup', onTuningEndOnce, { once: true })
-  window.addEventListener('touchend', onTuningEndOnce, { once: true })
+  tuning.value = true;
+  activeTuningSlider.value = sliderName;
+  document.body.classList.add('st-live-tuning');
+  document.body.setAttribute('data-active-slider', sliderName);
+  __hideOverlaysForTuning();
+  window.addEventListener('pointerup', onTuningEndOnce, { once: true });
+  window.addEventListener('touchend', onTuningEndOnce, { once: true });
 }
 function onTuningEndOnce() {
-  tuning.value = false
-  activeTuningSlider.value = null
-  document.body.classList.remove('st-live-tuning')
-  document.body.removeAttribute('data-active-slider')
-  __restoreOverlaysForTuning()
+  tuning.value = false;
+  activeTuningSlider.value = null;
+  document.body.classList.remove('st-live-tuning');
+  document.body.removeAttribute('data-active-slider');
+  __restoreOverlaysForTuning();
 }
 
 // Composable: state + helpers
 const { state, initFromCSS, startAutoSave, setRootVar, buildSnapshot, saveSnapshotLS } =
-  useAppearanceOthers()
+  useAppearanceOthers();
 
 // Destructure refs for template parity
-const { fabMargin } = state
+const { fabMargin } = state;
 
 // 从 Pinia store 获取全局共享的 refs
-const { timezone, dateTimeFormat } = storeToRefs(appearanceStore)
+const { timezone, dateTimeFormat } = storeToRefs(appearanceStore);
 
 // 常用时区列表（使用 i18n key）
 const timezoneOptions = [
@@ -89,7 +89,7 @@ const timezoneOptions = [
   { value: 'America/Los_Angeles', labelKey: 'appearance.others.tzLosAngeles' },
   { value: 'America/Chicago', labelKey: 'appearance.others.tzChicago' },
   { value: 'UTC', labelKey: 'appearance.others.tzUTC' },
-]
+];
 
 // 日期时间格式选项（使用i18n key作为label）
 const dateTimeFormatOptions = ref([
@@ -101,47 +101,47 @@ const dateTimeFormatOptions = ref([
   { value: 'DD/MM/YYYY hh:mm A', labelKey: 'appearance.others.formatEU12' },
   { value: 'YYYY年MM月DD日 HH:mm', labelKey: 'appearance.others.formatCN24' },
   { value: 'YYYY年MM月DD日 hh:mm A', labelKey: 'appearance.others.formatCN12' },
-])
+]);
 
 // 持久化：任意外观变更立即保存到浏览器，避免刷新后丢失
 // 注意：state 是普通对象（包含 ref），不是 reactive 对象，需要监听具体的 ref
 watch([fabMargin, timezone, dateTimeFormat], () => {
   try {
-    const snap = buildSnapshot()
-    saveSnapshotLS(snap)
+    const snap = buildSnapshot();
+    saveSnapshotLS(snap);
   } catch (_) {}
-})
+});
 
 // Handlers
 function onFabMarginInput(e) {
-  fabMargin.value = Number(e.target.value)
-  setRootVar('--st-fab-margin', fabMargin.value)
+  fabMargin.value = Number(e.target.value);
+  setRootVar('--st-fab-margin', fabMargin.value);
 }
 function onFabMarginNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 0 && v <= 100) {
-    fabMargin.value = v
-    setRootVar('--st-fab-margin', v)
+    fabMargin.value = v;
+    setRootVar('--st-fab-margin', v);
   }
 }
 
 function onTimezoneChange(e) {
-  appearanceStore.setTimezone(e.target.value)
+  appearanceStore.setTimezone(e.target.value);
 }
 
 function onDateTimeFormatChange(e) {
-  appearanceStore.setDateTimeFormat(e.target.value)
+  appearanceStore.setDateTimeFormat(e.target.value);
 }
 
 // Lifecycle: init + auto-save broadcast
-let __dispose = null
+let __dispose = null;
 onMounted(() => {
-  initFromCSS()
-  __dispose = startAutoSave({ intervalMs: 1000 })
-})
+  initFromCSS();
+  __dispose = startAutoSave({ intervalMs: 1000 });
+});
 onBeforeUnmount(() => {
-  if (typeof __dispose === 'function') __dispose()
-})
+  if (typeof __dispose === 'function') __dispose();
+});
 </script>
 
 <template>

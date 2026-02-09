@@ -1,64 +1,64 @@
 <script setup lang="ts">
-import { computed, onMounted, nextTick, ref, watch } from 'vue'
-import { usePreviewStore, type PreviewMode } from '@/features/preview/store'
-import { usePreviewRuntime } from '../runtime'
+import { computed, onMounted, nextTick, ref, watch } from 'vue';
+import { usePreviewStore, type PreviewMode } from '@/features/preview/store';
+import { usePreviewRuntime } from '../runtime';
 
-const preview = usePreviewStore()
-const runtime = usePreviewRuntime()
+const preview = usePreviewStore();
+const runtime = usePreviewRuntime();
 
 const options: { value: PreviewMode; label: string }[] = [
   { value: 'raw', label: '原始提示词' },
   { value: 'message', label: '对话页面提示词' },
   { value: 'preflight', label: '发给AI前提示词' },
-]
+];
 
 const current = computed<PreviewMode>({
   get: () => preview.mode,
   set: (v) => preview.setMode(v),
-})
+});
 
 onMounted(() => {
-  preview.load()
-  nextTick(() => (window as any).lucide?.createIcons?.())
-})
+  preview.load();
+  nextTick(() => (window as any).lucide?.createIcons?.());
+});
 
 // 自动结果（仅显示当前选择的模式）
 const autoMessages = computed(() => {
   if (preview.mode === 'raw') {
-    return runtime.results.raw?.messages ?? []
+    return runtime.results.raw?.messages ?? [];
   } else if (preview.mode === 'message') {
-    return runtime.results.dialog?.message ?? []
+    return runtime.results.dialog?.message ?? [];
   } else if (preview.mode === 'preflight') {
-    return runtime.results.preflight?.message ?? []
+    return runtime.results.preflight?.message ?? [];
   }
-  return []
-})
+  return [];
+});
 
 const autoVariables = computed(() => {
-  if (preview.mode === 'message') return runtime.results.dialog?.variables ?? null
-  if (preview.mode === 'preflight') return runtime.results.preflight?.variables ?? null
-  return null
-})
+  if (preview.mode === 'message') return runtime.results.dialog?.variables ?? null;
+  if (preview.mode === 'preflight') return runtime.results.preflight?.variables ?? null;
+  return null;
+});
 const autoHasVariables = computed(() => {
-  const v = autoVariables.value
-  return !!(v && typeof v === 'object' && Object.keys(v).length > 0)
-})
-const autoLoading = computed(() => runtime.generating)
-const autoError = computed(() => runtime.lastError)
+  const v = autoVariables.value;
+  return !!(v && typeof v === 'object' && Object.keys(v).length > 0);
+});
+const autoLoading = computed(() => runtime.generating);
+const autoError = computed(() => runtime.lastError);
 
 // 复制 messages JSON
 function copyAuto() {
   try {
-    const txt = JSON.stringify(autoMessages.value ?? [], null, 2)
+    const txt = JSON.stringify(autoMessages.value ?? [], null, 2);
     if (navigator?.clipboard?.writeText) {
-      navigator.clipboard.writeText(txt)
+      navigator.clipboard.writeText(txt);
     } else {
-      const ta = document.createElement('textarea')
-      ta.value = txt
-      document.body.appendChild(ta)
-      ta.select()
-      document.execCommand('copy')
-      ta.remove()
+      const ta = document.createElement('textarea');
+      ta.value = txt;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
     }
   } catch {}
 }
@@ -66,34 +66,34 @@ function copyAuto() {
 // 提取 source.type
 function sourceType(m: any): string {
   try {
-    return String(m?.source?.type ?? '—')
+    return String(m?.source?.type ?? '—');
   } catch {
-    return '—'
+    return '—';
   }
 }
 function pretty(obj: any): string {
   try {
-    return JSON.stringify(obj ?? {}, null, 2)
+    return JSON.stringify(obj ?? {}, null, 2);
   } catch {
-    return ''
+    return '';
   }
 }
 
 // 底部“变量”页：展开/收起 + 持久化
-const VARS_OPEN_KEY = 'prompt_editor_preview_vars_open'
-const varsOpen = ref(true)
+const VARS_OPEN_KEY = 'prompt_editor_preview_vars_open';
+const varsOpen = ref(true);
 onMounted(() => {
   try {
-    const raw = localStorage.getItem(VARS_OPEN_KEY)
-    if (raw === '0' || raw === 'false') varsOpen.value = false
-    else varsOpen.value = true
+    const raw = localStorage.getItem(VARS_OPEN_KEY);
+    if (raw === '0' || raw === 'false') varsOpen.value = false;
+    else varsOpen.value = true;
   } catch {}
-})
+});
 watch(varsOpen, (v) => {
   try {
-    localStorage.setItem(VARS_OPEN_KEY, v ? '1' : '0')
+    localStorage.setItem(VARS_OPEN_KEY, v ? '1' : '0');
   } catch {}
-})
+});
 </script>
 
 <template>

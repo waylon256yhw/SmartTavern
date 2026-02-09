@@ -1,17 +1,17 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import Host from '@/workflow/core/host'
-import * as CatalogChannel from '@/workflow/channels/catalog'
-import * as SettingsChannel from '@/workflow/channels/settings'
-import DataCatalog from '@/services/dataCatalog'
-import ImportConflictModal from '@/components/common/ImportConflictModal.vue'
-import ImportErrorModal from '@/components/common/ImportErrorModal.vue'
-import ExportModal from '@/components/common/ExportModal.vue'
-import DeleteConfirmModal from '@/components/common/DeleteConfirmModal.vue'
-import CreateItemModal from '@/components/common/CreateItemModal.vue'
-import { useI18n } from '@/locales'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import Host from '@/workflow/core/host';
+import * as CatalogChannel from '@/workflow/channels/catalog';
+import * as SettingsChannel from '@/workflow/channels/settings';
+import DataCatalog from '@/services/dataCatalog';
+import ImportConflictModal from '@/components/common/ImportConflictModal.vue';
+import ImportErrorModal from '@/components/common/ImportErrorModal.vue';
+import ExportModal from '@/components/common/ExportModal.vue';
+import DeleteConfirmModal from '@/components/common/DeleteConfirmModal.vue';
+import CreateItemModal from '@/components/common/CreateItemModal.vue';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   anchorLeft: { type: Number, default: 308 },
@@ -20,9 +20,9 @@ const props = defineProps({
   top: { type: Number, default: 64 },
   bottom: { type: Number, default: 12 },
   conversationFile: { type: String, default: null },
-})
+});
 
-const emit = defineEmits(['close', 'use', 'view', 'delete', 'import', 'export', 'create'])
+const emit = defineEmits(['close', 'use', 'view', 'delete', 'import', 'export', 'create']);
 
 const panelStyle = computed(() => ({
   position: 'fixed',
@@ -31,86 +31,86 @@ const panelStyle = computed(() => ({
   bottom: props.bottom + 'px',
   width: props.width + 'px',
   zIndex: String(props.zIndex),
-}))
+}));
 
-const usingKeys = ref([])
-const settingsLoaded = ref(false)
+const usingKeys = ref([]);
+const settingsLoaded = ref(false);
 
 // 导入相关状态
-const fileInputRef = ref(null)
-const importing = ref(false)
-const importError = ref(null)
-const pendingImportFile = ref(null)
+const fileInputRef = ref(null);
+const importing = ref(false);
+const importError = ref(null);
+const pendingImportFile = ref(null);
 
 // 导入冲突弹窗状态
-const showImportConflictModal = ref(false)
-const importConflictExistingName = ref('')
-const importConflictSuggestedName = ref('')
+const showImportConflictModal = ref(false);
+const importConflictExistingName = ref('');
+const importConflictSuggestedName = ref('');
 
 // 导出弹窗状态
-const showExportModal = ref(false)
+const showExportModal = ref(false);
 
 // 导入错误弹窗状态
-const showImportErrorModal = ref(false)
-const importErrorCode = ref('')
-const importErrorMessage = ref('')
-const importExpectedType = ref('')
-const importActualType = ref('')
+const showImportErrorModal = ref(false);
+const importErrorCode = ref('');
+const importErrorMessage = ref('');
+const importExpectedType = ref('');
+const importActualType = ref('');
 
 // 删除确认弹窗状态
-const showDeleteConfirmModal = ref(false)
-const deleteTarget = ref(null)
-const deleting = ref(false)
+const showDeleteConfirmModal = ref(false);
+const deleteTarget = ref(null);
+const deleting = ref(false);
 
 // 新建弹窗状态
-const showCreateModal = ref(false)
+const showCreateModal = ref(false);
 
 // 使用通道响应式状态
-const regexRules = CatalogChannel.regexRules
+const regexRules = CatalogChannel.regexRules;
 const loading = computed(
   () =>
     CatalogChannel.loadingStates.value.regex ||
     (props.conversationFile ? SettingsChannel.isLoading(props.conversationFile) : false) ||
     importing.value,
-)
+);
 const error = computed(
   () =>
     importError.value ||
     CatalogChannel.errorStates.value.regex ||
     (props.conversationFile ? SettingsChannel.getError(props.conversationFile) : null),
-)
+);
 
 // 监听事件响应
-let unsubscribeRegex = null
-let unsubscribeSettings = null
+let unsubscribeRegex = null;
+let unsubscribeSettings = null;
 
 function loadData() {
-  if (settingsLoaded.value) return
+  if (settingsLoaded.value) return;
 
   // 请求正则规则列表
   Host.events.emit(CatalogChannel.EVT_CATALOG_REGEX_REQ, {
     requestId: Date.now(),
-  })
+  });
 
   // 请求设置（如果有对话文件）
   if (props.conversationFile) {
     Host.events.emit(SettingsChannel.EVT_SETTINGS_GET_REQ, {
       conversationFile: props.conversationFile,
       requestId: Date.now(),
-    })
+    });
   } else {
-    settingsLoaded.value = true
+    settingsLoaded.value = true;
   }
 }
 
 function refreshRegexRules() {
-  Host.events.emit(CatalogChannel.EVT_CATALOG_REGEX_REQ, { requestId: Date.now() })
+  Host.events.emit(CatalogChannel.EVT_CATALOG_REGEX_REQ, { requestId: Date.now() });
 }
 
 // Transition 完成后初始化图标
 function handleTransitionComplete() {
   try {
-    window?.lucide?.createIcons?.()
+    window?.lucide?.createIcons?.();
   } catch (_) {}
 }
 
@@ -120,60 +120,60 @@ onMounted(() => {
     if (payload?.success) {
       // 数据更新成功，等待 transition 完成后初始化图标
     }
-  })
+  });
 
   // 监听设置响应
   unsubscribeSettings = Host.events.on(SettingsChannel.EVT_SETTINGS_GET_RES, (payload) => {
     if (payload?.success && payload?.conversationFile === props.conversationFile) {
-      const settings = payload.settings || {}
+      const settings = payload.settings || {};
       // regex_rules是数组字段（多选）
       if (Array.isArray(settings.regex_rules)) {
-        usingKeys.value = settings.regex_rules
+        usingKeys.value = settings.regex_rules;
       }
-      settingsLoaded.value = true
+      settingsLoaded.value = true;
     }
-  })
-})
+  });
+});
 
 onUnmounted(() => {
-  if (unsubscribeRegex) unsubscribeRegex()
-  if (unsubscribeSettings) unsubscribeSettings()
-})
+  if (unsubscribeRegex) unsubscribeRegex();
+  if (unsubscribeSettings) unsubscribeSettings();
+});
 
 watch(
   () => props.conversationFile,
   (v) => {
     if (v && !settingsLoaded.value) {
-      loadData()
+      loadData();
     }
   },
   { immediate: true },
-)
+);
 
 function close() {
-  emit('close')
+  emit('close');
 }
 
 // 多选逻辑：切换选中状态
 function onUse(k) {
   if (!props.conversationFile) {
-    const idx = usingKeys.value.indexOf(k)
+    const idx = usingKeys.value.indexOf(k);
     if (idx >= 0) {
-      usingKeys.value.splice(idx, 1)
+      usingKeys.value.splice(idx, 1);
     } else {
-      usingKeys.value.push(k)
+      usingKeys.value.push(k);
     }
-    emit('use', k)
-    return
+    emit('use', k);
+    return;
   }
 
   // 计算新的选中列表
-  const newKeys = [...usingKeys.value]
-  const idx = newKeys.indexOf(k)
+  const newKeys = [...usingKeys.value];
+  const idx = newKeys.indexOf(k);
   if (idx >= 0) {
-    newKeys.splice(idx, 1)
+    newKeys.splice(idx, 1);
   } else {
-    newKeys.push(k)
+    newKeys.push(k);
   }
 
   // 通过事件请求更新设置
@@ -181,210 +181,210 @@ function onUse(k) {
     conversationFile: props.conversationFile,
     patch: { regex_rules: newKeys },
     requestId: Date.now(),
-  })
+  });
 
   // 监听更新响应（一次性）
   const unsubUpdate = Host.events.on(SettingsChannel.EVT_SETTINGS_UPDATE_RES, (payload) => {
     if (payload?.conversationFile === props.conversationFile) {
       if (payload.success) {
-        usingKeys.value = newKeys
-        emit('use', k)
+        usingKeys.value = newKeys;
+        emit('use', k);
       }
-      unsubUpdate() // 移除监听器
+      unsubUpdate(); // 移除监听器
     }
-  })
+  });
 }
 
 function onView(k) {
-  emit('view', k)
+  emit('view', k);
 }
 
 // ==================== 删除功能 ====================
 
 function onDelete(k) {
-  const item = regexRules.value.find((p) => p.key === k)
-  if (!item) return
+  const item = regexRules.value.find((p) => p.key === k);
+  if (!item) return;
 
   deleteTarget.value = {
     key: k,
     name: item.name || getFolderName(k),
     folderPath: k.replace(/\/regex_rules\.json$/, ''),
-  }
-  showDeleteConfirmModal.value = true
+  };
+  showDeleteConfirmModal.value = true;
 }
 
 function closeDeleteConfirmModal() {
-  showDeleteConfirmModal.value = false
-  deleteTarget.value = null
+  showDeleteConfirmModal.value = false;
+  deleteTarget.value = null;
 }
 
 async function handleDeleteConfirm() {
-  if (!deleteTarget.value) return
+  if (!deleteTarget.value) return;
 
-  deleting.value = true
+  deleting.value = true;
   try {
-    const result = await DataCatalog.deleteDataFolder(deleteTarget.value.folderPath)
+    const result = await DataCatalog.deleteDataFolder(deleteTarget.value.folderPath);
     if (result.success) {
-      const idx = usingKeys.value.indexOf(deleteTarget.value.key)
+      const idx = usingKeys.value.indexOf(deleteTarget.value.key);
       if (idx >= 0) {
-        usingKeys.value.splice(idx, 1)
+        usingKeys.value.splice(idx, 1);
       }
-      refreshRegexRules()
-      emit('delete', deleteTarget.value.key)
+      refreshRegexRules();
+      emit('delete', deleteTarget.value.key);
     } else {
-      importError.value = result.message || t('error.deleteFailed', { error: result.error || '' })
+      importError.value = result.message || t('error.deleteFailed', { error: result.error || '' });
     }
   } catch (err) {
-    console.error('[RegexRulesPanel] Delete error:', err)
-    importError.value = t('error.deleteFailed', { error: err.message || '' })
+    console.error('[RegexRulesPanel] Delete error:', err);
+    importError.value = t('error.deleteFailed', { error: err.message || '' });
   } finally {
-    deleting.value = false
-    closeDeleteConfirmModal()
+    deleting.value = false;
+    closeDeleteConfirmModal();
   }
 }
 
-const isLucide = (v) => typeof v === 'string' && /^[a-z\-]+$/.test(v)
+const isLucide = (v) => typeof v === 'string' && /^[a-z\-]+$/.test(v);
 
 // 从文件路径提取文件夹名称
 function getFolderName(filePath) {
-  if (!filePath) return ''
-  const parts = filePath.split('/')
+  if (!filePath) return '';
+  const parts = filePath.split('/');
   if (parts.length >= 2) {
-    return parts[parts.length - 2]
+    return parts[parts.length - 2];
   }
-  return ''
+  return '';
 }
 
 // 辅助：检查是否选中
-const isUsing = (k) => usingKeys.value.includes(k)
+const isUsing = (k) => usingKeys.value.includes(k);
 
 // ==================== 导入功能 ====================
 
 function triggerImport() {
-  importError.value = null
-  if (fileInputRef.value) fileInputRef.value.click()
+  importError.value = null;
+  if (fileInputRef.value) fileInputRef.value.click();
 }
 
 function extractRegexName(filename) {
-  return filename.replace(/\.(json|zip|png)$/i, '')
+  return filename.replace(/\.(json|zip|png)$/i, '');
 }
 
 async function handleFileSelect(event) {
-  const files = event.target.files
-  if (!files || files.length === 0) return
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
 
-  const file = files[0]
-  const validTypes = ['.json', '.zip', '.png']
-  const ext = '.' + (file.name.split('.').pop() || '').toLowerCase()
+  const file = files[0];
+  const validTypes = ['.json', '.zip', '.png'];
+  const ext = '.' + (file.name.split('.').pop() || '').toLowerCase();
   if (!validTypes.includes(ext)) {
-    importError.value = t('error.invalidFileType', { ext })
-    event.target.value = ''
-    return
+    importError.value = t('error.invalidFileType', { ext });
+    event.target.value = '';
+    return;
   }
 
   // 直接调用导入，后端会处理名称冲突检测
-  await doImport(file, false)
-  event.target.value = ''
+  await doImport(file, false);
+  event.target.value = '';
 }
 
 async function doImport(file, overwrite = false, targetName = null) {
-  importing.value = true
-  importError.value = null
+  importing.value = true;
+  importError.value = null;
 
   try {
-    const result = await DataCatalog.importDataFromFile('regex_rule', file, targetName, overwrite)
+    const result = await DataCatalog.importDataFromFile('regex_rule', file, targetName, overwrite);
     if (result.success) {
-      refreshRegexRules()
-      emit('import', result)
+      refreshRegexRules();
+      emit('import', result);
     } else {
       // 检查是否是需要显示专用弹窗的错误
-      const errorCode = result.error || ''
+      const errorCode = result.error || '';
       if (errorCode === 'NAME_EXISTS') {
         // 名称冲突，显示冲突弹窗
-        openImportConflictModal(file, result.folder_name, result.suggested_name)
+        openImportConflictModal(file, result.folder_name, result.suggested_name);
       } else if (
         errorCode === 'TYPE_MISMATCH' ||
         errorCode === 'NO_TYPE_INFO' ||
         errorCode === 'NO_TYPE_IN_FILENAME'
       ) {
-        openImportErrorModal(errorCode, result.message, result.expected_type, result.actual_type)
+        openImportErrorModal(errorCode, result.message, result.expected_type, result.actual_type);
       } else {
-        importError.value = result.message || result.error || t('error.importFailed')
+        importError.value = result.message || result.error || t('error.importFailed');
       }
     }
   } catch (err) {
-    console.error('[RegexRulesPanel] Import error:', err)
-    importError.value = err.message || t('error.importFailed')
+    console.error('[RegexRulesPanel] Import error:', err);
+    importError.value = err.message || t('error.importFailed');
   } finally {
-    importing.value = false
+    importing.value = false;
   }
 }
 
 // 打开导入错误弹窗
 function openImportErrorModal(code, message, expected, actual) {
-  importErrorCode.value = code
-  importErrorMessage.value = message || ''
-  importExpectedType.value = expected || 'regex_rule'
-  importActualType.value = actual || ''
-  showImportErrorModal.value = true
+  importErrorCode.value = code;
+  importErrorMessage.value = message || '';
+  importExpectedType.value = expected || 'regex_rule';
+  importActualType.value = actual || '';
+  showImportErrorModal.value = true;
 }
 
 // 关闭导入错误弹窗
 function closeImportErrorModal() {
-  showImportErrorModal.value = false
+  showImportErrorModal.value = false;
 }
 
 function openImportConflictModal(file, existingName, suggestedName) {
-  pendingImportFile.value = file
-  importConflictExistingName.value = existingName
-  importConflictSuggestedName.value = suggestedName
-  showImportConflictModal.value = true
+  pendingImportFile.value = file;
+  importConflictExistingName.value = existingName;
+  importConflictSuggestedName.value = suggestedName;
+  showImportConflictModal.value = true;
 }
 
 function closeImportConflictModal() {
-  showImportConflictModal.value = false
-  pendingImportFile.value = null
+  showImportConflictModal.value = false;
+  pendingImportFile.value = null;
 }
 
 async function handleConflictOverwrite() {
-  const file = pendingImportFile.value
-  closeImportConflictModal()
-  if (file) await doImport(file, true)
+  const file = pendingImportFile.value;
+  closeImportConflictModal();
+  if (file) await doImport(file, true);
 }
 
 async function handleConflictRename(targetName) {
-  const file = pendingImportFile.value
-  closeImportConflictModal()
-  if (file) await doImport(file, false, targetName)
+  const file = pendingImportFile.value;
+  closeImportConflictModal();
+  if (file) await doImport(file, false, targetName);
 }
 
 // ==================== 导出功能 ====================
 
 function openExportModal() {
-  showExportModal.value = true
+  showExportModal.value = true;
 }
 
 function closeExportModal() {
-  showExportModal.value = false
+  showExportModal.value = false;
 }
 
 function handleExportComplete(result) {
-  emit('export', result)
+  emit('export', result);
 }
 
 // ==================== 新建功能 ====================
 
 function openCreateModal() {
-  showCreateModal.value = true
+  showCreateModal.value = true;
 }
 
 function closeCreateModal() {
-  showCreateModal.value = false
+  showCreateModal.value = false;
 }
 
 function handleCreated(result) {
-  refreshRegexRules()
-  emit('create', result)
+  refreshRegexRules();
+  emit('create', result);
 }
 </script>
 

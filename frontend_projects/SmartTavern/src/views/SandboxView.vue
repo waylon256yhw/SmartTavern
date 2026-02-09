@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
-import SandboxStage from '@/components/sandbox/SandboxStage.vue'
-import { useChatSettingsStore } from '@/stores/chatSettings'
-import DataCatalog from '@/services/dataCatalog'
-import JSZip from 'jszip'
-import { useI18n } from '@/locales'
+import { ref, onMounted, watch } from 'vue';
+import SandboxStage from '@/components/sandbox/SandboxStage.vue';
+import { useChatSettingsStore } from '@/stores/chatSettings';
+import DataCatalog from '@/services/dataCatalog';
+import JSZip from 'jszip';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
-const chatSettingsStore = useChatSettingsStore()
+const { t } = useI18n();
+const chatSettingsStore = useChatSettingsStore();
 
 // 状态管理
-const loading = ref(true)
-const error = ref<string | null>(null)
-const htmlContent = ref('')
-const baseUrl = ref('')
+const loading = ref(true);
+const error = ref<string | null>(null);
+const htmlContent = ref('');
+const baseUrl = ref('');
 
 // 定义emit
 const emit = defineEmits<{
-  'update:loading': [value: boolean]
-  'update:loadingMessage': [value: string]
-  ready: []
-}>()
+  'update:loading': [value: boolean];
+  'update:loadingMessage': [value: string];
+  ready: [];
+}>();
 
 /**
  * 从zip文件中查找index.html
@@ -28,117 +28,119 @@ const emit = defineEmits<{
  */
 async function findIndexHtml(zip: JSZip): Promise<{ html: string; basePath: string } | null> {
   const files = Object.keys(zip.files).filter((name) => {
-    const fileObj = zip.files[name]
-    return fileObj && !fileObj.dir
-  })
+    const fileObj = zip.files[name];
+    return fileObj && !fileObj.dir;
+  });
 
   // 查找所有index.html文件（不区分大小写）
   const indexFiles = files.filter((name) => {
-    const basename = name.split('/').pop()?.toLowerCase()
-    return basename === 'index.html' || basename === 'index.htm'
-  })
+    const basename = name.split('/').pop()?.toLowerCase();
+    return basename === 'index.html' || basename === 'index.htm';
+  });
 
   if (indexFiles.length === 0) {
-    return null
+    return null;
   }
 
   // 按路径深度排序，选择最浅的那个
   indexFiles.sort((a, b) => {
-    const depthA = a.split('/').length
-    const depthB = b.split('/').length
-    return depthA - depthB
-  })
+    const depthA = a.split('/').length;
+    const depthB = b.split('/').length;
+    return depthA - depthB;
+  });
 
-  const indexPath = indexFiles[0]
+  const indexPath = indexFiles[0];
 
   if (!indexPath) {
-    return null
+    return null;
   }
 
-  const file = zip.files[indexPath]
+  const file = zip.files[indexPath];
 
   if (!file) {
-    return null
+    return null;
   }
 
-  const html = await file.async('text')
+  const html = await file.async('text');
   // 获取基础路径（index.html所在目录）
-  const lastSlashIndex = indexPath.lastIndexOf('/')
-  const basePath = lastSlashIndex >= 0 ? indexPath.substring(0, lastSlashIndex + 1) : ''
+  const lastSlashIndex = indexPath.lastIndexOf('/');
+  const basePath = lastSlashIndex >= 0 ? indexPath.substring(0, lastSlashIndex + 1) : '';
 
-  return { html, basePath }
+  return { html, basePath };
 }
 
 /**
  * 加载sandbox项目
  */
 async function loadSandbox() {
-  loading.value = true
-  error.value = null
-  htmlContent.value = ''
+  loading.value = true;
+  error.value = null;
+  htmlContent.value = '';
 
   // 通知父组件显示加载动画
-  emit('update:loading', true)
-  emit('update:loadingMessage', t('app.loading.sandbox'))
+  emit('update:loading', true);
+  emit('update:loadingMessage', t('app.loading.sandbox'));
 
   try {
     // 1. 获取当前对话的角色卡文件（可能尚未加载完成）
     if (!chatSettingsStore.characterFile) {
-      await chatSettingsStore.loadSettings()
+      await chatSettingsStore.loadSettings();
     }
-    const characterFile = chatSettingsStore.characterFile
+    const characterFile = chatSettingsStore.characterFile;
 
     if (!characterFile) {
-      throw new Error('未找到角色卡配置')
+      throw new Error('未找到角色卡配置');
     }
 
     // 2. 获取角色卡详情
-    const characterDetail = await DataCatalog.getCharacterDetail(characterFile, { useCache: false })
+    const characterDetail = await DataCatalog.getCharacterDetail(characterFile, {
+      useCache: false,
+    });
 
     if (!characterDetail?.content) {
-      throw new Error('角色卡数据加载失败')
+      throw new Error('角色卡数据加载失败');
     }
 
     // 3. 检查是否为sandbox类型
     if (characterDetail.content.type !== 'sandbox') {
-      throw new Error('当前角色卡不是sandbox类型')
+      throw new Error('当前角色卡不是sandbox类型');
     }
 
     // 4. 构建sandbox.zip的路径
     // characterFile 格式: backend_projects/SmartTavern/data/characters/角色名/character.json
-    const characterDir = characterFile.substring(0, characterFile.lastIndexOf('/'))
-    const sandboxZipPath = `${characterDir}/sandbox.zip`
+    const characterDir = characterFile.substring(0, characterFile.lastIndexOf('/'));
+    const sandboxZipPath = `${characterDir}/sandbox.zip`;
 
     // 5. 获取sandbox.zip文件
-    const zipBlob = await DataCatalog.getDataAssetBlob(sandboxZipPath)
+    const zipBlob = await DataCatalog.getDataAssetBlob(sandboxZipPath);
 
     // 6. 解压zip文件
-    const zip = await JSZip.loadAsync(zipBlob.blob)
+    const zip = await JSZip.loadAsync(zipBlob.blob);
 
     // 7. 查找index.html
-    const result = await findIndexHtml(zip)
+    const result = await findIndexHtml(zip);
 
     if (!result) {
-      throw new Error('在压缩包中未找到index.html文件')
+      throw new Error('在压缩包中未找到index.html文件');
     }
 
     // 8. 设置HTML内容和基础路径
-    htmlContent.value = result.html
-    baseUrl.value = result.basePath
+    htmlContent.value = result.html;
+    baseUrl.value = result.basePath;
 
     // 通知视图已准备好
-    emit('ready')
+    emit('ready');
     // 关闭加载动画
-    emit('update:loading', false)
-    emit('update:loadingMessage', '')
+    emit('update:loading', false);
+    emit('update:loadingMessage', '');
   } catch (err: any) {
-    console.error('[SandboxView] 加载失败:', err)
-    error.value = err.message || '加载sandbox项目失败'
+    console.error('[SandboxView] 加载失败:', err);
+    error.value = err.message || '加载sandbox项目失败';
     // 出错时也要关闭加载动画
-    emit('update:loading', false)
-    emit('update:loadingMessage', '')
+    emit('update:loading', false);
+    emit('update:loadingMessage', '');
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
@@ -146,14 +148,14 @@ async function loadSandbox() {
 watch(
   () => chatSettingsStore.characterFile,
   () => {
-    loadSandbox()
+    loadSandbox();
   },
-)
+);
 
 // 组件挂载时加载
 onMounted(() => {
-  loadSandbox()
-})
+  loadSandbox();
+});
 </script>
 
 <template>

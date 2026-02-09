@@ -14,8 +14,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
-import HtmlIframeSandbox from './HtmlIframeSandbox.vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
+import HtmlIframeSandbox from './HtmlIframeSandbox.vue';
 
 const props = defineProps({
   html: { type: String, default: '' },
@@ -46,87 +46,87 @@ const props = defineProps({
   },
   // 当允许时，可由 HTML 内联指令 <!-- st:display-mode=auto|fixed --> 覆盖
   preferInlineMode: { type: Boolean, default: false },
-})
+});
 
 function parseInlineDisplayMode(s?: string): 'auto' | 'fixed' | null {
-  if (!s) return null
-  const re = /<!--\s*st:display-mode\s*=\s*(auto|fixed)\s*-->/gi
-  let m: RegExpExecArray | null
-  let last: 'auto' | 'fixed' | null = null
+  if (!s) return null;
+  const re = /<!--\s*st:display-mode\s*=\s*(auto|fixed)\s*-->/gi;
+  let m: RegExpExecArray | null;
+  let last: 'auto' | 'fixed' | null = null;
   while ((m = re.exec(s)) !== null) {
-    const v = (m[1] || '').toLowerCase() as 'auto' | 'fixed'
-    if (v === 'auto' || v === 'fixed') last = v
+    const v = (m[1] || '').toLowerCase() as 'auto' | 'fixed';
+    if (v === 'auto' || v === 'fixed') last = v;
   }
-  return last
+  return last;
 }
 
-type Pref = { preferInline: boolean; displayMode: 'auto' | 'fixed' } | null
+type Pref = { preferInline: boolean; displayMode: 'auto' | 'fixed' } | null;
 function readSandboxDisplayPref(): Pref {
   try {
-    const raw = localStorage.getItem('st.appearance.sandbox.v1')
-    if (!raw) return null
-    const snap = JSON.parse(raw)
-    const sel = String(snap?.sandboxDisplayModeSel || '').toLowerCase()
-    if (sel === 'inline') return { preferInline: true, displayMode: 'auto' }
-    if (sel === 'fixed') return { preferInline: false, displayMode: 'fixed' }
-    if (sel === 'auto') return { preferInline: false, displayMode: 'auto' }
-    return null
+    const raw = localStorage.getItem('st.appearance.sandbox.v1');
+    if (!raw) return null;
+    const snap = JSON.parse(raw);
+    const sel = String(snap?.sandboxDisplayModeSel || '').toLowerCase();
+    if (sel === 'inline') return { preferInline: true, displayMode: 'auto' };
+    if (sel === 'fixed') return { preferInline: false, displayMode: 'fixed' };
+    if (sel === 'auto') return { preferInline: false, displayMode: 'auto' };
+    return null;
   } catch {
-    return null
+    return null;
   }
 }
 
-const inlineDisplayMode = computed(() => parseInlineDisplayMode(props.html))
+const inlineDisplayMode = computed(() => parseInlineDisplayMode(props.html));
 
 // 运行时优先：外观面板广播的即时选择（无需刷新）
-const runtimePref = ref<Pref | null>(null)
-const lsPref = computed(() => runtimePref.value ?? readSandboxDisplayPref())
+const runtimePref = ref<Pref | null>(null);
+const lsPref = computed(() => runtimePref.value ?? readSandboxDisplayPref());
 
 const effectivePreferInline = computed(() => {
   return typeof lsPref.value?.preferInline === 'boolean'
     ? lsPref.value!.preferInline
-    : props.preferInlineMode
-})
+    : props.preferInlineMode;
+});
 
 const baseDisplayMode = computed<'auto' | 'fixed'>(() => {
-  return (lsPref.value?.displayMode ?? props.displayMode) as 'auto' | 'fixed'
-})
+  return (lsPref.value?.displayMode ?? props.displayMode) as 'auto' | 'fixed';
+});
 
 const displayModeEffective = computed<'auto' | 'fixed'>(() => {
   // 当允许时，沙盒内的内联指令可覆盖；否则使用外观面板/父组件的选择
   if (effectivePreferInline.value && inlineDisplayMode.value) {
-    return inlineDisplayMode.value
+    return inlineDisplayMode.value;
   }
-  return baseDisplayMode.value
-})
+  return baseDisplayMode.value;
+});
 
-const isAuto = computed(() => displayModeEffective.value !== 'fixed')
+const isAuto = computed(() => displayModeEffective.value !== 'fixed');
 
 // 监听外观面板事件，实现即时切换
 function onAppearanceSandboxUpdate(e: Event) {
-  const d = (e as CustomEvent).detail
-  const sel = String(d?.sandboxDisplayModeSel || '').toLowerCase()
+  const d = (e as CustomEvent).detail;
+  const sel = String(d?.sandboxDisplayModeSel || '').toLowerCase();
   if (sel === 'inline') {
-    runtimePref.value = { preferInline: true, displayMode: 'auto' }
+    runtimePref.value = { preferInline: true, displayMode: 'auto' };
   } else if (sel === 'fixed') {
-    runtimePref.value = { preferInline: false, displayMode: 'fixed' }
+    runtimePref.value = { preferInline: false, displayMode: 'fixed' };
   } else if (sel === 'auto') {
-    runtimePref.value = { preferInline: false, displayMode: 'auto' }
+    runtimePref.value = { preferInline: false, displayMode: 'auto' };
   } else {
-    runtimePref.value = null
+    runtimePref.value = null;
   }
 }
 onMounted(() =>
   window.addEventListener('stAppearanceSandboxUpdate', onAppearanceSandboxUpdate as EventListener),
-)
+);
 onBeforeUnmount(() => {
   try {
     window.removeEventListener(
       'stAppearanceSandboxUpdate',
       onAppearanceSandboxUpdate as EventListener,
-    )
+    );
   } catch (_) {}
-})
+});
 
 const DEFAULT_HTML = `
 <div class="stx">
@@ -234,9 +234,9 @@ code{ color: var(--accent); font-family: ui-monospace, "JetBrains Mono", "Fira C
   })
 })();
 <\/script>
-`
+`;
 
-const effectiveHtml = computed(() => props.html || DEFAULT_HTML)
+const effectiveHtml = computed(() => props.html || DEFAULT_HTML);
 </script>
 
 <!--

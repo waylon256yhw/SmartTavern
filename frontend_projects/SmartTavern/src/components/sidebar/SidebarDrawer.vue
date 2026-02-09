@@ -1,8 +1,8 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
-import { useI18n } from '@/locales'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 /**
  * SidebarDrawer
@@ -20,22 +20,22 @@ const props = defineProps({
   iconSize: { type: Number, default: 44 }, // 浮标尺寸
   storageKey: { type: String, default: 'st.sidebar.drawer' },
   draggable: { type: Boolean, default: true },
-})
+});
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue']);
 
-const open = ref(props.modelValue)
+const open = ref(props.modelValue);
 watch(
   () => props.modelValue,
   (v) => (open.value = v),
-)
-watch(open, (v) => emit('update:modelValue', v))
+);
+watch(open, (v) => emit('update:modelValue', v));
 // 重新渲染 Lucide 图标（FAB 在 open=false 时新插入）
 watch(open, () => {
   nextTick(() => {
-    if (window?.lucide?.createIcons) window.lucide.createIcons()
-  })
-})
+    if (window?.lucide?.createIcons) window.lucide.createIcons();
+  });
+});
 
 // 浮标位置（以页面可视区域为边界）
 // margin 现在从CSS变量读取，在OthersAppearance中配置
@@ -43,11 +43,11 @@ function getMargin() {
   try {
     const val = getComputedStyle(document.documentElement)
       .getPropertyValue('--st-fab-margin')
-      ?.trim()
-    const num = parseInt(val, 10)
-    return Number.isFinite(num) && num >= 0 ? num : 12
+      ?.trim();
+    const num = parseInt(val, 10);
+    return Number.isFinite(num) && num >= 0 ? num : 12;
   } catch (_) {
-    return 12
+    return 12;
   }
 }
 
@@ -55,10 +55,10 @@ const iconPos = ref({
   x: 0, // 左上角坐标（使用 left/top 模式）
   y: 200,
   dock: 'right', // 'left' | 'right' | 'top' | 'bottom'
-})
+});
 
 function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, n))
+  return Math.max(min, Math.min(max, n));
 }
 
 // 获取当前的UI缩放比例
@@ -66,165 +66,165 @@ function getUIScale() {
   try {
     const scale = parseFloat(
       getComputedStyle(document.documentElement).getPropertyValue('--st-ui-scale') || '1',
-    )
-    return isNaN(scale) ? 1 : scale
+    );
+    return isNaN(scale) ? 1 : scale;
   } catch (_) {
-    return 1
+    return 1;
   }
 }
 
 // 获取真实的视口尺寸（不受zoom影响）
 function getRealViewportSize() {
-  const scale = getUIScale()
+  const scale = getUIScale();
   return {
     width: window.innerWidth / scale,
     height: window.innerHeight / scale,
-  }
+  };
 }
 
 function loadPos() {
-  const margin = getMargin()
+  const margin = getMargin();
   try {
-    const raw = localStorage.getItem(props.storageKey)
+    const raw = localStorage.getItem(props.storageKey);
     if (raw) {
-      const data = JSON.parse(raw)
+      const data = JSON.parse(raw);
       iconPos.value = {
         x: typeof data.x === 'number' ? data.x : margin,
         y: typeof data.y === 'number' ? data.y : 200,
         dock: data.dock || 'right',
-      }
+      };
     } else {
       // 默认靠左中部（首次进入时收起在左侧）
-      const viewport = getRealViewportSize()
+      const viewport = getRealViewportSize();
       iconPos.value = {
         x: margin,
         y: Math.round(viewport.height * 0.5) - Math.round(props.iconSize * 0.5),
         dock: 'left',
-      }
+      };
     }
   } catch (_) {
-    const viewport = getRealViewportSize()
+    const viewport = getRealViewportSize();
     iconPos.value = {
       x: margin,
       y: Math.round(viewport.height * 0.5) - Math.round(props.iconSize * 0.5),
       dock: 'left',
-    }
+    };
   }
-  clampIntoViewport()
+  clampIntoViewport();
 }
 
 function savePos() {
-  localStorage.setItem(props.storageKey, JSON.stringify(iconPos.value))
+  localStorage.setItem(props.storageKey, JSON.stringify(iconPos.value));
 }
 
 function clampIntoViewport() {
-  const margin = getMargin()
-  const viewport = getRealViewportSize()
-  const maxX = viewport.width - props.iconSize - margin
-  const maxY = viewport.height - props.iconSize - margin
-  iconPos.value.x = clamp(iconPos.value.x, margin, maxX)
-  iconPos.value.y = clamp(iconPos.value.y, margin, maxY)
+  const margin = getMargin();
+  const viewport = getRealViewportSize();
+  const maxX = viewport.width - props.iconSize - margin;
+  const maxY = viewport.height - props.iconSize - margin;
+  iconPos.value.x = clamp(iconPos.value.x, margin, maxX);
+  iconPos.value.y = clamp(iconPos.value.y, margin, maxY);
 }
 
 function nearestDock() {
   // 计算到四边距离，选择最近边缘
-  const margin = getMargin()
-  const viewport = getRealViewportSize()
-  const dLeft = iconPos.value.x - margin
-  const dRight = viewport.width - (iconPos.value.x + props.iconSize) - margin
-  const dTop = iconPos.value.y - margin
-  const dBottom = viewport.height - (iconPos.value.y + props.iconSize) - margin
+  const margin = getMargin();
+  const viewport = getRealViewportSize();
+  const dLeft = iconPos.value.x - margin;
+  const dRight = viewport.width - (iconPos.value.x + props.iconSize) - margin;
+  const dTop = iconPos.value.y - margin;
+  const dBottom = viewport.height - (iconPos.value.y + props.iconSize) - margin;
 
   const distances = [
     { k: 'left', v: dLeft },
     { k: 'right', v: dRight },
     { k: 'top', v: dTop },
     { k: 'bottom', v: dBottom },
-  ]
+  ];
 
-  distances.sort((a, b) => a.v - b.v)
-  const nearest = distances[0].k
-  iconPos.value.dock = nearest
+  distances.sort((a, b) => a.v - b.v);
+  const nearest = distances[0].k;
+  iconPos.value.dock = nearest;
 
   // 吸附
-  if (nearest === 'left') iconPos.value.x = margin
-  if (nearest === 'right') iconPos.value.x = viewport.width - props.iconSize - margin
-  if (nearest === 'top') iconPos.value.y = margin
-  if (nearest === 'bottom') iconPos.value.y = viewport.height - props.iconSize - margin
+  if (nearest === 'left') iconPos.value.x = margin;
+  if (nearest === 'right') iconPos.value.x = viewport.width - props.iconSize - margin;
+  if (nearest === 'top') iconPos.value.y = margin;
+  if (nearest === 'bottom') iconPos.value.y = viewport.height - props.iconSize - margin;
 }
 
-let dragging = false
-let pointerStart = { x: 0, y: 0 }
-let iconStart = { x: 0, y: 0 }
-let moved = false
+let dragging = false;
+let pointerStart = { x: 0, y: 0 };
+let iconStart = { x: 0, y: 0 };
+let moved = false;
 
 function onPointerDown(e) {
   if (!props.draggable) {
     // 不可拖拽则点击展开
-    open.value = true
-    return
+    open.value = true;
+    return;
   }
-  dragging = true
-  moved = false
-  pointerStart = { x: e.clientX, y: e.clientY }
-  iconStart = { x: iconPos.value.x, y: iconPos.value.y }
+  dragging = true;
+  moved = false;
+  pointerStart = { x: e.clientX, y: e.clientY };
+  iconStart = { x: iconPos.value.x, y: iconPos.value.y };
 
   // 使用setPointerCapture确保持续接收指针事件（即使鼠标移出元素）
   if (e.target && typeof e.target.setPointerCapture === 'function') {
     try {
-      e.target.setPointerCapture(e.pointerId)
+      e.target.setPointerCapture(e.pointerId);
     } catch (_) {}
   }
 
-  window.addEventListener('pointermove', onPointerMove)
-  window.addEventListener('pointerup', onPointerUp, { once: true })
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp, { once: true });
 }
 
 function onPointerMove(e) {
-  if (!dragging) return
-  const dx = e.clientX - pointerStart.x
-  const dy = e.clientY - pointerStart.y
-  if (Math.abs(dx) > 2 || Math.abs(dy) > 2) moved = true
-  const margin = getMargin()
-  const viewport = getRealViewportSize()
-  iconPos.value.x = clamp(iconStart.x + dx, margin, viewport.width - props.iconSize - margin)
-  iconPos.value.y = clamp(iconStart.y + dy, margin, viewport.height - props.iconSize - margin)
+  if (!dragging) return;
+  const dx = e.clientX - pointerStart.x;
+  const dy = e.clientY - pointerStart.y;
+  if (Math.abs(dx) > 2 || Math.abs(dy) > 2) moved = true;
+  const margin = getMargin();
+  const viewport = getRealViewportSize();
+  iconPos.value.x = clamp(iconStart.x + dx, margin, viewport.width - props.iconSize - margin);
+  iconPos.value.y = clamp(iconStart.y + dy, margin, viewport.height - props.iconSize - margin);
 }
 
 function onPointerUp(e) {
-  window.removeEventListener('pointermove', onPointerMove)
+  window.removeEventListener('pointermove', onPointerMove);
 
   // 释放指针捕获
   if (e.target && typeof e.target.releasePointerCapture === 'function') {
     try {
-      e.target.releasePointerCapture(e.pointerId)
+      e.target.releasePointerCapture(e.pointerId);
     } catch (_) {}
   }
 
-  dragging = false
+  dragging = false;
   if (moved) {
-    nearestDock()
-    savePos()
+    nearestDock();
+    savePos();
   } else {
     // 认为是点击 → 展开
-    open.value = true
+    open.value = true;
   }
 }
 
 function onResize() {
-  clampIntoViewport()
-  nearestDock()
-  savePos()
+  clampIntoViewport();
+  nearestDock();
+  savePos();
 }
 
 onMounted(() => {
-  loadPos()
-  window.addEventListener('resize', onResize)
-  window.lucide?.createIcons?.()
-})
+  loadPos();
+  window.addEventListener('resize', onResize);
+  window.lucide?.createIcons?.();
+});
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', onResize)
-})
+  window.removeEventListener('resize', onResize);
+});
 
 // 样式计算
 const iconStyle = computed(() => {
@@ -235,17 +235,17 @@ const iconStyle = computed(() => {
     zIndex: 60,
     left: iconPos.value.x + 'px',
     top: iconPos.value.y + 'px',
-  }
-  return base
-})
+  };
+  return base;
+});
 
-const fabClass = computed(() => ['sd-fab', `dock-${iconPos.value.dock}`])
+const fabClass = computed(() => ['sd-fab', `dock-${iconPos.value.dock}`]);
 
 const drawerStyle = computed(() => {
   // 抽屉固定靠左 overlay
-  const margin = getMargin()
+  const margin = getMargin();
   const top =
-    getComputedStyle(document.documentElement).getPropertyValue('--st-sidebar-top') || '64px'
+    getComputedStyle(document.documentElement).getPropertyValue('--st-sidebar-top') || '64px';
   return {
     position: 'fixed',
     zIndex: 59,
@@ -253,8 +253,8 @@ const drawerStyle = computed(() => {
     top: top,
     bottom: margin + 'px',
     width: props.width + 'px',
-  }
-})
+  };
+});
 </script>
 
 <template>

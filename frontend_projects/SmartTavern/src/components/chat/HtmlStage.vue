@@ -29,11 +29,11 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
-import HtmlIframeSandbox from '@/components/sandbox/HtmlIframeSandbox.vue'
-import { useI18n } from '@/locales'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
+import HtmlIframeSandbox from '@/components/sandbox/HtmlIframeSandbox.vue';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   before: { type: String, default: '' },
@@ -49,82 +49,82 @@ const props = defineProps({
   preferInlineMode: { type: Boolean, default: false },
   // 是否应该渲染 iframe（用于渲染优化）
   shouldRender: { type: Boolean, default: true },
-})
+});
 
-defineEmits(['iframe-loaded'])
+defineEmits(['iframe-loaded']);
 
 function parseInlineDisplayMode(s) {
-  if (!s) return null
-  const re = /<!--\s*st:display-mode\s*=\s*(auto|fixed)\s*-->/gi
+  if (!s) return null;
+  const re = /<!--\s*st:display-mode\s*=\s*(auto|fixed)\s*-->/gi;
   let m,
-    last = null
+    last = null;
   while ((m = re.exec(s)) !== null) {
-    const v = (m[1] || '').toLowerCase()
-    if (v === 'auto' || v === 'fixed') last = v
+    const v = (m[1] || '').toLowerCase();
+    if (v === 'auto' || v === 'fixed') last = v;
   }
-  return last
+  return last;
 }
 
 function readThreadedDisplayPref() {
   try {
-    const raw = localStorage.getItem('st.appearance.threaded.v1')
-    if (!raw) return null
-    const snap = JSON.parse(raw)
-    const sel = String(snap?.threadedDisplayModeSel || '').toLowerCase()
-    if (sel === 'inline') return { preferInline: true, displayMode: 'auto' }
-    if (sel === 'fixed') return { preferInline: false, displayMode: 'fixed' }
-    if (sel === 'auto') return { preferInline: false, displayMode: 'auto' }
-    return null
+    const raw = localStorage.getItem('st.appearance.threaded.v1');
+    if (!raw) return null;
+    const snap = JSON.parse(raw);
+    const sel = String(snap?.threadedDisplayModeSel || '').toLowerCase();
+    if (sel === 'inline') return { preferInline: true, displayMode: 'auto' };
+    if (sel === 'fixed') return { preferInline: false, displayMode: 'fixed' };
+    if (sel === 'auto') return { preferInline: false, displayMode: 'auto' };
+    return null;
   } catch {
-    return null
+    return null;
   }
 }
 
-const inlineDisplayMode = computed(() => parseInlineDisplayMode(props.html))
+const inlineDisplayMode = computed(() => parseInlineDisplayMode(props.html));
 
 // 运行时优先：外观面板广播的即时选择
-const runtimePref = ref(null)
-const lsPref = computed(() => runtimePref.value ?? readThreadedDisplayPref())
+const runtimePref = ref(null);
+const lsPref = computed(() => runtimePref.value ?? readThreadedDisplayPref());
 
 const effectivePreferInline = computed(() => {
   return lsPref.value && typeof lsPref.value.preferInline === 'boolean'
     ? lsPref.value.preferInline
-    : props.preferInlineMode
-})
+    : props.preferInlineMode;
+});
 
 const baseDisplayMode = computed(() => {
-  return lsPref.value && lsPref.value.displayMode ? lsPref.value.displayMode : props.displayMode
-})
+  return lsPref.value && lsPref.value.displayMode ? lsPref.value.displayMode : props.displayMode;
+});
 
 const displayModeEffective = computed(() => {
   if (effectivePreferInline.value && inlineDisplayMode.value) {
-    return inlineDisplayMode.value
+    return inlineDisplayMode.value;
   }
-  return baseDisplayMode.value
-})
+  return baseDisplayMode.value;
+});
 
-const isAuto = computed(() => displayModeEffective.value !== 'fixed')
+const isAuto = computed(() => displayModeEffective.value !== 'fixed');
 
 // 监听外观面板事件，实现即时切换
 function onAppearanceThreadedUpdate(e) {
-  const d = e?.detail
-  const sel = String(d?.threadedDisplayModeSel || '').toLowerCase()
+  const d = e?.detail;
+  const sel = String(d?.threadedDisplayModeSel || '').toLowerCase();
   if (sel === 'inline') {
-    runtimePref.value = { preferInline: true, displayMode: 'auto' }
+    runtimePref.value = { preferInline: true, displayMode: 'auto' };
   } else if (sel === 'fixed') {
-    runtimePref.value = { preferInline: false, displayMode: 'fixed' }
+    runtimePref.value = { preferInline: false, displayMode: 'fixed' };
   } else if (sel === 'auto') {
-    runtimePref.value = { preferInline: false, displayMode: 'auto' }
+    runtimePref.value = { preferInline: false, displayMode: 'auto' };
   } else {
-    runtimePref.value = null
+    runtimePref.value = null;
   }
 }
-onMounted(() => window.addEventListener('stAppearanceThreadedUpdate', onAppearanceThreadedUpdate))
+onMounted(() => window.addEventListener('stAppearanceThreadedUpdate', onAppearanceThreadedUpdate));
 onBeforeUnmount(() => {
   try {
-    window.removeEventListener('stAppearanceThreadedUpdate', onAppearanceThreadedUpdate)
+    window.removeEventListener('stAppearanceThreadedUpdate', onAppearanceThreadedUpdate);
   } catch (_) {}
-})
+});
 </script>
 
 <style scoped>

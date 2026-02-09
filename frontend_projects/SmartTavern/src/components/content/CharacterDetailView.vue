@@ -1,250 +1,250 @@
 <script setup>
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
-import WorldBookCard from './cards/WorldBookCard.vue'
-import RegexRuleCard from './cards/RegexRuleCard.vue'
-import { useI18n } from '@/locales'
-import Host from '@/workflow/core/host'
-import * as Catalog from '@/workflow/channels/catalog'
-import { useCharacterStore } from '@/stores/character'
-import { useChatSettingsStore } from '@/stores/chatSettings'
-import { useCustomDrag } from '@/composables/useCustomDrag'
-import DataCatalog from '@/services/dataCatalog'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import WorldBookCard from './cards/WorldBookCard.vue';
+import RegexRuleCard from './cards/RegexRuleCard.vue';
+import { useI18n } from '@/locales';
+import Host from '@/workflow/core/host';
+import * as Catalog from '@/workflow/channels/catalog';
+import { useCharacterStore } from '@/stores/character';
+import { useChatSettingsStore } from '@/stores/chatSettings';
+import { useCustomDrag } from '@/composables/useCustomDrag';
+import DataCatalog from '@/services/dataCatalog';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   characterData: { type: Object, default: null },
   file: { type: String, default: '' },
-})
+});
 
 // 图标上传相关
-const iconFile = ref(null)
-const iconPreviewUrl = ref('')
-const iconInputRef = ref(null)
+const iconFile = ref(null);
+const iconPreviewUrl = ref('');
+const iconInputRef = ref(null);
 // 追踪图标是否被用户主动删除
-const iconDeleted = ref(false)
+const iconDeleted = ref(false);
 // 追踪是否已经从后端加载了图标
-const iconLoadedFromServer = ref(false)
+const iconLoadedFromServer = ref(false);
 
 // 图标预览URL计算属性
-const hasIcon = computed(() => !!iconPreviewUrl.value)
+const hasIcon = computed(() => !!iconPreviewUrl.value);
 
 // 头像上传相关
-const avatarFile = ref(null)
-const avatarPreviewUrl = ref('')
-const avatarInputRef = ref(null)
+const avatarFile = ref(null);
+const avatarPreviewUrl = ref('');
+const avatarInputRef = ref(null);
 // 追踪头像是否被用户主动删除
-const avatarDeleted = ref(false)
+const avatarDeleted = ref(false);
 // 追踪是否已经从后端加载了头像
-const avatarLoadedFromServer = ref(false)
+const avatarLoadedFromServer = ref(false);
 
 // 头像预览URL计算属性
-const hasAvatar = computed(() => !!avatarPreviewUrl.value)
+const hasAvatar = computed(() => !!avatarPreviewUrl.value);
 
 // 处理图标选择
 function handleIconSelect(e) {
-  const file = e.target.files?.[0]
-  if (!file) return
+  const file = e.target.files?.[0];
+  if (!file) return;
 
   // 验证文件类型
   if (!file.type.startsWith('image/')) {
-    return
+    return;
   }
 
-  iconFile.value = file
+  iconFile.value = file;
 
   // 创建预览URL
   if (iconPreviewUrl.value) {
-    URL.revokeObjectURL(iconPreviewUrl.value)
+    URL.revokeObjectURL(iconPreviewUrl.value);
   }
-  iconPreviewUrl.value = URL.createObjectURL(file)
-  iconDeleted.value = false
+  iconPreviewUrl.value = URL.createObjectURL(file);
+  iconDeleted.value = false;
 }
 
 // 触发图标选择
 function triggerIconSelect() {
-  iconInputRef.value?.click()
+  iconInputRef.value?.click();
 }
 
 // 移除图标
 function removeIcon() {
-  iconFile.value = null
+  iconFile.value = null;
   if (iconPreviewUrl.value) {
-    URL.revokeObjectURL(iconPreviewUrl.value)
+    URL.revokeObjectURL(iconPreviewUrl.value);
   }
-  iconPreviewUrl.value = ''
+  iconPreviewUrl.value = '';
   if (iconInputRef.value) {
-    iconInputRef.value.value = ''
+    iconInputRef.value.value = '';
   }
   // 标记用户主动删除了图标
-  iconDeleted.value = true
+  iconDeleted.value = true;
 }
 
 function resetIconPreview() {
-  iconFile.value = null
+  iconFile.value = null;
   if (iconPreviewUrl.value) {
-    URL.revokeObjectURL(iconPreviewUrl.value)
+    URL.revokeObjectURL(iconPreviewUrl.value);
   }
-  iconPreviewUrl.value = ''
+  iconPreviewUrl.value = '';
   if (iconInputRef.value) {
-    iconInputRef.value.value = ''
+    iconInputRef.value.value = '';
   }
   // 重置删除标记和加载标记
-  iconDeleted.value = false
-  iconLoadedFromServer.value = false
+  iconDeleted.value = false;
+  iconLoadedFromServer.value = false;
 }
 
 // 处理头像选择
 function handleAvatarSelect(e) {
-  const file = e.target.files?.[0]
-  if (!file) return
+  const file = e.target.files?.[0];
+  if (!file) return;
 
   // 验证文件类型
   if (!file.type.startsWith('image/')) {
-    return
+    return;
   }
 
-  avatarFile.value = file
+  avatarFile.value = file;
 
   // 创建预览URL
   if (avatarPreviewUrl.value) {
-    URL.revokeObjectURL(avatarPreviewUrl.value)
+    URL.revokeObjectURL(avatarPreviewUrl.value);
   }
-  avatarPreviewUrl.value = URL.createObjectURL(file)
-  avatarDeleted.value = false
+  avatarPreviewUrl.value = URL.createObjectURL(file);
+  avatarDeleted.value = false;
 }
 
 // 触发头像选择
 function triggerAvatarSelect() {
-  avatarInputRef.value?.click()
+  avatarInputRef.value?.click();
 }
 
 // 移除头像
 function removeAvatar() {
-  avatarFile.value = null
+  avatarFile.value = null;
   if (avatarPreviewUrl.value) {
-    URL.revokeObjectURL(avatarPreviewUrl.value)
+    URL.revokeObjectURL(avatarPreviewUrl.value);
   }
-  avatarPreviewUrl.value = ''
+  avatarPreviewUrl.value = '';
   if (avatarInputRef.value) {
-    avatarInputRef.value.value = ''
+    avatarInputRef.value.value = '';
   }
   // 标记用户主动删除了头像
-  avatarDeleted.value = true
+  avatarDeleted.value = true;
 }
 
 function resetAvatarPreview() {
-  avatarFile.value = null
+  avatarFile.value = null;
   if (avatarPreviewUrl.value) {
-    URL.revokeObjectURL(avatarPreviewUrl.value)
+    URL.revokeObjectURL(avatarPreviewUrl.value);
   }
-  avatarPreviewUrl.value = ''
+  avatarPreviewUrl.value = '';
   if (avatarInputRef.value) {
-    avatarInputRef.value.value = ''
+    avatarInputRef.value.value = '';
   }
   // 重置删除标记和加载标记
-  avatarDeleted.value = false
-  avatarLoadedFromServer.value = false
+  avatarDeleted.value = false;
+  avatarLoadedFromServer.value = false;
 }
 
 // 根据文件路径加载已有图标
 async function loadExistingIcon() {
   // 重置当前图标
-  resetIconPreview()
+  resetIconPreview();
 
-  if (!props.file) return
+  if (!props.file) return;
 
   // 构建图标路径：将文件路径的 character.json 替换为 icon.png
-  const iconPath = props.file.replace(/character\.json$/, 'icon.png')
+  const iconPath = props.file.replace(/character\.json$/, 'icon.png');
 
   try {
     // 使用 DataCatalog.getDataAssetBlob 获取图标
-    const { blob, mime } = await DataCatalog.getDataAssetBlob(iconPath)
+    const { blob, mime } = await DataCatalog.getDataAssetBlob(iconPath);
     if (blob.size > 0 && mime.startsWith('image/')) {
-      iconPreviewUrl.value = URL.createObjectURL(blob)
+      iconPreviewUrl.value = URL.createObjectURL(blob);
       // 标记图标是从服务器加载的
-      iconLoadedFromServer.value = true
+      iconLoadedFromServer.value = true;
     }
   } catch (err) {
     // 图标不存在或加载失败，忽略错误
-    console.debug('[CharacterDetailView] No existing icon or failed to load:', err)
-    iconLoadedFromServer.value = false
+    console.debug('[CharacterDetailView] No existing icon or failed to load:', err);
+    iconLoadedFromServer.value = false;
   }
 }
 
 // 根据文件路径加载已有头像
 async function loadExistingAvatar() {
   // 重置当前头像
-  resetAvatarPreview()
+  resetAvatarPreview();
 
-  if (!props.file) return
+  if (!props.file) return;
 
   // 构建头像路径：将文件路径的 character.json 替换为 character.png
-  const avatarPath = props.file.replace(/character\.json$/, 'character.png')
+  const avatarPath = props.file.replace(/character\.json$/, 'character.png');
 
   try {
     // 使用 DataCatalog.getDataAssetBlob 获取头像
-    const { blob, mime } = await DataCatalog.getDataAssetBlob(avatarPath)
+    const { blob, mime } = await DataCatalog.getDataAssetBlob(avatarPath);
     if (blob.size > 0 && mime.startsWith('image/')) {
-      avatarPreviewUrl.value = URL.createObjectURL(blob)
+      avatarPreviewUrl.value = URL.createObjectURL(blob);
       // 标记头像是从服务器加载的
-      avatarLoadedFromServer.value = true
+      avatarLoadedFromServer.value = true;
     }
   } catch (err) {
     // 头像不存在或加载失败，忽略错误
-    console.debug('[CharacterDetailView] No existing avatar or failed to load:', err)
-    avatarLoadedFromServer.value = false
+    console.debug('[CharacterDetailView] No existing avatar or failed to load:', err);
+    avatarLoadedFromServer.value = false;
   }
 }
 
 // 将文件转换为Base64
 async function fileToBase64(file) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = () => {
-      const result = reader.result
+      const result = reader.result;
       // 移除 data URL 前缀
-      const base64 = result.includes(',') ? result.split(',')[1] : result
-      resolve(base64)
-    }
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
+      const base64 = result.includes(',') ? result.split(',')[1] : result;
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 /** 深拷贝 */
 function deepClone(x) {
-  return JSON.parse(JSON.stringify(x))
+  return JSON.parse(JSON.stringify(x));
 }
 /** 规范化后端/外部传入的角色卡结构到本组件内部期望结构 */
 function normalizeCharacterData(src) {
-  if (!src || typeof src !== 'object') return null
-  const name = src.name || '角色'
-  const description = src.description || ''
-  const type = src.type || 'threaded' // 默认为 threaded
-  const character_name = src.character_name || ''
-  const character_badge = src.character_badge || ''
+  if (!src || typeof src !== 'object') return null;
+  const name = src.name || '角色';
+  const description = src.description || '';
+  const type = src.type || 'threaded'; // 默认为 threaded
+  const character_name = src.character_name || '';
+  const character_badge = src.character_badge || '';
   const message = Array.isArray(src.message)
     ? src.message
     : Array.isArray(src.messages)
       ? src.messages
-      : []
+      : [];
   // world_book 可能是对象 { name, entries } 或直接 entries 数组
-  let world_book
+  let world_book;
   if (Array.isArray(src.entries)) {
-    world_book = { name: src.world_book?.name || '角色世界书', entries: src.entries }
+    world_book = { name: src.world_book?.name || '角色世界书', entries: src.entries };
   } else if (Array.isArray(src.world_book?.entries)) {
-    world_book = { name: src.world_book.name || '角色世界书', entries: src.world_book.entries }
+    world_book = { name: src.world_book.name || '角色世界书', entries: src.world_book.entries };
   } else if (Array.isArray(src.worldbook?.entries)) {
-    world_book = { name: src.worldbook.name || '角色世界书', entries: src.worldbook.entries }
+    world_book = { name: src.worldbook.name || '角色世界书', entries: src.worldbook.entries };
   } else {
-    world_book = { name: src.world_book?.name || '角色世界书', entries: [] }
+    world_book = { name: src.world_book?.name || '角色世界书', entries: [] };
   }
   const regex_rules = Array.isArray(src.regex_rules)
     ? src.regex_rules
     : src.find_regex || src.replace_regex || src.id
       ? [src]
-      : []
+      : [];
   return {
     name,
     description,
@@ -254,7 +254,7 @@ function normalizeCharacterData(src) {
     message,
     world_book,
     regex_rules,
-  }
+  };
 }
 // 当前编辑的数据（内存中）
 const currentData = ref(
@@ -270,7 +270,7 @@ const currentData = ref(
       regex_rules: [],
     },
   ),
-)
+);
 // 外部数据变更时同步
 watch(
   () => props.characterData,
@@ -286,109 +286,109 @@ watch(
         world_book: { name: '', entries: [] },
         regex_rules: [],
       },
-    )
-    await nextTick()
-    window.lucide?.createIcons?.()
+    );
+    await nextTick();
+    window.lucide?.createIcons?.();
   },
-)
+);
 
 // 监听文件路径变化，加载图标和头像
 watch(
   () => props.file,
   (newFile) => {
     if (newFile) {
-      loadExistingIcon()
-      loadExistingAvatar()
+      loadExistingIcon();
+      loadExistingAvatar();
     } else {
-      resetIconPreview()
-      resetAvatarPreview()
+      resetIconPreview();
+      resetAvatarPreview();
     }
   },
   { immediate: true },
-)
+);
 
 // 基本信息编辑
-const nameDraft = ref(currentData.value.name || '')
-const descDraft = ref(currentData.value.description || '')
-const typeDraft = ref(currentData.value.type || 'threaded')
-const characterNameDraft = ref(currentData.value.character_name || '')
-const characterBadgeDraft = ref(currentData.value.character_badge || '')
+const nameDraft = ref(currentData.value.name || '');
+const descDraft = ref(currentData.value.description || '');
+const typeDraft = ref(currentData.value.type || 'threaded');
+const characterNameDraft = ref(currentData.value.character_name || '');
+const characterBadgeDraft = ref(currentData.value.character_badge || '');
 
 function saveMeta() {
-  currentData.value.name = nameDraft.value
-  currentData.value.description = descDraft.value
-  currentData.value.type = typeDraft.value
-  currentData.value.character_name = characterNameDraft.value
-  currentData.value.character_badge = characterBadgeDraft.value
+  currentData.value.name = nameDraft.value;
+  currentData.value.description = descDraft.value;
+  currentData.value.type = typeDraft.value;
+  currentData.value.character_name = characterNameDraft.value;
+  currentData.value.character_badge = characterBadgeDraft.value;
 }
 
 // 初始消息编辑
-const messageEdits = ref([...(currentData.value.message || [])])
-const editingMsgIndex = ref(null)
+const messageEdits = ref([...(currentData.value.message || [])]);
+const editingMsgIndex = ref(null);
 
 watch(
   () => currentData.value.message,
   (arr) => {
-    messageEdits.value = [...(arr || [])]
+    messageEdits.value = [...(arr || [])];
   },
   { deep: true },
-)
+);
 
 function onEditMsg(i) {
-  editingMsgIndex.value = i
+  editingMsgIndex.value = i;
 }
 
 function onCancelMsg(i) {
-  messageEdits.value[i] = currentData.value.message[i]
-  editingMsgIndex.value = null
+  messageEdits.value[i] = currentData.value.message[i];
+  editingMsgIndex.value = null;
 }
 
 function onSaveMsg(i) {
-  if (i < 0 || i >= messageEdits.value.length) return
-  currentData.value.message[i] = messageEdits.value[i]
-  editingMsgIndex.value = null
+  if (i < 0 || i >= messageEdits.value.length) return;
+  currentData.value.message[i] = messageEdits.value[i];
+  editingMsgIndex.value = null;
 }
 
 function removeMessage(i) {
-  currentData.value.message.splice(i, 1)
-  messageEdits.value.splice(i, 1)
+  currentData.value.message.splice(i, 1);
+  messageEdits.value.splice(i, 1);
 }
 
 function addMessage() {
-  if (!currentData.value.message) currentData.value.message = []
-  currentData.value.message.push('')
-  messageEdits.value.push('')
-  editingMsgIndex.value = currentData.value.message.length - 1
-  nextTick(() => window.lucide?.createIcons?.())
+  if (!currentData.value.message) currentData.value.message = [];
+  currentData.value.message.push('');
+  messageEdits.value.push('');
+  editingMsgIndex.value = currentData.value.message.length - 1;
+  nextTick(() => window.lucide?.createIcons?.());
 }
 
 // 内嵌世界书
-const newWbId = ref('')
-const newWbName = ref('')
-const wbError = ref(null)
+const newWbId = ref('');
+const newWbName = ref('');
+const wbError = ref(null);
 
 function addWorldEntry() {
-  wbError.value = null
-  const id = newWbId.value.trim()
-  const name = newWbName.value.trim()
+  wbError.value = null;
+  const id = newWbId.value.trim();
+  const name = newWbName.value.trim();
   if (!id) {
-    wbError.value = t('detail.character.errors.wbIdRequired')
-    return
+    wbError.value = t('detail.character.errors.wbIdRequired');
+    return;
   }
   if (!name) {
-    wbError.value = t('detail.character.errors.wbNameRequired')
-    return
+    wbError.value = t('detail.character.errors.wbNameRequired');
+    return;
   }
   if (!currentData.value.world_book) {
     currentData.value.world_book = {
       name: t('detail.character.worldBook.defaultName'),
       entries: [],
-    }
+    };
   }
-  const list = currentData.value.world_book.entries || []
+  const list = currentData.value.world_book.entries || [];
   if (list.some((e) => e.id === id)) {
-    wbError.value = t('detail.character.errors.wbIdExists')
-    return
+    wbError.value = t('detail.character.errors.wbIdExists');
+    return;
   }
   const entry = {
     id,
@@ -400,21 +400,21 @@ function addWorldEntry() {
     order: 100,
     depth: 0,
     keys: [],
-  }
-  if (!currentData.value.world_book.entries) currentData.value.world_book.entries = []
-  currentData.value.world_book.entries.push(entry)
-  newWbId.value = ''
-  newWbName.value = ''
-  nextTick(() => window.lucide?.createIcons?.())
+  };
+  if (!currentData.value.world_book.entries) currentData.value.world_book.entries = [];
+  currentData.value.world_book.entries.push(entry);
+  newWbId.value = '';
+  newWbName.value = '';
+  nextTick(() => window.lucide?.createIcons?.());
 }
 
 function onWbUpdate(updated) {
-  const list = currentData.value.world_book?.entries || []
-  const oldId = updated._oldId || updated.id
-  const idx = list.findIndex((w) => w.id === oldId)
+  const list = currentData.value.world_book?.entries || [];
+  const oldId = updated._oldId || updated.id;
+  const idx = list.findIndex((w) => w.id === oldId);
   if (idx >= 0) {
-    const { _oldId, ...cleanData } = updated
-    list[idx] = cleanData
+    const { _oldId, ...cleanData } = updated;
+    list[idx] = cleanData;
   }
 }
 
@@ -422,7 +422,7 @@ function onWbDelete(id) {
   if (currentData.value.world_book?.entries) {
     currentData.value.world_book.entries = currentData.value.world_book.entries.filter(
       (w) => w.id !== id,
-    )
+    );
   }
 }
 
@@ -437,57 +437,57 @@ const {
   itemSelector: '.draglist-item',
   dataAttribute: 'data-wb-id',
   onReorder: (draggedId, targetId, insertBefore) => {
-    const list = [...(currentData.value.world_book?.entries || [])]
-    let ids = list.map((i) => String(i.id))
-    const draggedIdStr = String(draggedId)
-    const targetIdStr = targetId ? String(targetId) : null
-    const fromIdx = ids.indexOf(draggedIdStr)
+    const list = [...(currentData.value.world_book?.entries || [])];
+    let ids = list.map((i) => String(i.id));
+    const draggedIdStr = String(draggedId);
+    const targetIdStr = targetId ? String(targetId) : null;
+    const fromIdx = ids.indexOf(draggedIdStr);
 
     if (fromIdx >= 0 && draggedIdStr !== targetIdStr) {
-      ids.splice(fromIdx, 1)
+      ids.splice(fromIdx, 1);
       if (targetIdStr) {
-        const toIdx = ids.indexOf(targetIdStr)
-        let insertIdx = toIdx < 0 ? ids.length : toIdx + (insertBefore ? 0 : 1)
-        if (insertIdx < 0) insertIdx = 0
-        if (insertIdx > ids.length) insertIdx = ids.length
-        ids.splice(insertIdx, 0, draggedIdStr)
+        const toIdx = ids.indexOf(targetIdStr);
+        let insertIdx = toIdx < 0 ? ids.length : toIdx + (insertBefore ? 0 : 1);
+        if (insertIdx < 0) insertIdx = 0;
+        if (insertIdx > ids.length) insertIdx = ids.length;
+        ids.splice(insertIdx, 0, draggedIdStr);
       } else {
-        ids.push(draggedIdStr)
+        ids.push(draggedIdStr);
       }
 
       currentData.value.world_book.entries = ids
         .map((id) => list.find((w) => String(w.id) === id))
-        .filter(Boolean)
-      window.lucide?.createIcons?.()
+        .filter(Boolean);
+      window.lucide?.createIcons?.();
     }
   },
   getTitleForItem: (id) => {
-    const entry = currentData.value.world_book?.entries?.find((w) => w.id === id)
-    return entry?.name || id
+    const entry = currentData.value.world_book?.entries?.find((w) => w.id === id);
+    return entry?.name || id;
   },
-})
+});
 
 // 内嵌正则规则
-const newRuleId = ref('')
-const newRuleName = ref('')
-const ruleError = ref(null)
+const newRuleId = ref('');
+const newRuleName = ref('');
+const ruleError = ref(null);
 
 function addRegexRule() {
-  ruleError.value = null
-  const id = newRuleId.value.trim()
-  const name = newRuleName.value.trim()
+  ruleError.value = null;
+  const id = newRuleId.value.trim();
+  const name = newRuleName.value.trim();
   if (!id) {
-    ruleError.value = t('detail.character.errors.ruleIdRequired')
-    return
+    ruleError.value = t('detail.character.errors.ruleIdRequired');
+    return;
   }
   if (!name) {
-    ruleError.value = t('detail.character.errors.ruleNameRequired')
-    return
+    ruleError.value = t('detail.character.errors.ruleNameRequired');
+    return;
   }
-  const rules = currentData.value.regex_rules || []
+  const rules = currentData.value.regex_rules || [];
   if (rules.some((r) => r.id === id)) {
-    ruleError.value = t('detail.character.errors.ruleIdExists')
-    return
+    ruleError.value = t('detail.character.errors.ruleIdExists');
+    return;
   }
   const rule = {
     id,
@@ -498,23 +498,23 @@ function addRegexRule() {
     targets: [],
     placement: 'after_macro',
     views: [],
-  }
-  if (!currentData.value.regex_rules) currentData.value.regex_rules = []
-  currentData.value.regex_rules.push(rule)
-  newRuleId.value = ''
-  newRuleName.value = ''
-  nextTick(() => window.lucide?.createIcons?.())
+  };
+  if (!currentData.value.regex_rules) currentData.value.regex_rules = [];
+  currentData.value.regex_rules.push(rule);
+  newRuleId.value = '';
+  newRuleName.value = '';
+  nextTick(() => window.lucide?.createIcons?.());
 }
 
 function onRegexUpdate(updated) {
-  const idx = currentData.value.regex_rules.findIndex((r) => r.id === updated.id)
+  const idx = currentData.value.regex_rules.findIndex((r) => r.id === updated.id);
   if (idx >= 0) {
-    currentData.value.regex_rules[idx] = updated
+    currentData.value.regex_rules[idx] = updated;
   }
 }
 
 function onRegexDelete(id) {
-  currentData.value.regex_rules = currentData.value.regex_rules.filter((r) => r.id !== id)
+  currentData.value.regex_rules = currentData.value.regex_rules.filter((r) => r.id !== id);
 }
 
 // 正则规则拖拽 - 使用 composable
@@ -528,40 +528,40 @@ const {
   itemSelector: '.draglist-item',
   dataAttribute: 'data-rule-id',
   onReorder: (draggedId, targetId, insertBefore) => {
-    const list = [...(currentData.value.regex_rules || [])]
-    let ids = list.map((i) => String(i.id))
-    const draggedIdStr = String(draggedId)
-    const targetIdStr = targetId ? String(targetId) : null
-    const fromIdx = ids.indexOf(draggedIdStr)
+    const list = [...(currentData.value.regex_rules || [])];
+    let ids = list.map((i) => String(i.id));
+    const draggedIdStr = String(draggedId);
+    const targetIdStr = targetId ? String(targetId) : null;
+    const fromIdx = ids.indexOf(draggedIdStr);
 
     if (fromIdx >= 0 && draggedIdStr !== targetIdStr) {
-      ids.splice(fromIdx, 1)
+      ids.splice(fromIdx, 1);
       if (targetIdStr) {
-        const toIdx = ids.indexOf(targetIdStr)
-        let insertIdx = toIdx < 0 ? ids.length : toIdx + (insertBefore ? 0 : 1)
-        if (insertIdx < 0) insertIdx = 0
-        if (insertIdx > ids.length) insertIdx = ids.length
-        ids.splice(insertIdx, 0, draggedIdStr)
+        const toIdx = ids.indexOf(targetIdStr);
+        let insertIdx = toIdx < 0 ? ids.length : toIdx + (insertBefore ? 0 : 1);
+        if (insertIdx < 0) insertIdx = 0;
+        if (insertIdx > ids.length) insertIdx = ids.length;
+        ids.splice(insertIdx, 0, draggedIdStr);
       } else {
-        ids.push(draggedIdStr)
+        ids.push(draggedIdStr);
       }
 
       currentData.value.regex_rules = ids
         .map((id) => list.find((r) => String(r.id) === id))
-        .filter(Boolean)
-      window.lucide?.createIcons?.()
+        .filter(Boolean);
+      window.lucide?.createIcons?.();
     }
   },
   getTitleForItem: (id) => {
-    const rule = currentData.value.regex_rules?.find((r) => r.id === id)
-    return rule?.name || id
+    const rule = currentData.value.regex_rules?.find((r) => r.id === id);
+    return rule?.name || id;
   },
-})
+});
 
 // 初始化 Lucide 图标
 onMounted(() => {
-  window.lucide?.createIcons?.()
-})
+  window.lucide?.createIcons?.();
+});
 
 watch(
   [
@@ -570,58 +570,58 @@ watch(
     () => currentData.value.regex_rules,
   ],
   async () => {
-    await nextTick()
-    window.lucide?.createIcons?.()
+    await nextTick();
+    window.lucide?.createIcons?.();
   },
   { flush: 'post' },
-)
+);
 
 // 保存状态
-const saving = ref(false)
-const savedOk = ref(false)
-let __saveTimer = null
-const __eventOffs = []
+const saving = ref(false);
+const savedOk = ref(false);
+let __saveTimer = null;
+const __eventOffs = [];
 
 onBeforeUnmount(() => {
   try {
     __eventOffs?.forEach((fn) => {
       try {
-        fn?.()
+        fn?.();
       } catch (_) {}
-    })
-    __eventOffs.length = 0
-    if (__saveTimer) clearTimeout(__saveTimer)
+    });
+    __eventOffs.length = 0;
+    if (__saveTimer) clearTimeout(__saveTimer);
   } catch (_) {}
-})
+});
 
 // 保存到后端
 async function save() {
-  const file = props.file
+  const file = props.file;
   if (!file) {
     try {
-      alert(t('error.missingFilePath'))
+      alert(t('error.missingFilePath'));
     } catch (_) {}
-    return
+    return;
   }
 
   // 先保存当前草稿
-  saveMeta()
+  saveMeta();
 
   // 处理图标：
   // - 用户选择了新图标 -> 转换为 base64
   // - 用户删除了图标 -> 传空字符串 ''（告诉后端删除）
   // - 没有修改图标 -> 不传（undefined）
-  let iconBase64 = undefined
+  let iconBase64 = undefined;
   if (iconFile.value) {
     // 用户选择了新图标
     try {
-      iconBase64 = await fileToBase64(iconFile.value)
+      iconBase64 = await fileToBase64(iconFile.value);
     } catch (err) {
-      console.error('[CharacterDetailView] Icon conversion failed:', err)
+      console.error('[CharacterDetailView] Icon conversion failed:', err);
     }
   } else if (iconDeleted.value && iconLoadedFromServer.value) {
     // 用户删除了原有图标（图标曾经从服务器加载，现在被删除）
-    iconBase64 = ''
+    iconBase64 = '';
   }
   // 否则 iconBase64 保持 undefined，表示不修改图标
 
@@ -629,17 +629,17 @@ async function save() {
   // - 用户选择了新头像 -> 转换为 base64
   // - 用户删除了头像 -> 传空字符串 ''（告诉后端删除）
   // - 没有修改头像 -> 不传（undefined）
-  let avatarBase64 = undefined
+  let avatarBase64 = undefined;
   if (avatarFile.value) {
     // 用户选择了新头像
     try {
-      avatarBase64 = await fileToBase64(avatarFile.value)
+      avatarBase64 = await fileToBase64(avatarFile.value);
     } catch (err) {
-      console.error('[CharacterDetailView] Avatar conversion failed:', err)
+      console.error('[CharacterDetailView] Avatar conversion failed:', err);
     }
   } else if (avatarDeleted.value && avatarLoadedFromServer.value) {
     // 用户删除了原有头像（头像曾经从服务器加载，现在被删除）
-    avatarBase64 = ''
+    avatarBase64 = '';
   }
   // 否则 avatarBase64 保持 undefined，表示不修改头像
 
@@ -653,85 +653,85 @@ async function save() {
     message: Array.isArray(currentData.value.message) ? currentData.value.message : [],
     world_book: currentData.value.world_book || { name: '', entries: [] },
     regex_rules: Array.isArray(currentData.value.regex_rules) ? currentData.value.regex_rules : [],
-  }
+  };
 
-  saving.value = true
-  savedOk.value = false
+  saving.value = true;
+  savedOk.value = false;
   if (__saveTimer) {
     try {
-      clearTimeout(__saveTimer)
+      clearTimeout(__saveTimer);
     } catch {}
-    __saveTimer = null
+    __saveTimer = null;
   }
 
-  const tag = `character_save_${Date.now()}`
+  const tag = `character_save_${Date.now()}`;
 
   // 监听保存结果（一次性）
   const offOk = Host.events.on(
     Catalog.EVT_CATALOG_CHARACTER_UPDATE_OK,
     async ({ file: resFile, tag: resTag }) => {
-      if (resFile !== file || resTag !== tag) return
-      console.log('[CharacterDetailView] 保存成功（事件）')
-      savedOk.value = true
-      saving.value = false
+      if (resFile !== file || resTag !== tag) return;
+      console.log('[CharacterDetailView] 保存成功（事件）');
+      savedOk.value = true;
+      saving.value = false;
       if (savedOk.value) {
         __saveTimer = setTimeout(() => {
-          savedOk.value = false
-        }, 1800)
+          savedOk.value = false;
+        }, 1800);
       }
 
       // 保存成功后，刷新侧边栏列表
       try {
-        console.log('[CharacterDetailView] 刷新角色卡列表')
+        console.log('[CharacterDetailView] 刷新角色卡列表');
         Host.events.emit(Catalog.EVT_CATALOG_CHARACTERS_REQ, {
           requestId: Date.now(),
-        })
+        });
       } catch (err) {
-        console.warn('[CharacterDetailView] 刷新角色卡列表失败:', err)
+        console.warn('[CharacterDetailView] 刷新角色卡列表失败:', err);
       }
 
       // 保存成功后，检查是否是当前使用的角色卡，如果是则刷新 store
       try {
-        const chatSettingsStore = useChatSettingsStore()
-        const characterStore = useCharacterStore()
-        const currentCharacterFile = chatSettingsStore.characterFile
+        const chatSettingsStore = useChatSettingsStore();
+        const characterStore = useCharacterStore();
+        const currentCharacterFile = chatSettingsStore.characterFile;
         if (currentCharacterFile && currentCharacterFile === file) {
-          console.log('[CharacterDetailView] 刷新角色卡 store')
-          await characterStore.refreshFromCharacterFile(file)
+          console.log('[CharacterDetailView] 刷新角色卡 store');
+          await characterStore.refreshFromCharacterFile(file);
         }
       } catch (err) {
-        console.warn('[CharacterDetailView] 刷新角色卡 store 失败:', err)
+        console.warn('[CharacterDetailView] 刷新角色卡 store 失败:', err);
       }
 
       try {
-        offOk?.()
+        offOk?.();
       } catch (_) {}
       try {
-        offFail?.()
+        offFail?.();
       } catch (_) {}
     },
-  )
+  );
 
   const offFail = Host.events.on(
     Catalog.EVT_CATALOG_CHARACTER_UPDATE_FAIL,
     ({ file: resFile, message, tag: resTag }) => {
-      if (resFile && resFile !== file) return
-      if (resTag && resTag !== tag) return
-      console.error('[CharacterDetailView] 保存失败（事件）:', message)
+      if (resFile && resFile !== file) return;
+      if (resTag && resTag !== tag) return;
+      console.error('[CharacterDetailView] 保存失败（事件）:', message);
       try {
-        alert(t('detail.character.saveFailed') + '：' + message)
+        alert(t('detail.character.saveFailed') + '：' + message);
       } catch (_) {}
-      saving.value = false
+      saving.value = false;
       try {
-        offOk?.()
+        offOk?.();
       } catch (_) {}
       try {
-        offFail?.()
+        offFail?.();
       } catch (_) {}
     },
-  )
+  );
 
-  __eventOffs.push(offOk, offFail)
+  __eventOffs.push(offOk, offFail);
 
   // 发送保存请求事件
   Host.events.emit(Catalog.EVT_CATALOG_CHARACTER_UPDATE_REQ, {
@@ -742,7 +742,7 @@ async function save() {
     iconBase64,
     avatarBase64,
     tag,
-  })
+  });
 }
 </script>
 

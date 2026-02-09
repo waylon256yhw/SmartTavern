@@ -1,74 +1,74 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { useI18n } from '@/locales'
+import { ref, computed, watch } from 'vue';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   item: { type: Object, required: true },
-})
+});
 
-const emit = defineEmits(['update', 'delete'])
+const emit = defineEmits(['update', 'delete']);
 
 // UI state
-const editing = ref(false)
+const editing = ref(false);
 
 // helpers
-const toTri = (v) => (v === true ? 'true' : v === false ? 'false' : 'null')
-const fromTri = (s) => (s === 'true' ? true : s === 'false' ? false : null)
+const toTri = (v) => (v === true ? 'true' : v === false ? 'false' : 'null');
+const fromTri = (s) => (s === 'true' ? true : s === 'false' ? false : null);
 
-const isInChat = computed(() => props.item.position === 'in-chat')
-const hasContent = computed(() => 'content' in props.item)
+const isInChat = computed(() => props.item.position === 'in-chat');
+const hasContent = computed(() => 'content' in props.item);
 
 const enabledLabel = (v) =>
   v === true
     ? t('cards.common.enabled')
     : v === false
       ? t('cards.common.disabled')
-      : t('cards.common.notSet')
+      : t('cards.common.notSet');
 
 // draft fields
-const draftName = ref(props.item.name)
-const draftEnabled = ref(toTri(props.item.enabled))
-const draftRole = ref(props.item.role)
-const draftDepth = ref(isInChat.value ? props.item.depth : 0)
-const draftOrder = ref(isInChat.value ? props.item.order : 0)
-const draftContent = ref(hasContent.value ? (props.item.content ?? '') : '')
+const draftName = ref(props.item.name);
+const draftEnabled = ref(toTri(props.item.enabled));
+const draftRole = ref(props.item.role);
+const draftDepth = ref(isInChat.value ? props.item.depth : 0);
+const draftOrder = ref(isInChat.value ? props.item.order : 0);
+const draftContent = ref(hasContent.value ? (props.item.content ?? '') : '');
 
 function resetDraft() {
-  draftName.value = props.item.name
-  draftEnabled.value = toTri(props.item.enabled)
-  draftRole.value = props.item.role
+  draftName.value = props.item.name;
+  draftEnabled.value = toTri(props.item.enabled);
+  draftRole.value = props.item.role;
   if (isInChat.value) {
-    draftDepth.value = props.item.depth
-    draftOrder.value = props.item.order
+    draftDepth.value = props.item.depth;
+    draftOrder.value = props.item.order;
   } else {
-    draftDepth.value = 0
-    draftOrder.value = 0
+    draftDepth.value = 0;
+    draftOrder.value = 0;
   }
-  draftContent.value = hasContent.value ? (props.item.content ?? '') : ''
+  draftContent.value = hasContent.value ? (props.item.content ?? '') : '';
 }
 
 watch(
   () => props.item,
   () => {
-    if (!editing.value) resetDraft()
+    if (!editing.value) resetDraft();
   },
   { deep: false },
-)
+);
 
 function onEdit() {
-  resetDraft()
-  editing.value = true
+  resetDraft();
+  editing.value = true;
 }
 
 function onCancel() {
-  resetDraft()
-  editing.value = false
+  resetDraft();
+  editing.value = false;
 }
 
 function onDelete() {
-  emit('delete', props.item.identifier)
+  emit('delete', props.item.identifier);
 }
 
 function onSave() {
@@ -79,22 +79,22 @@ function onSave() {
     enabled: fromTri(draftEnabled.value),
     role: draftRole.value,
     position: props.item.position,
-  }
+  };
 
   if (isInChat.value) {
-    updated.depth = draftDepth.value
-    updated.order = draftOrder.value
-    updated.content = draftContent.value
+    updated.depth = draftDepth.value;
+    updated.order = draftOrder.value;
+    updated.content = draftContent.value;
   } else {
     // Relative: 除一次性组件外，必须包含 content 字段
-    const isSpecial = !hasContent.value
+    const isSpecial = !hasContent.value;
     if (!isSpecial) {
-      updated.content = draftContent.value
+      updated.content = draftContent.value;
     }
   }
 
-  emit('update', updated)
-  editing.value = false
+  emit('update', updated);
+  editing.value = false;
 }
 </script>
 

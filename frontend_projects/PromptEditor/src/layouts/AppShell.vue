@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { onMounted, nextTick } from 'vue'
+import { onMounted, nextTick } from 'vue';
 
 /* 顶部右侧：新建/导入/导出/保存/重置 事件 */
 const emit = defineEmits<{
-  (e: 'new'): void
-  (e: 'import-files'): void
-  (e: 'export-file'): void
-  (e: 'save'): void
-  (e: 'reset'): void
-}>()
+  (e: 'new'): void;
+  (e: 'import-files'): void;
+  (e: 'export-file'): void;
+  (e: 'save'): void;
+  (e: 'reset'): void;
+}>();
 
 // 组件挂载后渲染 Lucide 图标（避免图标未初始化）
 onMounted(() => {
-  nextTick(() => (window as any).lucide?.createIcons?.())
-})
+  nextTick(() => (window as any).lucide?.createIcons?.());
+});
 </script>
 
 <template>

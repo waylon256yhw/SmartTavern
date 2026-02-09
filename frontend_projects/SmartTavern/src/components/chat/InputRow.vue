@@ -67,10 +67,10 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue'
-import { useI18n } from '@/locales'
+import { ref, computed, nextTick } from 'vue';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   pendingActive: { type: Boolean, default: false },
@@ -78,55 +78,55 @@ const props = defineProps({
   placeholder: { type: String, default: '' },
   sendLabel: { type: String, default: '' },
   stopLabel: { type: String, default: '' },
-})
+});
 
-const emit = defineEmits(['submit', 'cancel'])
+const emit = defineEmits(['submit', 'cancel']);
 
-const inputRef = ref(null)
-const text = ref('')
+const inputRef = ref(null);
+const text = ref('');
 
 // i18n computed
-const effectivePlaceholder = computed(() => props.placeholder || t('chat.input.placeholder'))
-const effectiveSendLabel = computed(() => props.sendLabel || t('chat.input.send'))
-const effectiveStopLabel = computed(() => props.stopLabel || t('chat.input.stop'))
+const effectivePlaceholder = computed(() => props.placeholder || t('chat.input.placeholder'));
+const effectiveSendLabel = computed(() => props.sendLabel || t('chat.input.send'));
+const effectiveStopLabel = computed(() => props.stopLabel || t('chat.input.stop'));
 
 const sendButtonTitle = computed(() =>
   props.pendingActive ? t('chat.input.stopWaiting') : t('chat.input.sendShortcut'),
-)
+);
 
 function onKeydown(e) {
   if (props.pendingActive) {
-    if (e.key === 'Enter' && !e.shiftKey) e.preventDefault()
-    return
+    if (e.key === 'Enter' && !e.shiftKey) e.preventDefault();
+    return;
   }
   if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault()
-    onSubmit()
+    e.preventDefault();
+    onSubmit();
   }
 }
 
 function onSubmit() {
-  const t = text.value.trim()
-  if (!t) return
-  emit('submit', t)
+  const t = text.value.trim();
+  if (!t) return;
+  emit('submit', t);
   // 注意：不再自动清空，由父组件在发送成功后调用 clearText()
 }
 
 function clearText() {
-  text.value = ''
-  nextTick(() => inputRef.value?.focus?.())
+  text.value = '';
+  nextTick(() => inputRef.value?.focus?.());
 }
 
 function onCancel() {
-  emit('cancel')
+  emit('cancel');
 }
 
 function setText(value) {
-  text.value = value ?? ''
-  nextTick(() => inputRef.value?.focus?.())
+  text.value = value ?? '';
+  nextTick(() => inputRef.value?.focus?.());
 }
 
-defineExpose({ setText, clearText })
+defineExpose({ setText, clearText });
 </script>
 
 <style scoped>

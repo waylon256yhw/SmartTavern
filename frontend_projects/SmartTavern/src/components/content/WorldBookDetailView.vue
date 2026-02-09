@@ -1,137 +1,137 @@
 <script setup>
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
-import WorldBookCard from './cards/WorldBookCard.vue'
-import Host from '@/workflow/core/host'
-import * as Catalog from '@/workflow/channels/catalog'
-import { useI18n } from '@/locales'
-import { useWorldBooksStore } from '@/stores/worldBooks'
-import { useChatSettingsStore } from '@/stores/chatSettings'
-import { useCustomDrag } from '@/composables/useCustomDrag'
-import DataCatalog from '@/services/dataCatalog'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import WorldBookCard from './cards/WorldBookCard.vue';
+import Host from '@/workflow/core/host';
+import * as Catalog from '@/workflow/channels/catalog';
+import { useI18n } from '@/locales';
+import { useWorldBooksStore } from '@/stores/worldBooks';
+import { useChatSettingsStore } from '@/stores/chatSettings';
+import { useCustomDrag } from '@/composables/useCustomDrag';
+import DataCatalog from '@/services/dataCatalog';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   worldbookData: { type: Object, default: null },
   file: { type: String, default: '' },
-})
+});
 
 // 图标上传相关
-const iconFile = ref(null)
-const iconPreviewUrl = ref('')
-const iconInputRef = ref(null)
+const iconFile = ref(null);
+const iconPreviewUrl = ref('');
+const iconInputRef = ref(null);
 // 追踪图标是否被用户主动删除（区分"没有图标"和"删除图标"）
-const iconDeleted = ref(false)
+const iconDeleted = ref(false);
 // 追踪是否已经从后端加载了图标（用于判断是"保持不变"还是"删除"）
-const iconLoadedFromServer = ref(false)
+const iconLoadedFromServer = ref(false);
 
 // 图标预览URL计算属性
-const hasIcon = computed(() => !!iconPreviewUrl.value)
+const hasIcon = computed(() => !!iconPreviewUrl.value);
 
 // 图标处理函数
 function handleIconSelect(e) {
-  const file = e.target.files?.[0]
-  if (!file) return
+  const file = e.target.files?.[0];
+  if (!file) return;
 
   // 验证文件类型
   if (!file.type.startsWith('image/')) {
-    return
+    return;
   }
 
-  iconFile.value = file
+  iconFile.value = file;
 
   // 创建预览URL
   if (iconPreviewUrl.value) {
-    URL.revokeObjectURL(iconPreviewUrl.value)
+    URL.revokeObjectURL(iconPreviewUrl.value);
   }
-  iconPreviewUrl.value = URL.createObjectURL(file)
-  iconDeleted.value = false
+  iconPreviewUrl.value = URL.createObjectURL(file);
+  iconDeleted.value = false;
 }
 
 function triggerIconSelect() {
-  iconInputRef.value?.click()
+  iconInputRef.value?.click();
 }
 
 async function removeIcon() {
-  iconFile.value = null
+  iconFile.value = null;
   if (iconPreviewUrl.value) {
-    URL.revokeObjectURL(iconPreviewUrl.value)
+    URL.revokeObjectURL(iconPreviewUrl.value);
   }
-  iconPreviewUrl.value = ''
+  iconPreviewUrl.value = '';
   if (iconInputRef.value) {
-    iconInputRef.value.value = ''
+    iconInputRef.value.value = '';
   }
   // 标记用户主动删除了图标
-  iconDeleted.value = true
+  iconDeleted.value = true;
   // 重新初始化 lucide 图标
-  await nextTick()
-  window.lucide?.createIcons?.()
+  await nextTick();
+  window.lucide?.createIcons?.();
 }
 
 function resetIconPreview() {
-  iconFile.value = null
+  iconFile.value = null;
   if (iconPreviewUrl.value) {
-    URL.revokeObjectURL(iconPreviewUrl.value)
+    URL.revokeObjectURL(iconPreviewUrl.value);
   }
-  iconPreviewUrl.value = ''
+  iconPreviewUrl.value = '';
   if (iconInputRef.value) {
-    iconInputRef.value.value = ''
+    iconInputRef.value.value = '';
   }
   // 重置删除标记和加载标记
-  iconDeleted.value = false
-  iconLoadedFromServer.value = false
+  iconDeleted.value = false;
+  iconLoadedFromServer.value = false;
 }
 
 // 将文件转换为Base64
 async function fileToBase64(file) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = () => {
-      const result = reader.result
+      const result = reader.result;
       // 移除 data URL 前缀
-      const base64 = result.includes(',') ? result.split(',')[1] : result
-      resolve(base64)
-    }
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
+      const base64 = result.includes(',') ? result.split(',')[1] : result;
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 // 根据文件路径加载已有图标
 async function loadExistingIcon() {
   // 重置当前图标
-  resetIconPreview()
+  resetIconPreview();
 
-  if (!props.file) return
+  if (!props.file) return;
 
   // 构建图标路径：将文件路径的 worldbook.json 替换为 icon.png
-  const iconPath = props.file.replace(/worldbook\.json$/, 'icon.png')
+  const iconPath = props.file.replace(/worldbook\.json$/, 'icon.png');
 
   try {
     // 使用 DataCatalog.getDataAssetBlob 获取图标
-    const { blob, mime } = await DataCatalog.getDataAssetBlob(iconPath)
+    const { blob, mime } = await DataCatalog.getDataAssetBlob(iconPath);
     if (blob.size > 0 && mime.startsWith('image/')) {
-      iconPreviewUrl.value = URL.createObjectURL(blob)
+      iconPreviewUrl.value = URL.createObjectURL(blob);
       // 标记图标是从服务器加载的
-      iconLoadedFromServer.value = true
+      iconLoadedFromServer.value = true;
     }
   } catch (err) {
     // 图标不存在或加载失败，忽略错误
-    console.debug('[WorldBookDetailView] No existing icon or failed to load:', err)
-    iconLoadedFromServer.value = false
+    console.debug('[WorldBookDetailView] No existing icon or failed to load:', err);
+    iconLoadedFromServer.value = false;
   }
 }
 
 /** 深拷贝工具 */
 function deepClone(x) {
-  return JSON.parse(JSON.stringify(x))
+  return JSON.parse(JSON.stringify(x));
 }
 
 /** 规范化后端/外部传入的数据到本组件内部结构 */
 function normalizeWorldbookData(src) {
-  if (!src || typeof src !== 'object') return null
-  const name = src.name || '世界书'
-  const description = src.description || ''
+  if (!src || typeof src !== 'object') return null;
+  const name = src.name || '世界书';
+  const description = src.description || '';
   // 兼容两种结构：
   // - 内部结构：{ world_books: [...] }
   // - 后端文件/接口：{ entries: [...] }
@@ -139,7 +139,7 @@ function normalizeWorldbookData(src) {
     ? src.world_books
     : Array.isArray(src.entries)
       ? src.entries
-      : []
+      : [];
   const mapped = entries.map((e) => ({
     id: e?.id ?? e?.identifier ?? '',
     name: e?.name ?? e?.title ?? '',
@@ -150,8 +150,8 @@ function normalizeWorldbookData(src) {
     order: typeof e?.order === 'number' ? e.order : 100,
     depth: typeof e?.depth === 'number' ? e.depth : 0,
     condition: e?.condition ?? '',
-  }))
-  return { name, description, world_books: mapped }
+  }));
+  return { name, description, world_books: mapped };
 }
 
 // 当前编辑的数据（内存中）
@@ -159,7 +159,7 @@ const currentData = ref(
   deepClone(
     normalizeWorldbookData(props.worldbookData) || { name: '', description: '', world_books: [] },
   ),
-)
+);
 
 // 当外部传入的 worldbookData 变化时，重新规范化并刷新图标
 watch(
@@ -167,35 +167,35 @@ watch(
   async (v) => {
     currentData.value = deepClone(
       normalizeWorldbookData(v) || { name: '', description: '', world_books: [] },
-    )
+    );
     // 加载已有图标
-    await loadExistingIcon()
-    await nextTick()
-    window.lucide?.createIcons?.()
+    await loadExistingIcon();
+    await nextTick();
+    window.lucide?.createIcons?.();
   },
-)
+);
 
 // 新增条目
-const newId = ref('')
-const newName = ref('')
-const addError = ref(null)
+const newId = ref('');
+const newName = ref('');
+const addError = ref(null);
 
 async function addEntry() {
-  addError.value = null
-  const id = newId.value.trim()
-  const name = newName.value.trim()
+  addError.value = null;
+  const id = newId.value.trim();
+  const name = newName.value.trim();
   if (!id) {
-    addError.value = t('detail.worldBook.errors.idRequired')
-    return
+    addError.value = t('detail.worldBook.errors.idRequired');
+    return;
   }
   if (!name) {
-    addError.value = t('detail.worldBook.errors.nameRequired')
-    return
+    addError.value = t('detail.worldBook.errors.nameRequired');
+    return;
   }
-  const list = currentData.value.world_books || []
+  const list = currentData.value.world_books || [];
   if (list.some((e) => e.id === id)) {
-    addError.value = t('detail.worldBook.errors.idExists')
-    return
+    addError.value = t('detail.worldBook.errors.idExists');
+    return;
   }
   const entry = {
     id,
@@ -207,29 +207,29 @@ async function addEntry() {
     order: 100,
     depth: 0,
     condition: '',
-  }
-  if (!currentData.value.world_books) currentData.value.world_books = []
-  currentData.value.world_books.push(entry)
-  newId.value = ''
-  newName.value = ''
-  await nextTick()
-  window.lucide?.createIcons?.()
+  };
+  if (!currentData.value.world_books) currentData.value.world_books = [];
+  currentData.value.world_books.push(entry);
+  newId.value = '';
+  newName.value = '';
+  await nextTick();
+  window.lucide?.createIcons?.();
 }
 
 // 条目更新和删除
 function onEntryUpdate(updated) {
-  const list = currentData.value.world_books || []
+  const list = currentData.value.world_books || [];
   // 如果 ID 改变了，需要找到原 ID
-  const oldId = updated._oldId || updated.id
-  const idx = list.findIndex((w) => w.id === oldId)
+  const oldId = updated._oldId || updated.id;
+  const idx = list.findIndex((w) => w.id === oldId);
   if (idx >= 0) {
-    const { _oldId, ...cleanData } = updated
-    list[idx] = cleanData
+    const { _oldId, ...cleanData } = updated;
+    list[idx] = cleanData;
   }
 }
 
 function onEntryDelete(id) {
-  currentData.value.world_books = (currentData.value.world_books || []).filter((w) => w.id !== id)
+  currentData.value.world_books = (currentData.value.world_books || []).filter((w) => w.id !== id);
 }
 
 // 世界书拖拽 - 使用 composable
@@ -238,77 +238,77 @@ const { dragging, dragOverId, dragOverBefore, startDrag } = useCustomDrag({
   itemSelector: '.draglist-item',
   dataAttribute: 'data-wb-id',
   onReorder: (draggedId, targetId, insertBefore) => {
-    const list = [...(currentData.value.world_books || [])]
-    let ids = list.map((i) => String(i.id))
-    const draggedIdStr = String(draggedId)
-    const targetIdStr = targetId ? String(targetId) : null
-    const fromIdx = ids.indexOf(draggedIdStr)
+    const list = [...(currentData.value.world_books || [])];
+    let ids = list.map((i) => String(i.id));
+    const draggedIdStr = String(draggedId);
+    const targetIdStr = targetId ? String(targetId) : null;
+    const fromIdx = ids.indexOf(draggedIdStr);
 
     if (fromIdx >= 0 && draggedIdStr !== targetIdStr) {
-      ids.splice(fromIdx, 1)
+      ids.splice(fromIdx, 1);
       if (targetIdStr) {
-        const toIdx = ids.indexOf(targetIdStr)
-        let insertIdx = toIdx < 0 ? ids.length : toIdx + (insertBefore ? 0 : 1)
-        if (insertIdx < 0) insertIdx = 0
-        if (insertIdx > ids.length) insertIdx = ids.length
-        ids.splice(insertIdx, 0, draggedIdStr)
+        const toIdx = ids.indexOf(targetIdStr);
+        let insertIdx = toIdx < 0 ? ids.length : toIdx + (insertBefore ? 0 : 1);
+        if (insertIdx < 0) insertIdx = 0;
+        if (insertIdx > ids.length) insertIdx = ids.length;
+        ids.splice(insertIdx, 0, draggedIdStr);
       } else {
-        ids.push(draggedIdStr)
+        ids.push(draggedIdStr);
       }
 
       currentData.value.world_books = ids
         .map((id) => list.find((w) => String(w.id) === id))
-        .filter(Boolean)
-      window.lucide?.createIcons?.()
+        .filter(Boolean);
+      window.lucide?.createIcons?.();
     }
   },
   getTitleForItem: (id) => {
-    const entry = currentData.value.world_books?.find((w) => String(w.id) === String(id))
-    return entry?.name || id
+    const entry = currentData.value.world_books?.find((w) => String(w.id) === String(id));
+    return entry?.name || id;
   },
-})
+});
 
 // 初始化 Lucide 图标
 onMounted(async () => {
-  window.lucide?.createIcons?.()
+  window.lucide?.createIcons?.();
   // 加载已有图标
-  await loadExistingIcon()
-})
+  await loadExistingIcon();
+});
 
 watch(
   () => currentData.value.world_books,
   async () => {
-    await nextTick()
-    window.lucide?.createIcons?.()
+    await nextTick();
+    window.lucide?.createIcons?.();
   },
   { flush: 'post' },
-)
+);
 
-const __eventOffs = [] // 事件监听清理器
-const saving = ref(false)
-const savedOk = ref(false)
-let __saveTimer = null
+const __eventOffs = []; // 事件监听清理器
+const saving = ref(false);
+const savedOk = ref(false);
+let __saveTimer = null;
 
 onBeforeUnmount(() => {
   try {
     __eventOffs?.forEach((fn) => {
       try {
-        fn?.()
+        fn?.();
       } catch (_) {}
-    })
-    __eventOffs.length = 0
-    if (__saveTimer) clearTimeout(__saveTimer)
+    });
+    __eventOffs.length = 0;
+    if (__saveTimer) clearTimeout(__saveTimer);
   } catch (_) {}
-})
+});
 
 // 保存到后端（事件驱动）
 async function save() {
-  const file = props.file
+  const file = props.file;
   if (!file) {
     try {
-      alert(t('error.missingFilePath'))
+      alert(t('error.missingFilePath'));
     } catch (_) {}
-    return
+    return;
   }
   // 将内部 world_books 转换为 entries
   const entries = (currentData.value.world_books || []).map((w) => ({
@@ -321,107 +321,107 @@ async function save() {
     order: typeof w?.order === 'number' ? w.order : 100,
     depth: typeof w?.depth === 'number' ? w.depth : 0,
     condition: w?.condition ?? '',
-  }))
+  }));
   const content = {
     name: currentData.value.name || '',
     description: currentData.value.description || '',
     entries,
-  }
+  };
 
   // 处理图标：
   // - 用户选择了新图标 -> 转换为 base64
   // - 用户删除了图标 -> 传空字符串 ''（告诉后端删除）
   // - 没有修改图标 -> 不传（undefined）
-  let iconBase64 = undefined
+  let iconBase64 = undefined;
   if (iconFile.value) {
     // 用户选择了新图标
     try {
-      iconBase64 = await fileToBase64(iconFile.value)
+      iconBase64 = await fileToBase64(iconFile.value);
     } catch (err) {
-      console.error('[WorldBookDetailView] Icon conversion failed:', err)
+      console.error('[WorldBookDetailView] Icon conversion failed:', err);
     }
   } else if (iconDeleted.value && iconLoadedFromServer.value) {
     // 用户删除了原有图标（图标曾经从服务器加载，现在被删除）
-    iconBase64 = ''
+    iconBase64 = '';
   }
   // 否则 iconBase64 保持 undefined，表示不修改图标
 
-  saving.value = true
-  const tag = `worldbook_save_${Date.now()}`
+  saving.value = true;
+  const tag = `worldbook_save_${Date.now()}`;
 
   if (__saveTimer) {
     try {
-      clearTimeout(__saveTimer)
+      clearTimeout(__saveTimer);
     } catch {}
-    __saveTimer = null
+    __saveTimer = null;
   }
 
   // 监听保存结果（一次性）
   const offOk = Host.events.on(
     Catalog.EVT_CATALOG_WORLDBOOK_UPDATE_OK,
     async ({ file: resFile, tag: resTag }) => {
-      if (resFile !== file || resTag !== tag) return
-      console.log('[WorldBookDetailView] 保存成功（事件）')
-      savedOk.value = true
-      saving.value = false
+      if (resFile !== file || resTag !== tag) return;
+      console.log('[WorldBookDetailView] 保存成功（事件）');
+      savedOk.value = true;
+      saving.value = false;
       if (savedOk.value) {
         __saveTimer = setTimeout(() => {
-          savedOk.value = false
-        }, 1800)
+          savedOk.value = false;
+        }, 1800);
       }
 
       // 保存成功后，刷新侧边栏列表
       try {
-        console.log('[WorldBookDetailView] 刷新世界书列表')
+        console.log('[WorldBookDetailView] 刷新世界书列表');
         Host.events.emit(Catalog.EVT_CATALOG_WORLDBOOKS_REQ, {
           requestId: Date.now(),
-        })
+        });
       } catch (err) {
-        console.warn('[WorldBookDetailView] 刷新世界书列表失败:', err)
+        console.warn('[WorldBookDetailView] 刷新世界书列表失败:', err);
       }
 
       // 保存成功后，检查是否是当前使用的世界书之一，如果是则刷新 store
       try {
-        const chatSettingsStore = useChatSettingsStore()
-        const worldBooksStore = useWorldBooksStore()
-        const currentWorldBookFiles = chatSettingsStore.worldBooksFiles || []
+        const chatSettingsStore = useChatSettingsStore();
+        const worldBooksStore = useWorldBooksStore();
+        const currentWorldBookFiles = chatSettingsStore.worldBooksFiles || [];
         if (currentWorldBookFiles.includes(file)) {
-          console.log('[WorldBookDetailView] 刷新世界书 store')
-          await worldBooksStore.refreshFromWorldBookFiles(currentWorldBookFiles)
+          console.log('[WorldBookDetailView] 刷新世界书 store');
+          await worldBooksStore.refreshFromWorldBookFiles(currentWorldBookFiles);
         }
       } catch (err) {
-        console.warn('[WorldBookDetailView] 刷新世界书 store 失败:', err)
+        console.warn('[WorldBookDetailView] 刷新世界书 store 失败:', err);
       }
 
       try {
-        offOk?.()
+        offOk?.();
       } catch (_) {}
       try {
-        offFail?.()
+        offFail?.();
       } catch (_) {}
     },
-  )
+  );
 
   const offFail = Host.events.on(
     Catalog.EVT_CATALOG_WORLDBOOK_UPDATE_FAIL,
     ({ file: resFile, message, tag: resTag }) => {
-      if (resFile && resFile !== file) return
-      if (resTag && resTag !== tag) return
-      console.error('[WorldBookDetailView] 保存失败（事件）:', message)
+      if (resFile && resFile !== file) return;
+      if (resTag && resTag !== tag) return;
+      console.error('[WorldBookDetailView] 保存失败（事件）:', message);
       try {
-        alert(t('detail.worldBook.saveFailed') + '：' + message)
+        alert(t('detail.worldBook.saveFailed') + '：' + message);
       } catch (_) {}
-      saving.value = false
+      saving.value = false;
       try {
-        offOk?.()
+        offOk?.();
       } catch (_) {}
       try {
-        offFail?.()
+        offFail?.();
       } catch (_) {}
     },
-  )
+  );
 
-  __eventOffs.push(offOk, offFail)
+  __eventOffs.push(offOk, offFail);
 
   // 发送保存请求事件
   Host.events.emit(Catalog.EVT_CATALOG_WORLDBOOK_UPDATE_REQ, {
@@ -431,7 +431,7 @@ async function save() {
     description: content.description,
     iconBase64,
     tag,
-  })
+  });
 }
 </script>
 

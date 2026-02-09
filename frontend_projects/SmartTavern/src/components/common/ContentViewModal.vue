@@ -1,34 +1,34 @@
 <script setup>
-import { ref, watch, computed, toRef } from 'vue'
-import { useI18n } from '@/locales'
-import CustomScrollbar2 from '@/components/common/CustomScrollbar2.vue'
-import { useFocusTrap } from '@/composables/useFocusTrap'
+import { ref, watch, computed, toRef } from 'vue';
+import { useI18n } from '@/locales';
+import CustomScrollbar2 from '@/components/common/CustomScrollbar2.vue';
+import { useFocusTrap } from '@/composables/useFocusTrap';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   show: { type: Boolean, default: false },
   title: { type: String, default: '' },
   icon: { type: String, default: '' },
   autoHeight: { type: Boolean, default: false },
-})
+});
 
-const effectiveTitle = computed(() => props.title || t('components.modal.defaultTitle'))
+const effectiveTitle = computed(() => props.title || t('components.modal.defaultTitle'));
 
-const emit = defineEmits(['close', 'update:show'])
+const emit = defineEmits(['close', 'update:show']);
 
-const modalRef = ref(null)
-useFocusTrap(modalRef, toRef(props, 'show'))
+const modalRef = ref(null);
+useFocusTrap(modalRef, toRef(props, 'show'));
 
 function close() {
-  emit('close')
-  emit('update:show', false)
+  emit('close');
+  emit('update:show', false);
 }
 
 // 监听 ESC 键关闭
 function handleKeydown(e) {
   if (e.key === 'Escape' && props.show) {
-    close()
+    close();
   }
 }
 
@@ -36,15 +36,15 @@ watch(
   () => props.show,
   (v) => {
     if (v) {
-      document.addEventListener('keydown', handleKeydown)
-      document.body.style.overflow = 'hidden'
+      document.addEventListener('keydown', handleKeydown);
+      document.body.style.overflow = 'hidden';
     } else {
-      document.removeEventListener('keydown', handleKeydown)
-      document.body.style.overflow = ''
+      document.removeEventListener('keydown', handleKeydown);
+      document.body.style.overflow = '';
     }
   },
   { immediate: true },
-)
+);
 </script>
 
 <template>

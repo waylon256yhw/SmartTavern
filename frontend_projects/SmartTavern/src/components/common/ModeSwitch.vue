@@ -1,8 +1,8 @@
 <script setup>
-import { computed } from 'vue'
-import { useI18n } from '@/locales'
+import { computed } from 'vue';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   modelValue: { type: String, default: 'threaded' }, // 'threaded' | 'sandbox'
@@ -10,8 +10,8 @@ const props = defineProps({
     type: Array,
     default: null,
   },
-})
-const emit = defineEmits(['update:modelValue'])
+});
+const emit = defineEmits(['update:modelValue']);
 
 const effectiveOptions = computed(
   () =>
@@ -19,10 +19,10 @@ const effectiveOptions = computed(
       { key: 'threaded', label: t('components.modeSwitch.threaded') },
       { key: 'sandbox', label: t('components.modeSwitch.sandbox') },
     ],
-)
+);
 
 function selectMode(key) {
-  if (key !== props.modelValue) emit('update:modelValue', key)
+  if (key !== props.modelValue) emit('update:modelValue', key);
 }
 </script>
 

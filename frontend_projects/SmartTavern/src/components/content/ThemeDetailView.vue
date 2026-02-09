@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import { ref, watch, onBeforeUnmount } from 'vue'
-import { useI18n } from '@/locales'
-import StylesService from '@/services/stylesService'
+import { ref, watch, onBeforeUnmount } from 'vue';
+import { useI18n } from '@/locales';
+import StylesService from '@/services/stylesService';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   themeData: { type: Object, default: null },
   dir: { type: String, default: '' },
-})
+});
 
-const emit = defineEmits(['saved'])
+const emit = defineEmits(['saved']);
 
 // 当前编辑的数据（内存中）
-const nameDraft = ref('')
-const descDraft = ref('')
+const nameDraft = ref('');
+const descDraft = ref('');
 
 // 初始化
 if (props.themeData) {
-  nameDraft.value = props.themeData.name || ''
-  descDraft.value = props.themeData.description || ''
+  nameDraft.value = props.themeData.name || '';
+  descDraft.value = props.themeData.description || '';
 }
 
 // 监听外部数据变化
@@ -27,11 +27,11 @@ watch(
   () => props.themeData,
   (newData) => {
     if (newData) {
-      nameDraft.value = newData.name || ''
-      descDraft.value = newData.description || ''
+      nameDraft.value = newData.name || '';
+      descDraft.value = newData.description || '';
     }
   },
-)
+);
 
 // 失焦保存到内存
 function saveMeta() {
@@ -39,61 +39,61 @@ function saveMeta() {
 }
 
 // 保存状态
-const saving = ref(false)
-const savedOk = ref(false)
-let __saveTimer: ReturnType<typeof setTimeout> | null = null
+const saving = ref(false);
+const savedOk = ref(false);
+let __saveTimer: ReturnType<typeof setTimeout> | null = null;
 
 onBeforeUnmount(() => {
-  if (__saveTimer) clearTimeout(__saveTimer)
-})
+  if (__saveTimer) clearTimeout(__saveTimer);
+});
 
 // 保存到后端
 async function save() {
-  const dir = props.dir
+  const dir = props.dir;
   if (!dir) {
     try {
-      alert(t('error.missingFilePath'))
+      alert(t('error.missingFilePath'));
     } catch (_) {}
-    return
+    return;
   }
 
-  saving.value = true
-  savedOk.value = false
+  saving.value = true;
+  savedOk.value = false;
   if (__saveTimer) {
-    clearTimeout(__saveTimer)
-    __saveTimer = null
+    clearTimeout(__saveTimer);
+    __saveTimer = null;
   }
 
   try {
     const result = await StylesService.updateThemeFile(dir, {
       name: nameDraft.value,
       description: descDraft.value,
-    })
+    });
 
     if (result.error) {
-      console.error('[ThemeDetailView] 保存失败:', result.message)
+      console.error('[ThemeDetailView] 保存失败:', result.message);
       try {
-        alert(t('detail.theme.saveFailed') + '：' + result.message)
+        alert(t('detail.theme.saveFailed') + '：' + result.message);
       } catch (_) {}
     } else {
-      console.log('[ThemeDetailView] 保存成功')
-      savedOk.value = true
+      console.log('[ThemeDetailView] 保存成功');
+      savedOk.value = true;
       if (savedOk.value) {
         __saveTimer = setTimeout(() => {
-          savedOk.value = false
-        }, 1800)
+          savedOk.value = false;
+        }, 1800);
       }
 
       // 通知父组件刷新主题列表
-      emit('saved', { dir: props.dir })
+      emit('saved', { dir: props.dir });
     }
   } catch (error: any) {
-    console.error('[ThemeDetailView] 保存错误:', error)
+    console.error('[ThemeDetailView] 保存错误:', error);
     try {
-      alert(t('detail.theme.saveFailed') + '：' + error.message)
+      alert(t('detail.theme.saveFailed') + '：' + error.message);
     } catch (_) {}
   } finally {
-    saving.value = false
+    saving.value = false;
   }
 }
 </script>

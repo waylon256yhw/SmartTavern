@@ -1,105 +1,105 @@
 <script setup>
-import { ref, reactive, computed, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
-import Host from '@/workflow/core/host'
-import * as Catalog from '@/workflow/channels/catalog'
-import { useI18n } from '@/locales'
-import DataCatalog from '@/services/dataCatalog'
+import { ref, reactive, computed, onMounted, watch, nextTick, onBeforeUnmount } from 'vue';
+import Host from '@/workflow/core/host';
+import * as Catalog from '@/workflow/channels/catalog';
+import { useI18n } from '@/locales';
+import DataCatalog from '@/services/dataCatalog';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   llmConfigData: { type: Object, default: null },
   file: { type: String, default: '' },
-})
+});
 
 // 图标上传相关
-const iconFile = ref(null)
-const iconPreviewUrl = ref('')
-const iconInputRef = ref(null)
-const iconDeleted = ref(false)
-const iconLoadedFromServer = ref(false)
+const iconFile = ref(null);
+const iconPreviewUrl = ref('');
+const iconInputRef = ref(null);
+const iconDeleted = ref(false);
+const iconLoadedFromServer = ref(false);
 
-const hasIcon = computed(() => !!iconPreviewUrl.value)
+const hasIcon = computed(() => !!iconPreviewUrl.value);
 
 // 图标处理函数
 function handleIconSelect(e) {
-  const file = e.target.files?.[0]
-  if (!file) return
+  const file = e.target.files?.[0];
+  if (!file) return;
 
   if (!file.type.startsWith('image/')) {
-    return
+    return;
   }
 
-  iconFile.value = file
+  iconFile.value = file;
 
   if (iconPreviewUrl.value) {
-    URL.revokeObjectURL(iconPreviewUrl.value)
+    URL.revokeObjectURL(iconPreviewUrl.value);
   }
-  iconPreviewUrl.value = URL.createObjectURL(file)
-  iconDeleted.value = false
+  iconPreviewUrl.value = URL.createObjectURL(file);
+  iconDeleted.value = false;
 }
 
 function triggerIconSelect() {
-  iconInputRef.value?.click()
+  iconInputRef.value?.click();
 }
 
 async function removeIcon() {
-  iconFile.value = null
+  iconFile.value = null;
   if (iconPreviewUrl.value) {
-    URL.revokeObjectURL(iconPreviewUrl.value)
+    URL.revokeObjectURL(iconPreviewUrl.value);
   }
-  iconPreviewUrl.value = ''
+  iconPreviewUrl.value = '';
   if (iconInputRef.value) {
-    iconInputRef.value.value = ''
+    iconInputRef.value.value = '';
   }
-  iconDeleted.value = true
-  await nextTick()
-  window.lucide?.createIcons?.()
+  iconDeleted.value = true;
+  await nextTick();
+  window.lucide?.createIcons?.();
 }
 
 function resetIconPreview() {
-  iconFile.value = null
+  iconFile.value = null;
   if (iconPreviewUrl.value) {
-    URL.revokeObjectURL(iconPreviewUrl.value)
+    URL.revokeObjectURL(iconPreviewUrl.value);
   }
-  iconPreviewUrl.value = ''
+  iconPreviewUrl.value = '';
   if (iconInputRef.value) {
-    iconInputRef.value.value = ''
+    iconInputRef.value.value = '';
   }
-  iconDeleted.value = false
-  iconLoadedFromServer.value = false
+  iconDeleted.value = false;
+  iconLoadedFromServer.value = false;
 }
 
 async function loadExistingIcon() {
-  resetIconPreview()
+  resetIconPreview();
 
-  if (!props.file) return
+  if (!props.file) return;
 
-  const iconPath = props.file.replace(/llm_config\.json$/, 'icon.png')
+  const iconPath = props.file.replace(/llm_config\.json$/, 'icon.png');
 
   try {
-    const { blob, mime } = await DataCatalog.getDataAssetBlob(iconPath)
+    const { blob, mime } = await DataCatalog.getDataAssetBlob(iconPath);
     if (blob.size > 0 && mime.startsWith('image/')) {
-      iconPreviewUrl.value = URL.createObjectURL(blob)
-      iconLoadedFromServer.value = true
+      iconPreviewUrl.value = URL.createObjectURL(blob);
+      iconLoadedFromServer.value = true;
     }
   } catch (err) {
-    console.debug('[LLMConfigDetailView] No existing icon or failed to load:', err)
-    iconLoadedFromServer.value = false
+    console.debug('[LLMConfigDetailView] No existing icon or failed to load:', err);
+    iconLoadedFromServer.value = false;
   }
 }
 
 async function fileToBase64(file) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = () => {
-      const result = reader.result
-      const base64 = result.includes(',') ? result.split(',')[1] : result
-      resolve(base64)
-    }
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
+      const result = reader.result;
+      const base64 = result.includes(',') ? result.split(',')[1] : result;
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 /* 默认配置（非演示数据） */
@@ -112,12 +112,12 @@ const DEFAULT_GEMINI_CONFIG = {
   responseMimeType: '',
   safetySettings: {},
   customParams: {},
-}
+};
 const DEFAULT_ANTHROPIC_CONFIG = {
   stop_sequences: [],
   enable_thinking: false,
   thinking_budget: 16000,
-}
+};
 const DEFAULT_LLM_CONFIG = {
   name: '',
   description: '',
@@ -137,16 +137,16 @@ const DEFAULT_LLM_CONFIG = {
   custom_params: {},
   gemini_config: DEFAULT_GEMINI_CONFIG,
   anthropic_config: DEFAULT_ANTHROPIC_CONFIG,
-}
+};
 
 /** 深拷贝 */
 function deepClone(x) {
-  return JSON.parse(JSON.stringify(x))
+  return JSON.parse(JSON.stringify(x));
 }
 
 /** 规范化后端/外部传入的配置结构 */
 function normalizeLLMConfigData(src) {
-  if (!src || typeof src !== 'object') return null
+  if (!src || typeof src !== 'object') return null;
   return {
     name: src.name || 'AI配置',
     description: src.description || '',
@@ -166,29 +166,29 @@ function normalizeLLMConfigData(src) {
     custom_params: src.custom_params || {},
     gemini_config: src.gemini_config || DEFAULT_GEMINI_CONFIG,
     anthropic_config: src.anthropic_config || DEFAULT_ANTHROPIC_CONFIG,
-  }
+  };
 }
 
 // 当前编辑的数据（内存中）
 const currentData = ref(
   deepClone(normalizeLLMConfigData(props.llmConfigData) || DEFAULT_LLM_CONFIG),
-)
+);
 
 // 外部数据变更时同步
 watch(
   () => props.llmConfigData,
   async (v) => {
-    currentData.value = deepClone(normalizeLLMConfigData(v) || DEFAULT_LLM_CONFIG)
-    initApiToggles(v)
-    initJsonStrings()
-    await loadExistingIcon()
-    await nextTick()
-    window.lucide?.createIcons?.()
+    currentData.value = deepClone(normalizeLLMConfigData(v) || DEFAULT_LLM_CONFIG);
+    initApiToggles(v);
+    initJsonStrings();
+    await loadExistingIcon();
+    await nextTick();
+    window.lucide?.createIcons?.();
   },
-)
+);
 
 // 可用的 providers
-const providers = ['openai', 'anthropic', 'gemini', 'openai_compatible', 'custom']
+const providers = ['openai', 'anthropic', 'gemini', 'openai_compatible', 'custom'];
 
 // 请求参数启用开关
 const apiToggleKeys = [
@@ -198,115 +198,115 @@ const apiToggleKeys = [
   'presence_penalty',
   'frequency_penalty',
   'stream',
-]
-const apiToggles = reactive(Object.fromEntries(apiToggleKeys.map((k) => [k, true])))
+];
+const apiToggles = reactive(Object.fromEntries(apiToggleKeys.map((k) => [k, true])));
 
 // 根据配置数据初始化 apiToggles（字段存在且非 null 视为启用）
 function initApiToggles(src) {
-  if (!src) return
+  if (!src) return;
   for (const key of apiToggleKeys) {
-    apiToggles[key] = src[key] !== undefined && src[key] !== null
+    apiToggles[key] = src[key] !== undefined && src[key] !== null;
   }
 }
 
 // 初始化 apiToggles
-initApiToggles(props.llmConfigData)
+initApiToggles(props.llmConfigData);
 
-const showGemini = computed(() => currentData.value.provider === 'gemini')
-const showAnthropic = computed(() => currentData.value.provider === 'anthropic')
+const showGemini = computed(() => currentData.value.provider === 'gemini');
+const showAnthropic = computed(() => currentData.value.provider === 'anthropic');
 
 // 自定义参数 JSON 字符串（双向绑定）
-const customParamsStr = ref('')
-const customParamsError = ref('')
+const customParamsStr = ref('');
+const customParamsError = ref('');
 
 // Gemini 配置 JSON 字符串
-const geminiStopSequencesStr = ref('')
-const geminiSafetySettingsStr = ref('')
-const geminiSafetyError = ref('')
-const geminiCustomParamsStr = ref('')
-const geminiCustomError = ref('')
+const geminiStopSequencesStr = ref('');
+const geminiSafetySettingsStr = ref('');
+const geminiSafetyError = ref('');
+const geminiCustomParamsStr = ref('');
+const geminiCustomError = ref('');
 
 // Anthropic 配置字符串
-const anthropicStopSequencesStr = ref('')
+const anthropicStopSequencesStr = ref('');
 
 // 初始化 JSON 字符串
 function initJsonStrings() {
   try {
-    customParamsStr.value = JSON.stringify(currentData.value.custom_params || {}, null, 2)
+    customParamsStr.value = JSON.stringify(currentData.value.custom_params || {}, null, 2);
   } catch {
-    customParamsStr.value = '{}'
+    customParamsStr.value = '{}';
   }
 
   // Gemini
-  geminiStopSequencesStr.value = (currentData.value.gemini_config.stopSequences || []).join(', ')
+  geminiStopSequencesStr.value = (currentData.value.gemini_config.stopSequences || []).join(', ');
   try {
     geminiSafetySettingsStr.value = JSON.stringify(
       currentData.value.gemini_config.safetySettings || {},
       null,
       2,
-    )
+    );
   } catch {
-    geminiSafetySettingsStr.value = '{}'
+    geminiSafetySettingsStr.value = '{}';
   }
   try {
     geminiCustomParamsStr.value = JSON.stringify(
       currentData.value.gemini_config.customParams || {},
       null,
       2,
-    )
+    );
   } catch {
-    geminiCustomParamsStr.value = '{}'
+    geminiCustomParamsStr.value = '{}';
   }
 
   // Anthropic
   anthropicStopSequencesStr.value = (currentData.value.anthropic_config.stop_sequences || []).join(
     ', ',
-  )
+  );
 }
 
 // 解析 JSON 字符串并更新数据
 function parseJsonStrings() {
   // custom_params
-  customParamsError.value = ''
+  customParamsError.value = '';
   try {
-    currentData.value.custom_params = JSON.parse(customParamsStr.value || '{}')
+    currentData.value.custom_params = JSON.parse(customParamsStr.value || '{}');
   } catch (e) {
-    customParamsError.value = t('detail.llmConfig.errors.jsonFormatError')
+    customParamsError.value = t('detail.llmConfig.errors.jsonFormatError');
   }
 
   // Gemini stopSequences
   currentData.value.gemini_config.stopSequences = geminiStopSequencesStr.value
     .split(',')
     .map((s) => s.trim())
-    .filter(Boolean)
+    .filter(Boolean);
 
   // Gemini safetySettings
-  geminiSafetyError.value = ''
+  geminiSafetyError.value = '';
   try {
     currentData.value.gemini_config.safetySettings = JSON.parse(
       geminiSafetySettingsStr.value || '{}',
-    )
+    );
   } catch (e) {
-    geminiSafetyError.value = t('detail.llmConfig.errors.jsonFormatError')
+    geminiSafetyError.value = t('detail.llmConfig.errors.jsonFormatError');
   }
 
   // Gemini customParams
-  geminiCustomError.value = ''
+  geminiCustomError.value = '';
   try {
-    currentData.value.gemini_config.customParams = JSON.parse(geminiCustomParamsStr.value || '{}')
+    currentData.value.gemini_config.customParams = JSON.parse(geminiCustomParamsStr.value || '{}');
   } catch (e) {
-    geminiCustomError.value = t('detail.llmConfig.errors.jsonFormatError')
+    geminiCustomError.value = t('detail.llmConfig.errors.jsonFormatError');
   }
 
   // Anthropic stop_sequences
   currentData.value.anthropic_config.stop_sequences = anthropicStopSequencesStr.value
     .split(',')
     .map((s) => s.trim())
-    .filter(Boolean)
+    .filter(Boolean);
 }
 
 // 模型列表下拉
-const showModelDropdown = ref(false)
+const showModelDropdown = ref(false);
 const modelListPlaceholder = ref([
   'gpt-4o-mini',
   'gpt-4o',
@@ -316,70 +316,70 @@ const modelListPlaceholder = ref([
   'claude-3-5-haiku-20241022',
   'gemini-2.0-flash-exp',
   'gemini-1.5-pro',
-])
+]);
 
 function selectModel(modelId) {
-  currentData.value.model = modelId
-  showModelDropdown.value = false
+  currentData.value.model = modelId;
+  showModelDropdown.value = false;
 }
 
 function toggleModelDropdown() {
-  showModelDropdown.value = !showModelDropdown.value
+  showModelDropdown.value = !showModelDropdown.value;
 }
 
 // 保存状态提示
-const saving = ref(false)
-const savedOk = ref(false)
-let __saveTimer = null
+const saving = ref(false);
+const savedOk = ref(false);
+let __saveTimer = null;
 
 // 初始化
 onMounted(async () => {
-  initJsonStrings()
-  window.lucide?.createIcons?.()
-  await loadExistingIcon()
-})
+  initJsonStrings();
+  window.lucide?.createIcons?.();
+  await loadExistingIcon();
+});
 
 watch(
   () => currentData.value,
   async () => {
-    await nextTick()
-    window.lucide?.createIcons?.()
+    await nextTick();
+    window.lucide?.createIcons?.();
   },
   { deep: true, flush: 'post' },
-)
+);
 
-const __eventOffs = [] // 事件监听清理器
+const __eventOffs = []; // 事件监听清理器
 
 onBeforeUnmount(() => {
   try {
     __eventOffs?.forEach((fn) => {
       try {
-        fn?.()
+        fn?.();
       } catch (_) {}
-    })
-    __eventOffs.length = 0
+    });
+    __eventOffs.length = 0;
   } catch (_) {}
-})
+});
 
 /** 保存：将当前编辑内容写回后端文件（事件驱动） */
 async function save() {
-  const file = props.file
+  const file = props.file;
   if (!file) {
     try {
-      alert(t('error.missingFilePath'))
+      alert(t('error.missingFilePath'));
     } catch (_) {}
-    return
+    return;
   }
 
   // 解析 JSON 字符串
-  parseJsonStrings()
+  parseJsonStrings();
 
   // 检查是否有JSON错误
   if (customParamsError.value || geminiSafetyError.value || geminiCustomError.value) {
     try {
-      alert(t('detail.llmConfig.errors.fixJsonErrors'))
+      alert(t('detail.llmConfig.errors.fixJsonErrors'));
     } catch (_) {}
-    return
+    return;
   }
 
   // 构建保存内容（根据 apiToggles 条件性包含可选参数）
@@ -394,102 +394,102 @@ async function save() {
     connect_timeout: currentData.value.connect_timeout,
     enable_logging: currentData.value.enable_logging,
     custom_params: currentData.value.custom_params,
-  }
+  };
   // 可选参数：只有启用时才包含在请求中
-  if (apiToggles.max_tokens) payloadContent.max_tokens = currentData.value.max_tokens
-  if (apiToggles.temperature) payloadContent.temperature = currentData.value.temperature
-  if (apiToggles.top_p) payloadContent.top_p = currentData.value.top_p
+  if (apiToggles.max_tokens) payloadContent.max_tokens = currentData.value.max_tokens;
+  if (apiToggles.temperature) payloadContent.temperature = currentData.value.temperature;
+  if (apiToggles.top_p) payloadContent.top_p = currentData.value.top_p;
   if (apiToggles.presence_penalty)
-    payloadContent.presence_penalty = currentData.value.presence_penalty
+    payloadContent.presence_penalty = currentData.value.presence_penalty;
   if (apiToggles.frequency_penalty)
-    payloadContent.frequency_penalty = currentData.value.frequency_penalty
-  if (apiToggles.stream) payloadContent.stream = currentData.value.stream
+    payloadContent.frequency_penalty = currentData.value.frequency_penalty;
+  if (apiToggles.stream) payloadContent.stream = currentData.value.stream;
 
   // 根据 provider 条件性地添加特定配置
   if (currentData.value.provider === 'gemini') {
-    payloadContent.gemini_config = currentData.value.gemini_config
+    payloadContent.gemini_config = currentData.value.gemini_config;
   }
   if (currentData.value.provider === 'anthropic') {
-    payloadContent.anthropic_config = currentData.value.anthropic_config
+    payloadContent.anthropic_config = currentData.value.anthropic_config;
   }
 
   // 处理图标
-  let iconBase64 = undefined
+  let iconBase64 = undefined;
   if (iconFile.value) {
     try {
-      iconBase64 = await fileToBase64(iconFile.value)
+      iconBase64 = await fileToBase64(iconFile.value);
     } catch (err) {
-      console.error('[LLMConfigDetailView] Icon conversion failed:', err)
+      console.error('[LLMConfigDetailView] Icon conversion failed:', err);
     }
   } else if (iconDeleted.value && iconLoadedFromServer.value) {
-    iconBase64 = ''
+    iconBase64 = '';
   }
 
   // 可视提示
-  saving.value = true
-  savedOk.value = false
+  saving.value = true;
+  savedOk.value = false;
   if (__saveTimer) {
     try {
-      clearTimeout(__saveTimer)
+      clearTimeout(__saveTimer);
     } catch {}
-    __saveTimer = null
+    __saveTimer = null;
   }
 
-  const tag = `llmconfig_save_${Date.now()}`
+  const tag = `llmconfig_save_${Date.now()}`;
 
   // 监听保存结果（一次性）
   const offOk = Host.events.on(
     Catalog.EVT_CATALOG_LLMCONFIG_UPDATE_OK,
     ({ file: resFile, tag: resTag }) => {
-      if (resFile !== file || resTag !== tag) return
-      console.log('[LLMConfigDetailView] 保存成功（事件）')
-      savedOk.value = true
-      saving.value = false
+      if (resFile !== file || resTag !== tag) return;
+      console.log('[LLMConfigDetailView] 保存成功（事件）');
+      savedOk.value = true;
+      saving.value = false;
       if (savedOk.value) {
         __saveTimer = setTimeout(() => {
-          savedOk.value = false
-        }, 1800)
+          savedOk.value = false;
+        }, 1800);
       }
 
       // 保存成功后，刷新侧边栏列表
       try {
-        console.log('[LLMConfigDetailView] 刷新LLM配置列表')
+        console.log('[LLMConfigDetailView] 刷新LLM配置列表');
         Host.events.emit(Catalog.EVT_CATALOG_LLMCONFIGS_REQ, {
           requestId: Date.now(),
-        })
+        });
       } catch (err) {
-        console.warn('[LLMConfigDetailView] 刷新LLM配置列表失败:', err)
+        console.warn('[LLMConfigDetailView] 刷新LLM配置列表失败:', err);
       }
 
       try {
-        offOk?.()
+        offOk?.();
       } catch (_) {}
       try {
-        offFail?.()
+        offFail?.();
       } catch (_) {}
     },
-  )
+  );
 
   const offFail = Host.events.on(
     Catalog.EVT_CATALOG_LLMCONFIG_UPDATE_FAIL,
     ({ file: resFile, message, tag: resTag }) => {
-      if (resFile && resFile !== file) return
-      if (resTag && resTag !== tag) return
-      console.error('[LLMConfigDetailView] 保存失败（事件）:', message)
+      if (resFile && resFile !== file) return;
+      if (resTag && resTag !== tag) return;
+      console.error('[LLMConfigDetailView] 保存失败（事件）:', message);
       try {
-        alert(t('detail.llmConfig.saveFailed') + '：' + message)
+        alert(t('detail.llmConfig.saveFailed') + '：' + message);
       } catch (_) {}
-      saving.value = false
+      saving.value = false;
       try {
-        offOk?.()
+        offOk?.();
       } catch (_) {}
       try {
-        offFail?.()
+        offFail?.();
       } catch (_) {}
     },
-  )
+  );
 
-  __eventOffs.push(offOk, offFail)
+  __eventOffs.push(offOk, offFail);
 
   // 发送保存请求事件
   Host.events.emit(Catalog.EVT_CATALOG_LLMCONFIG_UPDATE_REQ, {
@@ -499,7 +499,7 @@ async function save() {
     description: payloadContent.description,
     iconBase64,
     tag,
-  })
+  });
 }
 </script>
 

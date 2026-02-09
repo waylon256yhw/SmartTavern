@@ -1,73 +1,73 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, nextTick } from 'vue'
-import { usePersonaStore } from '@/features/persona/store'
-import { useFileManagerStore } from '@/features/files/fileManager'
+import { ref, watch, onMounted, nextTick } from 'vue';
+import { usePersonaStore } from '@/features/persona/store';
+import { useFileManagerStore } from '@/features/files/fileManager';
 
-const store = usePersonaStore()
-const fm = useFileManagerStore()
+const store = usePersonaStore();
+const fm = useFileManagerStore();
 
-const fileTitle = ref<string>('Persona.json')
-const renameError = ref<string | null>(null)
+const fileTitle = ref<string>('Persona.json');
+const renameError = ref<string | null>(null);
 watch(
   () => store.fileName,
   (v) => {
-    fileTitle.value = v || 'Persona.json'
+    fileTitle.value = v || 'Persona.json';
   },
   { immediate: true },
-)
+);
 function renamePersonaFile() {
-  renameError.value = null
-  const oldName = store.fileName || 'Persona.json'
-  const nn = (fileTitle.value || '').trim()
+  renameError.value = null;
+  const oldName = store.fileName || 'Persona.json';
+  const nn = (fileTitle.value || '').trim();
   if (!nn) {
-    renameError.value = '文件名不能为空'
-    return
+    renameError.value = '文件名不能为空';
+    return;
   }
-  if (nn === oldName) return
-  ;(store as any).renameFile?.(nn)
+  if (nn === oldName) return;
+  (store as any).renameFile?.(nn);
   try {
-    fm.renameFile('user', oldName, nn)
+    fm.renameFile('user', oldName, nn);
   } catch {}
 }
 
 // 本地草稿
-const nameDraft = ref<string>('')
-const descDraft = ref<string>('')
+const nameDraft = ref<string>('');
+const descDraft = ref<string>('');
 
 // 加载本地状态
 onMounted(() => {
-  store.load()
-  nameDraft.value = store.name
-  descDraft.value = store.description
-  ;(window as any).lucide?.createIcons?.()
-})
+  store.load();
+  nameDraft.value = store.name;
+  descDraft.value = store.description;
+  (window as any).lucide?.createIcons?.();
+});
 
 watch(
   () => store.name,
   (v) => {
-    nameDraft.value = v ?? ''
+    nameDraft.value = v ?? '';
   },
-)
+);
 watch(
   () => store.description,
   (v) => {
-    descDraft.value = v ?? ''
+    descDraft.value = v ?? '';
   },
-)
+);
 
 // 保存（失焦即时保存）
 function saveName() {
-  store.updateName(nameDraft.value)
+  store.updateName(nameDraft.value);
 }
 function saveDesc() {
-  store.updateDescription(descDraft.value)
+  store.updateDescription(descDraft.value);
 }
 
 // 重置为当前存储内容
 function resetAll() {
-  nameDraft.value = store.name
-  descDraft.value = store.description
-  nextTick(() => (window as any).lucide?.createIcons?.())
+  nameDraft.value = store.name;
+  descDraft.value = store.description;
+  nextTick(() => (window as any).lucide?.createIcons?.());
 }
 </script>
 

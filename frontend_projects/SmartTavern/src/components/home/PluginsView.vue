@@ -1,82 +1,82 @@
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
-import DataCatalog from '@/services/dataCatalog'
-import Host from '@/workflow/core/host'
-import { PluginLoader } from '@/workflow/loader.js'
-import ContentViewModal from '@/components/common/ContentViewModal.vue'
-import PluginDetailView from '@/components/content/PluginDetailView.vue'
-import DeleteConfirmModal from '@/components/common/DeleteConfirmModal.vue'
-import { useI18n } from '@/locales'
+import { ref, onMounted, nextTick } from 'vue';
+import DataCatalog from '@/services/dataCatalog';
+import Host from '@/workflow/core/host';
+import { PluginLoader } from '@/workflow/loader.js';
+import ContentViewModal from '@/components/common/ContentViewModal.vue';
+import PluginDetailView from '@/components/content/PluginDetailView.vue';
+import DeleteConfirmModal from '@/components/common/DeleteConfirmModal.vue';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 // 插件清单
-const plugins = ref([])
-const loading = ref(true)
+const plugins = ref([]);
+const loading = ref(true);
 
 // 正在处理的条目
-const pending = ref({})
+const pending = ref({});
 
 // 删除确认弹窗状态
-const showDeleteConfirmModal = ref(false)
-const deleteTarget = ref(null)
-const deleting = ref(false)
+const showDeleteConfirmModal = ref(false);
+const deleteTarget = ref(null);
+const deleting = ref(false);
 
 // 详情面板状态
-const showDetailModal = ref(false)
-const detailPlugin = ref(null)
-const detailPluginDir = ref('')
+const showDetailModal = ref(false);
+const detailPlugin = ref(null);
+const detailPluginDir = ref('');
 
 // 判断图标是否为 lucide 图标
-const isLucide = (v) => typeof v === 'string' && /^[a-z\-]+$/.test(v)
+const isLucide = (v) => typeof v === 'string' && /^[a-z\-]+$/.test(v);
 
 /** 规范化插件 ID */
 function mkId(file) {
-  const safe = String(file || '').replace(/[^a-zA-Z0-9:_\-./]/g, '_')
-  return `plg:${safe}`
+  const safe = String(file || '').replace(/[^a-zA-Z0-9:_\-./]/g, '_');
+  return `plg:${safe}`;
 }
 
 // 从目录路径提取文件夹名称
 function getFolderName(dirPath) {
-  if (!dirPath) return ''
-  const parts = dirPath.split('/')
-  return parts[parts.length - 1] || ''
+  if (!dirPath) return '';
+  const parts = dirPath.split('/');
+  return parts[parts.length - 1] || '';
 }
 
 // 加载插件列表
 async function loadPlugins() {
-  loading.value = true
+  loading.value = true;
   try {
-    const sw = await DataCatalog.getPluginsSwitch()
+    const sw = await DataCatalog.getPluginsSwitch();
     if (!Array.isArray(sw?.enabled)) {
       Host.pushToast?.({
         type: 'error',
         message: '缺失插件开关文件（plugins_switch.json）',
         timeout: 2800,
-      })
-      plugins.value = []
-      return
+      });
+      plugins.value = [];
+      return;
     }
-    const enabledArr = sw.enabled.map((x) => String(x))
-    const enabledSet = new Set(enabledArr)
+    const enabledArr = sw.enabled.map((x) => String(x));
+    const enabledSet = new Set(enabledArr);
 
-    const res = await DataCatalog.listPlugins()
-    const arr = Array.isArray(res?.items) ? res.items : []
-    const errs = Array.isArray(res?.errors) ? res.errors : []
+    const res = await DataCatalog.listPlugins();
+    const arr = Array.isArray(res?.items) ? res.items : [];
+    const errs = Array.isArray(res?.errors) ? res.errors : [];
     for (const er of errs) {
       Host.pushToast?.({
         type: 'warning',
         message: `插件目录缺失：${er?.file || ''}`,
         timeout: 2600,
-      })
+      });
     }
 
     const items = await Promise.all(
       arr.map(async (it) => {
-        const dir = String(it.dir || '')
-        const name = it.name || dir.split('/').pop() || '未命名'
-        const desc = it.description || ''
-        const plugName = dir.split('/').pop() || dir
+        const dir = String(it.dir || '');
+        const name = it.name || dir.split('/').pop() || '未命名';
+        const desc = it.description || '';
+        const plugName = dir.split('/').pop() || dir;
         const obj = {
           key: dir,
           icon: 'puzzle',
@@ -85,42 +85,42 @@ async function loadPlugins() {
           dir,
           enabled: enabledSet === null ? true : enabledSet.has(plugName),
           avatarUrl: null,
-        }
+        };
         // 加载图标
-        const iconPath = dir ? `${dir}/icon.png` : ''
+        const iconPath = dir ? `${dir}/icon.png` : '';
         if (iconPath) {
           try {
-            const { blob } = await DataCatalog.getPluginsAssetBlob(iconPath)
-            obj.avatarUrl = URL.createObjectURL(blob)
+            const { blob } = await DataCatalog.getPluginsAssetBlob(iconPath);
+            obj.avatarUrl = URL.createObjectURL(blob);
           } catch (_) {
             // ignore
           }
         }
-        return obj
+        return obj;
       }),
-    )
-    plugins.value = items
+    );
+    plugins.value = items;
   } catch (e) {
-    console.warn('[PluginsView] loadPlugins failed:', e)
+    console.warn('[PluginsView] loadPlugins failed:', e);
   } finally {
-    loading.value = false
+    loading.value = false;
     nextTick(() => {
       try {
-        window?.lucide?.createIcons?.()
+        window?.lucide?.createIcons?.();
       } catch (_) {}
-    })
+    });
   }
 }
 
 // 启用/禁用插件
 async function onToggle(it) {
-  const dir = String(it?.dir || it?.key || '')
-  if (!dir) return
-  const id = mkId(dir)
-  if (pending.value[id]) return
-  pending.value[id] = true
+  const dir = String(it?.dir || it?.key || '');
+  if (!dir) return;
+  const id = mkId(dir);
+  if (pending.value[id]) return;
+  pending.value[id] = true;
 
-  const name = dir.split('/').pop() || dir
+  const name = dir.split('/').pop() || dir;
   const allNames = (plugins.value || []).map(
     (x) =>
       String(x.dir || x.key || '')
@@ -128,160 +128,160 @@ async function onToggle(it) {
         .pop() ||
       x.name ||
       '',
-  )
+  );
   try {
-    const sw = await DataCatalog.getPluginsSwitch()
+    const sw = await DataCatalog.getPluginsSwitch();
     if (!Array.isArray(sw?.enabled)) {
       Host.pushToast?.({
         type: 'error',
         message: '缺失插件开关文件（plugins_switch.json）',
         timeout: 2800,
-      })
-      return
+      });
+      return;
     }
-    const set = new Set(sw.enabled.map((x) => String(x)))
+    const set = new Set(sw.enabled.map((x) => String(x)));
 
-    let nextEnabled = []
+    let nextEnabled = [];
     if (it.enabled) {
       // 禁用
-      set.delete(name)
-      nextEnabled = Array.from(set)
-      const nextDisabled = allNames.filter((n) => nextEnabled.indexOf(n) === -1)
-      await DataCatalog.updatePluginsSwitch({ enabled: nextEnabled, disabled: nextDisabled })
-      await PluginLoader.unload(id)
-      it.enabled = false
-      Host.pushToast?.({ type: 'info', message: `已禁用插件：${name}`, timeout: 1600 })
+      set.delete(name);
+      nextEnabled = Array.from(set);
+      const nextDisabled = allNames.filter((n) => nextEnabled.indexOf(n) === -1);
+      await DataCatalog.updatePluginsSwitch({ enabled: nextEnabled, disabled: nextDisabled });
+      await PluginLoader.unload(id);
+      it.enabled = false;
+      Host.pushToast?.({ type: 'info', message: `已禁用插件：${name}`, timeout: 1600 });
     } else {
       // 启用
-      set.add(name)
-      nextEnabled = Array.from(set)
-      const nextDisabled = allNames.filter((n) => nextEnabled.indexOf(n) === -1)
-      await DataCatalog.updatePluginsSwitch({ enabled: nextEnabled, disabled: nextDisabled })
-      await PluginLoader.loadPluginByDir(dir, { id, replace: true })
-      it.enabled = true
-      Host.pushToast?.({ type: 'success', message: `已启用插件：${name}`, timeout: 1600 })
+      set.add(name);
+      nextEnabled = Array.from(set);
+      const nextDisabled = allNames.filter((n) => nextEnabled.indexOf(n) === -1);
+      await DataCatalog.updatePluginsSwitch({ enabled: nextEnabled, disabled: nextDisabled });
+      await PluginLoader.loadPluginByDir(dir, { id, replace: true });
+      it.enabled = true;
+      Host.pushToast?.({ type: 'success', message: `已启用插件：${name}`, timeout: 1600 });
     }
   } catch (e) {
-    console.warn('[PluginsView] toggle failed:', e)
-    Host.pushToast?.({ type: 'error', message: `操作失败：${e?.message || e}`, timeout: 2200 })
+    console.warn('[PluginsView] toggle failed:', e);
+    Host.pushToast?.({ type: 'error', message: `操作失败：${e?.message || e}`, timeout: 2200 });
   } finally {
-    delete pending.value[id]
+    delete pending.value[id];
     nextTick(() => {
       try {
-        window?.lucide?.createIcons?.()
+        window?.lucide?.createIcons?.();
       } catch (_) {}
-    })
+    });
   }
 }
 
 // 查看插件详情
 async function onViewPlugin(it) {
-  const dir = String(it?.dir || it?.key || '')
-  if (!dir) return
+  const dir = String(it?.dir || it?.key || '');
+  if (!dir) return;
 
   try {
-    const result = await DataCatalog.getPluginDetail(dir)
+    const result = await DataCatalog.getPluginDetail(dir);
     if (result.error) {
       Host.pushToast?.({
         type: 'error',
         message: `获取插件详情失败：${result.message || result.error}`,
         timeout: 2200,
-      })
-      return
+      });
+      return;
     }
 
-    detailPlugin.value = result.content || {}
-    detailPluginDir.value = dir
-    showDetailModal.value = true
+    detailPlugin.value = result.content || {};
+    detailPluginDir.value = dir;
+    showDetailModal.value = true;
   } catch (err) {
-    console.error('[PluginsView] Get plugin detail error:', err)
+    console.error('[PluginsView] Get plugin detail error:', err);
     Host.pushToast?.({
       type: 'error',
       message: `获取插件详情失败：${err.message || err}`,
       timeout: 2200,
-    })
+    });
   }
 }
 
 function closeDetailModal() {
-  showDetailModal.value = false
-  detailPlugin.value = null
-  detailPluginDir.value = ''
+  showDetailModal.value = false;
+  detailPlugin.value = null;
+  detailPluginDir.value = '';
 }
 
 function handlePluginSaved() {
-  console.log('[PluginsView] Plugin saved, refreshing list')
-  loadPlugins()
+  console.log('[PluginsView] Plugin saved, refreshing list');
+  loadPlugins();
 }
 
 // 删除插件
 function onDeletePlugin(it) {
-  const dir = String(it?.dir || it?.key || '')
-  if (!dir) return
+  const dir = String(it?.dir || it?.key || '');
+  if (!dir) return;
 
   deleteTarget.value = {
     key: dir,
     name: it.name || getFolderName(dir),
     folderPath: dir,
-  }
-  showDeleteConfirmModal.value = true
+  };
+  showDeleteConfirmModal.value = true;
 }
 
 function closeDeleteConfirmModal() {
-  showDeleteConfirmModal.value = false
-  deleteTarget.value = null
+  showDeleteConfirmModal.value = false;
+  deleteTarget.value = null;
 }
 
 async function handleDeleteConfirm() {
-  if (!deleteTarget.value) return
+  if (!deleteTarget.value) return;
 
-  const dir = deleteTarget.value.key
-  const id = mkId(dir)
+  const dir = deleteTarget.value.key;
+  const id = mkId(dir);
 
-  deleting.value = true
+  deleting.value = true;
   try {
     // 先卸载插件
     try {
-      await PluginLoader.unload(id)
+      await PluginLoader.unload(id);
     } catch (_) {}
 
     // 删除插件目录
-    const result = await DataCatalog.deleteDataFolder(deleteTarget.value.folderPath)
+    const result = await DataCatalog.deleteDataFolder(deleteTarget.value.folderPath);
     if (result.success) {
-      await loadPlugins()
+      await loadPlugins();
       Host.pushToast?.({
         type: 'success',
         message: `已删除插件：${deleteTarget.value.name}`,
         timeout: 1800,
-      })
+      });
     } else {
       Host.pushToast?.({
         type: 'error',
         message: result.message || t('error.deleteFailed', { error: result.error || '' }),
         timeout: 2200,
-      })
+      });
     }
   } catch (err) {
-    console.error('[PluginsView] Delete error:', err)
+    console.error('[PluginsView] Delete error:', err);
     Host.pushToast?.({
       type: 'error',
       message: t('error.deleteFailed', { error: err.message || '' }),
       timeout: 2200,
-    })
+    });
   } finally {
-    deleting.value = false
-    closeDeleteConfirmModal()
+    deleting.value = false;
+    closeDeleteConfirmModal();
   }
 }
 
 onMounted(async () => {
-  await loadPlugins()
+  await loadPlugins();
   setTimeout(() => {
     try {
-      window?.lucide?.createIcons?.()
+      window?.lucide?.createIcons?.();
     } catch (_) {}
-  }, 50)
-})
+  }, 50);
+});
 </script>
 
 <template>

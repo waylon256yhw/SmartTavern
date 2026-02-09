@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { useHistoryStore, deriveMessagesFromHistory } from '@/features/history/store'
+import { computed, onMounted, ref, watch } from 'vue';
+import { useHistoryStore, deriveMessagesFromHistory } from '@/features/history/store';
 
 /**
  * 分支对话可视化 + 本地分支编辑（前端缓存 json，不调用后端）
@@ -14,79 +14,79 @@ import { useHistoryStore, deriveMessagesFromHistory } from '@/features/history/s
  * - [python.chat_branches.openai_messages](api/modules/SmartTavern/chat_branches/chat_branches.py:207)
  */
 
-type MsgRole = 'system' | 'user' | 'assistant'
+type MsgRole = 'system' | 'user' | 'assistant';
 
 interface BranchDoc {
-  schema: { name: 'chat-branches'; version: number }
-  meta: { id: string; title?: string | null }
-  root: string
-  nodes: Record<string, { pid: string | null; role: MsgRole; content?: string | null }>
-  children: Record<string, string[]>
-  active_path: string[]
+  schema: { name: 'chat-branches'; version: number };
+  meta: { id: string; title?: string | null };
+  root: string;
+  nodes: Record<string, { pid: string | null; role: MsgRole; content?: string | null }>;
+  children: Record<string, string[]>;
+  active_path: string[];
 }
 interface BranchTable {
-  session_id: string
-  latest: { depth: number; j: number | null; n: number | null; node_id: string | null }
-  levels: { depth: number; node_id: string; j: number | null; n: number | null }[]
+  session_id: string;
+  latest: { depth: number; j: number | null; n: number | null; node_id: string | null };
+  levels: { depth: number; node_id: string; j: number | null; n: number | null }[];
 }
 interface PathView {
-  session_id: string
-  status: string
+  session_id: string;
+  status: string;
   path: {
-    id: string
-    depth: number
-    role: MsgRole
-    content: string | null
-    branch_j: number | null
-    branch_n: number | null
-  }[]
+    id: string;
+    depth: number;
+    role: MsgRole;
+    content: string | null;
+    branch_j: number | null;
+    branch_n: number | null;
+  }[];
 }
 interface OpenAIView {
-  conversation_id: string
-  session_id: string
-  messages: { role: MsgRole; content: string }[]
+  conversation_id: string;
+  session_id: string;
+  messages: { role: MsgRole; content: string }[];
 }
 
 const props = defineProps<{
-  branchDoc?: BranchDoc
-  branchTable?: BranchTable
-  pathView?: PathView
-  messagesView?: OpenAIView
-  title?: string
-}>()
+  branchDoc?: BranchDoc;
+  branchTable?: BranchTable;
+  pathView?: PathView;
+  messagesView?: OpenAIView;
+  title?: string;
+}>();
 
 // 使用 Store 活动文档或 props，回退 demo；并在非 chat-branches 时生成线性树
-const history = useHistoryStore()
-history.load()
+const history = useHistoryStore();
+history.load();
 
-const sourceAny = computed<any>(() => history.activeData)
+const sourceAny = computed<any>(() => history.activeData);
 
 const messages = computed<{ role: MsgRole; content: string }[]>(() =>
   deriveMessagesFromHistory(sourceAny.value),
-)
+);
 
 const doc = computed<BranchDoc>(() => {
-  const v: any = sourceAny.value
+  const v: any = sourceAny.value;
   // 若为标准 chat-branches 结构，直接使用
   if (v && v.schema?.name === 'chat-branches' && v.nodes && v.children && v.root) {
-    return v as BranchDoc
+    return v as BranchDoc;
   }
   // 否则根据 messages 生成一棵线性分支树（root -> 消息1 -> 消息2 ...）
-  const msgs = messages.value
-  const nodes: Record<string, { pid: string | null; role: MsgRole; content?: string | null }> = {}
-  const children: Record<string, string[]> = {}
-  const root = 'n_root'
-  nodes[root] = { pid: null, role: 'system', content: '对话记录' }
-  let prev = root
-  const active_path: string[] = [root]
-  let i = 0
+  const msgs = messages.value;
+  const nodes: Record<string, { pid: string | null; role: MsgRole; content?: string | null }> = {};
+  const children: Record<string, string[]> = {};
+  const root = 'n_root';
+  nodes[root] = { pid: null, role: 'system', content: '对话记录' };
+  let prev = root;
+  const active_path: string[] = [root];
+  let i = 0;
   for (const m of msgs) {
-    const id = `n_${++i}`
-    nodes[id] = { pid: prev, role: m.role, content: m.content }
-    const arr = children[prev] ?? (children[prev] = [])
-    arr.push(id)
-    prev = id
-    active_path.push(id)
+    const id = `n_${++i}`;
+    nodes[id] = { pid: prev, role: m.role, content: m.content };
+    const arr = children[prev] ?? (children[prev] = []);
+    arr.push(id);
+    prev = id;
+    active_path.push(id);
   }
   return {
     schema: { name: 'chat-branches', version: 2 },
@@ -95,252 +95,252 @@ const doc = computed<BranchDoc>(() => {
     nodes,
     children,
     active_path,
-  }
-})
+  };
+});
 
 // 原始 JSON 文本编辑（保持与 Store 同步）
-const jsonText = ref('')
+const jsonText = ref('');
 watch(
   sourceAny,
   (v) => {
     try {
-      jsonText.value = JSON.stringify(v ?? {}, null, 2)
+      jsonText.value = JSON.stringify(v ?? {}, null, 2);
     } catch {
-      jsonText.value = ''
+      jsonText.value = '';
     }
   },
   { immediate: true },
-)
+);
 
 function handleFormat() {
   try {
-    const obj = JSON.parse(jsonText.value)
-    jsonText.value = JSON.stringify(obj, null, 2)
+    const obj = JSON.parse(jsonText.value);
+    jsonText.value = JSON.stringify(obj, null, 2);
   } catch {
-    alert('JSON 解析失败，无法格式化')
+    alert('JSON 解析失败，无法格式化');
   }
 }
 function handleSave() {
   try {
-    const obj = JSON.parse(jsonText.value)
-    history.setDoc(obj)
+    const obj = JSON.parse(jsonText.value);
+    history.setDoc(obj);
   } catch {
-    alert('JSON 解析失败，无法保存')
+    alert('JSON 解析失败，无法保存');
   }
 }
 function handleReset() {
   try {
-    jsonText.value = JSON.stringify(sourceAny.value ?? {}, null, 2)
+    jsonText.value = JSON.stringify(sourceAny.value ?? {}, null, 2);
   } catch {
-    jsonText.value = ''
+    jsonText.value = '';
   }
 }
 
 // 归一化 active_path（确保 root 开头）
 const activePath = computed<string[]>(() => {
-  const ap = (doc.value.active_path ?? []).slice()
-  if (!ap.length) return [doc.value.root]
-  if (ap[0] !== doc.value.root) ap.unshift(doc.value.root)
-  return ap
-})
+  const ap = (doc.value.active_path ?? []).slice();
+  if (!ap.length) return [doc.value.root];
+  if (ap[0] !== doc.value.root) ap.unshift(doc.value.root);
+  return ap;
+});
 
 function listDepthFirst(d: BranchDoc): string[] {
-  const order: string[] = []
+  const order: string[] = [];
   const dfs = (nid: string) => {
-    order.push(nid)
-    const kids = d.children[nid] ?? []
-    for (const k of kids) dfs(k)
-  }
-  dfs(d.root)
-  return order
+    order.push(nid);
+    const kids = d.children[nid] ?? [];
+    for (const k of kids) dfs(k);
+  };
+  dfs(d.root);
+  return order;
 }
 
 function parentMap(d: BranchDoc): Record<string, string | null> {
-  const m: Record<string, string | null> = {}
+  const m: Record<string, string | null> = {};
   for (const [pid, arr] of Object.entries(d.children)) {
-    for (const cid of arr) m[cid] = pid
+    for (const cid of arr) m[cid] = pid;
   }
-  m[d.root] = null
-  return m
+  m[d.root] = null;
+  return m;
 }
 
 function depthOf(d: BranchDoc, nid: string): number {
-  const pm: Record<string, string | null> = parentMap(d)
-  let cur: string | null = nid
-  let depth = 0
+  const pm: Record<string, string | null> = parentMap(d);
+  let cur: string | null = nid;
+  let depth = 0;
   while (cur !== null) {
-    const parentVal: string | null | undefined = pm[cur as string]
-    if (parentVal === null || typeof parentVal === 'undefined') break
-    depth++
-    cur = parentVal
+    const parentVal: string | null | undefined = pm[cur as string];
+    if (parentVal === null || typeof parentVal === 'undefined') break;
+    depth++;
+    cur = parentVal;
   }
-  return depth
+  return depth;
 }
 
 function jnOf(d: BranchDoc, nid: string): { j: number | null; n: number | null } {
-  const pm: Record<string, string | null> = parentMap(d)
-  const pid: string | null | undefined = pm[nid]
-  if (pid === null || typeof pid === 'undefined') return { j: null, n: null }
-  const siblings: string[] = d.children[pid] ?? []
-  const idx = siblings.indexOf(nid)
-  const j: number | null = idx >= 0 ? idx + 1 : null
-  const n: number | null = siblings.length ? siblings.length : null
-  return { j, n }
+  const pm: Record<string, string | null> = parentMap(d);
+  const pid: string | null | undefined = pm[nid];
+  if (pid === null || typeof pid === 'undefined') return { j: null, n: null };
+  const siblings: string[] = d.children[pid] ?? [];
+  const idx = siblings.indexOf(nid);
+  const j: number | null = idx >= 0 ? idx + 1 : null;
+  const n: number | null = siblings.length ? siblings.length : null;
+  return { j, n };
 }
 
 function branchLevelsFromDoc(
   d: BranchDoc,
 ): { depth: number; node_id: string; j: number | null; n: number | null }[] {
-  const ap: string[] = activePath.value
-  const levels: { depth: number; node_id: string; j: number | null; n: number | null }[] = []
+  const ap: string[] = activePath.value;
+  const levels: { depth: number; node_id: string; j: number | null; n: number | null }[] = [];
   for (let depth = 2; depth <= ap.length; depth++) {
-    const parentId: string = ap[depth - 2] as string
-    const childId: string | undefined = ap[depth - 1]
-    if (typeof childId === 'undefined') continue
-    const siblings: string[] = d.children[parentId] ?? []
-    const idx = siblings.indexOf(childId)
-    const j: number | null = idx >= 0 ? idx + 1 : null
-    const n: number | null = siblings.length ? siblings.length : null
-    levels.push({ depth, node_id: childId, j, n })
+    const parentId: string = ap[depth - 2] as string;
+    const childId: string | undefined = ap[depth - 1];
+    if (typeof childId === 'undefined') continue;
+    const siblings: string[] = d.children[parentId] ?? [];
+    const idx = siblings.indexOf(childId);
+    const j: number | null = idx >= 0 ? idx + 1 : null;
+    const n: number | null = siblings.length ? siblings.length : null;
+    levels.push({ depth, node_id: childId, j, n });
   }
-  return levels
+  return levels;
 }
 
 // messages 已基于 deriveMessagesFromHistory(sourceAny) 计算（见顶部 messages 计算属性）
 
-const onlyActive = ref(false)
-const order = computed(() => (onlyActive.value ? activePath.value : listDepthFirst(doc.value)))
-const levels = computed(() => props.branchTable?.levels ?? branchLevelsFromDoc(doc.value))
+const onlyActive = ref(false);
+const order = computed(() => (onlyActive.value ? activePath.value : listDepthFirst(doc.value)));
+const levels = computed(() => props.branchTable?.levels ?? branchLevelsFromDoc(doc.value));
 
 const latest = computed(() => {
-  const ap: string[] = activePath.value
-  const depth = ap.length
-  const node_id = ap.length ? ap[ap.length - 1] : null
+  const ap: string[] = activePath.value;
+  const depth = ap.length;
+  const node_id = ap.length ? ap[ap.length - 1] : null;
   if (depth < 2 || !node_id)
-    return { depth, j: null as number | null, n: null as number | null, node_id }
-  const jn = jnOf(doc.value, node_id)
-  return { depth, j: jn.j, n: jn.n, node_id }
-})
+    return { depth, j: null as number | null, n: null as number | null, node_id };
+  const jn = jnOf(doc.value, node_id);
+  return { depth, j: jn.j, n: jn.n, node_id };
+});
 
-const metaTitle = computed(() => props.title ?? doc.value.meta?.title ?? '分支会话')
+const metaTitle = computed(() => props.title ?? doc.value.meta?.title ?? '分支会话');
 
 // UI helpers（需暴露给模板）
 function isInActivePath(nid: string): boolean {
-  return activePath.value.includes(nid)
+  return activePath.value.includes(nid);
 }
 
 // 本地分支编辑（前端缓存修改）
-const appendRole = ref<'user' | 'assistant' | 'system'>('user')
-const appendText = ref('')
-const trimDepth = ref<number>(2)
+const appendRole = ref<'user' | 'assistant' | 'system'>('user');
+const appendText = ref('');
+const trimDepth = ref<number>(2);
 
 function onAppend() {
-  if (!appendText.value.trim()) return
-  history.append(appendRole.value, appendText.value)
-  appendText.value = ''
+  if (!appendText.value.trim()) return;
+  history.append(appendRole.value, appendText.value);
+  appendText.value = '';
 }
 
 function onTrim() {
-  if (!trimDepth.value || trimDepth.value < 1) return
-  history.truncateAfter(trimDepth.value)
+  if (!trimDepth.value || trimDepth.value < 1) return;
+  history.truncateAfter(trimDepth.value);
 }
 
 function onSwitch(dir: 'left' | 'right') {
-  const depth = latest.value?.depth ?? 2
-  if (!depth || depth < 2) return
-  history.switchBranch(depth, dir)
+  const depth = latest.value?.depth ?? 2;
+  if (!depth || depth < 2) return;
+  history.switchBranch(depth, dir);
 }
 
 // 节点上下文菜单与内联追加
-const menuFor = ref<string | null>(null)
-const inlineFor = ref<string | null>(null)
-const inlineRole = ref<'user' | 'assistant' | 'system'>('user')
-const inlineText = ref('')
+const menuFor = ref<string | null>(null);
+const inlineFor = ref<string | null>(null);
+const inlineRole = ref<'user' | 'assistant' | 'system'>('user');
+const inlineText = ref('');
 
 function pruneToHere(nid: string) {
-  const idx = activePath.value.indexOf(nid)
-  if (idx === -1) return
-  history.truncateAfter(idx + 1)
-  menuFor.value = null
+  const idx = activePath.value.indexOf(nid);
+  if (idx === -1) return;
+  history.truncateAfter(idx + 1);
+  menuFor.value = null;
 }
 
 function switchAtHere(nid: string, dir: 'left' | 'right') {
-  const idx = activePath.value.indexOf(nid)
-  if (idx === -1) return
-  history.switchBranch(idx + 1, dir)
-  menuFor.value = null
+  const idx = activePath.value.indexOf(nid);
+  if (idx === -1) return;
+  history.switchBranch(idx + 1, dir);
+  menuFor.value = null;
 }
 
 function submitInline() {
-  if (!inlineFor.value || !inlineText.value.trim()) return
-  history.appendAt(inlineFor.value, inlineRole.value, inlineText.value)
-  inlineText.value = ''
-  inlineFor.value = null
+  if (!inlineFor.value || !inlineText.value.trim()) return;
+  history.appendAt(inlineFor.value, inlineRole.value, inlineText.value);
+  inlineText.value = '';
+  inlineFor.value = null;
 }
 
 // 导出 chat-branches（按当前 activeFile.data）
 function handleExportBranches() {
   try {
-    const file = history.activeFile
+    const file = history.activeFile;
     if (!file) {
-      alert('无可导出的活动文件')
-      return
+      alert('无可导出的活动文件');
+      return;
     }
-    const json = JSON.stringify(file.data ?? {}, null, 2)
-    const blob = new Blob([json], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    const base = file.name.endsWith('.json') ? file.name.slice(0, -5) : file.name
-    a.download = `${base}.chat-branches.json`
-    a.href = url
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    URL.revokeObjectURL(url)
+    const json = JSON.stringify(file.data ?? {}, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const base = file.name.endsWith('.json') ? file.name.slice(0, -5) : file.name;
+    a.download = `${base}.chat-branches.json`;
+    a.href = url;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   } catch (e) {
-    alert('导出失败')
+    alert('导出失败');
   }
 }
 
 onMounted(() => {
-  ;(window as any).lucide?.createIcons?.()
-})
+  (window as any).lucide?.createIcons?.();
+});
 
-import { useFileManagerStore } from '@/features/files/fileManager'
-const fm = useFileManagerStore()
-const hasDoc = computed(() => !!history.activeData)
+import { useFileManagerStore } from '@/features/files/fileManager';
+const fm = useFileManagerStore();
+const hasDoc = computed(() => !!history.activeData);
 
-const fileTitle = ref<string>('')
+const fileTitle = ref<string>('');
 watch(
   () => history.activeName,
   (v) => {
-    fileTitle.value = v ?? ''
+    fileTitle.value = v ?? '';
   },
   { immediate: true },
-)
+);
 function renameHistoryFile() {
-  const oldName = history.activeName || ''
-  const nn = (fileTitle.value || '').trim()
-  if (!nn || !oldName || nn === oldName) return
-  const ok = (history as any).renameActive?.(nn)
+  const oldName = history.activeName || '';
+  const nn = (fileTitle.value || '').trim();
+  if (!nn || !oldName || nn === oldName) return;
+  const ok = (history as any).renameActive?.(nn);
   if (ok) {
     try {
-      fm.renameFile('history', oldName, nn)
+      fm.renameFile('history', oldName, nn);
     } catch {}
   }
 }
 
 // TS 插件模板可见性兼容
-void handleFormat
-void handleSave
-void handleReset
-void onAppend
-void onTrim
-void onSwitch
-void pruneToHere
-void switchAtHere
-void submitInline
-void handleExportBranches
+void handleFormat;
+void handleSave;
+void handleReset;
+void onAppend;
+void onTrim;
+void onSwitch;
+void pruneToHere;
+void switchAtHere;
+void submitInline;
+void handleExportBranches;
 </script>
 
 <template>

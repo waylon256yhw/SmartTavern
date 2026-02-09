@@ -1,234 +1,234 @@
 <script setup>
-import { ref, computed, watch, onMounted, nextTick, onBeforeUnmount } from 'vue'
-import { useI18n } from '@/locales'
-import Host from '@/workflow/core/host'
-import DataCatalog from '@/services/dataCatalog'
+import { ref, computed, watch, onMounted, nextTick, onBeforeUnmount } from 'vue';
+import { useI18n } from '@/locales';
+import Host from '@/workflow/core/host';
+import DataCatalog from '@/services/dataCatalog';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   pluginData: { type: Object, default: null },
   dir: { type: String, default: '' },
-})
+});
 
-const emit = defineEmits(['saved'])
+const emit = defineEmits(['saved']);
 
 // 图标上传相关
-const iconFile = ref(null)
-const iconPreviewUrl = ref('')
-const iconInputRef = ref(null)
+const iconFile = ref(null);
+const iconPreviewUrl = ref('');
+const iconInputRef = ref(null);
 // 追踪图标是否被用户主动删除
-const iconDeleted = ref(false)
+const iconDeleted = ref(false);
 // 追踪是否已经从后端加载了图标
-const iconLoadedFromServer = ref(false)
+const iconLoadedFromServer = ref(false);
 
 // 图标预览URL计算属性
-const hasIcon = computed(() => !!iconPreviewUrl.value)
+const hasIcon = computed(() => !!iconPreviewUrl.value);
 
 // 处理图标选择
 function handleIconSelect(e) {
-  const file = e.target.files?.[0]
-  if (!file) return
+  const file = e.target.files?.[0];
+  if (!file) return;
 
   // 验证文件类型
   if (!file.type.startsWith('image/')) {
-    return
+    return;
   }
 
-  iconFile.value = file
+  iconFile.value = file;
 
   // 创建预览URL
   if (iconPreviewUrl.value) {
-    URL.revokeObjectURL(iconPreviewUrl.value)
+    URL.revokeObjectURL(iconPreviewUrl.value);
   }
-  iconPreviewUrl.value = URL.createObjectURL(file)
-  iconDeleted.value = false
+  iconPreviewUrl.value = URL.createObjectURL(file);
+  iconDeleted.value = false;
 }
 
 // 触发图标选择
 function triggerIconSelect() {
-  iconInputRef.value?.click()
+  iconInputRef.value?.click();
 }
 
 // 移除图标
 function removeIcon() {
-  iconFile.value = null
+  iconFile.value = null;
   if (iconPreviewUrl.value) {
-    URL.revokeObjectURL(iconPreviewUrl.value)
+    URL.revokeObjectURL(iconPreviewUrl.value);
   }
-  iconPreviewUrl.value = ''
+  iconPreviewUrl.value = '';
   if (iconInputRef.value) {
-    iconInputRef.value.value = ''
+    iconInputRef.value.value = '';
   }
   // 标记用户主动删除了图标
-  iconDeleted.value = true
+  iconDeleted.value = true;
 }
 
 function resetIconPreview() {
-  iconFile.value = null
+  iconFile.value = null;
   if (iconPreviewUrl.value) {
-    URL.revokeObjectURL(iconPreviewUrl.value)
+    URL.revokeObjectURL(iconPreviewUrl.value);
   }
-  iconPreviewUrl.value = ''
+  iconPreviewUrl.value = '';
   if (iconInputRef.value) {
-    iconInputRef.value.value = ''
+    iconInputRef.value.value = '';
   }
   // 重置删除标记和加载标记
-  iconDeleted.value = false
-  iconLoadedFromServer.value = false
+  iconDeleted.value = false;
+  iconLoadedFromServer.value = false;
 }
 
 // 根据目录路径加载已有图标
 async function loadExistingIcon() {
   // 重置当前图标
-  resetIconPreview()
+  resetIconPreview();
 
-  if (!props.dir) return
+  if (!props.dir) return;
 
   // 构建图标路径：dir/icon.png
-  const iconPath = `${props.dir}/icon.png`
+  const iconPath = `${props.dir}/icon.png`;
 
   try {
     // 使用 DataCatalog.getPluginsAssetBlob 获取图标
-    const { blob, mime } = await DataCatalog.getPluginsAssetBlob(iconPath)
+    const { blob, mime } = await DataCatalog.getPluginsAssetBlob(iconPath);
     if (blob.size > 0 && mime.startsWith('image/')) {
-      iconPreviewUrl.value = URL.createObjectURL(blob)
+      iconPreviewUrl.value = URL.createObjectURL(blob);
       // 标记图标是从服务器加载的
-      iconLoadedFromServer.value = true
+      iconLoadedFromServer.value = true;
     }
   } catch (err) {
     // 图标不存在或加载失败，忽略错误
-    console.debug('[PluginDetailView] No existing icon or failed to load:', err)
-    iconLoadedFromServer.value = false
+    console.debug('[PluginDetailView] No existing icon or failed to load:', err);
+    iconLoadedFromServer.value = false;
   }
 }
 
 // 将文件转换为Base64
 async function fileToBase64(file) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = () => {
-      const result = reader.result
+      const result = reader.result;
       // 移除 data URL 前缀
-      const base64 = result.includes(',') ? result.split(',')[1] : result
-      resolve(base64)
-    }
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
+      const base64 = result.includes(',') ? result.split(',')[1] : result;
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 /** 深拷贝 */
 function deepClone(x) {
-  return JSON.parse(JSON.stringify(x))
+  return JSON.parse(JSON.stringify(x));
 }
 /** 规范化 Plugin 结构 */
 function normalizePluginData(src) {
-  if (!src || typeof src !== 'object') return null
+  if (!src || typeof src !== 'object') return null;
   return {
     name: src.name || '',
     description: src.description || '',
-  }
+  };
 }
 
 // 当前编辑的数据（内存中）
 const currentData = ref(
   deepClone(normalizePluginData(props.pluginData) || { name: '', description: '' }),
-)
+);
 
 // 外部数据变更时同步
 watch(
   () => props.pluginData,
   async (v) => {
-    currentData.value = deepClone(normalizePluginData(v) || { name: '', description: '' })
-    await nextTick()
-    window.lucide?.createIcons?.()
+    currentData.value = deepClone(normalizePluginData(v) || { name: '', description: '' });
+    await nextTick();
+    window.lucide?.createIcons?.();
   },
-)
+);
 
 // 监听目录路径变化，加载图标
 watch(
   () => props.dir,
   (newDir) => {
     if (newDir) {
-      loadExistingIcon()
+      loadExistingIcon();
     } else {
-      resetIconPreview()
+      resetIconPreview();
     }
   },
   { immediate: true },
-)
+);
 
 // 本地草稿
-const nameDraft = ref(currentData.value.name || '')
-const descDraft = ref(currentData.value.description || '')
+const nameDraft = ref(currentData.value.name || '');
+const descDraft = ref(currentData.value.description || '');
 
 // 保存（失焦即时保存）
 function saveName() {
-  currentData.value.name = nameDraft.value
+  currentData.value.name = nameDraft.value;
 }
 
 function saveDesc() {
-  currentData.value.description = descDraft.value
+  currentData.value.description = descDraft.value;
 }
 
 // 重置为当前存储内容
 function resetAll() {
-  nameDraft.value = currentData.value.name || ''
-  descDraft.value = currentData.value.description || ''
-  nextTick(() => window.lucide?.createIcons?.())
+  nameDraft.value = currentData.value.name || '';
+  descDraft.value = currentData.value.description || '';
+  nextTick(() => window.lucide?.createIcons?.());
 }
 
 // 保存状态
-const saving = ref(false)
-const savedOk = ref(false)
-let __saveTimer = null
+const saving = ref(false);
+const savedOk = ref(false);
+let __saveTimer = null;
 
 onBeforeUnmount(() => {
   try {
-    if (__saveTimer) clearTimeout(__saveTimer)
+    if (__saveTimer) clearTimeout(__saveTimer);
   } catch (_) {}
-})
+});
 
 // 保存到后端
 async function save() {
-  const dir = props.dir
+  const dir = props.dir;
   if (!dir) {
     try {
-      alert(t('error.missingFilePath'))
+      alert(t('error.missingFilePath'));
     } catch (_) {}
-    return
+    return;
   }
 
   // 先保存当前草稿
-  saveName()
-  saveDesc()
+  saveName();
+  saveDesc();
 
   // 处理图标：
   // - 用户选择了新图标 -> 转换为 base64
   // - 用户删除了图标 -> 传空字符串 ''（告诉后端删除）
   // - 没有修改图标 -> 不传（undefined）
-  let iconBase64 = undefined
+  let iconBase64 = undefined;
   if (iconFile.value) {
     // 用户选择了新图标
     try {
-      iconBase64 = await fileToBase64(iconFile.value)
+      iconBase64 = await fileToBase64(iconFile.value);
     } catch (err) {
-      console.error('[PluginDetailView] Icon conversion failed:', err)
+      console.error('[PluginDetailView] Icon conversion failed:', err);
     }
   } else if (iconDeleted.value && iconLoadedFromServer.value) {
     // 用户删除了原有图标（图标曾经从服务器加载，现在被删除）
-    iconBase64 = ''
+    iconBase64 = '';
   }
   // 否则 iconBase64 保持 undefined，表示不修改图标
 
-  saving.value = true
-  savedOk.value = false
+  saving.value = true;
+  savedOk.value = false;
   if (__saveTimer) {
     try {
-      clearTimeout(__saveTimer)
+      clearTimeout(__saveTimer);
     } catch {}
-    __saveTimer = null
+    __saveTimer = null;
   }
 
   try {
@@ -237,40 +237,40 @@ async function save() {
       currentData.value.name || '',
       currentData.value.description || '',
       iconBase64,
-    )
+    );
 
     if (result.error) {
-      console.error('[PluginDetailView] 保存失败:', result.message)
+      console.error('[PluginDetailView] 保存失败:', result.message);
       try {
-        alert(t('detail.plugin.saveFailed') + '：' + result.message)
+        alert(t('detail.plugin.saveFailed') + '：' + result.message);
       } catch (_) {}
     } else {
-      console.log('[PluginDetailView] 保存成功')
-      savedOk.value = true
+      console.log('[PluginDetailView] 保存成功');
+      savedOk.value = true;
       if (savedOk.value) {
         __saveTimer = setTimeout(() => {
-          savedOk.value = false
-        }, 1800)
+          savedOk.value = false;
+        }, 1800);
       }
-      Host.pushToast?.({ type: 'success', message: t('detail.plugin.saved'), timeout: 1600 })
+      Host.pushToast?.({ type: 'success', message: t('detail.plugin.saved'), timeout: 1600 });
 
       // 通知父组件刷新插件列表
-      emit('saved', { dir: props.dir })
+      emit('saved', { dir: props.dir });
     }
   } catch (err) {
-    console.error('[PluginDetailView] 保存错误:', err)
+    console.error('[PluginDetailView] 保存错误:', err);
     try {
-      alert(t('detail.plugin.saveFailed') + '：' + (err.message || err))
+      alert(t('detail.plugin.saveFailed') + '：' + (err.message || err));
     } catch (_) {}
   } finally {
-    saving.value = false
+    saving.value = false;
   }
 }
 
 // 初始化 Lucide 图标
 onMounted(() => {
-  window.lucide?.createIcons?.()
-})
+  window.lucide?.createIcons?.();
+});
 </script>
 
 <template>

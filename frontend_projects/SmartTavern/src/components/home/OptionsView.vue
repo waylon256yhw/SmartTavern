@@ -1,153 +1,153 @@
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue'
-import { useI18n } from '@/locales'
+import { ref, onMounted, watch, computed } from 'vue';
+import { useI18n } from '@/locales';
 
-const { t, locale, setLocale, availableLocales } = useI18n()
+const { t, locale, setLocale, availableLocales } = useI18n();
 
 const props = defineProps({
   theme: { type: String, default: 'system' }, // system | light | dark
-})
-const emit = defineEmits(['update:theme', 'update:lang'])
+});
+const emit = defineEmits(['update:theme', 'update:lang']);
 
-const currentTheme = ref(props.theme || 'system')
+const currentTheme = ref(props.theme || 'system');
 
 function applyThemeToRoot(t) {
-  const root = document.documentElement
+  const root = document.documentElement;
   if (t === 'dark') {
-    root.setAttribute('data-theme', 'dark')
+    root.setAttribute('data-theme', 'dark');
   } else if (t === 'light') {
-    root.setAttribute('data-theme', 'light')
+    root.setAttribute('data-theme', 'light');
   } else {
     // system: 检测系统主题偏好
     if (typeof window !== 'undefined' && window.matchMedia) {
-      const mql = window.matchMedia('(prefers-color-scheme: dark)')
-      root.setAttribute('data-theme', mql.matches ? 'dark' : 'light')
+      const mql = window.matchMedia('(prefers-color-scheme: dark)');
+      root.setAttribute('data-theme', mql.matches ? 'dark' : 'light');
     } else {
       // 降级方案
-      root.setAttribute('data-theme', 'light')
+      root.setAttribute('data-theme', 'light');
     }
   }
 }
 
 function setTheme(t) {
-  currentTheme.value = t
-  applyThemeToRoot(t)
-  emit('update:theme', t)
+  currentTheme.value = t;
+  applyThemeToRoot(t);
+  emit('update:theme', t);
 }
 
 const activeIndex = computed(() =>
   currentTheme.value === 'system' ? 0 : currentTheme.value === 'light' ? 1 : 2,
-)
+);
 const themeLabel = computed(() => {
-  if (currentTheme.value === 'system') return t('home.options.themeSystem')
-  if (currentTheme.value === 'light') return t('home.options.themeLight')
-  return t('home.options.themeDark')
-})
+  if (currentTheme.value === 'system') return t('home.options.themeSystem');
+  if (currentTheme.value === 'light') return t('home.options.themeLight');
+  return t('home.options.themeDark');
+});
 
 // ============== 后端 API 地址（持久化 + 全局可用） ==============
 const defaultBackend =
-  import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050')
-const backendBase = ref('')
+  import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050');
+const backendBase = ref('');
 
 function loadBackendBase() {
-  let v = defaultBackend
+  let v = defaultBackend;
   if (typeof window !== 'undefined') {
     try {
-      const ls = localStorage.getItem('st.backend_base')
-      if (ls && typeof ls === 'string') v = ls
-      else if (window.ST_BACKEND_BASE) v = String(window.ST_BACKEND_BASE)
+      const ls = localStorage.getItem('st.backend_base');
+      if (ls && typeof ls === 'string') v = ls;
+      else if (window.ST_BACKEND_BASE) v = String(window.ST_BACKEND_BASE);
     } catch (_) {}
-    window.ST_BACKEND_BASE = v
+    window.ST_BACKEND_BASE = v;
   }
-  backendBase.value = v
+  backendBase.value = v;
 }
 
 function saveBackendBase() {
-  const v = String(backendBase.value || '').trim() || defaultBackend
+  const v = String(backendBase.value || '').trim() || defaultBackend;
   if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem('st.backend_base', v)
+      localStorage.setItem('st.backend_base', v);
     } catch (_) {}
-    window.ST_BACKEND_BASE = v
+    window.ST_BACKEND_BASE = v;
   }
-  backendBase.value = v
+  backendBase.value = v;
 }
 
 function resetBackendBase() {
-  backendBase.value = defaultBackend
-  saveBackendBase()
+  backendBase.value = defaultBackend;
+  saveBackendBase();
 }
 
 // ============== UI 缩放（持久化 + 全局应用） ==============
-const defaultUIScale = 1.0
-const uiScale = ref('1.0')
+const defaultUIScale = 1.0;
+const uiScale = ref('1.0');
 
 function loadUIScale() {
-  let v = defaultUIScale
+  let v = defaultUIScale;
   if (typeof window !== 'undefined') {
     try {
-      const ls = localStorage.getItem('st.ui_scale')
+      const ls = localStorage.getItem('st.ui_scale');
       if (ls && typeof ls === 'string') {
-        const parsed = parseFloat(ls)
+        const parsed = parseFloat(ls);
         if (!isNaN(parsed) && parsed >= 0.5 && parsed <= 2.0) {
-          v = parsed
+          v = parsed;
         }
       }
     } catch (_) {}
   }
-  uiScale.value = String(v)
+  uiScale.value = String(v);
 }
 
 function applyUIScale(scale) {
   if (typeof window !== 'undefined' && document.documentElement) {
-    document.documentElement.style.zoom = String(scale)
-    document.documentElement.style.setProperty('--st-ui-scale', String(scale))
+    document.documentElement.style.zoom = String(scale);
+    document.documentElement.style.setProperty('--st-ui-scale', String(scale));
   }
 }
 
 function saveUIScale() {
-  const v = parseFloat(uiScale.value)
+  const v = parseFloat(uiScale.value);
   if (isNaN(v) || v < 0.5 || v > 2.0) {
-    loadUIScale()
-    return
+    loadUIScale();
+    return;
   }
   if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem('st.ui_scale', String(v))
+      localStorage.setItem('st.ui_scale', String(v));
     } catch (_) {}
   }
-  applyUIScale(v)
+  applyUIScale(v);
 }
 
 function resetUIScale() {
-  uiScale.value = String(defaultUIScale)
-  saveUIScale()
+  uiScale.value = String(defaultUIScale);
+  saveUIScale();
 }
 
 onMounted(() => {
   // 初始化图标 + 根据 props.theme 同步一次根节点主题
-  window.lucide?.createIcons?.()
-  applyThemeToRoot(currentTheme.value)
+  window.lucide?.createIcons?.();
+  applyThemeToRoot(currentTheme.value);
   // 初始化后端地址
-  loadBackendBase()
+  loadBackendBase();
   // 初始化 UI 缩放
-  loadUIScale()
-})
+  loadUIScale();
+});
 
 // 外部主题变化时，同步内部视图
 watch(
   () => props.theme,
   (v) => {
-    if (!v) return
-    currentTheme.value = v
-    applyThemeToRoot(v)
+    if (!v) return;
+    currentTheme.value = v;
+    applyThemeToRoot(v);
   },
-)
+);
 
 // 语言切换处理
 function handleLangChange(newLang) {
-  setLocale(newLang)
-  emit('update:lang', newLang)
+  setLocale(newLang);
+  emit('update:lang', newLang);
 }
 </script>
 

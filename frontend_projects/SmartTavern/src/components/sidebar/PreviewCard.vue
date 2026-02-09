@@ -1,8 +1,8 @@
 <script setup>
-import { computed, onMounted, onUpdated } from 'vue'
-import { useI18n } from '@/locales'
+import { computed, onMounted, onUpdated } from 'vue';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   icon: { type: String, default: 'puzzle' },
@@ -10,28 +10,28 @@ const props = defineProps({
   desc: { type: String, default: '' },
   part: { type: String, default: '' },
   type: { type: String, default: '' }, // 角色卡类型：threaded 或 sandbox
-})
-const emit = defineEmits(['click'])
+});
+const emit = defineEmits(['click']);
 
-const isLucide = computed(() => /^[a-z\-]+$/.test(props.icon))
+const isLucide = computed(() => /^[a-z\-]+$/.test(props.icon));
 
 // 根据类型返回显示文本
 const typeLabel = computed(() => {
-  if (!props.type) return ''
-  if (props.type === 'sandbox') return t('panel.character.type.sandbox')
-  if (props.type === 'threaded') return t('panel.character.type.threaded')
-  return ''
-})
+  if (!props.type) return '';
+  if (props.type === 'sandbox') return t('panel.character.type.sandbox');
+  if (props.type === 'threaded') return t('panel.character.type.threaded');
+  return '';
+});
 
 // 根据类型返回样式类
 const typeClass = computed(() => {
-  if (props.type === 'sandbox') return 'type-sandbox'
-  if (props.type === 'threaded') return 'type-threaded'
-  return ''
-})
+  if (props.type === 'sandbox') return 'type-sandbox';
+  if (props.type === 'threaded') return 'type-threaded';
+  return '';
+});
 
-onMounted(() => window.lucide?.createIcons?.())
-onUpdated(() => window.lucide?.createIcons?.())
+onMounted(() => window.lucide?.createIcons?.());
+onUpdated(() => window.lucide?.createIcons?.());
 </script>
 
 <template>

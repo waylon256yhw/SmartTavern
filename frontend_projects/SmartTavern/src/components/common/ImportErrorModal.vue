@@ -1,9 +1,9 @@
 <script setup>
-import { ref, computed, watch, onMounted, toRef } from 'vue'
-import { useI18n } from '@/locales'
-import { useFocusTrap } from '@/composables/useFocusTrap'
+import { ref, computed, watch, onMounted, toRef } from 'vue';
+import { useI18n } from '@/locales';
+import { useFocusTrap } from '@/composables/useFocusTrap';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -12,43 +12,43 @@ const props = defineProps({
   dataTypeName: { type: String, default: '' },
   expectedType: { type: String, default: '' },
   actualType: { type: String, default: '' },
-})
+});
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close']);
 
 // 错误码到图标的映射
 const errorIcon = computed(() => {
   switch (props.errorCode) {
     case 'TYPE_MISMATCH':
-      return 'file-x'
+      return 'file-x';
     case 'NO_TYPE_INFO':
     case 'NO_TYPE_IN_FILENAME':
-      return 'file-question'
+      return 'file-question';
     case 'INVALID_ZIP':
     case 'INVALID_FORMAT':
-      return 'file-warning'
+      return 'file-warning';
     default:
-      return 'alert-circle'
+      return 'alert-circle';
   }
-})
+});
 
 // 错误码到标题的映射
 const errorTitle = computed(() => {
   switch (props.errorCode) {
     case 'TYPE_MISMATCH':
-      return t('import.error.typeMismatch')
+      return t('import.error.typeMismatch');
     case 'NO_TYPE_INFO':
-      return t('import.error.noTypeInfo')
+      return t('import.error.noTypeInfo');
     case 'NO_TYPE_IN_FILENAME':
-      return t('import.error.noTypeInFilename')
+      return t('import.error.noTypeInFilename');
     case 'INVALID_ZIP':
-      return t('import.error.invalidZip')
+      return t('import.error.invalidZip');
     case 'INVALID_FORMAT':
-      return t('import.error.invalidFormat')
+      return t('import.error.invalidFormat');
     default:
-      return t('import.error.importFailed')
+      return t('import.error.importFailed');
   }
-})
+});
 
 // 类型名称的翻译（注意：key 必须与后端返回的 actual_type/expected_type 一致）
 const typeNameMap = computed(() => ({
@@ -61,42 +61,42 @@ const typeNameMap = computed(() => ({
   llmconfig: t('panel.llmConfigs.typeName'),
   llm_config: t('panel.llmConfigs.typeName'),
   plugin: t('panel.plugins.typeName'),
-}))
+}));
 
 const actualTypeName = computed(() => {
   if (!props.actualType) {
     // 尝试从 errorMessage 中解析类型（后备方案）
-    const match = props.errorMessage?.match(/文件包含 (\w+) 类型|contains (\w+) type/i)
+    const match = props.errorMessage?.match(/文件包含 (\w+) 类型|contains (\w+) type/i);
     if (match) {
-      const type = match[1] || match[2]
-      return typeNameMap.value[type] || type
+      const type = match[1] || match[2];
+      return typeNameMap.value[type] || type;
     }
-    return ''
+    return '';
   }
-  return typeNameMap.value[props.actualType] || props.actualType
-})
+  return typeNameMap.value[props.actualType] || props.actualType;
+});
 
 const expectedTypeName = computed(() => {
   if (!props.expectedType) {
     // 如果没有传入 expectedType，使用 dataTypeName
-    if (props.dataTypeName) return props.dataTypeName
+    if (props.dataTypeName) return props.dataTypeName;
     // 尝试从 errorMessage 中解析（后备方案）
-    const match = props.errorMessage?.match(/期望 (\w+) 类型|expects (\w+) type/i)
+    const match = props.errorMessage?.match(/期望 (\w+) 类型|expects (\w+) type/i);
     if (match) {
-      const type = match[1] || match[2]
-      return typeNameMap.value[type] || type
+      const type = match[1] || match[2];
+      return typeNameMap.value[type] || type;
     }
-    return ''
+    return '';
   }
-  return typeNameMap.value[props.expectedType] || props.expectedType
-})
+  return typeNameMap.value[props.expectedType] || props.expectedType;
+});
 
 function close() {
-  emit('close')
+  emit('close');
 }
 
-const modalRef = ref(null)
-useFocusTrap(modalRef, toRef(props, 'show'))
+const modalRef = ref(null);
+useFocusTrap(modalRef, toRef(props, 'show'));
 
 // 监听显示状态刷新图标
 watch(
@@ -105,18 +105,18 @@ watch(
     if (v) {
       setTimeout(() => {
         try {
-          window?.lucide?.createIcons?.()
+          window?.lucide?.createIcons?.();
         } catch (_) {}
-      }, 50)
+      }, 50);
     }
   },
-)
+);
 
 onMounted(() => {
   try {
-    window?.lucide?.createIcons?.()
+    window?.lucide?.createIcons?.();
   } catch (_) {}
-})
+});
 </script>
 
 <template>

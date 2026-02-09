@@ -1,29 +1,29 @@
 <script setup>
-import { computed } from 'vue'
-import ContentViewModal from '@/components/common/ContentViewModal.vue'
-import OptionsView from '@/components/home/OptionsView.vue'
-import { useI18n } from '@/locales'
+import { computed } from 'vue';
+import ContentViewModal from '@/components/common/ContentViewModal.vue';
+import OptionsView from '@/components/home/OptionsView.vue';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   show: { type: Boolean, default: false },
   title: { type: String, default: '' },
   icon: { type: String, default: '' },
   theme: { type: String, default: 'system' },
-})
+});
 
-const effectiveTitle = computed(() => props.title || t('home.options.title'))
+const effectiveTitle = computed(() => props.title || t('home.options.title'));
 
-const emit = defineEmits(['update:show', 'close', 'update:theme'])
+const emit = defineEmits(['update:show', 'close', 'update:theme']);
 
 function onClose() {
-  emit('close')
-  emit('update:show', false)
+  emit('close');
+  emit('update:show', false);
 }
 
 function onThemeUpdate(t) {
-  emit('update:theme', t)
+  emit('update:theme', t);
 }
 </script>
 

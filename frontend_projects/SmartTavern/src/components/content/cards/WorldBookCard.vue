@@ -1,18 +1,18 @@
 <script setup>
-import { ref, watch, nextTick } from 'vue'
-import { useI18n } from '@/locales'
+import { ref, watch, nextTick } from 'vue';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   entry: { type: Object, required: true },
-})
+});
 
-const emit = defineEmits(['update', 'delete'])
+const emit = defineEmits(['update', 'delete']);
 
-const editing = ref(false)
-const errorMsg = ref(null)
-const originalId = ref(props.entry.id)
+const editing = ref(false);
+const errorMsg = ref(null);
+const originalId = ref(props.entry.id);
 
 const form = ref({
   id: props.entry.id,
@@ -24,12 +24,12 @@ const form = ref({
   order: props.entry.order ?? 100,
   depth: props.entry.depth ?? 0,
   condition: props.entry.condition ?? '',
-})
+});
 
 watch(
   () => props.entry,
   (e) => {
-    if (!e) return
+    if (!e) return;
     form.value = {
       id: e.id,
       name: e.name,
@@ -40,23 +40,23 @@ watch(
       order: e.order ?? 100,
       depth: e.depth ?? 0,
       condition: e.condition ?? '',
-    }
-    originalId.value = e.id
+    };
+    originalId.value = e.id;
   },
   { deep: true },
-)
+);
 
 function toggleEdit() {
-  editing.value = !editing.value
-  nextTick(() => window.lucide?.createIcons?.())
+  editing.value = !editing.value;
+  nextTick(() => window.lucide?.createIcons?.());
 }
 
 function onSave() {
-  errorMsg.value = null
-  const newId = String(form.value.id ?? '').trim()
+  errorMsg.value = null;
+  const newId = String(form.value.id ?? '').trim();
   if (!newId) {
-    errorMsg.value = t('cards.worldBook.errorIdRequired')
-    return
+    errorMsg.value = t('cards.worldBook.errorIdRequired');
+    return;
   }
 
   const updated = {
@@ -70,15 +70,15 @@ function onSave() {
     depth: Number(form.value.depth ?? 0),
     condition: String(form.value.condition ?? ''),
     _oldId: originalId.value !== newId ? originalId.value : undefined,
-  }
+  };
 
-  emit('update', updated)
-  originalId.value = newId
-  editing.value = false
+  emit('update', updated);
+  originalId.value = newId;
+  editing.value = false;
 }
 
 function onDelete() {
-  emit('delete', props.entry.id)
+  emit('delete', props.entry.id);
 }
 </script>
 

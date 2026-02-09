@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
-import { useCharacterStore } from '@/features/characters/store'
-import type { WorldBookEntry, WorldBookMode, WorldBookPosition } from '@/features/presets/types'
+import { ref, watch, nextTick } from 'vue';
+import { useCharacterStore } from '@/features/characters/store';
+import type { WorldBookEntry, WorldBookMode, WorldBookPosition } from '@/features/presets/types';
 
 const props = defineProps<{
-  entry: WorldBookEntry
-}>()
+  entry: WorldBookEntry;
+}>();
 
-const store = useCharacterStore()
-const editing = ref(false)
-const errorMsg = ref<string | null>(null)
-const originalId = ref(props.entry.id)
+const store = useCharacterStore();
+const editing = ref(false);
+const errorMsg = ref<string | null>(null);
+const originalId = ref(props.entry.id);
 
 const form = ref({
   id: props.entry.id,
@@ -22,12 +22,12 @@ const form = ref({
   order: props.entry.order ?? 100,
   depth: props.entry.depth ?? 0,
   condition: String((props.entry as any).condition ?? ''),
-})
+});
 
 watch(
   () => props.entry,
   (e) => {
-    if (!e) return
+    if (!e) return;
     form.value = {
       id: e.id,
       name: e.name,
@@ -38,28 +38,28 @@ watch(
       order: e.order ?? 100,
       depth: e.depth ?? 0,
       condition: String((e as any).condition ?? ''),
-    }
-    originalId.value = e.id
+    };
+    originalId.value = e.id;
   },
   { deep: true },
-)
+);
 
 function toggleEdit() {
-  editing.value = !editing.value
-  nextTick(() => (window as any).lucide?.createIcons?.())
+  editing.value = !editing.value;
+  nextTick(() => (window as any).lucide?.createIcons?.());
 }
 
 async function onSave() {
-  errorMsg.value = null
-  const newId = String(form.value.id ?? '').trim()
+  errorMsg.value = null;
+  const newId = String(form.value.id ?? '').trim();
   if (!newId) {
-    errorMsg.value = '请填写 ID'
-    return
+    errorMsg.value = '请填写 ID';
+    return;
   }
-  const list = (store.worldEntries || []) as WorldBookEntry[]
+  const list = (store.worldEntries || []) as WorldBookEntry[];
   if (list.some((w) => w.id === newId && w.id !== originalId.value)) {
-    errorMsg.value = 'ID 已存在'
-    return
+    errorMsg.value = 'ID 已存在';
+    return;
   }
 
   const updated: WorldBookEntry = {
@@ -72,19 +72,19 @@ async function onSave() {
     order: Number(form.value.order ?? 100),
     depth: Number(form.value.depth ?? 0),
     condition: form.value.mode === 'conditional' ? String(form.value.condition || '') : '',
-  }
+  };
 
   // 若 id 被修改，则在原位置上完成“重命名”式替换；否则普通替换
-  store.upsertWorldBookWithOldId(updated, originalId.value)
-  originalId.value = newId
+  store.upsertWorldBookWithOldId(updated, originalId.value);
+  originalId.value = newId;
 
-  editing.value = false
-  await nextTick()
-  ;(window as any).lucide?.createIcons?.()
+  editing.value = false;
+  await nextTick();
+  (window as any).lucide?.createIcons?.();
 }
 
 function onDelete() {
-  store.removeWorldBook(props.entry.id)
+  store.removeWorldBook(props.entry.id);
 }
 </script>
 

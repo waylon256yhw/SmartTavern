@@ -1,26 +1,26 @@
 <script setup>
-import { computed } from 'vue'
-import { useI18n } from '@/locales'
+import { computed } from 'vue';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   theme: { type: String, default: 'system' }, // 'system' | 'light' | 'dark'
-})
-const emit = defineEmits(['update:theme'])
+});
+const emit = defineEmits(['update:theme']);
 
 const options = computed(() => [
   { key: 'system', label: t('components.themeSwitch.system') },
   { key: 'light', label: t('components.themeSwitch.light') },
   { key: 'dark', label: t('components.themeSwitch.dark') },
-])
+]);
 
 function selectTheme(key) {
-  emit('update:theme', key)
+  emit('update:theme', key);
 }
 
 function getTitle(opt) {
-  return t('components.themeSwitch.switchTo', { label: opt.label })
+  return t('components.themeSwitch.switchTo', { label: opt.label });
 }
 </script>
 

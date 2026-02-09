@@ -1,8 +1,8 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useI18n } from '@/locales'
+import { ref, computed, onMounted, watch } from 'vue';
+import { useI18n } from '@/locales';
 
-const { t, locale, setLocale, availableLocales } = useI18n()
+const { t, locale, setLocale, availableLocales } = useI18n();
 
 const props = defineProps({
   anchorLeft: { type: Number, default: 308 },
@@ -11,9 +11,9 @@ const props = defineProps({
   top: { type: Number, default: 64 },
   bottom: { type: Number, default: 12 },
   theme: { type: String, default: 'system' }, // 同步主页 Options 主题状态
-})
+});
 
-const emit = defineEmits(['close', 'update:theme', 'update:lang'])
+const emit = defineEmits(['close', 'update:theme', 'update:lang']);
 
 const panelStyle = computed(() => ({
   position: 'fixed',
@@ -22,152 +22,152 @@ const panelStyle = computed(() => ({
   bottom: props.bottom + 'px',
   width: props.width + 'px',
   zIndex: String(props.zIndex),
-}))
+}));
 
 function close() {
-  emit('close')
+  emit('close');
 }
 
 // OptionsView 同步：主题切换逻辑
-const currentTheme = ref(props.theme || 'system')
+const currentTheme = ref(props.theme || 'system');
 
 function applyThemeToRoot(t) {
-  const root = document.documentElement
+  const root = document.documentElement;
   if (t === 'dark') {
-    root.setAttribute('data-theme', 'dark')
+    root.setAttribute('data-theme', 'dark');
   } else if (t === 'light') {
-    root.setAttribute('data-theme', 'light')
+    root.setAttribute('data-theme', 'light');
   } else {
-    root.removeAttribute('data-theme')
+    root.removeAttribute('data-theme');
   }
 }
 
 function setTheme(t) {
-  currentTheme.value = t
-  applyThemeToRoot(t)
-  emit('update:theme', t)
+  currentTheme.value = t;
+  applyThemeToRoot(t);
+  emit('update:theme', t);
 }
 
 const activeIndex = computed(() =>
   currentTheme.value === 'system' ? 0 : currentTheme.value === 'light' ? 1 : 2,
-)
+);
 const themeLabel = computed(() =>
   currentTheme.value === 'system'
     ? t('sidebar.theme.system')
     : currentTheme.value === 'light'
       ? t('sidebar.theme.light')
       : t('sidebar.theme.dark'),
-)
+);
 
 // ============== 后端 API 地址（持久化 + 全局可用） ==============
 const defaultBackend =
-  import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050')
-const backendBase = ref('')
+  import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050');
+const backendBase = ref('');
 
 function loadBackendBase() {
-  let v = defaultBackend
+  let v = defaultBackend;
   if (typeof window !== 'undefined') {
     try {
-      const ls = localStorage.getItem('st.backend_base')
-      if (ls && typeof ls === 'string') v = ls
-      else if (window.ST_BACKEND_BASE) v = String(window.ST_BACKEND_BASE)
+      const ls = localStorage.getItem('st.backend_base');
+      if (ls && typeof ls === 'string') v = ls;
+      else if (window.ST_BACKEND_BASE) v = String(window.ST_BACKEND_BASE);
     } catch (_) {}
-    window.ST_BACKEND_BASE = v
+    window.ST_BACKEND_BASE = v;
   }
-  backendBase.value = v
+  backendBase.value = v;
 }
 
 function saveBackendBase() {
-  const v = String(backendBase.value || '').trim() || defaultBackend
+  const v = String(backendBase.value || '').trim() || defaultBackend;
   if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem('st.backend_base', v)
+      localStorage.setItem('st.backend_base', v);
     } catch (_) {}
-    window.ST_BACKEND_BASE = v
+    window.ST_BACKEND_BASE = v;
   }
-  backendBase.value = v
+  backendBase.value = v;
 }
 
 function resetBackendBase() {
-  backendBase.value = defaultBackend
-  saveBackendBase()
+  backendBase.value = defaultBackend;
+  saveBackendBase();
 }
 
 // ============== UI 缩放（持久化 + 全局应用） ==============
-const defaultUIScale = 1.0
-const uiScale = ref('1.0')
+const defaultUIScale = 1.0;
+const uiScale = ref('1.0');
 
 function loadUIScale() {
-  let v = defaultUIScale
+  let v = defaultUIScale;
   if (typeof window !== 'undefined') {
     try {
-      const ls = localStorage.getItem('st.ui_scale')
+      const ls = localStorage.getItem('st.ui_scale');
       if (ls && typeof ls === 'string') {
-        const parsed = parseFloat(ls)
+        const parsed = parseFloat(ls);
         if (!isNaN(parsed) && parsed >= 0.5 && parsed <= 2.0) {
-          v = parsed
+          v = parsed;
         }
       }
     } catch (_) {}
   }
-  uiScale.value = String(v)
-  applyUIScale(v)
+  uiScale.value = String(v);
+  applyUIScale(v);
 }
 
 function applyUIScale(scale) {
   if (typeof window !== 'undefined' && document.documentElement) {
     // 使用 zoom 属性实现全局缩放（更好地处理布局和滚动条）
-    document.documentElement.style.zoom = String(scale)
+    document.documentElement.style.zoom = String(scale);
     // 同时设置 CSS 变量，用于高度补偿计算
-    document.documentElement.style.setProperty('--st-ui-scale', String(scale))
+    document.documentElement.style.setProperty('--st-ui-scale', String(scale));
   }
 }
 
 function saveUIScale() {
-  const v = parseFloat(uiScale.value)
+  const v = parseFloat(uiScale.value);
   if (isNaN(v) || v < 0.5 || v > 2.0) {
     // 如果输入无效，恢复为当前保存的值
-    loadUIScale()
-    return
+    loadUIScale();
+    return;
   }
   if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem('st.ui_scale', String(v))
+      localStorage.setItem('st.ui_scale', String(v));
     } catch (_) {}
   }
-  applyUIScale(v)
+  applyUIScale(v);
 }
 
 function resetUIScale() {
-  uiScale.value = String(defaultUIScale)
-  saveUIScale()
+  uiScale.value = String(defaultUIScale);
+  saveUIScale();
 }
 
 // 外部主题变化时，同步内部视图
 watch(
   () => props.theme,
   (v) => {
-    if (!v) return
-    currentTheme.value = v
-    applyThemeToRoot(v)
+    if (!v) return;
+    currentTheme.value = v;
+    applyThemeToRoot(v);
   },
-)
+);
 
 // 语言切换处理
 function handleLangChange(newLang) {
-  setLocale(newLang)
-  emit('update:lang', newLang)
+  setLocale(newLang);
+  emit('update:lang', newLang);
 }
 
 onMounted(() => {
-  window.lucide?.createIcons?.()
+  window.lucide?.createIcons?.();
   // 打开面板时，根据当前主题同步到根节点
-  applyThemeToRoot(currentTheme.value)
+  applyThemeToRoot(currentTheme.value);
   // 同步后端地址
-  loadBackendBase()
+  loadBackendBase();
   // 同步 UI 缩放
-  loadUIScale()
-})
+  loadUIScale();
+});
 </script>
 
 <template>

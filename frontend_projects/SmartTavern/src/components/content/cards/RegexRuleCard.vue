@@ -1,30 +1,30 @@
 <script setup>
-import { ref, watch } from 'vue'
-import { useI18n } from '@/locales'
+import { ref, watch } from 'vue';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   rule: { type: Object, required: true },
-})
+});
 
-const emit = defineEmits(['update', 'delete'])
+const emit = defineEmits(['update', 'delete']);
 
-const editing = ref(false)
+const editing = ref(false);
 
-const enabledLabel = (v) => (v ? t('cards.common.enabled') : t('cards.common.disabled'))
+const enabledLabel = (v) => (v ? t('cards.common.enabled') : t('cards.common.disabled'));
 
-const draftName = ref(props.rule.name)
-const draftEnabled = ref(props.rule.enabled ? 'true' : 'false')
-const draftPlacement = ref(props.rule.placement)
-const draftFind = ref(props.rule.find_regex)
-const draftReplace = ref(props.rule.replace_regex)
-const draftMode = ref(props.rule.mode ?? 'always')
-const draftCondition = ref(String(props.rule.condition ?? ''))
+const draftName = ref(props.rule.name);
+const draftEnabled = ref(props.rule.enabled ? 'true' : 'false');
+const draftPlacement = ref(props.rule.placement);
+const draftFind = ref(props.rule.find_regex);
+const draftReplace = ref(props.rule.replace_regex);
+const draftMode = ref(props.rule.mode ?? 'always');
+const draftCondition = ref(String(props.rule.condition ?? ''));
 
 /* 选项枚举 */
-const TARGET_PREFIXES = ['preset', 'world_book', 'history', 'char', 'persona']
-const VIEWS = ['user_view', 'assistant_view']
+const TARGET_PREFIXES = ['preset', 'world_book', 'history', 'char', 'persona'];
+const VIEWS = ['user_view', 'assistant_view'];
 
 /* 细粒度来源类型 */
 const SOURCE_TYPES = [
@@ -38,7 +38,7 @@ const SOURCE_TYPES = [
   'world_book.in-chat',
   'char.description',
   'persona.description',
-]
+];
 
 /* 勾选框选择状态 */
 const selectedTargets = ref({
@@ -47,12 +47,12 @@ const selectedTargets = ref({
   history: (props.rule.targets || []).includes('history'),
   char: (props.rule.targets || []).includes('char'),
   persona: (props.rule.targets || []).includes('persona'),
-})
+});
 
 const selectedViews = ref({
   user_view: (props.rule.views || []).includes('user_view'),
   assistant_view: (props.rule.views || []).includes('assistant_view'),
-})
+});
 
 const selectedSourceTypes = ref({
   'history.user': (props.rule.targets || []).includes('history.user'),
@@ -65,35 +65,35 @@ const selectedSourceTypes = ref({
   'world_book.in-chat': (props.rule.targets || []).includes('world_book.in-chat'),
   'char.description': (props.rule.targets || []).includes('char.description'),
   'persona.description': (props.rule.targets || []).includes('persona.description'),
-})
+});
 
-const draftMinDepth = ref(props.rule.min_depth != null ? String(props.rule.min_depth) : '')
-const draftMaxDepth = ref(props.rule.max_depth != null ? String(props.rule.max_depth) : '')
-const draftDescription = ref(props.rule.description ?? '')
+const draftMinDepth = ref(props.rule.min_depth != null ? String(props.rule.min_depth) : '');
+const draftMaxDepth = ref(props.rule.max_depth != null ? String(props.rule.max_depth) : '');
+const draftDescription = ref(props.rule.description ?? '');
 
 function resetDraft() {
-  draftName.value = props.rule.name
-  draftEnabled.value = props.rule.enabled ? 'true' : 'false'
-  draftPlacement.value = props.rule.placement
-  draftFind.value = props.rule.find_regex
-  draftReplace.value = props.rule.replace_regex
-  draftMode.value = props.rule.mode ?? 'always'
-  draftCondition.value = String(props.rule.condition ?? '')
+  draftName.value = props.rule.name;
+  draftEnabled.value = props.rule.enabled ? 'true' : 'false';
+  draftPlacement.value = props.rule.placement;
+  draftFind.value = props.rule.find_regex;
+  draftReplace.value = props.rule.replace_regex;
+  draftMode.value = props.rule.mode ?? 'always';
+  draftCondition.value = String(props.rule.condition ?? '');
 
-  const arrT = (props.rule.targets || []).map((x) => String(x))
+  const arrT = (props.rule.targets || []).map((x) => String(x));
   selectedTargets.value = {
     preset: arrT.includes('preset'),
     world_book: arrT.includes('world_book'),
     history: arrT.includes('history'),
     char: arrT.includes('char'),
     persona: arrT.includes('persona'),
-  }
+  };
 
-  const arrV = (props.rule.views || []).map((x) => String(x))
+  const arrV = (props.rule.views || []).map((x) => String(x));
   selectedViews.value = {
     user_view: arrV.includes('user_view'),
     assistant_view: arrV.includes('assistant_view'),
-  }
+  };
 
   selectedSourceTypes.value = {
     'history.user': arrT.includes('history.user'),
@@ -106,40 +106,40 @@ function resetDraft() {
     'world_book.in-chat': arrT.includes('world_book.in-chat'),
     'char.description': arrT.includes('char.description'),
     'persona.description': arrT.includes('persona.description'),
-  }
+  };
 
-  draftMinDepth.value = props.rule.min_depth != null ? String(props.rule.min_depth) : ''
-  draftMaxDepth.value = props.rule.max_depth != null ? String(props.rule.max_depth) : ''
-  draftDescription.value = props.rule.description ?? ''
+  draftMinDepth.value = props.rule.min_depth != null ? String(props.rule.min_depth) : '';
+  draftMaxDepth.value = props.rule.max_depth != null ? String(props.rule.max_depth) : '';
+  draftDescription.value = props.rule.description ?? '';
 }
 
 watch(
   () => props.rule,
   () => {
-    if (!editing.value) resetDraft()
+    if (!editing.value) resetDraft();
   },
   { deep: false },
-)
+);
 
 function onEdit() {
-  resetDraft()
-  editing.value = true
+  resetDraft();
+  editing.value = true;
 }
 
 function onCancel() {
-  resetDraft()
-  editing.value = false
+  resetDraft();
+  editing.value = false;
 }
 
 function onDelete() {
-  emit('delete', props.rule.id)
+  emit('delete', props.rule.id);
 }
 
 function toNumOrUndef(text) {
-  const t = text.trim()
-  if (t === '') return undefined
-  const n = Number(t)
-  return Number.isFinite(n) ? n : undefined
+  const t = text.trim();
+  if (t === '') return undefined;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : undefined;
 }
 
 function onSave() {
@@ -160,17 +160,17 @@ function onSave() {
     views: VIEWS.filter((v) => selectedViews.value[v]),
     mode: draftMode.value === 'conditional' ? 'conditional' : 'always',
     condition: draftMode.value === 'conditional' ? draftCondition.value : '',
-  }
+  };
 
-  const minD = toNumOrUndef(draftMinDepth.value)
-  const maxD = toNumOrUndef(draftMaxDepth.value)
-  if (minD !== undefined) updated.min_depth = minD
-  if (maxD !== undefined) updated.max_depth = maxD
-  const desc = draftDescription.value.trim()
-  if (desc) updated.description = desc
+  const minD = toNumOrUndef(draftMinDepth.value);
+  const maxD = toNumOrUndef(draftMaxDepth.value);
+  if (minD !== undefined) updated.min_depth = minD;
+  if (maxD !== undefined) updated.max_depth = maxD;
+  const desc = draftDescription.value.trim();
+  if (desc) updated.description = desc;
 
-  emit('update', updated)
-  editing.value = false
+  emit('update', updated);
+  editing.value = false;
 }
 </script>
 

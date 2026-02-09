@@ -1,13 +1,13 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import ThreadedAppearanceTab from '@/components/sidebar/tabs/ThreadedAppearance.vue'
-import SandboxAppearanceTab from '@/components/sidebar/tabs/SandboxAppearance.vue'
-import BackgroundsManagerTab from '@/components/sidebar/tabs/BackgroundsManager.vue'
-import ThemeManagerTab from '@/components/sidebar/tabs/ThemeManager.vue'
-import OthersAppearanceTab from '@/components/sidebar/tabs/OthersAppearance.vue'
-import { useI18n } from '@/locales'
+import { ref, computed, onMounted, watch } from 'vue';
+import ThreadedAppearanceTab from '@/components/sidebar/tabs/ThreadedAppearance.vue';
+import SandboxAppearanceTab from '@/components/sidebar/tabs/SandboxAppearance.vue';
+import BackgroundsManagerTab from '@/components/sidebar/tabs/BackgroundsManager.vue';
+import ThemeManagerTab from '@/components/sidebar/tabs/ThemeManager.vue';
+import OthersAppearanceTab from '@/components/sidebar/tabs/OthersAppearance.vue';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 /**
  * 外观面板（容器）
@@ -25,8 +25,8 @@ const props = defineProps({
   width: { type: Number, default: 560 }, // 面板宽度
   zIndex: { type: Number, default: 59 }, // 与 Sidebar 同层（> 背景模糊 58）
   currentView: { type: String, default: 'threaded' }, // 当前视图类型：start/threaded/sandbox
-})
-const emit = defineEmits(['close'])
+});
+const emit = defineEmits(['close']);
 
 const tabs = computed(() => [
   { key: 'threaded', label: t('appearance.tabs.threaded'), icon: 'message-square' },
@@ -34,28 +34,28 @@ const tabs = computed(() => [
   { key: 'others', label: t('appearance.tabs.others'), icon: 'settings' },
   { key: 'backgrounds', label: t('appearance.tabs.backgrounds'), icon: 'image' },
   { key: 'theme', label: t('appearance.tabs.theme'), icon: 'palette' },
-])
+]);
 
 // 根据当前视图初始化active值
 const getInitialTab = () => {
-  if (props.currentView === 'sandbox') return 'sandbox'
-  if (props.currentView === 'threaded') return 'threaded'
-  return 'threaded' // 默认
-}
+  if (props.currentView === 'sandbox') return 'sandbox';
+  if (props.currentView === 'threaded') return 'threaded';
+  return 'threaded'; // 默认
+};
 
-const active = ref(getInitialTab())
+const active = ref(getInitialTab());
 
 // 监听currentView变化，自动切换到对应tab
 watch(
   () => props.currentView,
   (newView) => {
     if (newView === 'sandbox') {
-      active.value = 'sandbox'
+      active.value = 'sandbox';
     } else if (newView === 'threaded') {
-      active.value = 'threaded'
+      active.value = 'threaded';
     }
   },
-)
+);
 
 const panelStyle = computed(() => ({
   position: 'fixed',
@@ -68,18 +68,18 @@ const panelStyle = computed(() => ({
     '12px',
   width: props.width + 'px',
   zIndex: String(props.zIndex),
-}))
+}));
 
 function close() {
-  emit('close')
+  emit('close');
 }
 
 onMounted(() => {
   // 初始化 lucide 图标
   try {
-    window.lucide?.createIcons?.()
+    window.lucide?.createIcons?.();
   } catch (_) {}
-})
+});
 </script>
 
 <template>

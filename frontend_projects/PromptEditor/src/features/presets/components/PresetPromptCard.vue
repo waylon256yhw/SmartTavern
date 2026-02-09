@@ -1,77 +1,77 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { usePresetStore } from '../store'
-import type { PromptItem, PromptItemInChat, PromptItemRelative, Role } from '../types'
-import { SPECIAL_RELATIVE_TEMPLATES } from '../types'
+import { ref, computed, watch } from 'vue';
+import { usePresetStore } from '../store';
+import type { PromptItem, PromptItemInChat, PromptItemRelative, Role } from '../types';
+import { SPECIAL_RELATIVE_TEMPLATES } from '../types';
 
 const props = defineProps<{
-  item: PromptItem
-}>()
+  item: PromptItem;
+}>();
 
-const store = usePresetStore()
+const store = usePresetStore();
 
 // UI state
-const editing = ref(false)
+const editing = ref(false);
 
 // helpers
-type Tri = 'true' | 'false' | 'null'
-const toTri = (v: boolean | null): Tri => (v === true ? 'true' : v === false ? 'false' : 'null')
-const fromTri = (s: Tri): boolean | null => (s === 'true' ? true : s === 'false' ? false : null)
+type Tri = 'true' | 'false' | 'null';
+const toTri = (v: boolean | null): Tri => (v === true ? 'true' : v === false ? 'false' : 'null');
+const fromTri = (s: Tri): boolean | null => (s === 'true' ? true : s === 'false' ? false : null);
 
-const isInChat = computed((): boolean => props.item.position === 'in-chat')
-const hasContent = computed((): boolean => 'content' in props.item)
+const isInChat = computed((): boolean => props.item.position === 'in-chat');
+const hasContent = computed((): boolean => 'content' in props.item);
 const isSpecialRel = computed(
   (): boolean =>
     props.item.position === 'relative' &&
     SPECIAL_RELATIVE_TEMPLATES.some((t) => t.identifier === props.item.identifier),
-)
+);
 
 const enabledLabel = (v: boolean | null) =>
-  v === true ? '已启用' : v === false ? '未启用' : '未设置'
+  v === true ? '已启用' : v === false ? '未启用' : '未设置';
 
 // draft fields
-const draftName = ref(props.item.name)
-const draftEnabled = ref<Tri>(toTri(props.item.enabled))
-const draftRole = ref<Role>(props.item.role)
-const draftDepth = ref<number>(isInChat.value ? (props.item as PromptItemInChat).depth : 0)
-const draftOrder = ref<number>(isInChat.value ? (props.item as PromptItemInChat).order : 0)
-const draftContent = ref<string>(hasContent.value ? ((props.item as any).content ?? '') : '')
+const draftName = ref(props.item.name);
+const draftEnabled = ref<Tri>(toTri(props.item.enabled));
+const draftRole = ref<Role>(props.item.role);
+const draftDepth = ref<number>(isInChat.value ? (props.item as PromptItemInChat).depth : 0);
+const draftOrder = ref<number>(isInChat.value ? (props.item as PromptItemInChat).order : 0);
+const draftContent = ref<string>(hasContent.value ? ((props.item as any).content ?? '') : '');
 
 function resetDraft() {
-  draftName.value = props.item.name
-  draftEnabled.value = toTri(props.item.enabled)
-  draftRole.value = props.item.role
+  draftName.value = props.item.name;
+  draftEnabled.value = toTri(props.item.enabled);
+  draftRole.value = props.item.role;
   if (isInChat.value) {
-    draftDepth.value = (props.item as PromptItemInChat).depth
-    draftOrder.value = (props.item as PromptItemInChat).order
+    draftDepth.value = (props.item as PromptItemInChat).depth;
+    draftOrder.value = (props.item as PromptItemInChat).order;
   } else {
-    draftDepth.value = 0
-    draftOrder.value = 0
+    draftDepth.value = 0;
+    draftOrder.value = 0;
   }
-  draftContent.value = hasContent.value ? ((props.item as any).content ?? '') : ''
+  draftContent.value = hasContent.value ? ((props.item as any).content ?? '') : '';
 }
 
 watch(
   () => props.item,
   () => {
-    if (!editing.value) resetDraft()
+    if (!editing.value) resetDraft();
   },
   { deep: false },
-)
+);
 
 function onEdit() {
-  resetDraft()
-  editing.value = true
+  resetDraft();
+  editing.value = true;
 }
 
 function onCancel() {
-  resetDraft()
-  editing.value = false
+  resetDraft();
+  editing.value = false;
 }
 
 function onDelete() {
   // 从当前活动预设中删除该条目
-  store.removePrompt(props.item.identifier)
+  store.removePrompt(props.item.identifier);
 }
 
 function onSave() {
@@ -85,10 +85,10 @@ function onSave() {
       position: 'in-chat',
       depth: draftDepth.value,
       order: draftOrder.value,
-    }
+    };
     // In-Chat 必须始终包含 content 字段
-    const out = { ...base, content: draftContent.value } as PromptItemInChat
-    store.replacePrompt(out)
+    const out = { ...base, content: draftContent.value } as PromptItemInChat;
+    store.replacePrompt(out);
   } else {
     const base: PromptItemRelative = {
       identifier: props.item.identifier,
@@ -96,14 +96,14 @@ function onSave() {
       enabled: fromTri(draftEnabled.value),
       role: draftRole.value,
       position: 'relative',
-    }
+    };
     // Relative：除一次性组件外，必须包含 content 字段
     const out = isSpecialRel.value
       ? base
-      : ({ ...base, content: draftContent.value } as PromptItemRelative)
-    store.replacePrompt(out)
+      : ({ ...base, content: draftContent.value } as PromptItemRelative);
+    store.replacePrompt(out);
   }
-  editing.value = false
+  editing.value = false;
 }
 </script>
 

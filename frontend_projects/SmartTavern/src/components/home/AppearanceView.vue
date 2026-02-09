@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
-import { useI18n } from '@/locales'
-import BackgroundsManagerTab from '@/components/sidebar/tabs/BackgroundsManager.vue'
-import ThemeManagerTab from '@/components/sidebar/tabs/ThemeManager.vue'
+import { ref, computed, onMounted, nextTick } from 'vue';
+import { useI18n } from '@/locales';
+import BackgroundsManagerTab from '@/components/sidebar/tabs/BackgroundsManager.vue';
+import ThemeManagerTab from '@/components/sidebar/tabs/ThemeManager.vue';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 /**
  * 主页外观视图组件
@@ -12,25 +12,25 @@ const { t } = useI18n()
  * - 参考侧边栏的外观面板设计
  */
 
-const active = ref('backgrounds')
+const active = ref('backgrounds');
 
 const tabs = computed(() => [
   { key: 'backgrounds', label: t('appearance.tabs.backgrounds'), icon: 'image' },
   { key: 'theme', label: t('appearance.tabs.theme'), icon: 'palette' },
-])
+]);
 
 /** 刷新 Lucide 图标 */
 function refreshLucideIcons() {
   nextTick(() => {
     try {
-      ;(window as any)?.lucide?.createIcons?.()
+      (window as any)?.lucide?.createIcons?.();
     } catch (_) {}
-  })
+  });
 }
 
 onMounted(() => {
-  refreshLucideIcons()
-})
+  refreshLucideIcons();
+});
 </script>
 
 <template>

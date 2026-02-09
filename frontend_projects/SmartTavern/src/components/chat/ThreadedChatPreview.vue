@@ -1,23 +1,23 @@
 <script setup>
-import { ref, computed, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
-import { splitHtmlFromText } from '@/features/chat/normalizer'
-import usePalette from '@/composables/usePalette'
-import InputRow from '@/components/chat/InputRow.vue'
-import MessageItem from '@/components/chat/MessageItem.vue'
+import { ref, computed, nextTick, onMounted, onBeforeUnmount, watch } from 'vue';
+import { splitHtmlFromText } from '@/features/chat/normalizer';
+import usePalette from '@/composables/usePalette';
+import InputRow from '@/components/chat/InputRow.vue';
+import MessageItem from '@/components/chat/MessageItem.vue';
 /* AI补全改为事件桥接驱动，组件侧不直接依赖服务 */
-import Host from '@/workflow/core/host'
-import * as Completion from '@/workflow/channels/completion'
-import * as Threaded from '@/workflow/channels/threaded'
-import * as Message from '@/workflow/channels/message'
-import * as Branch from '@/workflow/channels/branch'
-import { useMessagesStore } from '@/stores/chatMessages'
-import { useCharacterStore } from '@/stores/character'
-import { usePersonaStore } from '@/stores/persona'
-import { useAppearanceSettingsStore } from '@/stores/appearanceSettings'
-import { useI18n } from '@/locales'
+import Host from '@/workflow/core/host';
+import * as Completion from '@/workflow/channels/completion';
+import * as Threaded from '@/workflow/channels/threaded';
+import * as Message from '@/workflow/channels/message';
+import * as Branch from '@/workflow/channels/branch';
+import { useMessagesStore } from '@/stores/chatMessages';
+import { useCharacterStore } from '@/stores/character';
+import { usePersonaStore } from '@/stores/persona';
+import { useAppearanceSettingsStore } from '@/stores/appearanceSettings';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
-const appearanceStore = useAppearanceSettingsStore()
+const { t } = useI18n();
+const appearanceStore = useAppearanceSettingsStore();
 
 /**
  * 楼层对话预览（美化版）
@@ -40,59 +40,59 @@ const props = defineProps({
     type: Object,
     default: null,
   },
-})
+});
 
-const msgStore = useMessagesStore()
-const characterStore = useCharacterStore()
-const personaStore = usePersonaStore()
+const msgStore = useMessagesStore();
+const characterStore = useCharacterStore();
+const personaStore = usePersonaStore();
 
 function roleLabel(role) {
-  return t(`role.${role}`) || t('common.unknown')
+  return t(`role.${role}`) || t('common.unknown');
 }
 function nameOf(msg) {
   // 名称占位规则：优先角色映射；可拓展为从 msg.meta 中读取昵称
-  return roleLabel(msg.role)
+  return roleLabel(msg.role);
 }
 
 /* 智能色条：根据头像图片/角色生成渐变色（抽离为 composable） */
-const { palettes, ensurePaletteFor, stripeStyle } = usePalette()
+const { palettes, ensurePaletteFor, stripeStyle } = usePalette();
 
 // Lucide 图标刷新（局部调用，避免 race）
 function refreshIcons() {
   nextTick(() => {
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
-      window.lucide.createIcons()
+      window.lucide.createIcons();
     }
     if (typeof window.initFlowbite === 'function') {
       try {
-        window.initFlowbite()
+        window.initFlowbite();
       } catch (_) {}
     }
-  })
+  });
 }
 
 /* 单条消息删除由子组件上抛，这里维护列表状态并重新加载分支信息 */
 async function deleteMessage(payload) {
   // 支持两种形式：字符串 msgId 或对象 { id, latest, active_path }
-  const isObj = payload && typeof payload === 'object'
-  const msgId = isObj ? payload.id : payload
-  const idx = props.messages.findIndex((m) => m.id === msgId)
+  const isObj = payload && typeof payload === 'object';
+  const msgId = isObj ? payload.id : payload;
+  const idx = props.messages.findIndex((m) => m.id === msgId);
   if (idx >= 0) {
-    props.messages.splice(idx, 1)
+    props.messages.splice(idx, 1);
     // 清理该节点的状态和流式内容索引
-    delete nodeStates.value[msgId]
-    delete streamContentIndex.value[msgId]
+    delete nodeStates.value[msgId];
+    delete streamContentIndex.value[msgId];
     // 使用 delete 返回的 latest（若提供）直接更新分支指示；否则不再请求分支表
     if (isObj && payload.latest && payload.latest.node_id) {
-      const lid = payload.latest.node_id
-      const lj = payload.latest.j != null ? payload.latest.j : null
-      const ln = payload.latest.n != null ? payload.latest.n : null
-      const newMap = {}
-      if (lj != null && ln != null) newMap[lid] = { j: lj, n: ln }
-      branchInfoMap.value = newMap
+      const lid = payload.latest.node_id;
+      const lj = payload.latest.j != null ? payload.latest.j : null;
+      const ln = payload.latest.n != null ? payload.latest.n : null;
+      const newMap = {};
+      if (lj != null && ln != null) newMap[lid] = { j: lj, n: ln };
+      branchInfoMap.value = newMap;
     }
   }
-  refreshIcons()
+  refreshIcons();
 }
 
 /* 菜单逻辑已下沉至 MessageItem.vue */
@@ -103,157 +103,157 @@ async function deleteMessage(payload) {
 onBeforeUnmount(() => {
   try {
     if (typeof handleGlobalClick === 'function') {
-      document.removeEventListener('click', handleGlobalClick)
+      document.removeEventListener('click', handleGlobalClick);
     }
   } catch (_) {}
-})
+});
 
 // 分支信息管理
-const branchInfoMap = ref({}) // 存储每个节点的分支信息 { node_id: { j, n } }
+const branchInfoMap = ref({}); // 存储每个节点的分支信息 { node_id: { j, n } }
 
 // 节点状态管理（等待/错误状态按节点ID独立存储）
-const nodeStates = ref({}) // { node_id: { waitingAI, waitingSeconds, error } }
+const nodeStates = ref({}); // { node_id: { waitingAI, waitingSeconds, error } }
 
 // 流式内容索引（后台存储流式接收的完整内容）
-const streamContentIndex = ref({}) // { node_id: string } - 存储流式接收的完整内容
+const streamContentIndex = ref({}); // { node_id: string } - 存储流式接收的完整内容
 // 打字机可见缓冲（逐步从完整内容中推进，可避免切换分支时闪烁/清空）
-const streamVisibleIndex = ref({}) // { node_id: string }
-let typingRAF = null
-let typingLastTs = 0
+const streamVisibleIndex = ref({}); // { node_id: string }
+let typingRAF = null;
+let typingLastTs = 0;
 
 function _ensureTypingLoop() {
-  if (typingRAF) return
+  if (typingRAF) return;
   const loop = (ts) => {
     try {
-      const dt = typingLastTs ? Math.max(0, (ts - typingLastTs) / 1000) : 0
-      typingLastTs = ts
-      let anyBacklog = false
-      const keys = Object.keys(streamContentIndex.value || {})
+      const dt = typingLastTs ? Math.max(0, (ts - typingLastTs) / 1000) : 0;
+      typingLastTs = ts;
+      let anyBacklog = false;
+      const keys = Object.keys(streamContentIndex.value || {});
       for (const id of keys) {
-        const full = String(streamContentIndex.value[id] || '')
-        const vis = String(streamVisibleIndex.value[id] || '')
-        const backlog = full.length - vis.length
+        const full = String(streamContentIndex.value[id] || '');
+        const vis = String(streamVisibleIndex.value[id] || '');
+        const backlog = full.length - vis.length;
         if (backlog > 0) {
-          anyBacklog = true
+          anyBacklog = true;
           // 自适应速率：基于 backlog 增速，避免积压
           // cps ≈ 24 + 10*sqrt(backlog) + 0.25*backlog，封顶 1500 cps
-          const cps = Math.min(1500, 24 + 10 * Math.sqrt(backlog) + 0.25 * backlog)
+          const cps = Math.min(1500, 24 + 10 * Math.sqrt(backlog) + 0.25 * backlog);
           // 本帧推进字符数（至少 1）
-          const step = Math.max(1, Math.floor(cps * dt))
-          const nextLen = Math.min(full.length, vis.length + step)
-          const slice = full.slice(vis.length, nextLen)
-          streamVisibleIndex.value[id] = vis + slice
+          const step = Math.max(1, Math.floor(cps * dt));
+          const nextLen = Math.min(full.length, vis.length + step);
+          const slice = full.slice(vis.length, nextLen);
+          streamVisibleIndex.value[id] = vis + slice;
         }
       }
       if (anyBacklog) {
-        typingRAF = requestAnimationFrame(loop)
+        typingRAF = requestAnimationFrame(loop);
       } else {
-        typingRAF = null
-        typingLastTs = 0
+        typingRAF = null;
+        typingLastTs = 0;
       }
     } catch (_) {
       // 出错时停止本轮，避免卡住循环
-      typingRAF = null
-      typingLastTs = 0
+      typingRAF = null;
+      typingLastTs = 0;
     }
-  }
-  typingRAF = requestAnimationFrame(loop)
+  };
+  typingRAF = requestAnimationFrame(loop);
 }
 // 发送用户消息后，后端 append_message 会立即创建助手占位并返回 latest（用于该占位）
 // 暂存该 j/n，等占位事件触发后应用到 tempNodeId
-const pendingAssistantJN = ref(null)
-const __uiOffs = [] // UI事件监听清单（组件卸载时统一清理）
-const __completionOffs = [] // AI补全事件监听清单（组件卸载时统一清理）
+const pendingAssistantJN = ref(null);
+const __uiOffs = []; // UI事件监听清单（组件卸载时统一清理）
+const __completionOffs = []; // AI补全事件监听清单（组件卸载时统一清理）
 
 /* 角色头像与元数据（assistant 角色使用）- 从 character store 获取 */
-const assistantAvatarUrl = computed(() => characterStore.avatarUrl)
+const assistantAvatarUrl = computed(() => characterStore.avatarUrl);
 const characterDisplayName = computed(() => {
-  const meta = characterStore.meta
-  if (!meta) return null
-  return String(meta?.character_name || meta?.name || '').trim() || null
-})
+  const meta = characterStore.meta;
+  if (!meta) return null;
+  return String(meta?.character_name || meta?.name || '').trim() || null;
+});
 const characterBadge = computed(() => {
-  const meta = characterStore.meta
-  if (!meta) return null
-  return String(meta?.character_badge || '').trim() || null
-})
+  const meta = characterStore.meta;
+  if (!meta) return null;
+  return String(meta?.character_badge || '').trim() || null;
+});
 
 /* 用户头像与元数据（user 角色使用）- 从 persona store 获取 */
-const userAvatarUrl = computed(() => personaStore.avatarUrl)
+const userAvatarUrl = computed(() => personaStore.avatarUrl);
 const userDisplayName = computed(() => {
-  const meta = personaStore.meta
-  if (!meta) return null
-  return String(meta?.persona_name || meta?.name || '').trim() || null
-})
+  const meta = personaStore.meta;
+  if (!meta) return null;
+  return String(meta?.persona_name || meta?.name || '').trim() || null;
+});
 const userBadge = computed(() => {
-  const meta = personaStore.meta
-  if (!meta) return null
-  return String(meta?.persona_badge || '').trim() || null
-})
+  const meta = personaStore.meta;
+  if (!meta) return null;
+  return String(meta?.persona_badge || '').trim() || null;
+});
 
 /**
  * 加载分支信息
  */
 async function loadBranchInfo() {
   if (!props.conversationFile) {
-    console.warn(t('chat.errors.noConversationFile'))
-    return
+    console.warn(t('chat.errors.noConversationFile'));
+    return;
   }
 
-  const convFile = props.conversationFile
+  const convFile = props.conversationFile;
 
   // 使用事件通道请求分支表，并在一次性监听中更新映射
   await new Promise((resolve) => {
     const offOk = Host.events.on(Branch.EVT_BRANCH_TABLE_OK, ({ conversationFile, result }) => {
-      if (conversationFile !== convFile) return
+      if (conversationFile !== convFile) return;
 
-      const newMap = {}
+      const newMap = {};
       if (result?.levels && Array.isArray(result.levels)) {
         result.levels.forEach((level) => {
           if (level.node_id && level.j !== null && level.n !== null) {
-            newMap[level.node_id] = { j: level.j, n: level.n }
+            newMap[level.node_id] = { j: level.j, n: level.n };
           }
-        })
+        });
       }
 
-      branchInfoMap.value = newMap
-      console.log('分支信息加载成功(事件):', newMap)
-      refreshIcons()
+      branchInfoMap.value = newMap;
+      console.log('分支信息加载成功(事件):', newMap);
+      refreshIcons();
 
       try {
-        offOk?.()
+        offOk?.();
       } catch (_) {}
       try {
-        offFail?.()
+        offFail?.();
       } catch (_) {}
-      resolve(true)
-    })
+      resolve(true);
+    });
     const offFail = Host.events.on(
       Branch.EVT_BRANCH_TABLE_FAIL,
       ({ conversationFile, message }) => {
-        if (conversationFile && conversationFile !== convFile) return
-        console.error(t('chat.errors.loadBranchFailed') + '(事件):', message)
+        if (conversationFile && conversationFile !== convFile) return;
+        console.error(t('chat.errors.loadBranchFailed') + '(事件):', message);
         try {
-          offOk?.()
+          offOk?.();
         } catch (_) {}
         try {
-          offFail?.()
+          offFail?.();
         } catch (_) {}
-        resolve(false)
+        resolve(false);
       },
-    )
+    );
 
-    __uiOffs.push(offOk, offFail)
-    Host.events.emit(Branch.EVT_BRANCH_TABLE_REQ, { conversationFile: convFile })
-  })
+    __uiOffs.push(offOk, offFail);
+    Host.events.emit(Branch.EVT_BRANCH_TABLE_REQ, { conversationFile: convFile });
+  });
 }
 
 /* 输入框逻辑 */
-const inputText = ref('')
-const messageListRef = ref(null)
-const inputRef = ref(null)
-const inputRowRef = ref(null)
-let removeWheel = null
+const inputText = ref('');
+const messageListRef = ref(null);
+const inputRef = ref(null);
+const inputRowRef = ref(null);
+let removeWheel = null;
 
 onMounted(async () => {
   // 加载角色/用户头像与元数据，以及分支信息
@@ -262,266 +262,266 @@ onMounted(async () => {
     characterStore.refreshFromConversation(props.conversationFile),
     personaStore.refreshFromConversation(props.conversationFile),
     loadBranchInfo(),
-  ])
+  ]);
 
   // 等待下一帧再初始化iframe跟踪，确保消息已渲染
-  await nextTick()
-  await nextTick()
+  await nextTick();
+  await nextTick();
 
   // 初始化iframe加载跟踪
-  initIframesTracking()
+  initIframesTracking();
 
   // 首次挂载后强制更新滚动条（确保容器尺寸已稳定）
-  messageListRef.value?.update?.()
+  messageListRef.value?.update?.();
 
   // 在 chat-unified 与 main 区域（包括空白处）使用滚轮也能滚动消息列表
-  const chatUnified = document.querySelector('[data-scope="chat-unified"]')
-  const mainArea = document.querySelector('[data-scope="main"]')
+  const chatUnified = document.querySelector('[data-scope="chat-unified"]');
+  const mainArea = document.querySelector('[data-scope="main"]');
   const wheelHandler = (e) => {
-    const container = messageListRef.value?.$el?.querySelector('.scroll-container')
-    if (!container) return
+    const container = messageListRef.value?.$el?.querySelector('.scroll-container');
+    if (!container) return;
 
     // 如果事件来源本就在列表容器内，让原生滚动处理
-    if (container.contains(e.target)) return
+    if (container.contains(e.target)) return;
 
     // 如果事件来源在输入框容器内（包括 textarea 和自定义滚动条），让原生滚动处理
-    const inputContainer = document.querySelector('.input-container')
-    if (inputContainer && inputContainer.contains(e.target)) return
+    const inputContainer = document.querySelector('.input-container');
+    if (inputContainer && inputContainer.contains(e.target)) return;
 
     // 位于聊天统一区域或主区域空白时，拦截并转发滚动到消息容器
-    const inChatUnified = chatUnified && chatUnified.contains(e.target)
-    const inMainArea = mainArea && mainArea.contains(e.target)
+    const inChatUnified = chatUnified && chatUnified.contains(e.target);
+    const inMainArea = mainArea && mainArea.contains(e.target);
     if (inChatUnified || inMainArea) {
-      container.scrollTop += e.deltaY
-      e.preventDefault()
+      container.scrollTop += e.deltaY;
+      e.preventDefault();
     }
-  }
-  chatUnified?.addEventListener('wheel', wheelHandler, { passive: false })
-  mainArea?.addEventListener('wheel', wheelHandler, { passive: false })
+  };
+  chatUnified?.addEventListener('wheel', wheelHandler, { passive: false });
+  mainArea?.addEventListener('wheel', wheelHandler, { passive: false });
   removeWheel = () => {
-    chatUnified?.removeEventListener('wheel', wheelHandler)
-    mainArea?.removeEventListener('wheel', wheelHandler)
-  }
+    chatUnified?.removeEventListener('wheel', wheelHandler);
+    mainArea?.removeEventListener('wheel', wheelHandler);
+  };
 
   // 视口追踪：监听滚动事件更新视口中心
-  const container = messageListRef.value?.$el?.querySelector('.scroll-container')
+  const container = messageListRef.value?.$el?.querySelector('.scroll-container');
   if (container) {
-    let scrollTimeout = null
+    let scrollTimeout = null;
     const scrollHandler = () => {
-      if (scrollTimeout) clearTimeout(scrollTimeout)
+      if (scrollTimeout) clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
-        updateViewportCenter()
-      }, 100)
-    }
-    container.addEventListener('scroll', scrollHandler, { passive: true })
+        updateViewportCenter();
+      }, 100);
+    };
+    container.addEventListener('scroll', scrollHandler, { passive: true });
 
     // 初始化视口中心
     nextTick(() => {
-      updateViewportCenter()
-    })
+      updateViewportCenter();
+    });
   }
 
-  refreshIcons()
+  refreshIcons();
   // 初始化现有消息的智能色条调色板（若有头像则提取主色）
   props.messages.forEach((m) => {
-    ensurePaletteFor(m)
-  })
-})
+    ensurePaletteFor(m);
+  });
+});
 
 onBeforeUnmount(() => {
-  removeWheel?.()
+  removeWheel?.();
   if (sendErrorTimer) {
-    clearTimeout(sendErrorTimer)
-    sendErrorTimer = null
+    clearTimeout(sendErrorTimer);
+    sendErrorTimer = null;
   }
   if (sendSuccessTimer) {
-    clearTimeout(sendSuccessTimer)
-    sendSuccessTimer = null
+    clearTimeout(sendSuccessTimer);
+    sendSuccessTimer = null;
   }
   // 角色头像和用户头像 Blob URL 都由对应的 store 管理，无需手动清理
   // 清理补全事件监听（避免组件卸载后仍然持有回调）
   try {
     __completionOffs?.forEach((fn) => {
       try {
-        fn?.()
+        fn?.();
       } catch (_) {}
-    })
-    __completionOffs.length = 0
+    });
+    __completionOffs.length = 0;
   } catch (_) {}
   // 清理 UI 事件监听
   try {
     __uiOffs?.forEach((fn) => {
       try {
-        fn?.()
+        fn?.();
       } catch (_) {}
-    })
-    __uiOffs.length = 0
+    });
+    __uiOffs.length = 0;
   } catch (_) {}
-})
+});
 
 watch(
   () => props.messages.length,
   () => {
     // 下一拍更新滚动条
     nextTick(() => {
-      messageListRef.value?.update?.()
-      refreshIcons()
+      messageListRef.value?.update?.();
+      refreshIcons();
       // 消息数量变化后，重新初始化iframe跟踪
-      initIframesTracking()
-    })
+      initIframesTracking();
+    });
   },
-)
+);
 
 /**
  * 事件驱动：为指定 tag 附加 Completion 监听（用于 UI 占位与后续更新）
  */
 function attachCompletionHandlersForTag(tagNodeId) {
   // 打字机与等待态
-  let currentNodeId = tagNodeId // 关键修复：跟踪当前节点ID（可能从临时ID变为真实ID）
-  let typewriterBuffer = ''
-  let isTyping = false
-  let hasReceivedError = false
+  let currentNodeId = tagNodeId; // 关键修复：跟踪当前节点ID（可能从临时ID变为真实ID）
+  let typewriterBuffer = '';
+  let isTyping = false;
+  let hasReceivedError = false;
   let waitingTimer = setInterval(() => {
-    const st = nodeStates.value[currentNodeId]
-    if (st) st.waitingSeconds = (st.waitingSeconds || 0) + 1
-  }, 1000)
+    const st = nodeStates.value[currentNodeId];
+    if (st) st.waitingSeconds = (st.waitingSeconds || 0) + 1;
+  }, 1000);
 
   const offChunk = Host.events.on(Completion.EVT_COMPLETION_CHUNK, async ({ tag, content }) => {
-    if (tag !== tagNodeId) return
-    if (hasReceivedError) return
+    if (tag !== tagNodeId) return;
+    if (hasReceivedError) return;
 
     // 第一个 chunk 到达，结束等待动画
     if (nodeStates.value[currentNodeId]?.waitingAI) {
-      nodeStates.value[currentNodeId].waitingAI = false
+      nodeStates.value[currentNodeId].waitingAI = false;
       if (waitingTimer) {
-        clearInterval(waitingTimer)
-        waitingTimer = null
+        clearInterval(waitingTimer);
+        waitingTimer = null;
       }
     }
 
     // 后台索引（完整内容）- 使用当前节点ID
-    if (!streamContentIndex.value[currentNodeId]) streamContentIndex.value[currentNodeId] = ''
-    streamContentIndex.value[currentNodeId] += content
+    if (!streamContentIndex.value[currentNodeId]) streamContentIndex.value[currentNodeId] = '';
+    streamContentIndex.value[currentNodeId] += content;
 
     // 初始化可见缓冲并启动自适应打字机循环
     if (streamVisibleIndex.value[currentNodeId] == null)
-      streamVisibleIndex.value[currentNodeId] = ''
-    _ensureTypingLoop()
+      streamVisibleIndex.value[currentNodeId] = '';
+    _ensureTypingLoop();
 
     // 不直接修改前台消息文本，避免切换分支时清空/覆盖其他分支内容；
     // 展示层通过 getRenderContent() 读取 streamContentIndex 实现无痕显示
 
     // 滚动到底部
-    await nextTick()
-    const container = messageListRef.value?.$el?.querySelector('.scroll-container')
-    if (container) container.scrollTop = container.scrollHeight
-  })
+    await nextTick();
+    const container = messageListRef.value?.$el?.querySelector('.scroll-container');
+    if (container) container.scrollTop = container.scrollHeight;
+  });
   const offSaved = Host.events.on(
     Completion.EVT_COMPLETION_SAVED,
     ({ tag, node_id, doc, content, node_updated_at }) => {
-      if (tag !== tagNodeId) return
-      if (hasReceivedError) return
-      const oldNodeId = currentNodeId
-      const msg = props.messages.find((m) => m.id === oldNodeId)
+      if (tag !== tagNodeId) return;
+      if (hasReceivedError) return;
+      const oldNodeId = currentNodeId;
+      const msg = props.messages.find((m) => m.id === oldNodeId);
       if (msg) {
         // 更新为真实ID
         if (node_id && oldNodeId !== node_id) {
-          msg.id = node_id
+          msg.id = node_id;
           // 关键修复：更新 currentNodeId，使后续chunk事件能找到消息
-          currentNodeId = node_id
+          currentNodeId = node_id;
           // 迁移节点状态和流式内容索引
           if (nodeStates.value[oldNodeId]) {
-            nodeStates.value[node_id] = nodeStates.value[oldNodeId]
-            delete nodeStates.value[oldNodeId]
+            nodeStates.value[node_id] = nodeStates.value[oldNodeId];
+            delete nodeStates.value[oldNodeId];
           }
           if (streamContentIndex.value[oldNodeId]) {
-            streamContentIndex.value[node_id] = streamContentIndex.value[oldNodeId]
-            delete streamContentIndex.value[oldNodeId]
+            streamContentIndex.value[node_id] = streamContentIndex.value[oldNodeId];
+            delete streamContentIndex.value[oldNodeId];
           }
         }
         // 更新节点时间戳
         if (node_updated_at) {
-          msg.node_updated_at = node_updated_at
+          msg.node_updated_at = node_updated_at;
           // 同步更新 rawMessages
           try {
-            const rawMsgs = msgStore.rawMessages || []
-            const idx = rawMsgs.findIndex((m) => m && m.id === (node_id || oldNodeId))
+            const rawMsgs = msgStore.rawMessages || [];
+            const idx = rawMsgs.findIndex((m) => m && m.id === (node_id || oldNodeId));
             if (idx >= 0 && rawMsgs[idx]) {
-              rawMsgs[idx].node_updated_at = node_updated_at
-              if (content) rawMsgs[idx].content = content
+              rawMsgs[idx].node_updated_at = node_updated_at;
+              if (content) rawMsgs[idx].content = content;
             }
           } catch (_) {}
         }
         // 非流式模式直接替换内容
         if (content) {
-          msg.content = content
+          msg.content = content;
           if (nodeStates.value[node_id || oldNodeId])
-            nodeStates.value[node_id || oldNodeId].waitingAI = false
+            nodeStates.value[node_id || oldNodeId].waitingAI = false;
         }
       }
       // 迁移可见缓冲
       if (streamVisibleIndex.value[oldNodeId]) {
-        streamVisibleIndex.value[node_id] = streamVisibleIndex.value[oldNodeId]
-        delete streamVisibleIndex.value[oldNodeId]
+        streamVisibleIndex.value[node_id] = streamVisibleIndex.value[oldNodeId];
+        delete streamVisibleIndex.value[oldNodeId];
       }
-      if (doc && props.conversationDoc) Object.assign(props.conversationDoc, doc)
+      if (doc && props.conversationDoc) Object.assign(props.conversationDoc, doc);
 
       // 仅使用 append/后端返回的 latest（若存在），不进行前端计算
       if (doc && doc.latest && doc.latest.node_id) {
-        const lid = doc.latest.node_id
-        const lj = doc.latest.j != null ? doc.latest.j : null
-        const ln = doc.latest.n != null ? doc.latest.n : null
-        const map = {}
-        if (lj != null && ln != null) map[lid] = { j: lj, n: ln }
-        branchInfoMap.value = map
+        const lid = doc.latest.node_id;
+        const lj = doc.latest.j != null ? doc.latest.j : null;
+        const ln = doc.latest.n != null ? doc.latest.n : null;
+        const map = {};
+        if (lj != null && ln != null) map[lid] = { j: lj, n: ln };
+        branchInfoMap.value = map;
       }
     },
-  )
+  );
   const offError = Host.events.on(Completion.EVT_COMPLETION_ERROR, ({ tag, message }) => {
-    if (tag !== tagNodeId) return
-    console.error(t('chat.errors.aiCallFailed') + ':', message)
-    hasReceivedError = true
+    if (tag !== tagNodeId) return;
+    console.error(t('chat.errors.aiCallFailed') + ':', message);
+    hasReceivedError = true;
     if (waitingTimer) {
-      clearInterval(waitingTimer)
-      waitingTimer = null
+      clearInterval(waitingTimer);
+      waitingTimer = null;
     }
-    typewriterBuffer = ''
-    isTyping = false
+    typewriterBuffer = '';
+    isTyping = false;
     if (nodeStates.value[currentNodeId]) {
-      nodeStates.value[currentNodeId].waitingAI = false
-      nodeStates.value[currentNodeId].error = message || t('chat.errors.aiCallFailed')
+      nodeStates.value[currentNodeId].waitingAI = false;
+      nodeStates.value[currentNodeId].error = message || t('chat.errors.aiCallFailed');
     }
-    delete streamContentIndex.value[currentNodeId]
-    nextTick(() => refreshIcons())
-  })
+    delete streamContentIndex.value[currentNodeId];
+    nextTick(() => refreshIcons());
+  });
   const offEnd = Host.events.on(Completion.EVT_COMPLETION_END, async ({ tag }) => {
-    if (tag !== tagNodeId) return
+    if (tag !== tagNodeId) return;
     if (waitingTimer) {
-      clearInterval(waitingTimer)
-      waitingTimer = null
+      clearInterval(waitingTimer);
+      waitingTimer = null;
     }
     while (isTyping || typewriterBuffer.length > 0) {
-      await new Promise((r) => setTimeout(r, 50))
+      await new Promise((r) => setTimeout(r, 50));
     }
-    if (nodeStates.value[currentNodeId]) nodeStates.value[currentNodeId].waitingAI = false
+    if (nodeStates.value[currentNodeId]) nodeStates.value[currentNodeId].waitingAI = false;
     if (hasReceivedError) {
-      await nextTick()
-      refreshIcons()
+      await nextTick();
+      refreshIcons();
     } else {
-      delete streamContentIndex.value[currentNodeId]
+      delete streamContentIndex.value[currentNodeId];
       // 不再在补全结束时计算 j/n；分支位置已由 append/retry/switch 返回的 latest 更新
-      refreshIcons()
+      refreshIcons();
     }
     // 清理监听
-    ;[offChunk, offSaved, offError, offEnd].forEach((fn) => {
+    [offChunk, offSaved, offError, offEnd].forEach((fn) => {
       try {
-        fn?.()
+        fn?.();
       } catch (_) {}
-    })
-  })
+    });
+  });
 
   // 记录统一清理器
-  __completionOffs.push(offChunk, offSaved, offError, offEnd)
+  __completionOffs.push(offChunk, offSaved, offError, offEnd);
 }
 
 /**
@@ -531,12 +531,12 @@ function attachCompletionHandlersForTag(tagNodeId) {
 const offAssistPlaceholder = Host.events.on(
   Threaded.EVT_THREAD_ASSIST_PLACEHOLDER_CREATE,
   ({ conversationFile, tempNodeId, node_updated_at }) => {
-    if (conversationFile !== props.conversationFile) return
+    if (conversationFile !== props.conversationFile) return;
 
     // 防御性检查：如果该节点已存在，跳过创建
-    const rawMsgs = msgStore.rawMessages || []
-    const existsInMessages = rawMsgs.some((m) => m && m.id === tempNodeId)
-    if (existsInMessages) return
+    const rawMsgs = msgStore.rawMessages || [];
+    const existsInMessages = rawMsgs.some((m) => m && m.id === tempNodeId);
+    if (existsInMessages) return;
 
     // 仅更新 rawMessages（因为 props.messages 是它的引用，会自动更新）
     try {
@@ -545,16 +545,16 @@ const offAssistPlaceholder = Host.events.on(
         role: 'assistant',
         content: '',
         node_updated_at: node_updated_at || null,
-      })
-      msgStore.updateRawMessages([...rawMsgs])
+      });
+      msgStore.updateRawMessages([...rawMsgs]);
 
       // 设置节点状态和调色板
-      ensurePaletteFor(rawMsgs[rawMsgs.length - 1])
-      nodeStates.value[tempNodeId] = { waitingAI: true, waitingSeconds: 0, error: null }
+      ensurePaletteFor(rawMsgs[rawMsgs.length - 1]);
+      nodeStates.value[tempNodeId] = { waitingAI: true, waitingSeconds: 0, error: null };
     } catch (_) {}
 
     // 附加 Completion 监听以驱动后续更新
-    attachCompletionHandlersForTag(tempNodeId)
+    attachCompletionHandlersForTag(tempNodeId);
 
     // 立即显示分支切换器：优先使用 append 返回的 latest（pendingAssistantJN），否则回退预测
     try {
@@ -562,94 +562,94 @@ const offAssistPlaceholder = Host.events.on(
         branchInfoMap.value = {
           ...(branchInfoMap.value || {}),
           [tempNodeId]: { ...pendingAssistantJN.value },
-        }
-        pendingAssistantJN.value = null
+        };
+        pendingAssistantJN.value = null;
       } else {
-        const doc = props.conversationDoc || {}
-        const ap = Array.isArray(doc.active_path) ? doc.active_path : []
-        const pid = ap.length ? ap[ap.length - 1] : null
-        let n = 1
+        const doc = props.conversationDoc || {};
+        const ap = Array.isArray(doc.active_path) ? doc.active_path : [];
+        const pid = ap.length ? ap[ap.length - 1] : null;
+        let n = 1;
         if (pid && doc.children && Array.isArray(doc.children[pid])) {
-          const siblings = doc.children[pid]
-          n = siblings.length + 1
+          const siblings = doc.children[pid];
+          n = siblings.length + 1;
         }
-        const j = n
-        branchInfoMap.value = { ...(branchInfoMap.value || {}), [tempNodeId]: { j, n } }
+        const j = n;
+        branchInfoMap.value = { ...(branchInfoMap.value || {}), [tempNodeId]: { j, n } };
       }
     } catch (_) {}
   },
-)
-__uiOffs.push(offAssistPlaceholder)
+);
+__uiOffs.push(offAssistPlaceholder);
 
 function sendMessage() {
-  const text = inputText.value.trim()
-  if (!text) return
+  const text = inputText.value.trim();
+  if (!text) return;
 
   // 创建新消息
   const newMessage = {
     id: Date.now(), // 简单的ID生成
     role: 'user',
     content: text,
-  }
+  };
 
   // 若等待中则直接返回（不允许再次发送）
-  if (pendingMessageId?.value) return
+  if (pendingMessageId?.value) return;
 
   // 添加到消息列表
-  props.messages.push(newMessage)
+  props.messages.push(newMessage);
   // 为新消息生成色条调色板（若有头像则尝试提取主色）
-  ensurePaletteFor(newMessage)
+  ensurePaletteFor(newMessage);
   // 启动 10 秒等待占位
-  startPendingFor(newMessage.id)
+  startPendingFor(newMessage.id);
 
   // 清空输入框
-  inputText.value = ''
+  inputText.value = '';
 
   // 滚动到底部（丝滑且自然）
   nextTick(() => {
     setTimeout(() => {
       if (messageListRef.value?.$el) {
-        const container = messageListRef.value.$el.querySelector('.scroll-container')
+        const container = messageListRef.value.$el.querySelector('.scroll-container');
         if (container) {
           // 优先使用原生平滑滚动
           try {
-            container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
+            container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
           } catch (_) {
             // 回退：rAF 动画
-            const start = container.scrollTop
-            const end = container.scrollHeight
-            const dur = 420
-            const t0 = performance.now()
-            const ease = (t) => 1 - Math.pow(1 - t, 3) // easeOutCubic
+            const start = container.scrollTop;
+            const end = container.scrollHeight;
+            const dur = 420;
+            const t0 = performance.now();
+            const ease = (t) => 1 - Math.pow(1 - t, 3); // easeOutCubic
             const step = (now) => {
-              const p = Math.min(1, (now - t0) / dur)
-              container.scrollTop = start + (end - start) * ease(p)
-              if (p < 1) requestAnimationFrame(step)
-            }
-            requestAnimationFrame(step)
+              const p = Math.min(1, (now - t0) / dur);
+              container.scrollTop = start + (end - start) * ease(p);
+              if (p < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
           }
         }
       }
-    }, 60)
-  })
+    }, 60);
+  });
 }
 
 // 输入行为：Enter 发送，Shift+Enter 换行（遵循 UI 规范）
 function onKeydown(e) {
   if (pendingMessageId?.value) {
     // 等待中不允许再次发送（允许输入编辑）
-    if (e.key === 'Enter' && !e.shiftKey) e.preventDefault()
-    return
+    if (e.key === 'Enter' && !e.shiftKey) e.preventDefault();
+    return;
   }
   if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault()
-    sendMessage()
+    e.preventDefault();
+    sendMessage();
   }
 }
 
 /* 快捷操作（编辑/再生），更多行为可接入后端 */
 function startEdit(msg) {
-  inputRowRef.value?.setText?.(msg.content)
+  inputRowRef.value?.setText?.(msg.content);
 }
 
 /**
@@ -658,97 +658,97 @@ function startEdit(msg) {
  * - user 消息：智能判断（有后续助手则重试助手，无则创建新助手并调用 AI）
  */
 async function regenerateMessage(msg) {
-  console.log('请求重新生成(事件化)：', msg.id, msg.role)
+  console.log('请求重新生成(事件化)：', msg.id, msg.role);
 
   if (!props.conversationFile || !props.conversationDoc) {
-    console.error(t('chat.errors.missingFileOrDoc'))
-    return
+    console.error(t('chat.errors.missingFileOrDoc'));
+    return;
   }
 
   try {
     if (msg.role === 'assistant') {
       // 事件化：助手消息重试 -> 创建新分支，由桥接器调用后端
-      const tag = `retry_ass_${Date.now()}`
-      const oldId = msg.id
+      const tag = `retry_ass_${Date.now()}`;
+      const oldId = msg.id;
 
       const offOk = Host.events.on(
         Branch.EVT_BRANCH_RETRY_ASSIST_OK,
         ({ conversationFile, newNodeId, doc, latest, active_path, node_updated_at, tag: rtag }) => {
-          if (conversationFile !== props.conversationFile || rtag !== tag) return
+          if (conversationFile !== props.conversationFile || rtag !== tag) return;
 
           // 仅更新 rawMessages（因为 props.messages 是它的引用，会自动更新）
           try {
-            const rawMsgs = msgStore.rawMessages || []
-            const rawIdx = rawMsgs.findIndex((m) => m && m.id === oldId)
+            const rawMsgs = msgStore.rawMessages || [];
+            const rawIdx = rawMsgs.findIndex((m) => m && m.id === oldId);
             if (rawIdx >= 0 && rawMsgs[rawIdx]) {
-              rawMsgs[rawIdx].id = newNodeId
-              rawMsgs[rawIdx].content = ''
-              rawMsgs[rawIdx].node_updated_at = node_updated_at
-              msgStore.updateRawMessages([...rawMsgs])
+              rawMsgs[rawIdx].id = newNodeId;
+              rawMsgs[rawIdx].content = '';
+              rawMsgs[rawIdx].node_updated_at = node_updated_at;
+              msgStore.updateRawMessages([...rawMsgs]);
 
               // 设置调色板和节点状态
-              ensurePaletteFor(rawMsgs[rawIdx])
-              nodeStates.value[newNodeId] = { waitingAI: true, waitingSeconds: 0, error: null }
+              ensurePaletteFor(rawMsgs[rawIdx]);
+              nodeStates.value[newNodeId] = { waitingAI: true, waitingSeconds: 0, error: null };
 
               // 关键修复：附加 Completion 监听器，以便后续 AI 补全内容可以显示
-              attachCompletionHandlersForTag(newNodeId)
+              attachCompletionHandlersForTag(newNodeId);
             }
           } catch (_) {}
 
-          if (doc && props.conversationDoc) Object.assign(props.conversationDoc, doc)
+          if (doc && props.conversationDoc) Object.assign(props.conversationDoc, doc);
 
           // 用 latest 直接更新分支映射（无网络额外请求）
           if (latest && latest.node_id) {
-            const lid = latest.node_id
-            const lj = latest.j != null ? latest.j : null
-            const ln = latest.n != null ? latest.n : null
-            const map = {}
-            if (lj != null && ln != null) map[lid] = { j: lj, n: ln }
-            branchInfoMap.value = map
+            const lid = latest.node_id;
+            const lj = latest.j != null ? latest.j : null;
+            const ln = latest.n != null ? latest.n : null;
+            const map = {};
+            if (lj != null && ln != null) map[lid] = { j: lj, n: ln };
+            branchInfoMap.value = map;
           }
 
           try {
-            offOk?.()
+            offOk?.();
           } catch (_) {}
           try {
-            offFail?.()
+            offFail?.();
           } catch (_) {}
         },
-      )
+      );
       const offFail = Host.events.on(
         Branch.EVT_BRANCH_RETRY_ASSIST_FAIL,
         ({ conversationFile, message, tag: rtag }) => {
-          if (conversationFile !== props.conversationFile || rtag !== tag) return
-          console.error(t('chat.errors.retryFailed') + ':', message)
+          if (conversationFile !== props.conversationFile || rtag !== tag) return;
+          console.error(t('chat.errors.retryFailed') + ':', message);
           try {
-            offOk?.()
+            offOk?.();
           } catch (_) {}
           try {
-            offFail?.()
+            offFail?.();
           } catch (_) {}
         },
-      )
+      );
 
-      __uiOffs.push(offOk, offFail)
+      __uiOffs.push(offOk, offFail);
       Host.events.emit(Branch.EVT_BRANCH_RETRY_ASSIST_REQ, {
         conversationFile: props.conversationFile,
         retryNodeId: oldId,
         tag,
-      })
+      });
     } else if (msg.role === 'user') {
       // 事件化：用户智能重试 -> 由桥接器决定创建助手或重试既有助手
-      const tag = `retry_user_${Date.now()}`
+      const tag = `retry_user_${Date.now()}`;
 
       // 监听 RETRY_USER_OK，如果是 retry_assistant 则继续监听分支创建
       const offOk = Host.events.on(
         Branch.EVT_BRANCH_RETRY_USER_OK,
         ({ conversationFile, action, assistantNodeId, doc, tag: rtag }) => {
-          if (conversationFile !== props.conversationFile || rtag !== tag) return
-          if (doc && props.conversationDoc) Object.assign(props.conversationDoc, doc)
+          if (conversationFile !== props.conversationFile || rtag !== tag) return;
+          if (doc && props.conversationDoc) Object.assign(props.conversationDoc, doc);
 
           // 如果是 retry_assistant，监听后续的分支创建事件以更新UI
           if (action === 'retry_assistant' && assistantNodeId) {
-            const oldAssistantId = assistantNodeId
+            const oldAssistantId = assistantNodeId;
 
             // 监听工作流触发的助手分支创建事件
             const offAssistOk = Host.events.on(
@@ -763,93 +763,93 @@ async function regenerateMessage(msg) {
                 tag: assTag,
               }) => {
                 // 检查是否是我们触发的重试（通过检查时间戳）
-                if (cf !== props.conversationFile) return
-                if (!assTag || !assTag.startsWith('retry_user_assist_')) return
+                if (cf !== props.conversationFile) return;
+                if (!assTag || !assTag.startsWith('retry_user_assist_')) return;
 
                 // 仅更新 rawMessages（因为 props.messages 是它的引用，会自动更新）
                 try {
-                  const rawMsgs = msgStore.rawMessages || []
-                  const rawIdx = rawMsgs.findIndex((m) => m && m.id === oldAssistantId)
+                  const rawMsgs = msgStore.rawMessages || [];
+                  const rawIdx = rawMsgs.findIndex((m) => m && m.id === oldAssistantId);
                   if (rawIdx >= 0 && rawMsgs[rawIdx]) {
-                    rawMsgs[rawIdx].id = newNodeId
-                    rawMsgs[rawIdx].content = ''
-                    rawMsgs[rawIdx].node_updated_at = node_updated_at
-                    msgStore.updateRawMessages([...rawMsgs])
+                    rawMsgs[rawIdx].id = newNodeId;
+                    rawMsgs[rawIdx].content = '';
+                    rawMsgs[rawIdx].node_updated_at = node_updated_at;
+                    msgStore.updateRawMessages([...rawMsgs]);
 
                     // 设置调色板和节点状态
-                    ensurePaletteFor(rawMsgs[rawIdx])
+                    ensurePaletteFor(rawMsgs[rawIdx]);
                     nodeStates.value[newNodeId] = {
                       waitingAI: true,
                       waitingSeconds: 0,
                       error: null,
-                    }
+                    };
 
                     // 附加 Completion 监听以驱动后续更新
-                    attachCompletionHandlersForTag(newNodeId)
+                    attachCompletionHandlersForTag(newNodeId);
                   }
                 } catch (_) {}
 
-                if (newDoc && props.conversationDoc) Object.assign(props.conversationDoc, newDoc)
+                if (newDoc && props.conversationDoc) Object.assign(props.conversationDoc, newDoc);
 
                 // 用 latest 直接更新分支映射
                 if (latest2 && latest2.node_id) {
-                  const lid = latest2.node_id
-                  const lj = latest2.j != null ? latest2.j : null
-                  const ln = latest2.n != null ? latest2.n : null
-                  const map = {}
-                  if (lj != null && ln != null) map[lid] = { j: lj, n: ln }
-                  branchInfoMap.value = map
+                  const lid = latest2.node_id;
+                  const lj = latest2.j != null ? latest2.j : null;
+                  const ln = latest2.n != null ? latest2.n : null;
+                  const map = {};
+                  if (lj != null && ln != null) map[lid] = { j: lj, n: ln };
+                  branchInfoMap.value = map;
                 }
 
                 try {
-                  offAssistOk?.()
+                  offAssistOk?.();
                 } catch (_) {}
               },
-            )
+            );
 
-            __uiOffs.push(offAssistOk)
+            __uiOffs.push(offAssistOk);
           }
 
           try {
-            offOk?.()
+            offOk?.();
           } catch (_) {}
           try {
-            offFail?.()
+            offFail?.();
           } catch (_) {}
         },
-      )
+      );
       const offFail = Host.events.on(
         Branch.EVT_BRANCH_RETRY_USER_FAIL,
         ({ conversationFile, message, tag: rtag }) => {
-          if (conversationFile !== props.conversationFile || rtag !== tag) return
-          console.error(t('chat.errors.retryFailed') + ':', message)
+          if (conversationFile !== props.conversationFile || rtag !== tag) return;
+          console.error(t('chat.errors.retryFailed') + ':', message);
           try {
-            offOk?.()
+            offOk?.();
           } catch (_) {}
           try {
-            offFail?.()
+            offFail?.();
           } catch (_) {}
         },
-      )
+      );
 
-      __uiOffs.push(offOk, offFail)
+      __uiOffs.push(offOk, offFail);
       Host.events.emit(Branch.EVT_BRANCH_RETRY_USER_REQ, {
         conversationFile: props.conversationFile,
         userNodeId: msg.id,
         tag,
-      })
+      });
     }
   } catch (error) {
-    console.error(t('chat.errors.retryFailed') + ':', error)
+    console.error(t('chat.errors.retryFailed') + ':', error);
   }
 }
 
 /* 发送状态管理 */
-const isSending = ref(false)
-const sendErrorMsg = ref('')
-const lastSentMessageId = ref(null)
-let sendErrorTimer = null
-let sendSuccessTimer = null
+const isSending = ref(false);
+const sendErrorMsg = ref('');
+const lastSentMessageId = ref(null);
+let sendErrorTimer = null;
+let sendSuccessTimer = null;
 
 /**
  * 提交输入（来自 InputRow），创建用户消息并保存到后端
@@ -857,34 +857,34 @@ let sendSuccessTimer = null
  * 失败时保留输入框内容让用户重试
  */
 async function onSubmit(text) {
-  const inputText = (text ?? '').trim()
-  if (!inputText) return
-  if (isSending.value) return
+  const inputText = (text ?? '').trim();
+  if (!inputText) return;
+  if (isSending.value) return;
 
   if (!props.conversationFile || !props.conversationDoc) {
-    console.error(t('chat.errors.noConversationDoc'))
-    return
+    console.error(t('chat.errors.noConversationDoc'));
+    return;
   }
 
   // 开始发送（禁用输入）
-  isSending.value = true
-  sendErrorMsg.value = ''
-  if (sendErrorTimer) clearTimeout(sendErrorTimer)
+  isSending.value = true;
+  sendErrorMsg.value = '';
+  if (sendErrorTimer) clearTimeout(sendErrorTimer);
 
   // 获取父节点：始终以 rawMessages 的最后一条为准（始终最新且正确）
-  const rawList = Array.isArray(msgStore.rawMessages) ? msgStore.rawMessages : []
+  const rawList = Array.isArray(msgStore.rawMessages) ? msgStore.rawMessages : [];
   const parentId =
     rawList.length > 0 && rawList[rawList.length - 1] && rawList[rawList.length - 1].id
       ? rawList[rawList.length - 1].id
-      : null
+      : null;
   if (!parentId) {
-    isSending.value = false
-    sendErrorMsg.value = t('chat.errors.cannotDetermineParentId')
-    return
+    isSending.value = false;
+    sendErrorMsg.value = t('chat.errors.cannotDetermineParentId');
+    return;
   }
 
-  const newNodeId = `n_user${Date.now()}`
-  const tag = newNodeId
+  const newNodeId = `n_user${Date.now()}`;
+  const tag = newNodeId;
 
   // 监听发送结果（一次性）
   const offOk = Host.events.on(
@@ -900,130 +900,130 @@ async function onSubmit(text) {
       tag: rtag,
     }) => {
       if (conversationFile !== props.conversationFile || nodeId !== newNodeId || rtag !== tag)
-        return
+        return;
 
       // 仅更新 rawMessages（因为 props.messages 是它的引用，会自动更新）
       try {
-        const rawMsgs = msgStore.rawMessages || []
+        const rawMsgs = msgStore.rawMessages || [];
         const newMessage = {
           id: newNodeId,
           role: 'user',
           content: inputText,
           node_updated_at: node_updated_at || null,
-        }
-        rawMsgs.push(newMessage)
-        msgStore.updateRawMessages([...rawMsgs])
+        };
+        rawMsgs.push(newMessage);
+        msgStore.updateRawMessages([...rawMsgs]);
 
         // 设置调色板
-        ensurePaletteFor(newMessage)
+        ensurePaletteFor(newMessage);
       } catch (_) {}
 
       if (doc && props.conversationDoc) {
         // append_message 现返回 active_path/latest（非完整 doc）：安全合并有效字段
         try {
-          if (Array.isArray(doc.active_path)) props.conversationDoc.active_path = doc.active_path
+          if (Array.isArray(doc.active_path)) props.conversationDoc.active_path = doc.active_path;
           if (doc.nodes && typeof doc.nodes === 'object')
-            Object.assign(props.conversationDoc.nodes || {}, doc.nodes)
+            Object.assign(props.conversationDoc.nodes || {}, doc.nodes);
           if (doc.children && typeof doc.children === 'object')
-            Object.assign(props.conversationDoc.children || {}, doc.children)
-          if (doc.roots && Array.isArray(doc.roots)) props.conversationDoc.roots = doc.roots
+            Object.assign(props.conversationDoc.children || {}, doc.children);
+          if (doc.roots && Array.isArray(doc.roots)) props.conversationDoc.roots = doc.roots;
         } catch (_) {}
       }
 
-      inputRowRef.value?.clearText?.()
-      isSending.value = false
+      inputRowRef.value?.clearText?.();
+      isSending.value = false;
 
       // 成功反馈
-      lastSentMessageId.value = newNodeId
-      if (sendSuccessTimer) clearTimeout(sendSuccessTimer)
+      lastSentMessageId.value = newNodeId;
+      if (sendSuccessTimer) clearTimeout(sendSuccessTimer);
       sendSuccessTimer = setTimeout(() => {
-        lastSentMessageId.value = null
-        refreshIcons()
-      }, 1500)
+        lastSentMessageId.value = null;
+        refreshIcons();
+      }, 1500);
 
       // 滚动到底部
       nextTick(() => {
         setTimeout(() => {
           if (messageListRef.value?.$el) {
-            const container = messageListRef.value.$el.querySelector('.scroll-container')
+            const container = messageListRef.value.$el.querySelector('.scroll-container');
             if (container) {
               try {
-                container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
+                container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
               } catch (_) {
-                const start = container.scrollTop
-                const end = container.scrollHeight
-                const dur = 420
-                const t0 = performance.now()
-                const ease = (t) => 1 - Math.pow(1 - t, 3)
+                const start = container.scrollTop;
+                const end = container.scrollHeight;
+                const dur = 420;
+                const t0 = performance.now();
+                const ease = (t) => 1 - Math.pow(1 - t, 3);
                 const step = (now) => {
-                  const p = Math.min(1, (now - t0) / dur)
-                  container.scrollTop = start + (end - start) * ease(p)
-                  if (p < 1) requestAnimationFrame(step)
-                }
-                requestAnimationFrame(step)
+                  const p = Math.min(1, (now - t0) / dur);
+                  container.scrollTop = start + (end - start) * ease(p);
+                  if (p < 1) requestAnimationFrame(step);
+                };
+                requestAnimationFrame(step);
               }
             }
           }
-        }, 60)
-      })
+        }, 60);
+      });
 
       // 用 latest 直接更新分支指示，避免调用分支表；并暂存给占位节点使用
       // latest.node_id 指向占位助手节点
       if (doc && doc.latest && doc.latest.node_id) {
-        const lid = doc.latest.node_id
-        const lj = doc.latest.j != null ? doc.latest.j : null
-        const ln = doc.latest.n != null ? doc.latest.n : null
-        const newMap = {}
-        if (lj != null && ln != null) newMap[lid] = { j: lj, n: ln }
-        branchInfoMap.value = newMap
-        pendingAssistantJN.value = lj != null && ln != null ? { j: lj, n: ln } : null
+        const lid = doc.latest.node_id;
+        const lj = doc.latest.j != null ? doc.latest.j : null;
+        const ln = doc.latest.n != null ? doc.latest.n : null;
+        const newMap = {};
+        if (lj != null && ln != null) newMap[lid] = { j: lj, n: ln };
+        branchInfoMap.value = newMap;
+        pendingAssistantJN.value = lj != null && ln != null ? { j: lj, n: ln } : null;
 
         // 触发占位助手创建事件（UI和rawMessages更新由监听器统一处理）
-        const placeholderTimestamp = placeholder_updated_at || null
+        const placeholderTimestamp = placeholder_updated_at || null;
         if (placeholderTimestamp && lid) {
           Host.events.emit(Threaded.EVT_THREAD_ASSIST_PLACEHOLDER_CREATE, {
             conversationFile: props.conversationFile,
             tempNodeId: lid,
             node_updated_at: placeholderTimestamp,
-          })
+          });
         }
       }
 
       try {
-        offOk?.()
+        offOk?.();
       } catch (_) {}
       try {
-        offFail?.()
+        offFail?.();
       } catch (_) {}
     },
-  )
+  );
   const offFail = Host.events.on(
     Message.EVT_MESSAGE_SEND_FAIL,
     ({ conversationFile, message, tag: rtag }) => {
-      if (conversationFile && conversationFile !== props.conversationFile) return
-      if (rtag && rtag !== tag) return
+      if (conversationFile && conversationFile !== props.conversationFile) return;
+      if (rtag && rtag !== tag) return;
 
-      isSending.value = false
-      sendErrorMsg.value = message || t('chat.errors.sendFailed')
+      isSending.value = false;
+      sendErrorMsg.value = message || t('chat.errors.sendFailed');
 
-      if (sendErrorTimer) clearTimeout(sendErrorTimer)
+      if (sendErrorTimer) clearTimeout(sendErrorTimer);
       sendErrorTimer = setTimeout(() => {
-        sendErrorMsg.value = ''
-        refreshIcons()
-      }, 2500)
+        sendErrorMsg.value = '';
+        refreshIcons();
+      }, 2500);
 
-      refreshIcons()
+      refreshIcons();
 
       try {
-        offOk?.()
+        offOk?.();
       } catch (_) {}
       try {
-        offFail?.()
+        offFail?.();
       } catch (_) {}
     },
-  )
+  );
 
-  __uiOffs.push(offOk, offFail)
+  __uiOffs.push(offOk, offFail);
 
   // 事件化发送请求（桥接器调用后端并广播结果）
   Host.events.emit(Message.EVT_MESSAGE_SEND_REQ, {
@@ -1033,111 +1033,114 @@ async function onSubmit(text) {
     role: 'user',
     content: inputText,
     tag,
-  })
+  });
 }
 
 function onMessageUpdate(msg) {
   // 消息更新后的回调（可选）
-  console.log('Message updated:', msg.id)
-  refreshIcons()
+  console.log('Message updated:', msg.id);
+  refreshIcons();
 }
 
 async function onBranchSwitched(data) {
   // 分支切换后的回调
-  console.log('Branch switched:', data)
+  console.log('Branch switched:', data);
 
   // 更新本地文档
   if (data.doc && props.conversationDoc) {
-    Object.assign(props.conversationDoc, data.doc)
+    Object.assign(props.conversationDoc, data.doc);
   }
 
   // 如果仅返回了目标节点ID（删除后智能切换场景），同步更新最后一条消息的节点ID
   if (data.nodeId && props.messages && props.messages.length > 0) {
-    const last = props.messages[props.messages.length - 1]
+    const last = props.messages[props.messages.length - 1];
     if (last && typeof last === 'object') {
-      last.id = data.nodeId
+      last.id = data.nodeId;
     }
   }
 
   // 无论 switch 还是 delete，切换后都重新处理视图（由路由生成最终显示内容）
   try {
-    await msgStore.processMessagesView?.()
+    await msgStore.processMessagesView?.();
   } catch (_) {}
 
   // 清理消息对象上可能残留的临时状态属性（向后兼容）
   if (data.msg) {
-    delete data.msg.waitingAI
-    delete data.msg.waitingSeconds
-    delete data.msg.error
+    delete data.msg.waitingAI;
+    delete data.msg.waitingSeconds;
+    delete data.msg.error;
 
     // 如果后台索引中有该节点的流式内容，同步到消息显示
     if (streamContentIndex.value[data.msg.id]) {
-      data.msg.content = streamContentIndex.value[data.msg.id]
+      data.msg.content = streamContentIndex.value[data.msg.id];
     }
   }
 
   // 使用事件返回的 latest 直接更新最后一条的分支指示，避免再次请求分支表
   if (data.latest && data.latest.node_id) {
-    const lid = data.latest.node_id
-    const lj = data.latest.j != null ? data.latest.j : null
-    const ln = data.latest.n != null ? data.latest.n : null
-    const newMap = {}
-    if (lj != null && ln != null) newMap[lid] = { j: lj, n: ln }
-    branchInfoMap.value = newMap
+    const lid = data.latest.node_id;
+    const lj = data.latest.j != null ? data.latest.j : null;
+    const ln = data.latest.n != null ? data.latest.n : null;
+    const newMap = {};
+    if (lj != null && ln != null) newMap[lid] = { j: lj, n: ln };
+    branchInfoMap.value = newMap;
   } else {
     // 兜底：若没有提供 latest，则回退一次性读取分支表
-    await loadBranchInfo()
+    await loadBranchInfo();
   }
 
-  refreshIcons()
+  refreshIcons();
 }
 
 /**
  * 判断是否是该角色的最后一条消息
  */
 function isLastOfRole(msg, idx) {
-  const role = msg.role
+  const role = msg.role;
   // 从当前消息之后查找，如果没有相同角色的消息，则当前是最后一条
   for (let i = idx + 1; i < props.messages.length; i++) {
     if (props.messages[i].role === role) {
-      return false
+      return false;
     }
   }
-  return true
+  return true;
 }
 
 function getRenderContent(msg) {
-  const sid = msg?.id
+  const sid = msg?.id;
   // 仅在“该节点仍处于流式/等待中或仍有未清理的流式索引”时，使用原始累加内容
-  const isStreaming = !!(sid && (nodeStates.value[sid]?.waitingAI || streamContentIndex.value[sid]))
+  const isStreaming = !!(
+    sid &&
+    (nodeStates.value[sid]?.waitingAI || streamContentIndex.value[sid])
+  );
   if (isStreaming) {
     // 打字机：优先返回可见缓冲，其次返回完整流式缓存
-    return streamVisibleIndex.value[sid] ?? streamContentIndex.value[sid] ?? msg?.content ?? ''
+    return streamVisibleIndex.value[sid] ?? streamContentIndex.value[sid] ?? msg?.content ?? '';
   }
   // 否则（已结束流式或从未流式），优先展示经过 process_messages_view 处理后的视图内容
-  return msgStore.getMessageContent(sid)
+  return msgStore.getMessageContent(sid);
 }
 function getDisplayParts(msg) {
-  return splitHtmlFromText(getRenderContent(msg))
+  return splitHtmlFromText(getRenderContent(msg));
 }
 
 // 视口中心消息索引（用于追踪视口模式）
-const viewportCenterIdx = ref(0)
+const viewportCenterIdx = ref(0);
 
 // iframe 加载状态跟踪
-const iframesLoading = ref(new Set())
-const emit = defineEmits(['all-iframes-loaded'])
+const iframesLoading = ref(new Set());
+const emit = defineEmits(['all-iframes-loaded']);
 
 /**
  * iframe加载完成回调
  */
 function onIframeLoaded(msgId) {
-  iframesLoading.value.delete(msgId)
+  iframesLoading.value.delete(msgId);
   if (iframesLoading.value.size === 0) {
     // 所有iframe都已加载完成
     nextTick(() => {
-      emit('all-iframes-loaded')
-    })
+      emit('all-iframes-loaded');
+    });
   }
 }
 
@@ -1145,18 +1148,18 @@ function onIframeLoaded(msgId) {
  * 初始化iframe加载跟踪
  */
 function initIframesTracking() {
-  iframesLoading.value.clear()
+  iframesLoading.value.clear();
   props.messages.forEach((m, idx) => {
     if (shouldRenderIframe(idx) && getDisplayParts(m).html) {
-      iframesLoading.value.add(m.id)
+      iframesLoading.value.add(m.id);
     }
-  })
+  });
 
   // 如果没有需要加载的iframe，立即通知完成
   if (iframesLoading.value.size === 0) {
     nextTick(() => {
-      emit('all-iframes-loaded')
-    })
+      emit('all-iframes-loaded');
+    });
   }
 }
 
@@ -1164,81 +1167,81 @@ function initIframesTracking() {
  * 更新视口中心消息索引
  */
 function updateViewportCenter() {
-  if (!messageListRef.value) return
+  if (!messageListRef.value) return;
 
-  const container = messageListRef.value.$el?.querySelector('.scroll-container')
-  if (!container) return
+  const container = messageListRef.value.$el?.querySelector('.scroll-container');
+  if (!container) return;
 
-  const containerRect = container.getBoundingClientRect()
-  const centerY = containerRect.top + containerRect.height / 2
+  const containerRect = container.getBoundingClientRect();
+  const centerY = containerRect.top + containerRect.height / 2;
 
   // 找到最接近视口中心的消息
-  const messageElements = container.querySelectorAll('[data-message-idx]')
-  let closestIdx = 0
-  let minDistance = Infinity
+  const messageElements = container.querySelectorAll('[data-message-idx]');
+  let closestIdx = 0;
+  let minDistance = Infinity;
 
   messageElements.forEach((el) => {
-    const rect = el.getBoundingClientRect()
-    const elementCenterY = rect.top + rect.height / 2
-    const distance = Math.abs(elementCenterY - centerY)
+    const rect = el.getBoundingClientRect();
+    const elementCenterY = rect.top + rect.height / 2;
+    const distance = Math.abs(elementCenterY - centerY);
 
     if (distance < minDistance) {
-      minDistance = distance
-      const idx = parseInt(el.getAttribute('data-message-idx') || '0', 10)
-      closestIdx = idx
+      minDistance = distance;
+      const idx = parseInt(el.getAttribute('data-message-idx') || '0', 10);
+      closestIdx = idx;
     }
-  })
+  });
 
-  viewportCenterIdx.value = closestIdx
+  viewportCenterIdx.value = closestIdx;
 }
 
 /**
  * 判断消息是否应该渲染 iframe
  */
 function shouldRenderIframe(idx) {
-  const mode = appearanceStore.iframeRenderMode
-  const range = appearanceStore.iframeRenderRange
+  const mode = appearanceStore.iframeRenderMode;
+  const range = appearanceStore.iframeRenderRange;
 
   if (mode === 'all') {
-    return true
+    return true;
   }
 
-  const totalMessages = props.messages.length
+  const totalMessages = props.messages.length;
 
   if (mode === 'track_latest') {
-    const latestIdx = totalMessages - 1
-    const startIdx = Math.max(0, latestIdx - range + 1)
-    return idx >= startIdx
+    const latestIdx = totalMessages - 1;
+    const startIdx = Math.max(0, latestIdx - range + 1);
+    return idx >= startIdx;
   }
 
   if (mode === 'track_viewport') {
     // 以视口中心消息为基准，前后各渲染部分
-    const centerIdx = viewportCenterIdx.value
-    const halfRange = Math.floor(range / 2)
-    const startIdx = Math.max(0, centerIdx - halfRange)
-    const endIdx = Math.min(totalMessages - 1, centerIdx + halfRange)
+    const centerIdx = viewportCenterIdx.value;
+    const halfRange = Math.floor(range / 2);
+    const startIdx = Math.max(0, centerIdx - halfRange);
+    const endIdx = Math.min(totalMessages - 1, centerIdx + halfRange);
 
     // 如果一端不足，补充到另一端
-    let actualStart = startIdx
-    let actualEnd = endIdx
+    let actualStart = startIdx;
+    let actualEnd = endIdx;
 
-    const beforeCount = centerIdx - startIdx
-    const afterCount = endIdx - centerIdx
+    const beforeCount = centerIdx - startIdx;
+    const afterCount = endIdx - centerIdx;
 
     if (beforeCount < halfRange) {
       // 前面不足，补充到后面
-      const deficit = halfRange - beforeCount
-      actualEnd = Math.min(totalMessages - 1, actualEnd + deficit)
+      const deficit = halfRange - beforeCount;
+      actualEnd = Math.min(totalMessages - 1, actualEnd + deficit);
     } else if (afterCount < halfRange) {
       // 后面不足，补充到前面
-      const deficit = halfRange - afterCount
-      actualStart = Math.max(0, actualStart - deficit)
+      const deficit = halfRange - afterCount;
+      actualStart = Math.max(0, actualStart - deficit);
     }
 
-    return idx >= actualStart && idx <= actualEnd
+    return idx >= actualStart && idx <= actualEnd;
   }
 
-  return true
+  return true;
 }
 </script>
 

@@ -1,10 +1,10 @@
 <script setup>
-import { ref, watch, toRef } from 'vue'
-import DataCatalog from '@/services/dataCatalog'
-import { useI18n } from '@/locales'
-import { useFocusTrap } from '@/composables/useFocusTrap'
+import { ref, watch, toRef } from 'vue';
+import DataCatalog from '@/services/dataCatalog';
+import { useI18n } from '@/locales';
+import { useFocusTrap } from '@/composables/useFocusTrap';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -14,163 +14,163 @@ const props = defineProps({
   defaultIcon: { type: String, default: 'file' }, // 默认 lucide 图标名
   useKeyAsPath: { type: Boolean, default: false }, // 为 true 时直接使用 key 作为导出路径（用于插件等目录型数据）
   hideJsonFormat: { type: Boolean, default: false }, // 为 true 时隐藏 JSON 格式选项（如插件不支持纯 JSON 导出）
-})
+});
 
-const emit = defineEmits(['close', 'export'])
+const emit = defineEmits(['close', 'export']);
 
-const selectedItem = ref(null)
-const exportFormat = ref('zip')
-const embedImage = ref(null)
-const embedImagePreview = ref(null)
-const exporting = ref(false)
-const exportError = ref(null)
-const exportSuccess = ref(false)
-const imageInputRef = ref(null)
-const isDraggingImage = ref(false)
-let successTimer = null
+const selectedItem = ref(null);
+const exportFormat = ref('zip');
+const embedImage = ref(null);
+const embedImagePreview = ref(null);
+const exporting = ref(false);
+const exportError = ref(null);
+const exportSuccess = ref(false);
+const imageInputRef = ref(null);
+const isDraggingImage = ref(false);
+let successTimer = null;
 
 // 当弹窗显示时，初始化状态
 watch(
   () => props.show,
   (val) => {
     if (val) {
-      selectedItem.value = props.items.length > 0 ? props.items[0].key : null
-      exportFormat.value = 'zip'
-      embedImage.value = null
-      embedImagePreview.value = null
-      exportError.value = null
-      exportSuccess.value = false
-      exporting.value = false
+      selectedItem.value = props.items.length > 0 ? props.items[0].key : null;
+      exportFormat.value = 'zip';
+      embedImage.value = null;
+      embedImagePreview.value = null;
+      exportError.value = null;
+      exportSuccess.value = false;
+      exporting.value = false;
       if (successTimer) {
-        clearTimeout(successTimer)
-        successTimer = null
+        clearTimeout(successTimer);
+        successTimer = null;
       }
       // 刷新 lucide 图标
       setTimeout(() => {
         try {
-          window?.lucide?.createIcons?.()
+          window?.lucide?.createIcons?.();
         } catch (_) {}
-      }, 50)
+      }, 50);
     }
   },
-)
+);
 
 // 从文件路径提取文件夹名称
 function getFolderName(filePath) {
-  if (!filePath) return ''
-  const parts = filePath.split('/')
+  if (!filePath) return '';
+  const parts = filePath.split('/');
   if (parts.length >= 2) {
-    return parts[parts.length - 2]
+    return parts[parts.length - 2];
   }
-  return ''
+  return '';
 }
 
 // 获取文件夹路径
 function getFolderPath(fileKey) {
-  if (!fileKey) return null
+  if (!fileKey) return null;
   // 如果设置了 useKeyAsPath，直接返回 key（用于插件等目录型数据）
   if (props.useKeyAsPath) {
-    return fileKey
+    return fileKey;
   }
   // 否则去掉文件名部分，返回目录路径
-  const parts = fileKey.split('/')
-  parts.pop()
-  return parts.join('/')
+  const parts = fileKey.split('/');
+  parts.pop();
+  return parts.join('/');
 }
 
 // 触发图片选择
 function triggerImageSelect() {
   if (imageInputRef.value) {
-    imageInputRef.value.click()
+    imageInputRef.value.click();
   }
 }
 
 // 处理图片选择
 function handleImageSelect(event) {
-  const files = event.target.files
-  if (!files || files.length === 0) return
-  processImageFile(files[0])
-  event.target.value = ''
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+  processImageFile(files[0]);
+  event.target.value = '';
 }
 
 // 处理图片文件
 function processImageFile(file) {
   if (!file.type.startsWith('image/png')) {
-    exportError.value = t('exportModal.errors.pngOnly')
-    return
+    exportError.value = t('exportModal.errors.pngOnly');
+    return;
   }
 
-  embedImage.value = file
+  embedImage.value = file;
 
-  const reader = new FileReader()
+  const reader = new FileReader();
   reader.onload = () => {
-    embedImagePreview.value = reader.result
-  }
-  reader.readAsDataURL(file)
+    embedImagePreview.value = reader.result;
+  };
+  reader.readAsDataURL(file);
 }
 
 // 拖拽处理
 function handleDragOver(event) {
-  event.preventDefault()
-  isDraggingImage.value = true
+  event.preventDefault();
+  isDraggingImage.value = true;
 }
 
 function handleDragLeave(event) {
-  event.preventDefault()
-  isDraggingImage.value = false
+  event.preventDefault();
+  isDraggingImage.value = false;
 }
 
 function handleDrop(event) {
-  event.preventDefault()
-  isDraggingImage.value = false
+  event.preventDefault();
+  isDraggingImage.value = false;
 
-  const files = event.dataTransfer.files
+  const files = event.dataTransfer.files;
   if (files && files.length > 0) {
-    processImageFile(files[0])
+    processImageFile(files[0]);
   }
 }
 
 // 清除选择的图片
 function clearEmbedImage() {
-  embedImage.value = null
-  embedImagePreview.value = null
+  embedImage.value = null;
+  embedImagePreview.value = null;
 }
 
 // 执行导出
 async function doExport() {
   if (!selectedItem.value) {
-    exportError.value = t('exportModal.errors.noSelection', { type: props.dataTypeName })
-    return
+    exportError.value = t('exportModal.errors.noSelection', { type: props.dataTypeName });
+    return;
   }
 
-  const folderPath = getFolderPath(selectedItem.value)
+  const folderPath = getFolderPath(selectedItem.value);
   if (!folderPath) {
-    exportError.value = t('exportModal.errors.noPath', { type: props.dataTypeName })
-    return
+    exportError.value = t('exportModal.errors.noPath', { type: props.dataTypeName });
+    return;
   }
 
-  exporting.value = true
-  exportError.value = null
-  exportSuccess.value = false
+  exporting.value = true;
+  exportError.value = null;
+  exportSuccess.value = false;
   if (successTimer) {
-    clearTimeout(successTimer)
-    successTimer = null
+    clearTimeout(successTimer);
+    successTimer = null;
   }
 
   try {
-    let embedImageBase64 = null
+    let embedImageBase64 = null;
 
     if (exportFormat.value === 'png' && embedImage.value) {
       embedImageBase64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader()
+        const reader = new FileReader();
         reader.onload = () => {
-          const result = reader.result
-          const base64 = result.includes(',') ? result.split(',')[1] || '' : result
-          resolve(base64)
-        }
-        reader.onerror = () => reject(reader.error)
-        reader.readAsDataURL(embedImage.value)
-      })
+          const result = reader.result;
+          const base64 = result.includes(',') ? result.split(',')[1] || '' : result;
+          resolve(base64);
+        };
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(embedImage.value);
+      });
     }
 
     await DataCatalog.downloadExportedData(
@@ -178,30 +178,30 @@ async function doExport() {
       props.dataType,
       exportFormat.value === 'png' ? embedImageBase64 : undefined,
       exportFormat.value,
-    )
+    );
 
-    emit('export', { item: selectedItem.value, format: exportFormat.value })
+    emit('export', { item: selectedItem.value, format: exportFormat.value });
     // 导出成功后不关闭面板，允许用户继续导出其他项
-    exportSuccess.value = true
+    exportSuccess.value = true;
     // 3秒后自动隐藏成功提示
-    if (successTimer) clearTimeout(successTimer)
+    if (successTimer) clearTimeout(successTimer);
     successTimer = setTimeout(() => {
-      exportSuccess.value = false
-    }, 3000)
+      exportSuccess.value = false;
+    }, 3000);
   } catch (err) {
-    console.error('[ExportModal] Export error:', err)
-    exportError.value = err.message || t('error.exportFailed')
+    console.error('[ExportModal] Export error:', err);
+    exportError.value = err.message || t('error.exportFailed');
   } finally {
-    exporting.value = false
+    exporting.value = false;
   }
 }
 
 function handleClose() {
-  emit('close')
+  emit('close');
 }
 
-const modalRef = ref(null)
-useFocusTrap(modalRef, toRef(props, 'show'))
+const modalRef = ref(null);
+useFocusTrap(modalRef, toRef(props, 'show'));
 </script>
 
 <template>

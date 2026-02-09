@@ -6,5 +6,13 @@
   "printWidth": 100,
   "endOfLine": "lf",
   "arrowParens": "always",
-  "vueIndentScriptAndStyle": false
+  "vueIndentScriptAndStyle": false,
+  "overrides": [
+    {
+      "files": "*.vue",
+      "options": {
+        "semi": true
+      }
+    }
+  ]
 }

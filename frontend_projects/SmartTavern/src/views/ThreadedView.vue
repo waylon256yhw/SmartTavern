@@ -1,31 +1,31 @@
 <script setup>
-import { onMounted, ref } from 'vue'
-import ThreadedChatPreview from '@/components/chat/ThreadedChatPreview.vue'
+import { onMounted, ref } from 'vue';
+import ThreadedChatPreview from '@/components/chat/ThreadedChatPreview.vue';
 
 const props = defineProps({
   messages: { type: Array, default: () => [] },
   conversationFile: { type: String, default: null },
   conversationDoc: { type: Object, default: null },
-})
+});
 
-const emit = defineEmits(['update:loading', 'update:loadingMessage', 'ready'])
+const emit = defineEmits(['update:loading', 'update:loadingMessage', 'ready']);
 
 // 跟踪iframe加载状态
-const iframesLoaded = ref(false)
+const iframesLoaded = ref(false);
 
 function onAllIframesLoaded() {
-  iframesLoaded.value = true
+  iframesLoaded.value = true;
   // 所有iframe加载完成后，通知父组件视图已准备好
-  emit('ready')
+  emit('ready');
   // 然后关闭加载动画
-  emit('update:loading', false)
-  emit('update:loadingMessage', '')
+  emit('update:loading', false);
+  emit('update:loadingMessage', '');
 }
 
 // ThreadedView数据已在App.vue中准备好，但需要等待iframe加载
 onMounted(() => {
   // 不再立即关闭加载动画，等待iframe加载完成
-})
+});
 </script>
 
 <template>

@@ -1,51 +1,51 @@
 <script setup>
-import { ref, computed } from 'vue'
-import { useOptionsStore } from '@/stores/workflow/options'
-import { useI18n } from '@/locales'
-import { useFocusTrap } from '@/composables/useFocusTrap'
+import { ref, computed } from 'vue';
+import { useOptionsStore } from '@/stores/workflow/options';
+import { useI18n } from '@/locales';
+import { useFocusTrap } from '@/composables/useFocusTrap';
 
-const { t } = useI18n()
-const store = useOptionsStore()
-const currentOption = computed(() => store.current)
+const { t } = useI18n();
+const store = useOptionsStore();
+const currentOption = computed(() => store.current);
 
-const panelRef = ref(null)
-const isActive = computed(() => !!currentOption.value)
-useFocusTrap(panelRef, isActive)
+const panelRef = ref(null);
+const isActive = computed(() => !!currentOption.value);
+useFocusTrap(panelRef, isActive);
 
 /** 处理选项选择 */
 function handleSelect(value) {
-  if (!currentOption.value) return
+  if (!currentOption.value) return;
 
-  const type = currentOption.value.type
+  const type = currentOption.value.type;
 
   if (type === 'single') {
     // 单选：直接确认
-    store.confirm(value)
+    store.confirm(value);
   } else if (type === 'multiple') {
     // 多选：切换选中状态
-    store.toggleSelection(value)
+    store.toggleSelection(value);
   } else if (type === 'any') {
     // 不定项：直接确认（允许任意个数）
-    store.toggleSelection(value)
+    store.toggleSelection(value);
   }
 }
 
 /** 检查选项是否被选中 */
 function isSelected(value) {
-  if (!currentOption.value) return false
-  return currentOption.value.selected.includes(value)
+  if (!currentOption.value) return false;
+  return currentOption.value.selected.includes(value);
 }
 
 /** 确认多选/不定项选择 */
 function handleConfirm() {
-  if (!currentOption.value) return
-  const selected = currentOption.value.selected
-  store.confirm(selected.length > 0 ? selected : null)
+  if (!currentOption.value) return;
+  const selected = currentOption.value.selected;
+  store.confirm(selected.length > 0 ? selected : null);
 }
 
 /** 取消选择 */
 function handleCancel() {
-  store.cancel()
+  store.cancel();
 }
 </script>
 

@@ -1,10 +1,10 @@
 <script setup>
-import { ref, watch, toRef } from 'vue'
-import DataCatalog from '@/services/dataCatalog'
-import { useI18n } from '@/locales'
-import { useFocusTrap } from '@/composables/useFocusTrap'
+import { ref, watch, toRef } from 'vue';
+import DataCatalog from '@/services/dataCatalog';
+import { useI18n } from '@/locales';
+import { useFocusTrap } from '@/composables/useFocusTrap';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -12,67 +12,67 @@ const props = defineProps({
   dataTypeName: { type: String, default: '' }, // 用于显示的名称，如 "预设"、"世界书" 等
   existingName: { type: String, default: '' },
   suggestedName: { type: String, default: '' },
-})
+});
 
-const emit = defineEmits(['close', 'overwrite', 'rename'])
+const emit = defineEmits(['close', 'overwrite', 'rename']);
 
-const customName = ref('')
-const customNameError = ref('')
-const checkingName = ref(false)
+const customName = ref('');
+const customNameError = ref('');
+const checkingName = ref(false);
 
 // 当弹窗显示时，初始化自定义名称
 watch(
   () => props.show,
   (val) => {
     if (val) {
-      customName.value = props.suggestedName || ''
-      customNameError.value = ''
-      checkingName.value = false
+      customName.value = props.suggestedName || '';
+      customNameError.value = '';
+      checkingName.value = false;
     }
   },
-)
+);
 
 // 处理覆盖
 function handleOverwrite() {
-  emit('overwrite')
+  emit('overwrite');
 }
 
 // 处理重命名
 async function handleRename() {
-  const targetName = customName.value.trim()
+  const targetName = customName.value.trim();
 
   if (!targetName) {
-    customNameError.value = t('importConflict.errors.emptyName')
-    return
+    customNameError.value = t('importConflict.errors.emptyName');
+    return;
   }
 
-  checkingName.value = true
-  customNameError.value = ''
+  checkingName.value = true;
+  customNameError.value = '';
 
   try {
-    const checkResult = await DataCatalog.checkNameExists(props.dataType, targetName)
+    const checkResult = await DataCatalog.checkNameExists(props.dataType, targetName);
 
     if (checkResult.success && checkResult.exists) {
       customNameError.value = t('importConflict.errors.nameExists', {
         name: checkResult.folder_name,
-      })
-      checkingName.value = false
-      return
+      });
+      checkingName.value = false;
+      return;
     }
   } catch (err) {
-    console.warn('[ImportConflictModal] Check custom name failed:', err)
+    console.warn('[ImportConflictModal] Check custom name failed:', err);
   }
 
-  checkingName.value = false
-  emit('rename', targetName)
+  checkingName.value = false;
+  emit('rename', targetName);
 }
 
 function handleClose() {
-  emit('close')
+  emit('close');
 }
 
-const modalRef = ref(null)
-useFocusTrap(modalRef, toRef(props, 'show'))
+const modalRef = ref(null);
+useFocusTrap(modalRef, toRef(props, 'show'));
 </script>
 
 <template>

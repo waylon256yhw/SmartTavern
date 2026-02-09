@@ -1,257 +1,257 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted } from 'vue'
-import { useCharacterStore } from '@/features/characters/store'
-import CharWorldBookCard from '@/features/characters/components/CharWorldBookCard.vue'
-import CharRegexRuleCard from '@/features/characters/components/CharRegexRuleCard.vue'
-import type { WorldBookEntry, RegexRule } from '@/features/presets/types'
-import { useFileManagerStore } from '@/features/files/fileManager'
+import { ref, computed, watch, nextTick, onMounted } from 'vue';
+import { useCharacterStore } from '@/features/characters/store';
+import CharWorldBookCard from '@/features/characters/components/CharWorldBookCard.vue';
+import CharRegexRuleCard from '@/features/characters/components/CharRegexRuleCard.vue';
+import type { WorldBookEntry, RegexRule } from '@/features/presets/types';
+import { useFileManagerStore } from '@/features/files/fileManager';
 
-const store = useCharacterStore()
-const fm = useFileManagerStore()
+const store = useCharacterStore();
+const fm = useFileManagerStore();
 
-const fileTitle = ref<string>('Character.json')
-const renameError = ref<string | null>(null)
+const fileTitle = ref<string>('Character.json');
+const renameError = ref<string | null>(null);
 watch(
   () => store.fileName,
   (v) => {
-    fileTitle.value = v || 'Character.json'
+    fileTitle.value = v || 'Character.json';
   },
   { immediate: true },
-)
+);
 function renameCharacterFile() {
-  renameError.value = null
-  const oldName = store.fileName || 'Character.json'
-  const nn = (fileTitle.value || '').trim()
+  renameError.value = null;
+  const oldName = store.fileName || 'Character.json';
+  const nn = (fileTitle.value || '').trim();
   if (!nn) {
-    renameError.value = '文件名不能为空'
-    return
+    renameError.value = '文件名不能为空';
+    return;
   }
-  if (nn === oldName) return
-  ;(store as any).renameFile?.(nn)
+  if (nn === oldName) return;
+  (store as any).renameFile?.(nn);
   try {
-    fm.renameFile('characters', oldName, nn)
+    fm.renameFile('characters', oldName, nn);
   } catch {}
 }
 
 onMounted(() => {
-  store.load()
-  ;(window as any).lucide?.createIcons?.()
-})
+  store.load();
+  (window as any).lucide?.createIcons?.();
+});
 
 watch(
   () => [store.worldEntries.length, store.regexRules.length],
   async () => {
-    await nextTick()
-    ;(window as any).lucide?.createIcons?.()
+    await nextTick();
+    (window as any).lucide?.createIcons?.();
   },
   { deep: false },
-)
+);
 
 /* 基本信息编辑 */
-const nameDraft = ref<string>('')
-const descDraft = ref<string>('')
+const nameDraft = ref<string>('');
+const descDraft = ref<string>('');
 
-const hasDoc = computed(() => store.hasDoc)
+const hasDoc = computed(() => store.hasDoc);
 
 watch(
   () => store.name,
   (v) => {
-    nameDraft.value = v ?? ''
+    nameDraft.value = v ?? '';
   },
   { immediate: true },
-)
+);
 watch(
   () => store.description,
   (v) => {
-    descDraft.value = v ?? ''
+    descDraft.value = v ?? '';
   },
   { immediate: true },
-)
+);
 
 function saveMeta() {
-  store.updateName(nameDraft.value)
-  store.updateDescription(descDraft.value)
+  store.updateName(nameDraft.value);
+  store.updateDescription(descDraft.value);
 }
 
 /* 初始消息编辑（读取/写入 doc.message） */
-const messageEdits = ref<string[]>([])
-const editingMsgIndex = ref<number | null>(null)
+const messageEdits = ref<string[]>([]);
+const editingMsgIndex = ref<number | null>(null);
 
-const messages = computed(() => store.messages)
+const messages = computed(() => store.messages);
 
 watch(
   messages,
   (arr) => {
-    messageEdits.value = (arr || []).map((x) => String(x ?? ''))
+    messageEdits.value = (arr || []).map((x) => String(x ?? ''));
   },
   { immediate: true },
-)
+);
 
 function onEditMsg(i: number) {
-  editingMsgIndex.value = i
+  editingMsgIndex.value = i;
 }
 function onCancelMsg(i: number) {
-  if (!messages.value) return
-  messageEdits.value[i] = String(messages.value[i] ?? '')
-  editingMsgIndex.value = null
+  if (!messages.value) return;
+  messageEdits.value[i] = String(messages.value[i] ?? '');
+  editingMsgIndex.value = null;
 }
 function onSaveMsg(i: number) {
-  if (i < 0 || i >= messageEdits.value.length) return
-  store.setMessage(i, messageEdits.value[i] ?? '')
-  editingMsgIndex.value = null
+  if (i < 0 || i >= messageEdits.value.length) return;
+  store.setMessage(i, messageEdits.value[i] ?? '');
+  editingMsgIndex.value = null;
 }
 function removeMessage(i: number) {
-  store.removeMessage(i)
+  store.removeMessage(i);
 }
 function addMessage() {
-  store.addMessage('')
-  editingMsgIndex.value = (messages.value?.length ?? 1) - 1
-  nextTick(() => (window as any).lucide?.createIcons?.())
+  store.addMessage('');
+  editingMsgIndex.value = (messages.value?.length ?? 1) - 1;
+  nextTick(() => (window as any).lucide?.createIcons?.());
 }
 
 /* 内嵌世界书面板（与独立面板类似，复用卡片组件） */
-const newWbId = ref<string>('')
-const newWbName = ref<string>('')
+const newWbId = ref<string>('');
+const newWbName = ref<string>('');
 
 // 拖拽：世界书
-const draggingWb = ref<string | null>(null)
-const dragOverWbId = ref<string | null>(null)
-const dragOverWbBefore = ref<boolean>(true)
+const draggingWb = ref<string | null>(null);
+const dragOverWbId = ref<string | null>(null);
+const dragOverWbBefore = ref<boolean>(true);
 
 function onDragStartWb(id: string, ev: DragEvent) {
-  draggingWb.value = id
+  draggingWb.value = id;
   try {
-    ev.dataTransfer?.setData('text/plain', id)
-    ev.dataTransfer!.effectAllowed = 'move'
-    const canvas = document.createElement('canvas')
-    canvas.width = 1
-    canvas.height = 1
-    ev.dataTransfer?.setDragImage(canvas, 0, 0)
+    ev.dataTransfer?.setData('text/plain', id);
+    ev.dataTransfer!.effectAllowed = 'move';
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    ev.dataTransfer?.setDragImage(canvas, 0, 0);
   } catch {}
 }
 
 function onDragOverWb(overId: string | null, ev: DragEvent) {
-  if (!draggingWb.value) return
-  ev.preventDefault()
+  if (!draggingWb.value) return;
+  ev.preventDefault();
   try {
-    const el = ev.currentTarget as HTMLElement | null
+    const el = ev.currentTarget as HTMLElement | null;
     if (el) {
-      const rect = el.getBoundingClientRect()
-      const mid = rect.top + rect.height / 2
-      dragOverWbBefore.value = ev.clientY < mid
+      const rect = el.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      dragOverWbBefore.value = ev.clientY < mid;
     }
   } catch {}
-  dragOverWbId.value = overId
+  dragOverWbId.value = overId;
 }
 
 function onDropWb(overId: string | null, ev: DragEvent) {
-  if (!draggingWb.value) return
-  ev.preventDefault()
-  const dId = draggingWb.value
-  const list = [...(store.worldEntries || [])]
-  let ids = list.map((i) => (i as any).id)
-  const fromIdx = ids.indexOf(dId)
-  if (fromIdx < 0) return
-  ids.splice(fromIdx, 1)
+  if (!draggingWb.value) return;
+  ev.preventDefault();
+  const dId = draggingWb.value;
+  const list = [...(store.worldEntries || [])];
+  let ids = list.map((i) => (i as any).id);
+  const fromIdx = ids.indexOf(dId);
+  if (fromIdx < 0) return;
+  ids.splice(fromIdx, 1);
   if (overId && overId !== dId) {
-    const toIdx = ids.indexOf(overId)
-    let insertIdx = toIdx < 0 ? ids.length : toIdx + (dragOverWbBefore.value ? 0 : 1)
-    if (insertIdx < 0) insertIdx = 0
-    if (insertIdx > ids.length) insertIdx = ids.length
-    ids.splice(insertIdx, 0, dId)
+    const toIdx = ids.indexOf(overId);
+    let insertIdx = toIdx < 0 ? ids.length : toIdx + (dragOverWbBefore.value ? 0 : 1);
+    if (insertIdx < 0) insertIdx = 0;
+    if (insertIdx > ids.length) insertIdx = ids.length;
+    ids.splice(insertIdx, 0, dId);
   } else {
-    ids.push(dId)
+    ids.push(dId);
   }
-  store.reorderWorldBooks(ids)
-  draggingWb.value = null
-  dragOverWbId.value = null
-  ;(window as any).lucide?.createIcons?.()
+  store.reorderWorldBooks(ids);
+  draggingWb.value = null;
+  dragOverWbId.value = null;
+  (window as any).lucide?.createIcons?.();
 }
 function onDropEndWb(ev: DragEvent) {
-  onDropWb(null, ev)
+  onDropWb(null, ev);
 }
 function onDragEndWb() {
-  draggingWb.value = null
-  dragOverWbId.value = null
+  draggingWb.value = null;
+  dragOverWbId.value = null;
 }
 
 // 拖拽：正则
-const draggingRx = ref<string | null>(null)
-const dragOverRxId = ref<string | null>(null)
-const dragOverRxBefore = ref<boolean>(true)
+const draggingRx = ref<string | null>(null);
+const dragOverRxId = ref<string | null>(null);
+const dragOverRxBefore = ref<boolean>(true);
 
 function onDragStartRx(id: string, ev: DragEvent) {
-  draggingRx.value = id
+  draggingRx.value = id;
   try {
-    ev.dataTransfer?.setData('text/plain', id)
-    ev.dataTransfer!.effectAllowed = 'move'
-    const canvas = document.createElement('canvas')
-    canvas.width = 1
-    canvas.height = 1
-    ev.dataTransfer?.setDragImage(canvas, 0, 0)
+    ev.dataTransfer?.setData('text/plain', id);
+    ev.dataTransfer!.effectAllowed = 'move';
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    ev.dataTransfer?.setDragImage(canvas, 0, 0);
   } catch {}
 }
 
 function onDragOverRx(overId: string | null, ev: DragEvent) {
-  if (!draggingRx.value) return
-  ev.preventDefault()
+  if (!draggingRx.value) return;
+  ev.preventDefault();
   try {
-    const el = ev.currentTarget as HTMLElement | null
+    const el = ev.currentTarget as HTMLElement | null;
     if (el) {
-      const rect = el.getBoundingClientRect()
-      const mid = rect.top + rect.height / 2
-      dragOverRxBefore.value = ev.clientY < mid
+      const rect = el.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      dragOverRxBefore.value = ev.clientY < mid;
     }
   } catch {}
-  dragOverRxId.value = overId
+  dragOverRxId.value = overId;
 }
 
 function onDropRx(overId: string | null, ev: DragEvent) {
-  if (!draggingRx.value) return
-  ev.preventDefault()
-  const dId = draggingRx.value
-  const list = [...(store.regexRules || [])]
-  let ids = list.map((i) => i.id)
-  const fromIdx = ids.indexOf(dId)
-  if (fromIdx < 0) return
-  ids.splice(fromIdx, 1)
+  if (!draggingRx.value) return;
+  ev.preventDefault();
+  const dId = draggingRx.value;
+  const list = [...(store.regexRules || [])];
+  let ids = list.map((i) => i.id);
+  const fromIdx = ids.indexOf(dId);
+  if (fromIdx < 0) return;
+  ids.splice(fromIdx, 1);
   if (overId && overId !== dId) {
-    const toIdx = ids.indexOf(overId)
-    let insertIdx = toIdx < 0 ? ids.length : toIdx + (dragOverRxBefore.value ? 0 : 1)
-    if (insertIdx < 0) insertIdx = 0
-    if (insertIdx > ids.length) insertIdx = ids.length
-    ids.splice(insertIdx, 0, dId)
+    const toIdx = ids.indexOf(overId);
+    let insertIdx = toIdx < 0 ? ids.length : toIdx + (dragOverRxBefore.value ? 0 : 1);
+    if (insertIdx < 0) insertIdx = 0;
+    if (insertIdx > ids.length) insertIdx = ids.length;
+    ids.splice(insertIdx, 0, dId);
   } else {
-    ids.push(dId)
+    ids.push(dId);
   }
-  store.reorderRegexRules(ids)
-  draggingRx.value = null
-  dragOverRxId.value = null
-  ;(window as any).lucide?.createIcons?.()
+  store.reorderRegexRules(ids);
+  draggingRx.value = null;
+  dragOverRxId.value = null;
+  (window as any).lucide?.createIcons?.();
 }
 function onDropEndRx(ev: DragEvent) {
-  onDropRx(null, ev)
+  onDropRx(null, ev);
 }
 function onDragEndRx() {
-  draggingRx.value = null
-  dragOverRxId.value = null
+  draggingRx.value = null;
+  dragOverRxId.value = null;
 }
 
 function addWorldEntry() {
-  const id = newWbId.value.trim()
-  const name = newWbName.value.trim()
+  const id = newWbId.value.trim();
+  const name = newWbName.value.trim();
   if (!id) {
-    alert('请填写世界书 ID')
-    return
+    alert('请填写世界书 ID');
+    return;
   }
   if (!name) {
-    alert('请填写 世界书名称')
-    return
+    alert('请填写 世界书名称');
+    return;
   }
-  const list = store.worldEntries
+  const list = store.worldEntries;
   if (list.some((e) => (e as any)?.id === id)) {
-    alert('ID 已存在')
-    return
+    alert('ID 已存在');
+    return;
   }
   const entry: WorldBookEntry = {
     id,
@@ -263,34 +263,34 @@ function addWorldEntry() {
     order: 100,
     depth: 0,
     keys: [],
-  }
-  store.addWorldBook(entry)
-  newWbId.value = ''
-  newWbName.value = ''
-  nextTick(() => (window as any).lucide?.createIcons?.())
+  };
+  store.addWorldBook(entry);
+  newWbId.value = '';
+  newWbName.value = '';
+  nextTick(() => (window as any).lucide?.createIcons?.());
 }
 
 /* 内嵌正则面板（与独立面板类似，复用卡片组件的字符版） */
-const newRuleId = ref<string>('')
-const newRuleName = ref<string>('')
-const ruleError = ref<string | null>(null)
+const newRuleId = ref<string>('');
+const newRuleName = ref<string>('');
+const ruleError = ref<string | null>(null);
 
 function addRegexRule() {
-  ruleError.value = null
-  const id = newRuleId.value.trim()
-  const name = newRuleName.value.trim()
+  ruleError.value = null;
+  const id = newRuleId.value.trim();
+  const name = newRuleName.value.trim();
   if (!id) {
-    ruleError.value = '请填写 规则 id'
-    return
+    ruleError.value = '请填写 规则 id';
+    return;
   }
   if (!name) {
-    ruleError.value = '请填写 规则名称'
-    return
+    ruleError.value = '请填写 规则名称';
+    return;
   }
-  const rules = store.regexRules || []
+  const rules = store.regexRules || [];
   if (rules.some((r) => r.id === id)) {
-    ruleError.value = '该 id 已存在'
-    return
+    ruleError.value = '该 id 已存在';
+    return;
   }
   const rule: RegexRule = {
     id,
@@ -301,11 +301,11 @@ function addRegexRule() {
     targets: [],
     placement: 'after_macro',
     views: [],
-  }
-  store.addRegexRule(rule)
-  newRuleId.value = ''
-  newRuleName.value = ''
-  nextTick(() => (window as any).lucide?.createIcons?.())
+  };
+  store.addRegexRule(rule);
+  newRuleId.value = '';
+  newRuleName.value = '';
+  nextTick(() => (window as any).lucide?.createIcons?.());
 }
 </script>
 

@@ -1,52 +1,52 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
-import ModeSwitch from '@/components/common/ModeSwitch.vue'
-import ThemeSwitch from '@/components/common/ThemeSwitch.vue'
-import { useI18n } from '@/locales'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
+import ModeSwitch from '@/components/common/ModeSwitch.vue';
+import ThemeSwitch from '@/components/common/ThemeSwitch.vue';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   view: { type: String, default: 'start' },
   showSidebar: { type: Boolean, default: false },
   theme: { type: String, default: 'system' },
-})
-const emit = defineEmits(['update:view', 'update:theme'])
+});
+const emit = defineEmits(['update:view', 'update:theme']);
 
-const condensed = ref(false)
+const condensed = ref(false);
 
 function onScroll() {
-  const y = window.scrollY || document.documentElement.scrollTop || 0
+  const y = window.scrollY || document.documentElement.scrollTop || 0;
   condensed.value =
     y >
     (parseInt(
       getComputedStyle(document.documentElement).getPropertyValue('--st-topbar-scroll-threshold'),
-    ) || 8)
+    ) || 8);
 }
 
 onMounted(() => {
-  window.addEventListener('scroll', onScroll, { passive: true })
-  onScroll()
-  window.lucide?.createIcons?.()
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+  window.lucide?.createIcons?.();
   if (typeof window.initFlowbite === 'function') {
     try {
-      window.initFlowbite()
+      window.initFlowbite();
     } catch (_) {}
   }
-})
-onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
+});
+onBeforeUnmount(() => window.removeEventListener('scroll', onScroll));
 
 function setView(v) {
-  emit('update:view', v)
+  emit('update:view', v);
 }
 function setTheme(themeValue) {
-  emit('update:theme', themeValue)
+  emit('update:theme', themeValue);
 }
 
 const viewTitle = computed(() => {
-  const key = `components.topBar.view${props.view.charAt(0).toUpperCase() + props.view.slice(1)}`
-  return t(key) || 'SmartTavern'
-})
+  const key = `components.topBar.view${props.view.charAt(0).toUpperCase() + props.view.slice(1)}`;
+  return t(key) || 'SmartTavern';
+});
 </script>
 
 <template>

@@ -1,16 +1,16 @@
 <script setup>
-import { ref, onMounted, nextTick, onBeforeUnmount, watch } from 'vue'
-import Host from '@/workflow/core/host'
-import * as Conversation from '@/workflow/channels/conversation'
-import ChatBranches from '@/services/chatBranches'
-import DataCatalog from '@/services/dataCatalog'
-import DeleteConfirmModal from '@/components/common/DeleteConfirmModal.vue'
-import { useI18n } from '@/locales'
+import { ref, onMounted, nextTick, onBeforeUnmount, watch } from 'vue';
+import Host from '@/workflow/core/host';
+import * as Conversation from '@/workflow/channels/conversation';
+import ChatBranches from '@/services/chatBranches';
+import DataCatalog from '@/services/dataCatalog';
+import DeleteConfirmModal from '@/components/common/DeleteConfirmModal.vue';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 // 通知上层所选文件（由 App 处理 API 调用与页面切换）
-const emit = defineEmits(['confirm'])
+const emit = defineEmits(['confirm']);
 
 /**
  * LoadGameView
@@ -21,136 +21,136 @@ const emit = defineEmits(['confirm'])
  *  4) 汇总后一次性更新面板显示
  */
 
-const loading = ref(false)
-const error = ref('')
+const loading = ref(false);
+const error = ref('');
 // items: [{ file, name, description, latest, character, persona, characterName, personaName, characterAvatarUrl, personaAvatarUrl, error? }]
-const items = ref([])
+const items = ref([]);
 
-const showDeleteModal = ref(false)
-const deleteTarget = ref(null)
-const deleting = ref(false)
+const showDeleteModal = ref(false);
+const deleteTarget = ref(null);
+const deleting = ref(false);
 
 function onDelete(item) {
-  deleteTarget.value = { file: item.file, name: item.name || item.file }
-  showDeleteModal.value = true
+  deleteTarget.value = { file: item.file, name: item.name || item.file };
+  showDeleteModal.value = true;
 }
 
 function closeDeleteModal() {
-  showDeleteModal.value = false
-  deleteTarget.value = null
+  showDeleteModal.value = false;
+  deleteTarget.value = null;
 }
 
 async function handleDeleteConfirm() {
-  if (!deleteTarget.value || deleting.value) return
-  deleting.value = true
+  if (!deleteTarget.value || deleting.value) return;
+  deleting.value = true;
   try {
-    await ChatBranches.deleteConversation(deleteTarget.value.file)
-    closeDeleteModal()
-    loadData()
+    await ChatBranches.deleteConversation(deleteTarget.value.file);
+    closeDeleteModal();
+    loadData();
   } catch (err) {
-    console.error('[LoadGameView] delete failed:', err)
+    console.error('[LoadGameView] delete failed:', err);
   } finally {
-    deleting.value = false
+    deleting.value = false;
   }
 }
 
 function baseName(file) {
-  const s = String(file || '')
-  const i = s.lastIndexOf('/')
-  return i >= 0 ? s.slice(i + 1) : s
+  const s = String(file || '');
+  const i = s.lastIndexOf('/');
+  return i >= 0 ? s.slice(i + 1) : s;
 }
 
 /** POSIX 工具：统一 / 分隔符 */
 function toPosix(p) {
-  return String(p || '').replace(/\\/g, '/')
+  return String(p || '').replace(/\\/g, '/');
 }
 
 /** 取父目录（末尾一定保留 /） */
 function dirname(p) {
-  const s = toPosix(p)
-  return s.replace(/[^/]+$/, '')
+  const s = toPosix(p);
+  return s.replace(/[^/]+$/, '');
 }
 
 function characterName(characterPath) {
-  const s = String(characterPath || '')
-  const parts = s.split('/').filter(Boolean)
+  const s = String(characterPath || '');
+  const parts = s.split('/').filter(Boolean);
   // 目标：仅显示文件所在的目录名（如 心与露 / 用户2）
   // 路径通常形如 .../characters/心与露/character.json 或 .../personas/用户2/persona.json
   // 优先取倒数第二段（目录名），否则退回最后一段/空串
-  return parts.length >= 2 ? parts[parts.length - 2] : parts[0] || ''
+  return parts.length >= 2 ? parts[parts.length - 2] : parts[0] || '';
 }
 
 function conversationSlug(file) {
-  const s = String(file || '')
-  const parts = s.split('/').filter(Boolean)
+  const s = String(file || '');
+  const parts = s.split('/').filter(Boolean);
   // 目标：仅显示对话目录名（conversations/{slug}/conversation.json -> slug）
-  return parts.length >= 2 ? parts[parts.length - 2] : parts[0] || ''
+  return parts.length >= 2 ? parts[parts.length - 2] : parts[0] || '';
 }
 
 function roleLabel(role) {
-  if (role === 'user') return t('home.loadGame.roleUser')
-  if (role === 'assistant') return t('home.loadGame.roleAssistant')
-  if (role === 'system') return t('home.loadGame.roleSystem')
-  return t('home.loadGame.roleUnknown')
+  if (role === 'user') return t('home.loadGame.roleUser');
+  if (role === 'assistant') return t('home.loadGame.roleAssistant');
+  if (role === 'system') return t('home.loadGame.roleSystem');
+  return t('home.loadGame.roleUnknown');
 }
 
 function truncate(text, max = 160) {
-  const t2 = String(text || '')
-  if (t2.length <= max) return t2
-  return t2.slice(0, max - 1) + '…'
+  const t2 = String(text || '');
+  if (t2.length <= max) return t2;
+  return t2.slice(0, max - 1) + '…';
 }
 
 /** 安全释放 ObjectURL，避免内存泄漏 */
 function safeRevoke(url) {
-  if (!url) return
+  if (!url) return;
   try {
-    URL.revokeObjectURL(url)
+    URL.revokeObjectURL(url);
   } catch (_) {}
 }
 
 /** 释放一组列表项上的头像 URL */
 function releaseItemAvatars(list) {
-  if (!Array.isArray(list)) return
+  if (!Array.isArray(list)) return;
   for (const it of list) {
-    if (!it) continue
-    safeRevoke(it.characterAvatarUrl)
-    safeRevoke(it.personaAvatarUrl)
+    if (!it) continue;
+    safeRevoke(it.characterAvatarUrl);
+    safeRevoke(it.personaAvatarUrl);
   }
 }
 
-const __eventOffs = [] // 事件监听清理器
+const __eventOffs = []; // 事件监听清理器
 
 onBeforeUnmount(() => {
   try {
     __eventOffs?.forEach((fn) => {
       try {
-        fn?.()
+        fn?.();
       } catch (_) {}
-    })
-    __eventOffs.length = 0
+    });
+    __eventOffs.length = 0;
   } catch (_) {}
   try {
-    releaseItemAvatars(items.value)
+    releaseItemAvatars(items.value);
   } catch (_) {}
-})
+});
 
 async function loadData() {
-  loading.value = true
-  error.value = ''
+  loading.value = true;
+  error.value = '';
   // 清理旧头像 URL
   try {
-    releaseItemAvatars(items.value)
+    releaseItemAvatars(items.value);
   } catch (_) {}
-  items.value = []
+  items.value = [];
 
-  const tag = `list_${Date.now()}`
+  const tag = `list_${Date.now()}`;
 
   try {
     // 监听对话列表加载结果（一次性）
     const offOk = Host.events.on(
       Conversation.EVT_CONVERSATION_LIST_OK,
       async ({ items: rawItems, tag: resTag }) => {
-        if (resTag !== tag) return
+        if (resTag !== tag) return;
 
         try {
           // 预构造展示数据
@@ -167,167 +167,167 @@ async function loadData() {
             characterAvatarUrl: '',
             personaAvatarUrl: '',
             error: '',
-          }))
+          }));
 
           // 一次性获取每个文件的最新消息（并发，事件驱动）
           // 若单个失败，不影响整体
           const latestPromises = combined.map((row, idx) => {
             return new Promise((resolve) => {
-              const msgTag = `latest_${idx}_${Date.now()}`
+              const msgTag = `latest_${idx}_${Date.now()}`;
 
               // 监听该文件的最新消息响应（一次性）
               const offOkLatest = Host.events.on(
                 Conversation.EVT_CONVERSATION_LATEST_MSG_OK,
                 ({ file: resFile, latest, tag: resTag2 }) => {
-                  if (resTag2 !== msgTag) return
+                  if (resTag2 !== msgTag) return;
 
-                  combined[idx].latest = latest
+                  combined[idx].latest = latest;
                   try {
-                    offOkLatest?.()
+                    offOkLatest?.();
                   } catch (_) {}
                   try {
-                    offFailLatest?.()
+                    offFailLatest?.();
                   } catch (_) {}
-                  resolve()
+                  resolve();
                 },
-              )
+              );
 
               const offFailLatest = Host.events.on(
                 Conversation.EVT_CONVERSATION_LATEST_MSG_FAIL,
                 ({ file: resFile, message, tag: resTag2 }) => {
-                  if (resTag2 && resTag2 !== msgTag) return
+                  if (resTag2 && resTag2 !== msgTag) return;
 
-                  combined[idx].error = message || t('home.loadGame.getLatestFailed')
+                  combined[idx].error = message || t('home.loadGame.getLatestFailed');
                   try {
-                    offOkLatest?.()
+                    offOkLatest?.();
                   } catch (_) {}
                   try {
-                    offFailLatest?.()
+                    offFailLatest?.();
                   } catch (_) {}
-                  resolve()
+                  resolve();
                 },
-              )
+              );
 
-              __eventOffs.push(offOkLatest, offFailLatest)
+              __eventOffs.push(offOkLatest, offFailLatest);
 
               // 发送最新消息请求
               Host.events.emit(Conversation.EVT_CONVERSATION_LATEST_MSG_REQ, {
                 file: row.file,
                 useCache: false,
                 tag: msgTag,
-              })
-            })
-          })
+              });
+            });
+          });
 
           // 并发获取每个对话的 settings 与头像信息
           // 名称直接从路径提取目录名，无需读取后端 JSON
           const settingsPromises = combined.map((row, idx) =>
             ChatBranches.settings({ action: 'get', file: row.file })
               .then(async (res) => {
-                const settings = res?.settings || {}
-                const charFile = settings.character || ''
-                const personaFile = settings.persona || ''
-                const chatType = settings.type || '' // 不设置默认值
+                const settings = res?.settings || {};
+                const charFile = settings.character || '';
+                const personaFile = settings.persona || '';
+                const chatType = settings.type || ''; // 不设置默认值
 
-                combined[idx].character = charFile
-                combined[idx].persona = personaFile
-                combined[idx].type = chatType
+                combined[idx].character = charFile;
+                combined[idx].persona = personaFile;
+                combined[idx].type = chatType;
 
                 // 角色卡：名称直接从路径提取目录名
                 if (charFile) {
-                  combined[idx].characterName = characterName(charFile)
+                  combined[idx].characterName = characterName(charFile);
 
                   // 头像仍需从后端加载
                   try {
-                    const dir = dirname(charFile)
-                    const { blob } = await DataCatalog.getDataAssetBlob(`${dir}character.png`)
-                    combined[idx].characterAvatarUrl = URL.createObjectURL(blob)
+                    const dir = dirname(charFile);
+                    const { blob } = await DataCatalog.getDataAssetBlob(`${dir}character.png`);
+                    combined[idx].characterAvatarUrl = URL.createObjectURL(blob);
                   } catch (_) {
-                    combined[idx].characterAvatarUrl = ''
+                    combined[idx].characterAvatarUrl = '';
                   }
                 } else {
-                  combined[idx].characterName = ''
-                  combined[idx].characterAvatarUrl = ''
+                  combined[idx].characterName = '';
+                  combined[idx].characterAvatarUrl = '';
                 }
 
                 // 用户画像：名称直接从路径提取目录名
                 if (personaFile) {
-                  combined[idx].personaName = characterName(personaFile)
+                  combined[idx].personaName = characterName(personaFile);
 
                   // 头像仍需从后端加载
                   try {
-                    const dir = dirname(personaFile)
-                    const { blob } = await DataCatalog.getDataAssetBlob(`${dir}persona.png`)
-                    combined[idx].personaAvatarUrl = URL.createObjectURL(blob)
+                    const dir = dirname(personaFile);
+                    const { blob } = await DataCatalog.getDataAssetBlob(`${dir}persona.png`);
+                    combined[idx].personaAvatarUrl = URL.createObjectURL(blob);
                   } catch (_) {
-                    combined[idx].personaAvatarUrl = ''
+                    combined[idx].personaAvatarUrl = '';
                   }
                 } else {
-                  combined[idx].personaName = ''
-                  combined[idx].personaAvatarUrl = ''
+                  combined[idx].personaName = '';
+                  combined[idx].personaAvatarUrl = '';
                 }
               })
               .catch(() => {
-                combined[idx].character = ''
-                combined[idx].persona = ''
-                combined[idx].characterName = ''
-                combined[idx].personaName = ''
-                combined[idx].characterAvatarUrl = ''
-                combined[idx].personaAvatarUrl = ''
-                combined[idx].type = '' // 错误时不设置默认值
+                combined[idx].character = '';
+                combined[idx].persona = '';
+                combined[idx].characterName = '';
+                combined[idx].personaName = '';
+                combined[idx].characterAvatarUrl = '';
+                combined[idx].personaAvatarUrl = '';
+                combined[idx].type = ''; // 错误时不设置默认值
               }),
-          )
+          );
 
-          await Promise.allSettled([...latestPromises, ...settingsPromises])
+          await Promise.allSettled([...latestPromises, ...settingsPromises]);
 
           // 一次性更新面板
-          items.value = combined
+          items.value = combined;
 
           // 刷新外部组件（图标由 watch 处理）
           nextTick(() => {
             if (typeof window.initFlowbite === 'function') {
               try {
-                window.initFlowbite()
+                window.initFlowbite();
               } catch (_) {}
             }
-          })
+          });
         } catch (e) {
-          error.value = e?.message || t('home.loadGame.loadFailed')
+          error.value = e?.message || t('home.loadGame.loadFailed');
         } finally {
-          loading.value = false
+          loading.value = false;
           try {
-            offOk?.()
+            offOk?.();
           } catch (_) {}
           try {
-            offFail?.()
+            offFail?.();
           } catch (_) {}
         }
       },
-    )
+    );
 
     const offFail = Host.events.on(
       Conversation.EVT_CONVERSATION_LIST_FAIL,
       ({ message, tag: resTag }) => {
-        if (resTag && resTag !== tag) return
+        if (resTag && resTag !== tag) return;
 
-        error.value = message || t('home.loadGame.loadFailed')
-        loading.value = false
+        error.value = message || t('home.loadGame.loadFailed');
+        loading.value = false;
         try {
-          offOk?.()
+          offOk?.();
         } catch (_) {}
         try {
-          offFail?.()
+          offFail?.();
         } catch (_) {}
       },
-    )
+    );
 
-    __eventOffs.push(offOk, offFail)
+    __eventOffs.push(offOk, offFail);
 
     // 发送列表请求事件
-    Host.events.emit(Conversation.EVT_CONVERSATION_LIST_REQ, { tag })
+    Host.events.emit(Conversation.EVT_CONVERSATION_LIST_REQ, { tag });
   } catch (e) {
-    error.value = e?.message || t('home.loadGame.loadFailed')
-    loading.value = false
+    error.value = e?.message || t('home.loadGame.loadFailed');
+    loading.value = false;
   }
 }
 
@@ -337,33 +337,33 @@ function refreshLucideIcons() {
     // 延迟一帧确保 DOM 完全渲染
     requestAnimationFrame(() => {
       try {
-        window?.lucide?.createIcons?.()
+        window?.lucide?.createIcons?.();
       } catch (_) {}
-    })
-  })
+    });
+  });
 }
 
 // 监听 items 变化，刷新图标
 watch(
   items,
   () => {
-    refreshLucideIcons()
+    refreshLucideIcons();
   },
   { flush: 'post' },
-)
+);
 
 // 监听 loading 变化，数据加载完成后刷新图标
 watch(loading, (newVal, oldVal) => {
   if (oldVal === true && newVal === false) {
-    refreshLucideIcons()
+    refreshLucideIcons();
   }
-})
+});
 
 onMounted(() => {
-  loadData()
+  loadData();
   // 组件挂载时也尝试刷新图标
-  refreshLucideIcons()
-})
+  refreshLucideIcons();
+});
 </script>
 
 <template>

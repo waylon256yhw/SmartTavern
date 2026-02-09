@@ -1,51 +1,51 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, nextTick } from 'vue'
+import { ref, onMounted, watch, computed, nextTick } from 'vue';
 
 // 预设设置的简化模型（本地占位状态）
-const temperature = ref<number>(1.0)
-const maxTokens = ref<number>(300)
-const stream = ref<boolean>(true)
-const topP = ref<number>(1.0)
-const frequencyPenalty = ref<number>(0)
-const presencePenalty = ref<number>(0)
+const temperature = ref<number>(1.0);
+const maxTokens = ref<number>(300);
+const stream = ref<boolean>(true);
+const topP = ref<number>(1.0);
+const frequencyPenalty = ref<number>(0);
+const presencePenalty = ref<number>(0);
 
 /* 面板收起/展开（默认全部展开）；状态持久化到 LocalStorage */
-const PANEL_STATE_KEY = 'prompt_editor_ui_panels'
-const apiOpen = ref(true)
-const promptsOpen = ref(true)
-const regexOpen = ref(true)
-const relativeOpen = ref(true)
-const inChatOpen = ref(true)
+const PANEL_STATE_KEY = 'prompt_editor_ui_panels';
+const apiOpen = ref(true);
+const promptsOpen = ref(true);
+const regexOpen = ref(true);
+const relativeOpen = ref(true);
+const inChatOpen = ref(true);
 
 /**
  * LLM API 参数在下方“API 配置”面板中编辑；
  * 不再使用后端 BaseURL/API Prefix 作为此面板内容
  */
 // LLM API 配置启用与参数开关（仅前端显示，不联通后端）
-const apiEnabled = ref(true)
-const enableTemperature = ref(true)
-const enableTopP = ref(true)
-const enableTopK = ref(true)
-const enableMaxContext = ref(true)
-const enableMaxTokens = ref(true)
-const enableStream = ref(true)
-const enableFrequencyPenalty = ref(true)
-const enablePresencePenalty = ref(true)
+const apiEnabled = ref(true);
+const enableTemperature = ref(true);
+const enableTopP = ref(true);
+const enableTopK = ref(true);
+const enableMaxContext = ref(true);
+const enableMaxTokens = ref(true);
+const enableStream = ref(true);
+const enableFrequencyPenalty = ref(true);
+const enablePresencePenalty = ref(true);
 
 // 额外参数（源码默认已有的保持不变，补充 top_k 与 max_context）
-const topK = ref<number>(0)
-const maxContext = ref<number>(4095)
+const topK = ref<number>(0);
+const maxContext = ref<number>(4095);
 
 function loadPanelStates() {
   try {
-    const raw = localStorage.getItem(PANEL_STATE_KEY)
+    const raw = localStorage.getItem(PANEL_STATE_KEY);
     if (raw) {
-      const obj = JSON.parse(raw)
-      if (typeof obj.apiOpen === 'boolean') apiOpen.value = obj.apiOpen
-      if (typeof obj.promptsOpen === 'boolean') promptsOpen.value = obj.promptsOpen
-      if (typeof obj.regexOpen === 'boolean') regexOpen.value = obj.regexOpen
-      if (typeof obj.relativeOpen === 'boolean') relativeOpen.value = obj.relativeOpen
-      if (typeof obj.inChatOpen === 'boolean') inChatOpen.value = obj.inChatOpen
+      const obj = JSON.parse(raw);
+      if (typeof obj.apiOpen === 'boolean') apiOpen.value = obj.apiOpen;
+      if (typeof obj.promptsOpen === 'boolean') promptsOpen.value = obj.promptsOpen;
+      if (typeof obj.regexOpen === 'boolean') regexOpen.value = obj.regexOpen;
+      if (typeof obj.relativeOpen === 'boolean') relativeOpen.value = obj.relativeOpen;
+      if (typeof obj.inChatOpen === 'boolean') inChatOpen.value = obj.inChatOpen;
     }
   } catch {}
 }
@@ -61,101 +61,101 @@ watch([apiOpen, promptsOpen, regexOpen, relativeOpen, inChatOpen], ([a, p, r, ro
         relativeOpen: ro,
         inChatOpen: io,
       }),
-    )
+    );
   } catch {}
-})
+});
 
 /* 初始化 Lucide 图标（组件挂载后） */
 onMounted(() => {
-  loadPanelStates()
-  ;(window as any).lucide?.createIcons?.()
-})
+  loadPanelStates();
+  (window as any).lucide?.createIcons?.();
+});
 
 /* 使用 Store 管理预设数据 */
-import { usePresetStore } from '../features/presets/store'
+import { usePresetStore } from '../features/presets/store';
 import type {
   PromptItem,
   PromptItemRelative,
   PromptItemInChat,
   RegexRule,
-} from '@/features/presets/types'
-import { SPECIAL_RELATIVE_TEMPLATES } from '@/features/presets/types'
-import PresetPromptCard from '@/features/presets/components/PresetPromptCard.vue'
-import RegexRuleCard from '@/features/regex/components/RegexRuleCard.vue'
-import { useFileManagerStore } from '@/features/files/fileManager'
+} from '@/features/presets/types';
+import { SPECIAL_RELATIVE_TEMPLATES } from '@/features/presets/types';
+import PresetPromptCard from '@/features/presets/components/PresetPromptCard.vue';
+import RegexRuleCard from '@/features/regex/components/RegexRuleCard.vue';
+import { useFileManagerStore } from '@/features/files/fileManager';
 
-const store = usePresetStore()
-const fm = useFileManagerStore()
+const store = usePresetStore();
+const fm = useFileManagerStore();
 
-const fileTitle = ref<string>('')
-const renameError = ref<string | null>(null)
+const fileTitle = ref<string>('');
+const renameError = ref<string | null>(null);
 watch(
   () => store.activeFile?.name,
   (v) => {
-    fileTitle.value = v ?? ''
+    fileTitle.value = v ?? '';
   },
   { immediate: true },
-)
+);
 function renamePresetFile() {
-  renameError.value = null
-  const oldName = store.activeFile?.name || ''
-  const nn = (fileTitle.value || '').trim()
+  renameError.value = null;
+  const oldName = store.activeFile?.name || '';
+  const nn = (fileTitle.value || '').trim();
   if (!nn) {
-    renameError.value = '文件名不能为空'
-    return
+    renameError.value = '文件名不能为空';
+    return;
   }
-  if (nn === oldName) return
-  const ok = (store as any).renameActive?.(nn)
+  if (nn === oldName) return;
+  const ok = (store as any).renameActive?.(nn);
   if (!ok) {
-    renameError.value = '重命名失败：可能与现有文件重名'
-    return
+    renameError.value = '重命名失败：可能与现有文件重名';
+    return;
   }
   try {
-    fm.renameFile('presets', oldName, nn)
+    fm.renameFile('presets', oldName, nn);
   } catch {}
 }
 
 watch(
   () => store.prompts.length,
   async () => {
-    await nextTick()
-    ;(window as any).lucide?.createIcons?.()
+    await nextTick();
+    (window as any).lucide?.createIcons?.();
   },
   { flush: 'post' },
-)
+);
 
 watch(
   () => store.activeData?.regex_rules?.length ?? 0,
   async () => {
-    await nextTick()
-    ;(window as any).lucide?.createIcons?.()
+    await nextTick();
+    (window as any).lucide?.createIcons?.();
   },
   { flush: 'post' },
-)
+);
 
 /* 新增条目（Relative / In-Chat） */
-const specialSelect = ref<string>('')
-const newRelId = ref<string>('')
-const newRelName = ref<string>('')
-const relError = ref<string | null>(null)
+const specialSelect = ref<string>('');
+const newRelId = ref<string>('');
+const newRelName = ref<string>('');
+const relError = ref<string | null>(null);
 
 const availableSpecials = computed(() =>
   SPECIAL_RELATIVE_TEMPLATES.filter(
     (t) => !store.relativePrompts.some((p) => p.identifier === t.identifier),
   ),
-)
-const reservedIdSet = new Set(SPECIAL_RELATIVE_TEMPLATES.map((t) => t.identifier))
-const reservedNameSet = new Set(SPECIAL_RELATIVE_TEMPLATES.map((t) => t.name))
+);
+const reservedIdSet = new Set(SPECIAL_RELATIVE_TEMPLATES.map((t) => t.identifier));
+const reservedNameSet = new Set(SPECIAL_RELATIVE_TEMPLATES.map((t) => t.name));
 
 async function addSelectedSpecial() {
-  relError.value = null
-  const sel = specialSelect.value
-  if (!sel) return
-  const tpl = SPECIAL_RELATIVE_TEMPLATES.find((t) => t.identifier === sel)
-  if (!tpl) return
+  relError.value = null;
+  const sel = specialSelect.value;
+  if (!sel) return;
+  const tpl = SPECIAL_RELATIVE_TEMPLATES.find((t) => t.identifier === sel);
+  if (!tpl) return;
   if (store.relativePrompts.some((p) => p.identifier === tpl.identifier)) {
-    relError.value = '该一次性组件已存在'
-    return
+    relError.value = '该一次性组件已存在';
+    return;
   }
   // 深拷贝，保持占位条目的 content 语义（不写入 content 字段）
   const item: PromptItemRelative = {
@@ -164,36 +164,36 @@ async function addSelectedSpecial() {
     enabled: tpl.enabled,
     role: tpl.role,
     position: tpl.position,
-  }
-  store.addPrompt(item as PromptItem)
-  specialSelect.value = ''
-  await nextTick()
-  ;(window as any).lucide?.createIcons?.()
+  };
+  store.addPrompt(item as PromptItem);
+  specialSelect.value = '';
+  await nextTick();
+  (window as any).lucide?.createIcons?.();
 }
 
 async function addCustomRelative() {
-  relError.value = null
-  const id = newRelId.value.trim()
-  const name = newRelName.value.trim()
+  relError.value = null;
+  const id = newRelId.value.trim();
+  const name = newRelName.value.trim();
   if (!id) {
-    relError.value = '请填写 id'
-    return
+    relError.value = '请填写 id';
+    return;
   }
   if (!name) {
-    relError.value = '请填写名称'
-    return
+    relError.value = '请填写名称';
+    return;
   }
   if (reservedIdSet.has(id) || reservedNameSet.has(name)) {
-    relError.value = 'id 或 名称 与保留组件重复'
-    return
+    relError.value = 'id 或 名称 与保留组件重复';
+    return;
   }
   if (store.relativePrompts.some((p) => p.identifier === id)) {
-    relError.value = 'id 已存在'
-    return
+    relError.value = 'id 已存在';
+    return;
   }
   if (store.relativePrompts.some((p) => p.name === name)) {
-    relError.value = '名称已存在'
-    return
+    relError.value = '名称已存在';
+    return;
   }
   const item: PromptItemRelative = {
     identifier: id,
@@ -202,39 +202,39 @@ async function addCustomRelative() {
     role: 'system',
     position: 'relative',
     content: '',
-  }
-  store.addPrompt(item as PromptItem)
-  newRelId.value = ''
-  newRelName.value = ''
-  await nextTick()
-  ;(window as any).lucide?.createIcons?.()
+  };
+  store.addPrompt(item as PromptItem);
+  newRelId.value = '';
+  newRelName.value = '';
+  await nextTick();
+  (window as any).lucide?.createIcons?.();
 }
 
 // In-Chat 新增（右对齐 id + 名称 + 添加）
-const newChatId = ref<string>('')
-const newChatName = ref<string>('')
-const chatError = ref<string | null>(null)
+const newChatId = ref<string>('');
+const newChatName = ref<string>('');
+const chatError = ref<string | null>(null);
 
 async function addCustomInChat() {
-  chatError.value = null
-  const id = newChatId.value.trim()
-  const name = newChatName.value.trim()
+  chatError.value = null;
+  const id = newChatId.value.trim();
+  const name = newChatName.value.trim();
   if (!id) {
-    chatError.value = '请填写 id'
-    return
+    chatError.value = '请填写 id';
+    return;
   }
   if (!name) {
-    chatError.value = '请填写名称'
-    return
+    chatError.value = '请填写名称';
+    return;
   }
   // 唯一性校验：identifier 需全局唯一；名称在 In-Chat 内唯一
   if (store.prompts.some((p) => p.identifier === id)) {
-    chatError.value = 'id 已存在'
-    return
+    chatError.value = 'id 已存在';
+    return;
   }
   if (store.inChatPrompts.some((p) => p.name === name)) {
-    chatError.value = '名称已存在'
-    return
+    chatError.value = '名称已存在';
+    return;
   }
   const item: PromptItemInChat = {
     identifier: id,
@@ -245,35 +245,35 @@ async function addCustomInChat() {
     depth: 0,
     order: 0,
     content: '',
-  }
-  store.addPrompt(item as PromptItem)
-  newChatId.value = ''
-  newChatName.value = ''
-  await nextTick()
-  ;(window as any).lucide?.createIcons?.()
+  };
+  store.addPrompt(item as PromptItem);
+  newChatId.value = '';
+  newChatName.value = '';
+  await nextTick();
+  (window as any).lucide?.createIcons?.();
 }
 
 // 正则规则新增（右对齐 id + 名称 + 添加）
-const newRegexId = ref<string>('')
-const newRegexName = ref<string>('')
-const regexError = ref<string | null>(null)
+const newRegexId = ref<string>('');
+const newRegexName = ref<string>('');
+const regexError = ref<string | null>(null);
 
 async function addCustomRegex() {
-  regexError.value = null
-  const id = newRegexId.value.trim()
-  const name = newRegexName.value.trim()
+  regexError.value = null;
+  const id = newRegexId.value.trim();
+  const name = newRegexName.value.trim();
   if (!id) {
-    regexError.value = '请填写 id'
-    return
+    regexError.value = '请填写 id';
+    return;
   }
   if (!name) {
-    regexError.value = '请填写 名称'
-    return
+    regexError.value = '请填写 名称';
+    return;
   }
-  const rules = store.activeData?.regex_rules ?? []
+  const rules = store.activeData?.regex_rules ?? [];
   if (rules.some((r) => r.id === id)) {
-    regexError.value = 'id 已存在'
-    return
+    regexError.value = 'id 已存在';
+    return;
   }
   const rule: RegexRule = {
     id,
@@ -284,19 +284,19 @@ async function addCustomRegex() {
     targets: [],
     placement: 'after_macro',
     views: [],
-  }
-  store.addRegexRule(rule)
-  newRegexId.value = ''
-  newRegexName.value = ''
-  await nextTick()
-  ;(window as any).lucide?.createIcons?.()
+  };
+  store.addRegexRule(rule);
+  newRegexId.value = '';
+  newRegexName.value = '';
+  await nextTick();
+  (window as any).lucide?.createIcons?.();
 }
 
 // 拖拽排序（Relative / In-Chat）
-type PosType = 'relative' | 'in-chat'
-const dragging = ref<{ position: PosType; id: string } | null>(null)
-const dragOverId = ref<string | null>(null)
-const dragOverBefore = ref<boolean>(true)
+type PosType = 'relative' | 'in-chat';
+const dragging = ref<{ position: PosType; id: string } | null>(null);
+const dragOverId = ref<string | null>(null);
+const dragOverBefore = ref<boolean>(true);
 
 /**
  * 拖拽预览采用“黑线位置指示”，不实时移动条目。
@@ -304,131 +304,131 @@ const dragOverBefore = ref<boolean>(true)
  */
 
 function onDragStart(position: PosType, id: string, ev: DragEvent) {
-  dragging.value = { position, id }
+  dragging.value = { position, id };
   try {
-    ev.dataTransfer?.setData('text/plain', id)
-    ev.dataTransfer!.effectAllowed = 'move'
+    ev.dataTransfer?.setData('text/plain', id);
+    ev.dataTransfer!.effectAllowed = 'move';
     // 使用极小透明拖拽影像，避免拖拽整卡片导致的布局扰动
-    const canvas = document.createElement('canvas')
-    canvas.width = 1
-    canvas.height = 1
-    ev.dataTransfer?.setDragImage(canvas, 0, 0)
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    ev.dataTransfer?.setDragImage(canvas, 0, 0);
   } catch {}
 }
 
 function onDragOver(position: PosType, overId: string | null, ev: DragEvent) {
-  if (dragging.value?.position !== position) return
-  ev.preventDefault()
+  if (dragging.value?.position !== position) return;
+  ev.preventDefault();
   // decide insert before/after by cursor vs target element center
   try {
-    const el = ev.currentTarget as HTMLElement | null
+    const el = ev.currentTarget as HTMLElement | null;
     if (el) {
-      const rect = el.getBoundingClientRect()
-      const mid = rect.top + rect.height / 2
-      dragOverBefore.value = ev.clientY < mid
+      const rect = el.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      dragOverBefore.value = ev.clientY < mid;
     }
   } catch {}
-  dragOverId.value = overId
+  dragOverId.value = overId;
 }
 
 function onDrop(position: PosType, overId: string | null, ev: DragEvent) {
-  if (dragging.value?.position !== position) return
-  ev.preventDefault()
-  const dId = dragging.value.id
-  const list = position === 'relative' ? [...store.relativePrompts] : [...store.inChatPrompts]
-  let ids = list.map((i) => i.identifier)
-  const fromIdx = ids.indexOf(dId)
-  if (fromIdx < 0) return
+  if (dragging.value?.position !== position) return;
+  ev.preventDefault();
+  const dId = dragging.value.id;
+  const list = position === 'relative' ? [...store.relativePrompts] : [...store.inChatPrompts];
+  let ids = list.map((i) => i.identifier);
+  const fromIdx = ids.indexOf(dId);
+  if (fromIdx < 0) return;
   // remove original
-  ids.splice(fromIdx, 1)
+  ids.splice(fromIdx, 1);
   if (overId && overId !== dId) {
-    const toIdx = ids.indexOf(overId)
-    let insertIdx = toIdx < 0 ? ids.length : toIdx + (dragOverBefore.value ? 0 : 1)
-    if (insertIdx < 0) insertIdx = 0
-    if (insertIdx > ids.length) insertIdx = ids.length
-    ids.splice(insertIdx, 0, dId)
+    const toIdx = ids.indexOf(overId);
+    let insertIdx = toIdx < 0 ? ids.length : toIdx + (dragOverBefore.value ? 0 : 1);
+    if (insertIdx < 0) insertIdx = 0;
+    if (insertIdx > ids.length) insertIdx = ids.length;
+    ids.splice(insertIdx, 0, dId);
   } else {
     // drop at end
-    ids.push(dId)
+    ids.push(dId);
   }
-  store.reorderWithinPosition(position, ids)
+  store.reorderWithinPosition(position, ids);
   // cleanup
-  dragging.value = null
-  dragOverId.value = null
-  ;(window as any).lucide?.createIcons?.()
+  dragging.value = null;
+  dragOverId.value = null;
+  (window as any).lucide?.createIcons?.();
 }
 
 function onDropEnd(position: PosType, ev: DragEvent) {
-  onDrop(position, null, ev)
+  onDrop(position, null, ev);
 }
 
 function onDragEnd() {
-  dragging.value = null
-  dragOverId.value = null
+  dragging.value = null;
+  dragOverId.value = null;
 }
 
 /* 正则规则拖拽排序（黑线预览） */
-const draggingRegex = ref<string | null>(null)
-const dragOverRegexId = ref<string | null>(null)
-const dragOverRegexBefore = ref<boolean>(true)
+const draggingRegex = ref<string | null>(null);
+const dragOverRegexId = ref<string | null>(null);
+const dragOverRegexBefore = ref<boolean>(true);
 
 function onRegexDragStart(id: string, ev: DragEvent) {
-  draggingRegex.value = id
+  draggingRegex.value = id;
   try {
-    ev.dataTransfer?.setData('text/plain', id)
-    ev.dataTransfer!.effectAllowed = 'move'
-    const canvas = document.createElement('canvas')
-    canvas.width = 1
-    canvas.height = 1
-    ev.dataTransfer?.setDragImage(canvas, 0, 0)
+    ev.dataTransfer?.setData('text/plain', id);
+    ev.dataTransfer!.effectAllowed = 'move';
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    ev.dataTransfer?.setDragImage(canvas, 0, 0);
   } catch {}
 }
 
 function onRegexDragOver(overId: string | null, ev: DragEvent) {
-  if (!draggingRegex.value) return
-  ev.preventDefault()
+  if (!draggingRegex.value) return;
+  ev.preventDefault();
   try {
-    const el = ev.currentTarget as HTMLElement | null
+    const el = ev.currentTarget as HTMLElement | null;
     if (el) {
-      const rect = el.getBoundingClientRect()
-      const mid = rect.top + rect.height / 2
-      dragOverRegexBefore.value = ev.clientY < mid
+      const rect = el.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      dragOverRegexBefore.value = ev.clientY < mid;
     }
   } catch {}
-  dragOverRegexId.value = overId
+  dragOverRegexId.value = overId;
 }
 
 function onRegexDrop(overId: string | null, ev: DragEvent) {
-  if (!draggingRegex.value) return
-  ev.preventDefault()
-  const dId = draggingRegex.value
-  const list = [...(store.activeData?.regex_rules || [])]
-  let ids = list.map((i) => i.id)
-  const fromIdx = ids.indexOf(dId)
-  if (fromIdx < 0) return
-  ids.splice(fromIdx, 1)
+  if (!draggingRegex.value) return;
+  ev.preventDefault();
+  const dId = draggingRegex.value;
+  const list = [...(store.activeData?.regex_rules || [])];
+  let ids = list.map((i) => i.id);
+  const fromIdx = ids.indexOf(dId);
+  if (fromIdx < 0) return;
+  ids.splice(fromIdx, 1);
   if (overId && overId !== dId) {
-    const toIdx = ids.indexOf(overId)
-    let insertIdx = toIdx < 0 ? ids.length : toIdx + (dragOverRegexBefore.value ? 0 : 1)
-    if (insertIdx < 0) insertIdx = 0
-    if (insertIdx > ids.length) insertIdx = ids.length
-    ids.splice(insertIdx, 0, dId)
+    const toIdx = ids.indexOf(overId);
+    let insertIdx = toIdx < 0 ? ids.length : toIdx + (dragOverRegexBefore.value ? 0 : 1);
+    if (insertIdx < 0) insertIdx = 0;
+    if (insertIdx > ids.length) insertIdx = ids.length;
+    ids.splice(insertIdx, 0, dId);
   } else {
-    ids.push(dId)
+    ids.push(dId);
   }
-  store.reorderRegexRules(ids)
-  draggingRegex.value = null
-  dragOverRegexId.value = null
-  ;(window as any).lucide?.createIcons?.()
+  store.reorderRegexRules(ids);
+  draggingRegex.value = null;
+  dragOverRegexId.value = null;
+  (window as any).lucide?.createIcons?.();
 }
 
 function onRegexDropEnd(ev: DragEvent) {
-  onRegexDrop(null, ev)
+  onRegexDrop(null, ev);
 }
 
 function onRegexDragEnd() {
-  draggingRegex.value = null
-  dragOverRegexId.value = null
+  draggingRegex.value = null;
+  dragOverRegexId.value = null;
 }
 </script>
 

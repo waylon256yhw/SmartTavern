@@ -1,7 +1,7 @@
 <script setup>
 const props = defineProps({
   homePlain: { type: Boolean, default: false },
-})
+});
 </script>
 
 <template>

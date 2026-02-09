@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from 'vue';
 
-type TabKey = 'presets' | 'files' | 'worldbook' | 'characters' | 'regex' | 'user' | 'history'
+type TabKey = 'presets' | 'files' | 'worldbook' | 'characters' | 'regex' | 'user' | 'history';
 
 // v-model 支持
 const props = defineProps<{
-  modelValue: TabKey
-}>()
+  modelValue: TabKey;
+}>();
 const emit = defineEmits<{
-  (e: 'update:modelValue', v: TabKey): void
-}>()
+  (e: 'update:modelValue', v: TabKey): void;
+}>();
 
 const current = computed({
   get: () => props.modelValue,
   set: (v: TabKey) => emit('update:modelValue', v),
-})
+});
 
 // 导航项定义（将“文件 Files”置于“预设 Presets”之前）
 const items: { key: TabKey; icon: string; label: string; sub: string }[] = [
@@ -25,7 +25,7 @@ const items: { key: TabKey; icon: string; label: string; sub: string }[] = [
   { key: 'regex', icon: 'code', label: '正则', sub: 'Regex' },
   { key: 'user', icon: 'id-card', label: '用户信息', sub: 'User' },
   { key: 'history', icon: 'history', label: '对话历史', sub: 'History' },
-]
+];
 </script>
 
 <template>

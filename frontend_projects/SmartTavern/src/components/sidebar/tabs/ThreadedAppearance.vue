@@ -1,15 +1,15 @@
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
-import useAppearanceThreaded from '@/composables/appearance/useAppearanceThreaded'
-import { useI18n } from '@/locales'
-import { useAppearanceSettingsStore } from '@/stores/appearanceSettings'
-import { storeToRefs } from 'pinia'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import useAppearanceThreaded from '@/composables/appearance/useAppearanceThreaded';
+import { useI18n } from '@/locales';
+import { useAppearanceSettingsStore } from '@/stores/appearanceSettings';
+import { storeToRefs } from 'pinia';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 // 获取 Pinia store 用于消息侧边栏宽度
-const appearanceStore = useAppearanceSettingsStore()
-const { messageSidebarWidth } = storeToRefs(appearanceStore)
+const appearanceStore = useAppearanceSettingsStore();
+const { messageSidebarWidth } = storeToRefs(appearanceStore);
 
 /**
  * 楼层对话外观配置（拆分自 AppearancePanel）
@@ -20,50 +20,50 @@ const { messageSidebarWidth } = storeToRefs(appearanceStore)
  */
 
 // live tuning indicator + overlay suppression
-const tuning = ref(false)
-const activeTuningSlider = ref(null)
+const tuning = ref(false);
+const activeTuningSlider = ref(null);
 
 /* 强制隐藏半透明背板/浮标（行内样式最高优先级），结束时恢复 */
-let __tuningHiddenEls = []
+let __tuningHiddenEls = [];
 function __hideOverlaysForTuning() {
-  const selectors = ['.st-panel-backdrop', '.sd-backdrop', '.sd-fab']
-  __tuningHiddenEls = []
+  const selectors = ['.st-panel-backdrop', '.sd-backdrop', '.sd-fab'];
+  __tuningHiddenEls = [];
   selectors.forEach((sel) => {
     document.querySelectorAll(sel).forEach((el) => {
-      __tuningHiddenEls.push({ el, style: el.getAttribute('style') })
+      __tuningHiddenEls.push({ el, style: el.getAttribute('style') });
       try {
-        el.style.setProperty('display', 'none', 'important')
-        el.style.setProperty('visibility', 'hidden', 'important')
-        el.style.setProperty('pointer-events', 'none', 'important')
+        el.style.setProperty('display', 'none', 'important');
+        el.style.setProperty('visibility', 'hidden', 'important');
+        el.style.setProperty('pointer-events', 'none', 'important');
       } catch (_) {}
-    })
-  })
+    });
+  });
 }
 function __restoreOverlaysForTuning() {
   __tuningHiddenEls.forEach(({ el, style }) => {
     try {
-      if (style != null) el.setAttribute('style', style)
-      else el.removeAttribute('style')
+      if (style != null) el.setAttribute('style', style);
+      else el.removeAttribute('style');
     } catch (_) {}
-  })
-  __tuningHiddenEls = []
+  });
+  __tuningHiddenEls = [];
 }
 
 function onTuningStart(sliderName) {
-  tuning.value = true
-  activeTuningSlider.value = sliderName
-  document.body.classList.add('st-live-tuning')
-  document.body.setAttribute('data-active-slider', sliderName)
-  __hideOverlaysForTuning()
-  window.addEventListener('pointerup', onTuningEndOnce, { once: true })
-  window.addEventListener('touchend', onTuningEndOnce, { once: true })
+  tuning.value = true;
+  activeTuningSlider.value = sliderName;
+  document.body.classList.add('st-live-tuning');
+  document.body.setAttribute('data-active-slider', sliderName);
+  __hideOverlaysForTuning();
+  window.addEventListener('pointerup', onTuningEndOnce, { once: true });
+  window.addEventListener('touchend', onTuningEndOnce, { once: true });
 }
 function onTuningEndOnce() {
-  tuning.value = false
-  activeTuningSlider.value = null
-  document.body.classList.remove('st-live-tuning')
-  document.body.removeAttribute('data-active-slider')
-  __restoreOverlaysForTuning()
+  tuning.value = false;
+  activeTuningSlider.value = null;
+  document.body.classList.remove('st-live-tuning');
+  document.body.removeAttribute('data-active-slider');
+  __restoreOverlaysForTuning();
 }
 
 // Composable: state + helpers
@@ -75,7 +75,7 @@ const {
   setRootVarUnitless,
   buildSnapshot,
   saveSnapshotLS,
-} = useAppearanceThreaded()
+} = useAppearanceThreaded();
 
 // Destructure refs for template parity
 const {
@@ -103,10 +103,10 @@ const {
   thRadius,
   // 新增：楼层 HTML 舞台显示模式（auto/fixed/inline）
   threadedDisplayModeSel,
-} = state
+} = state;
 
 // 从 appearanceSettings store 获取 iframe 渲染配置
-const { iframeRenderMode, iframeRenderRange } = storeToRefs(appearanceStore)
+const { iframeRenderMode, iframeRenderRange } = storeToRefs(appearanceStore);
 
 // 持久化：任意外观变更立即保存到浏览器，避免刷新后丢失
 // 注意：state 是普通对象（包含 ref），需要监听所有 ref 的数组
@@ -139,11 +139,11 @@ watch(
   ],
   () => {
     try {
-      const snap = buildSnapshot()
-      saveSnapshotLS(snap)
+      const snap = buildSnapshot();
+      saveSnapshotLS(snap);
     } catch (_) {}
   },
-)
+);
 
 // Presets (unchanged)
 const aspectPresets = [
@@ -151,300 +151,300 @@ const aspectPresets = [
   { label: '4:3', v: [4, 3] },
   { label: '21:9', v: [21, 9] },
   { label: '1:1', v: [1, 1] },
-]
+];
 
 // Handlers: same signatures, write via helpers
 function onContentFontSizeInput(e) {
-  contentFontSize.value = Number(e.target.value)
-  setRootVar('--st-content-font-size', contentFontSize.value)
+  contentFontSize.value = Number(e.target.value);
+  setRootVar('--st-content-font-size', contentFontSize.value);
 }
 function onContentFontSizeNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 12 && v <= 32) {
-    contentFontSize.value = v
-    setRootVar('--st-content-font-size', v)
+    contentFontSize.value = v;
+    setRootVar('--st-content-font-size', v);
   }
 }
 
 function onNameFontSizeInput(e) {
-  nameFontSize.value = Number(e.target.value)
-  setRootVar('--st-name-font-size', nameFontSize.value)
+  nameFontSize.value = Number(e.target.value);
+  setRootVar('--st-name-font-size', nameFontSize.value);
 }
 function onNameFontSizeNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 10 && v <= 24) {
-    nameFontSize.value = v
-    setRootVar('--st-name-font-size', v)
+    nameFontSize.value = v;
+    setRootVar('--st-name-font-size', v);
   }
 }
 
 function onBadgeFontSizeInput(e) {
-  badgeFontSize.value = Number(e.target.value)
-  setRootVar('--st-badge-font-size', badgeFontSize.value)
+  badgeFontSize.value = Number(e.target.value);
+  setRootVar('--st-badge-font-size', badgeFontSize.value);
 }
 function onBadgeFontSizeNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 8 && v <= 16) {
-    badgeFontSize.value = v
-    setRootVar('--st-badge-font-size', v)
+    badgeFontSize.value = v;
+    setRootVar('--st-badge-font-size', v);
   }
 }
 
 function onFloorFontSizeInput(e) {
-  floorFontSize.value = Number(e.target.value)
-  setRootVar('--st-floor-font-size', floorFontSize.value)
+  floorFontSize.value = Number(e.target.value);
+  setRootVar('--st-floor-font-size', floorFontSize.value);
 }
 function onFloorFontSizeNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 10 && v <= 24) {
-    floorFontSize.value = v
-    setRootVar('--st-floor-font-size', v)
+    floorFontSize.value = v;
+    setRootVar('--st-floor-font-size', v);
   }
 }
 
 function onAvatarSizeInput(e) {
-  avatarSize.value = Number(e.target.value)
-  setRootVar('--st-avatar-size', avatarSize.value)
+  avatarSize.value = Number(e.target.value);
+  setRootVar('--st-avatar-size', avatarSize.value);
 }
 function onAvatarSizeNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 32 && v <= 80) {
-    avatarSize.value = v
-    setRootVar('--st-avatar-size', v)
+    avatarSize.value = v;
+    setRootVar('--st-avatar-size', v);
   }
 }
 
 function onWidthInput(e) {
-  chatWidth.value = Number(e.target.value)
-  setRootVar('--st-chat-width', chatWidth.value)
+  chatWidth.value = Number(e.target.value);
+  setRootVar('--st-chat-width', chatWidth.value);
 }
 function onWidthNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 30 && v <= 100) {
-    chatWidth.value = v
-    setRootVar('--st-chat-width', v)
+    chatWidth.value = v;
+    setRootVar('--st-chat-width', v);
   }
 }
 
 function onInputHeightInput(e) {
-  inputHeight.value = Number(e.target.value)
-  setRootVar('--st-input-height', inputHeight.value)
+  inputHeight.value = Number(e.target.value);
+  setRootVar('--st-input-height', inputHeight.value);
 }
 function onInputHeightNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 80 && v <= 300) {
-    inputHeight.value = v
-    setRootVar('--st-input-height', v)
+    inputHeight.value = v;
+    setRootVar('--st-input-height', v);
   }
 }
 
 function onInputBottomMarginInput(e) {
-  inputBottomMargin.value = Number(e.target.value)
-  setRootVar('--st-input-bottom-margin', inputBottomMargin.value)
+  inputBottomMargin.value = Number(e.target.value);
+  setRootVar('--st-input-bottom-margin', inputBottomMargin.value);
 }
 function onInputBottomMarginNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 0 && v <= 100) {
-    inputBottomMargin.value = v
-    setRootVar('--st-input-bottom-margin', v)
+    inputBottomMargin.value = v;
+    setRootVar('--st-input-bottom-margin', v);
   }
 }
 
 // Common appearance
 function onContentLineHeightNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 1.2 && v <= 2.0) {
-    contentLineHeight.value = v
-    setRootVarUnitless('--st-content-line-height', String(v))
+    contentLineHeight.value = v;
+    setRootVarUnitless('--st-content-line-height', String(v));
   }
 }
 function onContentLineHeightRangeInput(e) {
-  contentLineHeight.value = Number(e.target.value)
-  setRootVarUnitless('--st-content-line-height', String(contentLineHeight.value))
+  contentLineHeight.value = Number(e.target.value);
+  setRootVarUnitless('--st-content-line-height', String(contentLineHeight.value));
 }
 
 function onMessageGapNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 0 && v <= 24) {
-    messageGap.value = v
-    setRootVar('--st-message-gap', v)
+    messageGap.value = v;
+    setRootVar('--st-message-gap', v);
   }
 }
 function onMessageGapRangeInput(e) {
-  messageGap.value = Number(e.target.value)
-  setRootVar('--st-message-gap', messageGap.value)
+  messageGap.value = Number(e.target.value);
+  setRootVar('--st-message-gap', messageGap.value);
 }
 
 function onCardRadiusNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 0 && v <= 24) {
-    cardRadius.value = v
-    setRootVar('--st-card-radius', v)
+    cardRadius.value = v;
+    setRootVar('--st-card-radius', v);
   }
 }
 function onCardRadiusRangeInput(e) {
-  cardRadius.value = Number(e.target.value)
-  setRootVar('--st-card-radius', cardRadius.value)
+  cardRadius.value = Number(e.target.value);
+  setRootVar('--st-card-radius', cardRadius.value);
 }
 
 function onStripeWidthNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 0 && v <= 12) {
-    stripeWidth.value = v
-    setRootVar('--st-stripe-width', v)
+    stripeWidth.value = v;
+    setRootVar('--st-stripe-width', v);
   }
 }
 function onStripeWidthRangeInput(e) {
-  stripeWidth.value = Number(e.target.value)
-  setRootVar('--st-stripe-width', stripeWidth.value)
+  stripeWidth.value = Number(e.target.value);
+  setRootVar('--st-stripe-width', stripeWidth.value);
 }
 
 /* Opacity handlers (% → 0~1) */
 function onThreadedBgOpacityNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 0 && v <= 100) {
-    threadedBgOpacityPct.value = v
-    setRootVarUnitless('--st-threaded-bg-opacity', String(v / 100))
+    threadedBgOpacityPct.value = v;
+    setRootVarUnitless('--st-threaded-bg-opacity', String(v / 100));
   }
 }
 function onThreadedBgOpacityRangeInput(e) {
-  threadedBgOpacityPct.value = Number(e.target.value)
-  setRootVarUnitless('--st-threaded-bg-opacity', String(threadedBgOpacityPct.value / 100))
+  threadedBgOpacityPct.value = Number(e.target.value);
+  setRootVarUnitless('--st-threaded-bg-opacity', String(threadedBgOpacityPct.value / 100));
 }
 
 /* Blur handlers (px) */
 function onThreadedBgBlurNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 0 && v <= 50) {
-    threadedBgBlurPx.value = v
-    setRootVar('--st-threaded-bg-blur', v)
+    threadedBgBlurPx.value = v;
+    setRootVar('--st-threaded-bg-blur', v);
   }
 }
 function onThreadedBgBlurRangeInput(e) {
-  threadedBgBlurPx.value = Number(e.target.value)
-  setRootVar('--st-threaded-bg-blur', threadedBgBlurPx.value)
+  threadedBgBlurPx.value = Number(e.target.value);
+  setRootVar('--st-threaded-bg-blur', threadedBgBlurPx.value);
 }
 
 function onThreadedListBgOpacityNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 0 && v <= 100) {
-    threadedListBgOpacityPct.value = v
-    setRootVarUnitless('--st-threaded-list-bg-opacity', String(v / 100))
+    threadedListBgOpacityPct.value = v;
+    setRootVarUnitless('--st-threaded-list-bg-opacity', String(v / 100));
   }
 }
 function onThreadedListBgOpacityRangeInput(e) {
-  threadedListBgOpacityPct.value = Number(e.target.value)
-  setRootVarUnitless('--st-threaded-list-bg-opacity', String(threadedListBgOpacityPct.value / 100))
+  threadedListBgOpacityPct.value = Number(e.target.value);
+  setRootVarUnitless('--st-threaded-list-bg-opacity', String(threadedListBgOpacityPct.value / 100));
 }
 
 function onThreadedInputBgOpacityNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 0 && v <= 100) {
-    threadedInputBgOpacityPct.value = v
-    setRootVarUnitless('--st-threaded-input-bg-opacity', String(v / 100))
+    threadedInputBgOpacityPct.value = v;
+    setRootVarUnitless('--st-threaded-input-bg-opacity', String(v / 100));
   }
 }
 function onThreadedInputBgOpacityRangeInput(e) {
-  threadedInputBgOpacityPct.value = Number(e.target.value)
+  threadedInputBgOpacityPct.value = Number(e.target.value);
   setRootVarUnitless(
     '--st-threaded-input-bg-opacity',
     String(threadedInputBgOpacityPct.value / 100),
-  )
+  );
 }
 
 // Threaded HTML stage handlers
 function onThreadedAspectPreset(e) {
-  const raw = e.target.value
-  if (!raw) return
-  const [ax, ay] = raw.split(',').map(Number)
+  const raw = e.target.value;
+  if (!raw) return;
+  const [ax, ay] = raw.split(',').map(Number);
   if (ax > 0 && ay > 0) {
-    thAspectX.value = ax
-    thAspectY.value = ay
-    setRootVarUnitless('--st-threaded-stage-aspect', `${ax} / ${ay}`)
+    thAspectX.value = ax;
+    thAspectY.value = ay;
+    setRootVarUnitless('--st-threaded-stage-aspect', `${ax} / ${ay}`);
   }
 }
 function onThreadedAspectNumInputX(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v > 0) {
-    thAspectX.value = v
-    setRootVarUnitless('--st-threaded-stage-aspect', `${thAspectX.value} / ${thAspectY.value}`)
+    thAspectX.value = v;
+    setRootVarUnitless('--st-threaded-stage-aspect', `${thAspectX.value} / ${thAspectY.value}`);
   }
 }
 function onThreadedAspectNumInputY(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v > 0) {
-    thAspectY.value = v
-    setRootVarUnitless('--st-threaded-stage-aspect', `${thAspectX.value} / ${thAspectY.value}`)
+    thAspectY.value = v;
+    setRootVarUnitless('--st-threaded-stage-aspect', `${thAspectX.value} / ${thAspectY.value}`);
   }
 }
 function onThreadedMaxWidthNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 30 && v <= 100) {
-    thMaxWidthPct.value = v
-    setRootVarUnitless('--st-threaded-stage-maxw', thMaxWidthPct.value)
+    thMaxWidthPct.value = v;
+    setRootVarUnitless('--st-threaded-stage-maxw', thMaxWidthPct.value);
   }
 }
 function onThreadedMaxWidthRangeInput(e) {
-  thMaxWidthPct.value = Number(e.target.value)
-  setRootVarUnitless('--st-threaded-stage-maxw', thMaxWidthPct.value)
+  thMaxWidthPct.value = Number(e.target.value);
+  setRootVarUnitless('--st-threaded-stage-maxw', thMaxWidthPct.value);
 }
 function onThreadedPaddingNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 0 && v <= 48) {
-    thPadding.value = v
-    setRootVar('--st-threaded-stage-padding', thPadding.value)
+    thPadding.value = v;
+    setRootVar('--st-threaded-stage-padding', thPadding.value);
   }
 }
 function onThreadedPaddingRangeInput(e) {
-  thPadding.value = Number(e.target.value)
-  setRootVar('--st-threaded-stage-padding', thPadding.value)
+  thPadding.value = Number(e.target.value);
+  setRootVar('--st-threaded-stage-padding', thPadding.value);
 }
 function onThreadedRadiusNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 0 && v <= 32) {
-    thRadius.value = v
-    setRootVar('--st-threaded-stage-radius', thRadius.value)
+    thRadius.value = v;
+    setRootVar('--st-threaded-stage-radius', thRadius.value);
   }
 }
 function onThreadedRadiusRangeInput(e) {
-  thRadius.value = Number(e.target.value)
-  setRootVar('--st-threaded-stage-radius', thRadius.value)
+  thRadius.value = Number(e.target.value);
+  setRootVar('--st-threaded-stage-radius', thRadius.value);
 }
 
 // 消息侧边栏宽度处理
 function onMessageSidebarWidthInput(e) {
-  const v = Number(e.target.value)
-  appearanceStore.setMessageSidebarWidth(v)
+  const v = Number(e.target.value);
+  appearanceStore.setMessageSidebarWidth(v);
 }
 function onMessageSidebarWidthNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 60 && v <= 150) {
-    appearanceStore.setMessageSidebarWidth(v)
+    appearanceStore.setMessageSidebarWidth(v);
   }
 }
 
 // Lifecycle: init + auto-save broadcast
-let __dispose = null
+let __dispose = null;
 onMounted(() => {
-  initFromCSS()
-  __dispose = startAutoSave({ intervalMs: 1000 })
+  initFromCSS();
+  __dispose = startAutoSave({ intervalMs: 1000 });
   // 实时保存并广播：切换显示模式即刻生效
   watch(
     threadedDisplayModeSel,
     (v) => {
       try {
-        const snap = buildSnapshot()
-        snap.threadedDisplayModeSel = String(v)
-        saveSnapshotLS(snap)
-        window.dispatchEvent(new CustomEvent('stAppearanceThreadedUpdate', { detail: snap }))
+        const snap = buildSnapshot();
+        snap.threadedDisplayModeSel = String(v);
+        saveSnapshotLS(snap);
+        window.dispatchEvent(new CustomEvent('stAppearanceThreadedUpdate', { detail: snap }));
       } catch (_) {}
     },
     { immediate: true },
-  )
-})
+  );
+});
 onBeforeUnmount(() => {
-  if (typeof __dispose === 'function') __dispose()
-})
+  if (typeof __dispose === 'function') __dispose();
+});
 </script>
 
 <template>
@@ -1089,8 +1089,8 @@ onBeforeUnmount(() => {
             max="50"
             @input="
               (e) => {
-                const v = Number(e.target.value)
-                if (v >= 1 && v <= 50) iframeRenderRange = v
+                const v = Number(e.target.value);
+                if (v >= 1 && v <= 50) iframeRenderRange = v;
               }
             "
           />

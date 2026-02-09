@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick, computed } from 'vue';
 
 /**
  * 简单的自定义滚动条组件
@@ -44,147 +44,147 @@ const props = defineProps({
     type: Number,
     default: 12,
   },
-})
+});
 
-const scrollContainer = ref(null)
-const scrollThumb = ref(null)
-const scrollTrack = ref(null)
+const scrollContainer = ref(null);
+const scrollThumb = ref(null);
+const scrollTrack = ref(null);
 
-const thumbHeight = ref(0)
-const thumbTop = ref(0)
-const showScrollbar = ref(false)
+const thumbHeight = ref(0);
+const thumbTop = ref(0);
+const showScrollbar = ref(false);
 
-const isHovering = ref(false)
-const isVisible = ref(false)
-let hideTimeout = null
+const isHovering = ref(false);
+const isVisible = ref(false);
+let hideTimeout = null;
 
 const currentWidth = computed(() =>
   isHovering.value || isDragging ? props.hoverWidth || props.width + 4 : props.width,
-)
+);
 
 function reveal() {
-  if (!props.overlay) return
-  isVisible.value = true
-  scheduleHide()
+  if (!props.overlay) return;
+  isVisible.value = true;
+  scheduleHide();
 }
 function scheduleHide() {
-  if (!props.overlay) return
-  if (hideTimeout) clearTimeout(hideTimeout)
+  if (!props.overlay) return;
+  if (hideTimeout) clearTimeout(hideTimeout);
   hideTimeout = setTimeout(() => {
-    if (!isHovering.value && !isDragging) isVisible.value = false
-  }, props.autoHideDelay)
+    if (!isHovering.value && !isDragging) isVisible.value = false;
+  }, props.autoHideDelay);
 }
 
-let isDragging = false
-let startY = 0
-let startScrollTop = 0
-let resizeObserver = null
+let isDragging = false;
+let startY = 0;
+let startScrollTop = 0;
+let resizeObserver = null;
 
 // 计算并更新滚动条状态
 function updateScrollbar() {
-  if (!scrollContainer.value) return
+  if (!scrollContainer.value) return;
 
-  const container = scrollContainer.value
-  const scrollHeight = container.scrollHeight
-  const clientHeight = container.clientHeight
-  const scrollTop = container.scrollTop
+  const container = scrollContainer.value;
+  const scrollHeight = container.scrollHeight;
+  const clientHeight = container.clientHeight;
+  const scrollTop = container.scrollTop;
 
   // 判断是否需要显示滚动条
-  showScrollbar.value = scrollHeight > clientHeight
+  showScrollbar.value = scrollHeight > clientHeight;
 
-  if (!showScrollbar.value) return
+  if (!showScrollbar.value) return;
 
   // 计算滑块高度（最小32px）
-  const ratio = clientHeight / Math.max(1, scrollHeight)
-  thumbHeight.value = Math.max(32, clientHeight * ratio)
+  const ratio = clientHeight / Math.max(1, scrollHeight);
+  thumbHeight.value = Math.max(32, clientHeight * ratio);
 
   // 计算滑块位置
-  const maxScrollTop = Math.max(1, scrollHeight - clientHeight)
-  const maxThumbTop = Math.max(1, clientHeight - thumbHeight.value)
-  thumbTop.value = (scrollTop / maxScrollTop) * maxThumbTop
+  const maxScrollTop = Math.max(1, scrollHeight - clientHeight);
+  const maxThumbTop = Math.max(1, clientHeight - thumbHeight.value);
+  thumbTop.value = (scrollTop / maxScrollTop) * maxThumbTop;
 }
 
 /* 滚动事件处理 */
 function handleScroll() {
-  updateScrollbar()
-  reveal()
+  updateScrollbar();
+  reveal();
 }
 
 // 悬浮边缘自动显隐（距离右边缘 24px 内显示）
 function handleWrapperMouseMove(e) {
-  if (!props.overlay) return
-  const el = e.currentTarget
-  if (!el) return
-  const rect = el.getBoundingClientRect()
-  const dist = rect.right - e.clientX
+  if (!props.overlay) return;
+  const el = e.currentTarget;
+  if (!el) return;
+  const rect = el.getBoundingClientRect();
+  const dist = rect.right - e.clientX;
   if (dist <= 24) {
-    reveal()
+    reveal();
   } else {
-    scheduleHide()
+    scheduleHide();
   }
 }
 
 // 全局鼠标移动：保持计时，停止后按延迟隐藏
 function handleGlobalMouseMove() {
-  if (!props.overlay) return
-  if (isVisible.value) scheduleHide()
+  if (!props.overlay) return;
+  if (isVisible.value) scheduleHide();
 }
 
 // 鼠标按下滑块
 function handleThumbMouseDown(e) {
-  isDragging = true
-  startY = e.clientY
-  startScrollTop = scrollContainer.value.scrollTop
-  reveal()
+  isDragging = true;
+  startY = e.clientY;
+  startScrollTop = scrollContainer.value.scrollTop;
+  reveal();
 
-  document.addEventListener('mousemove', handleMouseMove)
-  document.addEventListener('mouseup', handleMouseUp)
+  document.addEventListener('mousemove', handleMouseMove);
+  document.addEventListener('mouseup', handleMouseUp);
 
-  e.preventDefault()
+  e.preventDefault();
 }
 
 // 鼠标移动
 function handleMouseMove(e) {
-  if (!isDragging || !scrollContainer.value) return
+  if (!isDragging || !scrollContainer.value) return;
 
-  const container = scrollContainer.value
-  const deltaY = e.clientY - startY
-  const scrollHeight = container.scrollHeight
-  const clientHeight = container.clientHeight
-  const maxScrollTop = scrollHeight - clientHeight
-  const maxThumbTop = clientHeight - thumbHeight.value
+  const container = scrollContainer.value;
+  const deltaY = e.clientY - startY;
+  const scrollHeight = container.scrollHeight;
+  const clientHeight = container.clientHeight;
+  const maxScrollTop = scrollHeight - clientHeight;
+  const maxThumbTop = clientHeight - thumbHeight.value;
 
   // 计算新的滚动位置
-  const scrollDelta = (deltaY / maxThumbTop) * maxScrollTop
-  container.scrollTop = startScrollTop + scrollDelta
+  const scrollDelta = (deltaY / maxThumbTop) * maxScrollTop;
+  container.scrollTop = startScrollTop + scrollDelta;
 }
 
 // 鼠标释放
 function handleMouseUp() {
-  isDragging = false
-  scheduleHide()
-  document.removeEventListener('mousemove', handleMouseMove)
-  document.removeEventListener('mouseup', handleMouseUp)
+  isDragging = false;
+  scheduleHide();
+  document.removeEventListener('mousemove', handleMouseMove);
+  document.removeEventListener('mouseup', handleMouseUp);
 }
 
 // 点击轨道跳转
 function handleTrackClick(e) {
-  if (e.target !== scrollTrack.value) return
+  if (e.target !== scrollTrack.value) return;
 
-  const container = scrollContainer.value
-  const trackRect = scrollTrack.value.getBoundingClientRect()
-  const clickY = e.clientY - trackRect.top
+  const container = scrollContainer.value;
+  const trackRect = scrollTrack.value.getBoundingClientRect();
+  const clickY = e.clientY - trackRect.top;
 
-  const scrollHeight = container.scrollHeight
-  const clientHeight = container.clientHeight
-  const maxScrollTop = scrollHeight - clientHeight
+  const scrollHeight = container.scrollHeight;
+  const clientHeight = container.clientHeight;
+  const maxScrollTop = scrollHeight - clientHeight;
 
   // 计算目标滚动位置（点击位置居中）
-  const targetThumbTop = clickY - thumbHeight.value / 2
-  const maxThumbTop = clientHeight - thumbHeight.value
-  const ratio = Math.max(0, Math.min(1, targetThumbTop / maxThumbTop))
+  const targetThumbTop = clickY - thumbHeight.value / 2;
+  const maxThumbTop = clientHeight - thumbHeight.value;
+  const ratio = Math.max(0, Math.min(1, targetThumbTop / maxThumbTop));
 
-  container.scrollTop = ratio * maxScrollTop
+  container.scrollTop = ratio * maxScrollTop;
 }
 
 const trackStyle = computed(() => {
@@ -198,79 +198,79 @@ const trackStyle = computed(() => {
         : 'translateX(8px)'
       : 'translateX(0)',
     pointerEvents: props.overlay ? (isVisible.value ? 'auto' : 'none') : 'auto',
-  }
-})
+  };
+});
 
 const thumbStyle = computed(() => {
   const style = {
     height: `${thumbHeight.value}px`,
     top: `${thumbTop.value}px`,
-  }
-  if (props.thumbColor) style.background = props.thumbColor
-  if (props.thumbHoverColor) style['--thumb-hover-color'] = props.thumbHoverColor
-  return style
-})
+  };
+  if (props.thumbColor) style.background = props.thumbColor;
+  if (props.thumbHoverColor) style['--thumb-hover-color'] = props.thumbHoverColor;
+  return style;
+});
 
 // 组件挂载
 onMounted(() => {
   nextTick(() => {
     // 延迟更新以确保内容完全渲染
     setTimeout(() => {
-      updateScrollbar()
-    }, 100)
+      updateScrollbar();
+    }, 100);
 
     if (scrollContainer.value) {
-      scrollContainer.value.addEventListener('scroll', handleScroll, { passive: true })
+      scrollContainer.value.addEventListener('scroll', handleScroll, { passive: true });
     }
 
     // 监听窗口大小变化
-    window.addEventListener('resize', updateScrollbar)
+    window.addEventListener('resize', updateScrollbar);
     // 全局鼠标移动：保持活跃时显示，停止后按延迟隐藏
-    window.addEventListener('mousemove', handleGlobalMouseMove, { passive: true })
+    window.addEventListener('mousemove', handleGlobalMouseMove, { passive: true });
 
     // 使用 ResizeObserver 监听容器尺寸变化
     if (window.ResizeObserver && scrollContainer.value) {
       resizeObserver = new ResizeObserver(() => {
-        updateScrollbar()
-      })
-      resizeObserver.observe(scrollContainer.value)
+        updateScrollbar();
+      });
+      resizeObserver.observe(scrollContainer.value);
     }
 
     // 使用 MutationObserver 监听内容变化
     if (scrollContainer.value) {
       const observer = new MutationObserver(() => {
-        updateScrollbar()
-      })
+        updateScrollbar();
+      });
       observer.observe(scrollContainer.value, {
         childList: true,
         subtree: true,
         characterData: true,
-      })
+      });
     }
-  })
-})
+  });
+});
 
 // 组件卸载
 onBeforeUnmount(() => {
   if (scrollContainer.value) {
-    scrollContainer.value.removeEventListener('scroll', handleScroll)
+    scrollContainer.value.removeEventListener('scroll', handleScroll);
   }
-  window.removeEventListener('resize', updateScrollbar)
-  window.removeEventListener('mousemove', handleGlobalMouseMove)
+  window.removeEventListener('resize', updateScrollbar);
+  window.removeEventListener('mousemove', handleGlobalMouseMove);
   if (resizeObserver) {
     try {
-      resizeObserver.disconnect()
+      resizeObserver.disconnect();
     } catch (_) {}
-    resizeObserver = null
+    resizeObserver = null;
   }
-  document.removeEventListener('mousemove', handleMouseMove)
-  document.removeEventListener('mouseup', handleMouseUp)
-})
+  document.removeEventListener('mousemove', handleMouseMove);
+  document.removeEventListener('mouseup', handleMouseUp);
+});
 
 // 暴露更新方法（用于外部触发内容变化后更新滚动条）
 defineExpose({
   update: updateScrollbar,
-})
+});
 </script>
 
 <template>

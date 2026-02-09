@@ -1,77 +1,77 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick, watch } from 'vue'
-import { usePresetStore } from '@/features/presets/store'
-import type { WorldBookEntry } from '@/features/presets/types'
-import WorldBookCard from '@/features/worldbook/components/WorldBookCard.vue'
-import { useFileManagerStore } from '@/features/files/fileManager'
+import { ref, onMounted, nextTick, watch } from 'vue';
+import { usePresetStore } from '@/features/presets/store';
+import type { WorldBookEntry } from '@/features/presets/types';
+import WorldBookCard from '@/features/worldbook/components/WorldBookCard.vue';
+import { useFileManagerStore } from '@/features/files/fileManager';
 
-const store = usePresetStore()
-const fm = useFileManagerStore()
+const store = usePresetStore();
+const fm = useFileManagerStore();
 
-const fileTitle = ref<string>('')
-const renameError = ref<string | null>(null)
+const fileTitle = ref<string>('');
+const renameError = ref<string | null>(null);
 watch(
   () => store.activeFile?.name,
   (v) => {
-    fileTitle.value = v ?? ''
+    fileTitle.value = v ?? '';
   },
   { immediate: true },
-)
+);
 function renameWorldbookFile() {
-  renameError.value = null
-  const oldName = store.activeFile?.name || ''
-  const nn = (fileTitle.value || '').trim()
+  renameError.value = null;
+  const oldName = store.activeFile?.name || '';
+  const nn = (fileTitle.value || '').trim();
   if (!nn) {
-    renameError.value = '文件名不能为空'
-    return
+    renameError.value = '文件名不能为空';
+    return;
   }
-  if (nn === oldName) return
-  const ok = (store as any).renameActive?.(nn)
+  if (nn === oldName) return;
+  const ok = (store as any).renameActive?.(nn);
   if (!ok) {
-    renameError.value = '重命名失败：可能与现有文件重名'
-    return
+    renameError.value = '重命名失败：可能与现有文件重名';
+    return;
   }
   try {
-    fm.renameFile('worldbook', oldName, nn)
+    fm.renameFile('worldbook', oldName, nn);
   } catch {}
 }
 
 /* 世界书面板：导入/导出复用顶部按钮；使用当前活动文件的 world_books */
 
 onMounted(() => {
-  if (!store.loaded) store.load()
-  ;(window as any).lucide?.createIcons?.()
-})
+  if (!store.loaded) store.load();
+  (window as any).lucide?.createIcons?.();
+});
 
 // 变更后刷新 lucide 图标
 watch(
   () => store.activeData?.world_books?.length ?? 0,
   async () => {
-    await nextTick()
-    ;(window as any).lucide?.createIcons?.()
+    await nextTick();
+    (window as any).lucide?.createIcons?.();
   },
   { flush: 'post' },
-)
+);
 
 // 右上角：新增条目（id + 名称 + 添加）
-const newId = ref<string>('')
-const newName = ref<string>('')
+const newId = ref<string>('');
+const newName = ref<string>('');
 
 async function addEntry() {
-  const id = newId.value.trim()
-  const name = newName.value.trim()
+  const id = newId.value.trim();
+  const name = newName.value.trim();
   if (!id) {
-    alert('请填写 id')
-    return
+    alert('请填写 id');
+    return;
   }
   if (!name) {
-    alert('请填写 名称')
-    return
+    alert('请填写 名称');
+    return;
   }
-  const list = (store.activeData?.world_books || []) as WorldBookEntry[]
+  const list = (store.activeData?.world_books || []) as WorldBookEntry[];
   if (list.some((e) => e.id === id)) {
-    alert('id 已存在')
-    return
+    alert('id 已存在');
+    return;
   }
   const entry: WorldBookEntry = {
     id,
@@ -84,77 +84,77 @@ async function addEntry() {
     order: 100,
     depth: 0,
     keys: [],
-  }
-  store.addWorldBook(entry)
-  newId.value = ''
-  newName.value = ''
-  await nextTick()
-  ;(window as any).lucide?.createIcons?.()
+  };
+  store.addWorldBook(entry);
+  newId.value = '';
+  newName.value = '';
+  await nextTick();
+  (window as any).lucide?.createIcons?.();
 }
 
 // 导入/导出逻辑复用右上角按钮（App.vue），此处不再提供独立导入/导出
 
 /* 拖拽排序（黑线插入预览） */
-const dragging = ref<string | null>(null)
-const dragOverId = ref<string | null>(null)
-const dragOverBefore = ref<boolean>(true)
+const dragging = ref<string | null>(null);
+const dragOverId = ref<string | null>(null);
+const dragOverBefore = ref<boolean>(true);
 
 function onDragStart(id: string, ev: DragEvent) {
-  dragging.value = id
+  dragging.value = id;
   try {
-    ev.dataTransfer?.setData('text/plain', id)
-    ev.dataTransfer!.effectAllowed = 'move'
-    const canvas = document.createElement('canvas')
-    canvas.width = 1
-    canvas.height = 1
-    ev.dataTransfer?.setDragImage(canvas, 0, 0)
+    ev.dataTransfer?.setData('text/plain', id);
+    ev.dataTransfer!.effectAllowed = 'move';
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    ev.dataTransfer?.setDragImage(canvas, 0, 0);
   } catch {}
 }
 
 function onDragOver(overId: string | null, ev: DragEvent) {
-  if (!dragging.value) return
-  ev.preventDefault()
+  if (!dragging.value) return;
+  ev.preventDefault();
   try {
-    const el = ev.currentTarget as HTMLElement | null
+    const el = ev.currentTarget as HTMLElement | null;
     if (el) {
-      const rect = el.getBoundingClientRect()
-      const mid = rect.top + rect.height / 2
-      dragOverBefore.value = ev.clientY < mid
+      const rect = el.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      dragOverBefore.value = ev.clientY < mid;
     }
   } catch {}
-  dragOverId.value = overId
+  dragOverId.value = overId;
 }
 
 function onDrop(overId: string | null, ev: DragEvent) {
-  if (!dragging.value) return
-  ev.preventDefault()
-  const dId = dragging.value
-  const list = [...((store.activeData?.world_books || []) as WorldBookEntry[])]
-  let ids = list.map((i) => i.id)
-  const fromIdx = ids.indexOf(dId)
-  if (fromIdx < 0) return
-  ids.splice(fromIdx, 1)
+  if (!dragging.value) return;
+  ev.preventDefault();
+  const dId = dragging.value;
+  const list = [...((store.activeData?.world_books || []) as WorldBookEntry[])];
+  let ids = list.map((i) => i.id);
+  const fromIdx = ids.indexOf(dId);
+  if (fromIdx < 0) return;
+  ids.splice(fromIdx, 1);
   if (overId && overId !== dId) {
-    const toIdx = ids.indexOf(overId)
-    let insertIdx = toIdx < 0 ? ids.length : toIdx + (dragOverBefore.value ? 0 : 1)
-    if (insertIdx < 0) insertIdx = 0
-    if (insertIdx > ids.length) insertIdx = ids.length
-    ids.splice(insertIdx, 0, dId)
+    const toIdx = ids.indexOf(overId);
+    let insertIdx = toIdx < 0 ? ids.length : toIdx + (dragOverBefore.value ? 0 : 1);
+    if (insertIdx < 0) insertIdx = 0;
+    if (insertIdx > ids.length) insertIdx = ids.length;
+    ids.splice(insertIdx, 0, dId);
   } else {
-    ids.push(dId)
+    ids.push(dId);
   }
-  store.reorderWorldBooks(ids)
-  dragging.value = null
-  dragOverId.value = null
-  ;(window as any).lucide?.createIcons?.()
+  store.reorderWorldBooks(ids);
+  dragging.value = null;
+  dragOverId.value = null;
+  (window as any).lucide?.createIcons?.();
 }
 
 function onDropEnd(ev: DragEvent) {
-  onDrop(null, ev)
+  onDrop(null, ev);
 }
 function onDragEnd() {
-  dragging.value = null
-  dragOverId.value = null
+  dragging.value = null;
+  dragOverId.value = null;
 }
 </script>
 

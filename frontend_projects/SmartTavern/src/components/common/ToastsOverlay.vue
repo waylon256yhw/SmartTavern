@@ -1,16 +1,16 @@
 <script setup>
-import { computed } from 'vue'
-import { useToastsStore } from '@/stores/workflow/toasts'
-import { useI18n } from '@/locales'
+import { computed } from 'vue';
+import { useToastsStore } from '@/stores/workflow/toasts';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
-const store = useToastsStore()
-const toasts = computed(() => store.list)
+const { t } = useI18n();
+const store = useToastsStore();
+const toasts = computed(() => store.list);
 
 /** 手动关闭 */
 function closeToast(id) {
   try {
-    store.remove(id)
+    store.remove(id);
   } catch (_) {}
 }
 
@@ -18,13 +18,13 @@ function closeToast(id) {
 function typeTitle(type) {
   switch (type) {
     case 'success':
-      return t('components.toasts.success')
+      return t('components.toasts.success');
     case 'warning':
-      return t('components.toasts.warning')
+      return t('components.toasts.warning');
     case 'error':
-      return t('components.toasts.error')
+      return t('components.toasts.error');
     default:
-      return t('components.toasts.info')
+      return t('components.toasts.info');
   }
 }
 </script>

@@ -1,5 +1,5 @@
 <script setup>
-import HomeMenu from '@/components/home/HomeMenu.vue'
+import HomeMenu from '@/components/home/HomeMenu.vue';
 
 const emit = defineEmits([
   'new-game',
@@ -7,7 +7,7 @@ const emit = defineEmits([
   'open-appearance',
   'open-plugins',
   'open-options',
-])
+]);
 </script>
 
 <template>

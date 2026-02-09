@@ -1,83 +1,83 @@
 <script setup>
-import { ref, watch, computed, toRef } from 'vue'
-import DataCatalog from '@/services/dataCatalog'
-import { useI18n } from '@/locales'
-import { useFocusTrap } from '@/composables/useFocusTrap'
+import { ref, watch, computed, toRef } from 'vue';
+import DataCatalog from '@/services/dataCatalog';
+import { useI18n } from '@/locales';
+import { useFocusTrap } from '@/composables/useFocusTrap';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   show: { type: Boolean, default: false },
   dataType: { type: String, required: true }, // 'preset', 'worldbook', 'character', 'persona', 'regex_rule', 'llm_config'
   dataTypeName: { type: String, default: '' }, // 用于显示的名称
-})
+});
 
-const emit = defineEmits(['close', 'created'])
+const emit = defineEmits(['close', 'created']);
 
-const name = ref('')
-const description = ref('')
-const folderName = ref('')
-const nameError = ref('')
-const folderError = ref('')
-const creating = ref(false)
+const name = ref('');
+const description = ref('');
+const folderName = ref('');
+const nameError = ref('');
+const folderError = ref('');
+const creating = ref(false);
 
 // 图标上传相关
-const iconFile = ref(null)
-const iconPreviewUrl = ref('')
-const iconInputRef = ref(null)
+const iconFile = ref(null);
+const iconPreviewUrl = ref('');
+const iconInputRef = ref(null);
 
 // 计算图标预览URL
-const hasIcon = computed(() => !!iconPreviewUrl.value)
+const hasIcon = computed(() => !!iconPreviewUrl.value);
 
 // 处理图标选择
 function handleIconSelect(e) {
-  const file = e.target.files?.[0]
-  if (!file) return
+  const file = e.target.files?.[0];
+  if (!file) return;
 
   // 验证文件类型
   if (!file.type.startsWith('image/')) {
-    return
+    return;
   }
 
-  iconFile.value = file
+  iconFile.value = file;
 
   // 创建预览URL
   if (iconPreviewUrl.value) {
-    URL.revokeObjectURL(iconPreviewUrl.value)
+    URL.revokeObjectURL(iconPreviewUrl.value);
   }
-  iconPreviewUrl.value = URL.createObjectURL(file)
+  iconPreviewUrl.value = URL.createObjectURL(file);
 }
 
 // 触发图标选择
 function triggerIconSelect() {
-  iconInputRef.value?.click()
+  iconInputRef.value?.click();
 }
 
 // 移除图标
 function removeIcon() {
-  iconFile.value = null
+  iconFile.value = null;
   if (iconPreviewUrl.value) {
-    URL.revokeObjectURL(iconPreviewUrl.value)
+    URL.revokeObjectURL(iconPreviewUrl.value);
   }
-  iconPreviewUrl.value = ''
+  iconPreviewUrl.value = '';
   if (iconInputRef.value) {
-    iconInputRef.value.value = ''
+    iconInputRef.value.value = '';
   }
 }
 
 // 将文件转换为Base64
 async function fileToBase64(file) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = () => {
-      const result = reader.result
+      const result = reader.result;
       // 移除 data URL 前缀
-      const base64 = result.includes(',') ? result.split(',')[1] : result
-      resolve(base64)
-    }
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
+      const base64 = result.includes(',') ? result.split(',')[1] : result;
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 // 当弹窗显示时重置表单
@@ -85,48 +85,48 @@ watch(
   () => props.show,
   (val) => {
     if (val) {
-      name.value = ''
-      description.value = ''
-      folderName.value = ''
-      nameError.value = ''
-      folderError.value = ''
-      creating.value = false
-      removeIcon()
+      name.value = '';
+      description.value = '';
+      folderName.value = '';
+      nameError.value = '';
+      folderError.value = '';
+      creating.value = false;
+      removeIcon();
     }
   },
-)
+);
 
 // 验证并创建
 async function handleCreate() {
-  nameError.value = ''
-  folderError.value = ''
+  nameError.value = '';
+  folderError.value = '';
 
-  const trimmedName = name.value.trim()
-  const trimmedFolder = folderName.value.trim()
+  const trimmedName = name.value.trim();
+  const trimmedFolder = folderName.value.trim();
 
   if (!trimmedName) {
-    nameError.value = t('createItem.errors.emptyName')
-    return
+    nameError.value = t('createItem.errors.emptyName');
+    return;
   }
 
   if (!trimmedFolder) {
-    folderError.value = t('createItem.errors.emptyFolder')
-    return
+    folderError.value = t('createItem.errors.emptyFolder');
+    return;
   }
 
   // 验证文件夹名称格式（不允许特殊字符）
   if (!/^[a-zA-Z0-9_\-\u4e00-\u9fa5]+$/.test(trimmedFolder)) {
-    folderError.value = t('createItem.errors.invalidFolder')
-    return
+    folderError.value = t('createItem.errors.invalidFolder');
+    return;
   }
 
-  creating.value = true
+  creating.value = true;
 
   try {
     // 如果有图标，转换为Base64
-    let iconBase64 = null
+    let iconBase64 = null;
     if (iconFile.value) {
-      iconBase64 = await fileToBase64(iconFile.value)
+      iconBase64 = await fileToBase64(iconFile.value);
     }
 
     const result = await DataCatalog.createDataFolder(
@@ -135,38 +135,38 @@ async function handleCreate() {
       description.value.trim(),
       trimmedFolder,
       iconBase64,
-    )
+    );
 
     if (result.success) {
-      emit('created', result)
-      emit('close')
+      emit('created', result);
+      emit('close');
     } else {
       if (result.error === 'FOLDER_EXISTS') {
-        folderError.value = t('createItem.errors.folderExists', { folder: trimmedFolder })
+        folderError.value = t('createItem.errors.folderExists', { folder: trimmedFolder });
       } else {
-        nameError.value = result.message || t('createItem.errors.createFailed')
+        nameError.value = result.message || t('createItem.errors.createFailed');
       }
     }
   } catch (err) {
-    console.error('[CreateItemModal] Create error:', err)
-    nameError.value = err.message || t('createItem.errors.createFailed')
+    console.error('[CreateItemModal] Create error:', err);
+    nameError.value = err.message || t('createItem.errors.createFailed');
   } finally {
-    creating.value = false
+    creating.value = false;
   }
 }
 
 function handleClose() {
-  if (creating.value) return
-  emit('close')
+  if (creating.value) return;
+  emit('close');
 }
 
 // 键盘事件
 function handleKeydown(e) {
-  if (!props.show) return
+  if (!props.show) return;
   if (e.key === 'Escape') {
-    handleClose()
+    handleClose();
   } else if (e.key === 'Enter' && !creating.value) {
-    handleCreate()
+    handleCreate();
   }
 }
 
@@ -174,16 +174,16 @@ watch(
   () => props.show,
   (v) => {
     if (v) {
-      window.addEventListener('keydown', handleKeydown)
+      window.addEventListener('keydown', handleKeydown);
     } else {
-      window.removeEventListener('keydown', handleKeydown)
+      window.removeEventListener('keydown', handleKeydown);
     }
   },
   { immediate: true },
-)
+);
 
-const modalRef = ref(null)
-useFocusTrap(modalRef, toRef(props, 'show'))
+const modalRef = ref(null);
+useFocusTrap(modalRef, toRef(props, 'show'));
 </script>
 
 <template>

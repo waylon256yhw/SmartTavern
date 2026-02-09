@@ -1,129 +1,129 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
-import ThemeManager from '@/features/themes/manager'
-import StylesService from '@/services/stylesService'
-import ExportModal from '@/components/common/ExportModal.vue'
-import ImportConflictModal from '@/components/common/ImportConflictModal.vue'
-import DeleteConfirmModal from '@/components/common/DeleteConfirmModal.vue'
-import ContentViewModal from '@/components/common/ContentViewModal.vue'
-import ThemeDetailView from '@/components/content/ThemeDetailView.vue'
-import { useI18n } from '@/locales'
-import { useCustomDrag } from '@/composables/useCustomDrag'
+import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
+import ThemeManager from '@/features/themes/manager';
+import StylesService from '@/services/stylesService';
+import ExportModal from '@/components/common/ExportModal.vue';
+import ImportConflictModal from '@/components/common/ImportConflictModal.vue';
+import DeleteConfirmModal from '@/components/common/DeleteConfirmModal.vue';
+import ContentViewModal from '@/components/common/ContentViewModal.vue';
+import ThemeDetailView from '@/components/content/ThemeDetailView.vue';
+import { useI18n } from '@/locales';
+import { useCustomDrag } from '@/composables/useCustomDrag';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 /** 刷新 Lucide 图标 */
 function refreshLucideIcons() {
   nextTick(() => {
     try {
-      window?.lucide?.createIcons?.()
+      window?.lucide?.createIcons?.();
     } catch (_) {}
-  })
+  });
 }
 
 // 当前主题状态
-const themeInfo = ref(null)
-let off = null
+const themeInfo = ref(null);
+let off = null;
 
 // 后端主题列表
-const backendThemes = ref([])
-const loadingThemes = ref(false)
-const loadError = ref('')
+const backendThemes = ref([]);
+const loadingThemes = ref(false);
+const loadError = ref('');
 
 // 主题图标缓存 (dir -> blob URL) - 使用普通对象代替 Map 以获得更好的响应式支持
-const iconCache = ref({})
+const iconCache = ref({});
 
 // 加载状态
-const applyingTheme = ref('')
-const deletingTheme = ref('')
+const applyingTheme = ref('');
+const deletingTheme = ref('');
 
 // 导入导出状态
-const importInputRef = ref(null)
-const importing = ref(false)
-const showExportModal = ref(false)
-const showConflictModal = ref(false)
-const conflictInfo = ref(null)
-const pendingImportData = ref(null)
+const importInputRef = ref(null);
+const importing = ref(false);
+const showExportModal = ref(false);
+const showConflictModal = ref(false);
+const conflictInfo = ref(null);
+const pendingImportData = ref(null);
 
 // 详情面板状态
-const showDetailModal = ref(false)
-const detailTheme = ref(null)
-const detailThemeDir = ref('')
+const showDetailModal = ref(false);
+const detailTheme = ref(null);
+const detailThemeDir = ref('');
 
 // 删除确认弹窗状态
-const showDeleteConfirmModal = ref(false)
-const deleteTarget = ref(null)
+const showDeleteConfirmModal = ref(false);
+const deleteTarget = ref(null);
 
 // 计算属性：过滤启用/禁用的主题
-const enabledThemes = computed(() => backendThemes.value.filter((t) => t.enabled))
-const disabledThemes = computed(() => backendThemes.value.filter((t) => !t.enabled))
+const enabledThemes = computed(() => backendThemes.value.filter((t) => t.enabled));
+const disabledThemes = computed(() => backendThemes.value.filter((t) => !t.enabled));
 
 // 拖拽排序状态
-const savingOrder = ref(false)
+const savingOrder = ref(false);
 
 onMounted(async () => {
   try {
-    themeInfo.value = ThemeManager.getCurrentTheme?.() || null
+    themeInfo.value = ThemeManager.getCurrentTheme?.() || null;
     off = ThemeManager.on?.('change', () => {
-      themeInfo.value = ThemeManager.getCurrentTheme?.() || null
-    })
+      themeInfo.value = ThemeManager.getCurrentTheme?.() || null;
+    });
   } catch (_) {}
 
   // 加载后端主题列表
-  await loadBackendThemes()
+  await loadBackendThemes();
 
   // 刷新 lucide 图标
-  refreshLucideIcons()
-})
+  refreshLucideIcons();
+});
 
 onBeforeUnmount(() => {
   try {
-    off?.()
+    off?.();
   } catch (_) {}
-  off = null
+  off = null;
 
   // 清理图标 blob URLs
   for (const url of Object.values(iconCache.value)) {
     try {
-      URL.revokeObjectURL(url)
+      URL.revokeObjectURL(url);
     } catch (_) {}
   }
-  iconCache.value = {}
-})
+  iconCache.value = {};
+});
 
 /**
  * 从后端加载主题列表
  */
 async function loadBackendThemes() {
-  loadingThemes.value = true
-  loadError.value = ''
+  loadingThemes.value = true;
+  loadError.value = '';
   try {
-    const res = await StylesService.listThemes()
-    backendThemes.value = res.items || []
+    const res = await StylesService.listThemes();
+    backendThemes.value = res.items || [];
 
     // 等待 DOM 更新完成后再加载图标，避免响应式更新冲突
-    await nextTick()
+    await nextTick();
 
     // 加载所有主题的图标（不等待完成，避免阻塞）
-    const iconLoadPromises = []
+    const iconLoadPromises = [];
     for (const theme of backendThemes.value) {
       if (theme.icon && !(theme.dir in iconCache.value)) {
-        iconLoadPromises.push(loadThemeIcon(theme))
+        iconLoadPromises.push(loadThemeIcon(theme));
       }
     }
 
     // 等待所有图标加载完成
     if (iconLoadPromises.length > 0) {
-      await Promise.allSettled(iconLoadPromises)
+      await Promise.allSettled(iconLoadPromises);
     }
 
     // 刷新 lucide 图标
-    refreshLucideIcons()
+    refreshLucideIcons();
   } catch (err) {
-    loadError.value = err.message || String(err)
-    console.warn('[ThemeManagerTab] Load backend themes failed:', err)
+    loadError.value = err.message || String(err);
+    console.warn('[ThemeManagerTab] Load backend themes failed:', err);
   } finally {
-    loadingThemes.value = false
+    loadingThemes.value = false;
   }
 }
 
@@ -131,15 +131,15 @@ async function loadBackendThemes() {
  * 加载主题图标
  */
 async function loadThemeIcon(theme) {
-  if (!theme.icon) return
+  if (!theme.icon) return;
   try {
-    const res = await StylesService.getThemeAssetBlob(theme.icon)
-    const url = URL.createObjectURL(res.blob)
+    const res = await StylesService.getThemeAssetBlob(theme.icon);
+    const url = URL.createObjectURL(res.blob);
     // 使用 nextTick 确保在安全的时机更新响应式状态
-    await nextTick()
-    iconCache.value = { ...iconCache.value, [theme.dir]: url }
+    await nextTick();
+    iconCache.value = { ...iconCache.value, [theme.dir]: url };
   } catch (err) {
-    console.warn(`[ThemeManagerTab] Load icon failed for ${theme.name || theme.dir}:`, err)
+    console.warn(`[ThemeManagerTab] Load icon failed for ${theme.name || theme.dir}:`, err);
   }
 }
 
@@ -147,41 +147,41 @@ async function loadThemeIcon(theme) {
  * 获取主题图标 URL
  */
 function getThemeIconUrl(theme) {
-  if (!theme) return ''
-  return iconCache.value[theme.dir] || ''
+  if (!theme) return '';
+  return iconCache.value[theme.dir] || '';
 }
 
 /**
  * 切换主题的启用/禁用状态（支持多主题叠加）
  */
 async function onToggleTheme(theme) {
-  if (!theme || !theme.dir) return
+  if (!theme || !theme.dir) return;
 
-  applyingTheme.value = theme.dir
+  applyingTheme.value = theme.dir;
   try {
     // 切换启用状态
-    const newEnabled = !theme.enabled
-    await StylesService.setThemeEnabled(theme.dir, newEnabled)
+    const newEnabled = !theme.enabled;
+    await StylesService.setThemeEnabled(theme.dir, newEnabled);
 
     console.info(
       `[ThemeManagerTab] Theme ${newEnabled ? 'enabled' : 'disabled'}: ${theme.name || theme.dir}`,
-    )
+    );
 
     // 刷新主题列表
-    await loadBackendThemes()
+    await loadBackendThemes();
 
     // 应用所有启用主题的合并包
-    await applyAllEnabledThemes()
+    await applyAllEnabledThemes();
 
     // 刷新 Lucide 图标（主题切换后需要重新渲染）
-    refreshLucideIcons()
+    refreshLucideIcons();
   } catch (err) {
-    console.warn('[ThemeManagerTab] Toggle theme failed:', err)
-    alert(t('error.operationFailed', { error: err.message || String(err) }))
+    console.warn('[ThemeManagerTab] Toggle theme failed:', err);
+    alert(t('error.operationFailed', { error: err.message || String(err) }));
   } finally {
-    applyingTheme.value = ''
+    applyingTheme.value = '';
     // 确保在 finally 中也刷新图标
-    refreshLucideIcons()
+    refreshLucideIcons();
   }
 }
 
@@ -190,30 +190,30 @@ async function onToggleTheme(theme) {
  */
 async function applyAllEnabledThemes() {
   try {
-    const res = await StylesService.getAllEnabledThemes()
+    const res = await StylesService.getAllEnabledThemes();
 
     if (res.enabled_count === 0 || !res.merged_pack) {
       // 没有启用的主题，重置为默认
-      await ThemeManager.resetTheme({ persist: true })
-      console.info('[ThemeManagerTab] No enabled themes, reset to default')
+      await ThemeManager.resetTheme({ persist: true });
+      console.info('[ThemeManagerTab] No enabled themes, reset to default');
       // 主题重置后刷新图标
-      await nextTick()
-      refreshLucideIcons()
-      return
+      await nextTick();
+      refreshLucideIcons();
+      return;
     }
 
     // 应用合并后的主题包
-    await ThemeManager.applyThemePack(res.merged_pack, { persist: true })
+    await ThemeManager.applyThemePack(res.merged_pack, { persist: true });
     console.info(
       `[ThemeManagerTab] Applied ${res.enabled_count} merged themes:`,
       res.enabled_themes,
-    )
+    );
 
     // 主题应用后等待 DOM 更新，然后刷新图标
-    await nextTick()
-    refreshLucideIcons()
+    await nextTick();
+    refreshLucideIcons();
   } catch (err) {
-    console.warn('[ThemeManagerTab] Apply merged themes failed:', err)
+    console.warn('[ThemeManagerTab] Apply merged themes failed:', err);
   }
 }
 
@@ -221,45 +221,45 @@ async function applyAllEnabledThemes() {
  * 删除后端主题 - 显示确认弹窗
  */
 function onDeleteBackendTheme(theme) {
-  if (!theme || !theme.dir) return
+  if (!theme || !theme.dir) return;
 
   deleteTarget.value = {
     key: theme.dir,
     name: theme.name || theme.dir.split('/').pop() || '',
     folderPath: theme.dir,
-  }
-  showDeleteConfirmModal.value = true
+  };
+  showDeleteConfirmModal.value = true;
 }
 
 /**
  * 关闭删除确认弹窗
  */
 function closeDeleteConfirmModal() {
-  showDeleteConfirmModal.value = false
-  deleteTarget.value = null
+  showDeleteConfirmModal.value = false;
+  deleteTarget.value = null;
 }
 
 /**
  * 确认删除主题
  */
 async function handleDeleteConfirm() {
-  if (!deleteTarget.value) return
+  if (!deleteTarget.value) return;
 
-  deletingTheme.value = deleteTarget.value.key
+  deletingTheme.value = deleteTarget.value.key;
   try {
-    const res = await StylesService.deleteTheme(deleteTarget.value.folderPath)
+    const res = await StylesService.deleteTheme(deleteTarget.value.folderPath);
     if (!res.success) {
-      throw new Error(res.message || res.error || 'Delete failed')
+      throw new Error(res.message || res.error || 'Delete failed');
     }
-    console.info(`[ThemeManagerTab] Deleted theme: ${deleteTarget.value.name}`)
+    console.info(`[ThemeManagerTab] Deleted theme: ${deleteTarget.value.name}`);
     // 刷新列表
-    await loadBackendThemes()
+    await loadBackendThemes();
   } catch (err) {
-    console.warn('[ThemeManagerTab] Delete theme failed:', err)
-    alert(t('error.deleteFailed', { error: err.message || String(err) }))
+    console.warn('[ThemeManagerTab] Delete theme failed:', err);
+    alert(t('error.deleteFailed', { error: err.message || String(err) }));
   } finally {
-    deletingTheme.value = ''
-    closeDeleteConfirmModal()
+    deletingTheme.value = '';
+    closeDeleteConfirmModal();
   }
 }
 
@@ -267,42 +267,42 @@ async function handleDeleteConfirm() {
  * 从本地文件导入主题（通过 data_import API）
  */
 async function onThemeFileSelected(e) {
-  const file = e?.target?.files?.[0]
-  if (!file) return
+  const file = e?.target?.files?.[0];
+  if (!file) return;
 
-  importing.value = true
+  importing.value = true;
   try {
-    const res = await StylesService.importStyleFromFile(file)
+    const res = await StylesService.importStyleFromFile(file);
 
     if (res.success) {
-      console.info(`[ThemeManagerTab] Theme imported: ${res.name || res.folder}`)
+      console.info(`[ThemeManagerTab] Theme imported: ${res.name || res.folder}`);
       // 刷新列表
-      await loadBackendThemes()
+      await loadBackendThemes();
       // 如果导入时自动启用了主题，应用所有启用的主题
-      await applyAllEnabledThemes()
+      await applyAllEnabledThemes();
       // 确保图标正确渲染
-      await nextTick()
-      refreshLucideIcons()
+      await nextTick();
+      refreshLucideIcons();
     } else if (res.error === 'NAME_EXISTS') {
       // 名称冲突，显示冲突弹窗
       conflictInfo.value = {
         name: res.folder_name,
         suggestedName: res.suggested_name,
         typeName: t('appearance.theme.typeName'),
-      }
-      pendingImportData.value = { file }
-      showConflictModal.value = true
+      };
+      pendingImportData.value = { file };
+      showConflictModal.value = true;
     } else {
       // 其他错误
-      alert(res.message || res.error || t('error.importFailed'))
+      alert(res.message || res.error || t('error.importFailed'));
     }
   } catch (err) {
-    console.warn('[ThemeManagerTab] Theme import failed:', err)
-    alert(err.message || t('error.importFailed'))
+    console.warn('[ThemeManagerTab] Theme import failed:', err);
+    alert(err.message || t('error.importFailed'));
   } finally {
-    importing.value = false
+    importing.value = false;
     try {
-      e.target.value = ''
+      e.target.value = '';
     } catch (_) {}
   }
 }
@@ -311,43 +311,43 @@ async function onThemeFileSelected(e) {
  * 触发文件选择（导入）
  */
 function triggerImport() {
-  importInputRef.value?.click()
+  importInputRef.value?.click();
 }
 
 /**
  * 处理导入冲突：覆盖
  */
 async function onConflictOverwrite() {
-  if (!pendingImportData.value?.file) return
+  if (!pendingImportData.value?.file) return;
 
-  showConflictModal.value = false
-  importing.value = true
+  showConflictModal.value = false;
+  importing.value = true;
 
   try {
     const res = await StylesService.importStyleFromFile(
       pendingImportData.value.file,
       undefined,
       true, // overwrite
-    )
+    );
 
     if (res.success) {
-      console.info(`[ThemeManagerTab] Theme imported (overwrite): ${res.name || res.folder}`)
-      await loadBackendThemes()
+      console.info(`[ThemeManagerTab] Theme imported (overwrite): ${res.name || res.folder}`);
+      await loadBackendThemes();
       // 如果导入时自动启用了主题，应用所有启用的主题
-      await applyAllEnabledThemes()
+      await applyAllEnabledThemes();
       // 确保图标正确渲染
-      await nextTick()
-      refreshLucideIcons()
+      await nextTick();
+      refreshLucideIcons();
     } else {
-      alert(res.message || res.error || t('error.importFailed'))
+      alert(res.message || res.error || t('error.importFailed'));
     }
   } catch (err) {
-    console.warn('[ThemeManagerTab] Theme import (overwrite) failed:', err)
-    alert(err.message || t('error.importFailed'))
+    console.warn('[ThemeManagerTab] Theme import (overwrite) failed:', err);
+    alert(err.message || t('error.importFailed'));
   } finally {
-    importing.value = false
-    pendingImportData.value = null
-    conflictInfo.value = null
+    importing.value = false;
+    pendingImportData.value = null;
+    conflictInfo.value = null;
   }
 }
 
@@ -355,42 +355,42 @@ async function onConflictOverwrite() {
  * 处理导入冲突：重命名
  */
 async function onConflictRename(newName) {
-  if (!pendingImportData.value?.file || !newName) return
+  if (!pendingImportData.value?.file || !newName) return;
 
-  showConflictModal.value = false
-  importing.value = true
+  showConflictModal.value = false;
+  importing.value = true;
 
   try {
     const res = await StylesService.importStyleFromFile(
       pendingImportData.value.file,
       newName,
       false,
-    )
+    );
 
     if (res.success) {
-      console.info(`[ThemeManagerTab] Theme imported (renamed): ${res.name || res.folder}`)
-      await loadBackendThemes()
+      console.info(`[ThemeManagerTab] Theme imported (renamed): ${res.name || res.folder}`);
+      await loadBackendThemes();
       // 如果导入时自动启用了主题，应用所有启用的主题
-      await applyAllEnabledThemes()
+      await applyAllEnabledThemes();
       // 确保图标正确渲染
-      await nextTick()
-      refreshLucideIcons()
+      await nextTick();
+      refreshLucideIcons();
     } else if (res.error === 'NAME_EXISTS') {
       // 新名称仍然冲突
       conflictInfo.value = {
         name: res.folder_name,
         suggestedName: res.suggested_name,
         typeName: t('appearance.theme.typeName'),
-      }
-      showConflictModal.value = true
+      };
+      showConflictModal.value = true;
     } else {
-      alert(res.message || res.error || t('error.importFailed'))
+      alert(res.message || res.error || t('error.importFailed'));
     }
   } catch (err) {
-    console.warn('[ThemeManagerTab] Theme import (rename) failed:', err)
-    alert(err.message || t('error.importFailed'))
+    console.warn('[ThemeManagerTab] Theme import (rename) failed:', err);
+    alert(err.message || t('error.importFailed'));
   } finally {
-    importing.value = false
+    importing.value = false;
   }
 }
 
@@ -398,57 +398,57 @@ async function onConflictRename(newName) {
  * 取消导入冲突处理
  */
 function onConflictCancel() {
-  showConflictModal.value = false
-  pendingImportData.value = null
-  conflictInfo.value = null
+  showConflictModal.value = false;
+  pendingImportData.value = null;
+  conflictInfo.value = null;
 }
 
 /**
  * 打开导出弹窗
  */
 function openExportModal() {
-  showExportModal.value = true
-  refreshLucideIcons()
+  showExportModal.value = true;
+  refreshLucideIcons();
 }
 
 /**
  * 关闭导出弹窗
  */
 function closeExportModal() {
-  showExportModal.value = false
+  showExportModal.value = false;
 }
 
 /**
  * 导出成功回调
  */
 function onExportSuccess(data) {
-  console.info(`[ThemeManagerTab] Theme exported: ${data.item}`)
+  console.info(`[ThemeManagerTab] Theme exported: ${data.item}`);
 }
 
 /**
  * 查看主题详情
  */
 async function onViewTheme(theme) {
-  if (!theme || !theme.dir) return
+  if (!theme || !theme.dir) return;
 
   try {
     // 获取主题详情
-    const detail = await StylesService.getThemeDetail(theme.dir)
+    const detail = await StylesService.getThemeDetail(theme.dir);
     if (detail.error) {
-      alert(t('error.loadFailed', { error: detail.message || detail.error }))
-      return
+      alert(t('error.loadFailed', { error: detail.message || detail.error }));
+      return;
     }
 
-    detailTheme.value = detail
-    detailThemeDir.value = theme.dir
-    showDetailModal.value = true
+    detailTheme.value = detail;
+    detailThemeDir.value = theme.dir;
+    showDetailModal.value = true;
 
     // 刷新图标
-    await nextTick()
-    refreshLucideIcons()
+    await nextTick();
+    refreshLucideIcons();
   } catch (err) {
-    console.warn('[ThemeManager] Load theme detail failed:', err)
-    alert(t('error.loadFailed', { error: err.message || String(err) }))
+    console.warn('[ThemeManager] Load theme detail failed:', err);
+    alert(t('error.loadFailed', { error: err.message || String(err) }));
   }
 }
 
@@ -456,17 +456,17 @@ async function onViewTheme(theme) {
  * 关闭详情面板
  */
 function closeDetailModal() {
-  showDetailModal.value = false
-  detailTheme.value = null
-  detailThemeDir.value = ''
+  showDetailModal.value = false;
+  detailTheme.value = null;
+  detailThemeDir.value = '';
 }
 
 /**
  * 主题保存成功后刷新列表
  */
 function handleThemeSaved(payload) {
-  console.log('[ThemeManager] Theme saved, refreshing list')
-  loadBackendThemes()
+  console.log('[ThemeManager] Theme saved, refreshing list');
+  loadBackendThemes();
 }
 
 /**
@@ -478,17 +478,17 @@ const exportItems = computed(() => {
     name: theme.name || theme.dir.split('/').pop(),
     avatarUrl: getThemeIconUrl(theme),
     desc: theme.description || '',
-  }))
-})
+  }));
+});
 
 /**
  * 重置主题
  */
 async function onThemeReset() {
   try {
-    await ThemeManager.resetTheme({ persist: true })
+    await ThemeManager.resetTheme({ persist: true });
   } catch (err) {
-    console.warn('[ThemeManagerTab] Theme reset failed:', err)
+    console.warn('[ThemeManagerTab] Theme reset failed:', err);
   }
 }
 
@@ -496,14 +496,14 @@ async function onThemeReset() {
  * 检查主题是否已启用（支持多主题）
  */
 function isThemeEnabled(theme) {
-  if (!theme) return false
-  return theme.enabled === true
+  if (!theme) return false;
+  return theme.enabled === true;
 }
 
 /**
  * 获取启用的主题数量
  */
-const enabledCount = computed(() => backendThemes.value.filter((t) => t.enabled).length)
+const enabledCount = computed(() => backendThemes.value.filter((t) => t.enabled).length);
 
 // ==================== 拖拽排序功能 ====================
 
@@ -511,8 +511,8 @@ const enabledCount = computed(() => backendThemes.value.filter((t) => t.enabled)
  * 从主题目录路径提取文件夹名称
  */
 function getThemeFolderName(theme) {
-  if (!theme || !theme.dir) return ''
-  return theme.dir.split('/').pop() || ''
+  if (!theme || !theme.dir) return '';
+  return theme.dir.split('/').pop() || '';
 }
 
 // 主题拖拽 - 使用 composable
@@ -521,57 +521,57 @@ const { dragging, dragOverId, dragOverBefore, startDrag } = useCustomDrag({
   itemSelector: '.theme-item',
   dataAttribute: 'data-theme-dir',
   onReorder: async (draggedId, targetId, insertBefore) => {
-    const list = [...backendThemes.value]
-    const draggedIdStr = String(draggedId)
-    const targetIdStr = targetId ? String(targetId) : null
+    const list = [...backendThemes.value];
+    const draggedIdStr = String(draggedId);
+    const targetIdStr = targetId ? String(targetId) : null;
 
-    const fromIdx = list.findIndex((t) => String(t.dir) === draggedIdStr)
+    const fromIdx = list.findIndex((t) => String(t.dir) === draggedIdStr);
 
     if (fromIdx >= 0 && draggedIdStr !== targetIdStr) {
       // 提取文件夹名称列表用于排序
-      let folderNames = list.map((t) => getThemeFolderName(t))
-      const fromName = getThemeFolderName(list[fromIdx])
-      const fromNameIdx = folderNames.indexOf(fromName)
+      let folderNames = list.map((t) => getThemeFolderName(t));
+      const fromName = getThemeFolderName(list[fromIdx]);
+      const fromNameIdx = folderNames.indexOf(fromName);
 
       if (fromNameIdx >= 0) {
         // 移除原位置
-        folderNames.splice(fromNameIdx, 1)
+        folderNames.splice(fromNameIdx, 1);
 
         if (targetIdStr) {
-          const targetTheme = list.find((t) => String(t.dir) === targetIdStr)
+          const targetTheme = list.find((t) => String(t.dir) === targetIdStr);
           if (targetTheme) {
-            const toName = getThemeFolderName(targetTheme)
-            const toIdx = folderNames.indexOf(toName)
-            let insertIdx = toIdx < 0 ? folderNames.length : toIdx + (insertBefore ? 0 : 1)
-            if (insertIdx < 0) insertIdx = 0
-            if (insertIdx > folderNames.length) insertIdx = folderNames.length
-            folderNames.splice(insertIdx, 0, fromName)
+            const toName = getThemeFolderName(targetTheme);
+            const toIdx = folderNames.indexOf(toName);
+            let insertIdx = toIdx < 0 ? folderNames.length : toIdx + (insertBefore ? 0 : 1);
+            if (insertIdx < 0) insertIdx = 0;
+            if (insertIdx > folderNames.length) insertIdx = folderNames.length;
+            folderNames.splice(insertIdx, 0, fromName);
           }
         } else {
-          folderNames.push(fromName)
+          folderNames.push(fromName);
         }
 
         // 保存新顺序到后端
-        savingOrder.value = true
+        savingOrder.value = true;
         try {
-          await StylesService.updateThemesOrder(folderNames)
-          console.info('[ThemeManagerTab] Theme order updated:', folderNames)
+          await StylesService.updateThemesOrder(folderNames);
+          console.info('[ThemeManagerTab] Theme order updated:', folderNames);
           // 刷新主题列表
-          await loadBackendThemes()
+          await loadBackendThemes();
         } catch (err) {
-          console.warn('[ThemeManagerTab] Update theme order failed:', err)
+          console.warn('[ThemeManagerTab] Update theme order failed:', err);
         } finally {
-          savingOrder.value = false
-          refreshLucideIcons()
+          savingOrder.value = false;
+          refreshLucideIcons();
         }
       }
     }
   },
   getTitleForItem: (id) => {
-    const theme = backendThemes.value.find((t) => String(t.dir) === String(id))
-    return theme?.name || id
+    const theme = backendThemes.value.find((t) => String(t.dir) === String(id));
+    return theme?.name || id;
   },
-})
+});
 </script>
 
 <template>

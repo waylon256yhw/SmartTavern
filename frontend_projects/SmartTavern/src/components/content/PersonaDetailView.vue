@@ -1,199 +1,199 @@
 <script setup>
-import { ref, computed, watch, onMounted, nextTick, onBeforeUnmount } from 'vue'
-import { useI18n } from '@/locales'
-import Host from '@/workflow/core/host'
-import * as Catalog from '@/workflow/channels/catalog'
-import { usePersonaStore } from '@/stores/persona'
-import { useChatSettingsStore } from '@/stores/chatSettings'
-import DataCatalog from '@/services/dataCatalog'
+import { ref, computed, watch, onMounted, nextTick, onBeforeUnmount } from 'vue';
+import { useI18n } from '@/locales';
+import Host from '@/workflow/core/host';
+import * as Catalog from '@/workflow/channels/catalog';
+import { usePersonaStore } from '@/stores/persona';
+import { useChatSettingsStore } from '@/stores/chatSettings';
+import DataCatalog from '@/services/dataCatalog';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   personaData: { type: Object, default: null },
   file: { type: String, default: '' },
-})
+});
 
 // 图标上传相关
-const iconFile = ref(null)
-const iconPreviewUrl = ref('')
-const iconInputRef = ref(null)
-const iconDeleted = ref(false)
-const iconLoadedFromServer = ref(false)
+const iconFile = ref(null);
+const iconPreviewUrl = ref('');
+const iconInputRef = ref(null);
+const iconDeleted = ref(false);
+const iconLoadedFromServer = ref(false);
 
-const hasIcon = computed(() => !!iconPreviewUrl.value)
+const hasIcon = computed(() => !!iconPreviewUrl.value);
 
 // 头像上传相关
-const avatarFile = ref(null)
-const avatarPreviewUrl = ref('')
-const avatarInputRef = ref(null)
-const avatarDeleted = ref(false)
-const avatarLoadedFromServer = ref(false)
+const avatarFile = ref(null);
+const avatarPreviewUrl = ref('');
+const avatarInputRef = ref(null);
+const avatarDeleted = ref(false);
+const avatarLoadedFromServer = ref(false);
 
-const hasAvatar = computed(() => !!avatarPreviewUrl.value)
+const hasAvatar = computed(() => !!avatarPreviewUrl.value);
 
 // 图标处理函数
 function handleIconSelect(e) {
-  const file = e.target.files?.[0]
-  if (!file) return
+  const file = e.target.files?.[0];
+  if (!file) return;
 
   if (!file.type.startsWith('image/')) {
-    return
+    return;
   }
 
-  iconFile.value = file
+  iconFile.value = file;
 
   if (iconPreviewUrl.value) {
-    URL.revokeObjectURL(iconPreviewUrl.value)
+    URL.revokeObjectURL(iconPreviewUrl.value);
   }
-  iconPreviewUrl.value = URL.createObjectURL(file)
-  iconDeleted.value = false
+  iconPreviewUrl.value = URL.createObjectURL(file);
+  iconDeleted.value = false;
 }
 
 function triggerIconSelect() {
-  iconInputRef.value?.click()
+  iconInputRef.value?.click();
 }
 
 async function removeIcon() {
-  iconFile.value = null
+  iconFile.value = null;
   if (iconPreviewUrl.value) {
-    URL.revokeObjectURL(iconPreviewUrl.value)
+    URL.revokeObjectURL(iconPreviewUrl.value);
   }
-  iconPreviewUrl.value = ''
+  iconPreviewUrl.value = '';
   if (iconInputRef.value) {
-    iconInputRef.value.value = ''
+    iconInputRef.value.value = '';
   }
-  iconDeleted.value = true
-  await nextTick()
-  window.lucide?.createIcons?.()
+  iconDeleted.value = true;
+  await nextTick();
+  window.lucide?.createIcons?.();
 }
 
 function resetIconPreview() {
-  iconFile.value = null
+  iconFile.value = null;
   if (iconPreviewUrl.value) {
-    URL.revokeObjectURL(iconPreviewUrl.value)
+    URL.revokeObjectURL(iconPreviewUrl.value);
   }
-  iconPreviewUrl.value = ''
+  iconPreviewUrl.value = '';
   if (iconInputRef.value) {
-    iconInputRef.value.value = ''
+    iconInputRef.value.value = '';
   }
-  iconDeleted.value = false
-  iconLoadedFromServer.value = false
+  iconDeleted.value = false;
+  iconLoadedFromServer.value = false;
 }
 
 async function loadExistingIcon() {
-  resetIconPreview()
+  resetIconPreview();
 
-  if (!props.file) return
+  if (!props.file) return;
 
-  const iconPath = props.file.replace(/persona\.json$/, 'icon.png')
+  const iconPath = props.file.replace(/persona\.json$/, 'icon.png');
 
   try {
-    const { blob, mime } = await DataCatalog.getDataAssetBlob(iconPath)
+    const { blob, mime } = await DataCatalog.getDataAssetBlob(iconPath);
     if (blob.size > 0 && mime.startsWith('image/')) {
-      iconPreviewUrl.value = URL.createObjectURL(blob)
-      iconLoadedFromServer.value = true
+      iconPreviewUrl.value = URL.createObjectURL(blob);
+      iconLoadedFromServer.value = true;
     }
   } catch (err) {
-    console.debug('[PersonaDetailView] No existing icon or failed to load:', err)
-    iconLoadedFromServer.value = false
+    console.debug('[PersonaDetailView] No existing icon or failed to load:', err);
+    iconLoadedFromServer.value = false;
   }
 }
 
 // 头像处理函数
 function handleAvatarSelect(e) {
-  const file = e.target.files?.[0]
-  if (!file) return
+  const file = e.target.files?.[0];
+  if (!file) return;
 
   if (!file.type.startsWith('image/')) {
-    return
+    return;
   }
 
-  avatarFile.value = file
+  avatarFile.value = file;
 
   if (avatarPreviewUrl.value) {
-    URL.revokeObjectURL(avatarPreviewUrl.value)
+    URL.revokeObjectURL(avatarPreviewUrl.value);
   }
-  avatarPreviewUrl.value = URL.createObjectURL(file)
-  avatarDeleted.value = false
+  avatarPreviewUrl.value = URL.createObjectURL(file);
+  avatarDeleted.value = false;
 }
 
 function triggerAvatarSelect() {
-  avatarInputRef.value?.click()
+  avatarInputRef.value?.click();
 }
 
 async function removeAvatar() {
-  avatarFile.value = null
+  avatarFile.value = null;
   if (avatarPreviewUrl.value) {
-    URL.revokeObjectURL(avatarPreviewUrl.value)
+    URL.revokeObjectURL(avatarPreviewUrl.value);
   }
-  avatarPreviewUrl.value = ''
+  avatarPreviewUrl.value = '';
   if (avatarInputRef.value) {
-    avatarInputRef.value.value = ''
+    avatarInputRef.value.value = '';
   }
-  avatarDeleted.value = true
-  await nextTick()
-  window.lucide?.createIcons?.()
+  avatarDeleted.value = true;
+  await nextTick();
+  window.lucide?.createIcons?.();
 }
 
 function resetAvatarPreview() {
-  avatarFile.value = null
+  avatarFile.value = null;
   if (avatarPreviewUrl.value) {
-    URL.revokeObjectURL(avatarPreviewUrl.value)
+    URL.revokeObjectURL(avatarPreviewUrl.value);
   }
-  avatarPreviewUrl.value = ''
+  avatarPreviewUrl.value = '';
   if (avatarInputRef.value) {
-    avatarInputRef.value.value = ''
+    avatarInputRef.value.value = '';
   }
-  avatarDeleted.value = false
-  avatarLoadedFromServer.value = false
+  avatarDeleted.value = false;
+  avatarLoadedFromServer.value = false;
 }
 
 async function loadExistingAvatar() {
-  resetAvatarPreview()
+  resetAvatarPreview();
 
-  if (!props.file) return
+  if (!props.file) return;
 
-  const avatarPath = props.file.replace(/persona\.json$/, 'persona.png')
+  const avatarPath = props.file.replace(/persona\.json$/, 'persona.png');
 
   try {
-    const { blob, mime } = await DataCatalog.getDataAssetBlob(avatarPath)
+    const { blob, mime } = await DataCatalog.getDataAssetBlob(avatarPath);
     if (blob.size > 0 && mime.startsWith('image/')) {
-      avatarPreviewUrl.value = URL.createObjectURL(blob)
-      avatarLoadedFromServer.value = true
+      avatarPreviewUrl.value = URL.createObjectURL(blob);
+      avatarLoadedFromServer.value = true;
     }
   } catch (err) {
-    console.debug('[PersonaDetailView] No existing avatar or failed to load:', err)
-    avatarLoadedFromServer.value = false
+    console.debug('[PersonaDetailView] No existing avatar or failed to load:', err);
+    avatarLoadedFromServer.value = false;
   }
 }
 
 async function fileToBase64(file) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = () => {
-      const result = reader.result
-      const base64 = result.includes(',') ? result.split(',')[1] : result
-      resolve(base64)
-    }
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
+      const result = reader.result;
+      const base64 = result.includes(',') ? result.split(',')[1] : result;
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 /** 深拷贝 */
 function deepClone(x) {
-  return JSON.parse(JSON.stringify(x))
+  return JSON.parse(JSON.stringify(x));
 }
 /** 规范化 Persona 结构 */
 function normalizePersonaData(src) {
-  if (!src || typeof src !== 'object') return null
+  if (!src || typeof src !== 'object') return null;
   return {
     name: src.name || '用户',
     description: src.description || '',
     persona_name: src.persona_name || '',
     persona_badge: src.persona_badge || '',
-  }
+  };
 }
 // 当前编辑的数据（内存中）
 const currentData = ref(
@@ -205,194 +205,194 @@ const currentData = ref(
       persona_badge: '',
     },
   ),
-)
+);
 // 外部数据变更时同步
 watch(
   () => props.personaData,
   async (v) => {
     currentData.value = deepClone(
       normalizePersonaData(v) || { name: '', description: '', persona_name: '', persona_badge: '' },
-    )
-    await loadExistingIcon()
-    await nextTick()
-    window.lucide?.createIcons?.()
+    );
+    await loadExistingIcon();
+    await nextTick();
+    window.lucide?.createIcons?.();
   },
-)
+);
 
 // 本地草稿
-const nameDraft = ref(currentData.value.name || '')
-const descDraft = ref(currentData.value.description || '')
-const personaNameDraft = ref(currentData.value.persona_name || '')
-const personaBadgeDraft = ref(currentData.value.persona_badge || '')
+const nameDraft = ref(currentData.value.name || '');
+const descDraft = ref(currentData.value.description || '');
+const personaNameDraft = ref(currentData.value.persona_name || '');
+const personaBadgeDraft = ref(currentData.value.persona_badge || '');
 
 // 保存（失焦即时保存）
 function saveName() {
-  currentData.value.name = nameDraft.value
+  currentData.value.name = nameDraft.value;
 }
 
 function saveDesc() {
-  currentData.value.description = descDraft.value
+  currentData.value.description = descDraft.value;
 }
 
 function savePersonaName() {
-  currentData.value.persona_name = personaNameDraft.value
+  currentData.value.persona_name = personaNameDraft.value;
 }
 
 function savePersonaBadge() {
-  currentData.value.persona_badge = personaBadgeDraft.value
+  currentData.value.persona_badge = personaBadgeDraft.value;
 }
 
 // 重置为当前存储内容
 function resetAll() {
-  nameDraft.value = currentData.value.name || ''
-  descDraft.value = currentData.value.description || ''
-  personaNameDraft.value = currentData.value.persona_name || ''
-  personaBadgeDraft.value = currentData.value.persona_badge || ''
-  nextTick(() => window.lucide?.createIcons?.())
+  nameDraft.value = currentData.value.name || '';
+  descDraft.value = currentData.value.description || '';
+  personaNameDraft.value = currentData.value.persona_name || '';
+  personaBadgeDraft.value = currentData.value.persona_badge || '';
+  nextTick(() => window.lucide?.createIcons?.());
 }
 
 // 保存状态
-const saving = ref(false)
-const savedOk = ref(false)
-let __saveTimer = null
-const __eventOffs = []
+const saving = ref(false);
+const savedOk = ref(false);
+let __saveTimer = null;
+const __eventOffs = [];
 
 onBeforeUnmount(() => {
   try {
     __eventOffs?.forEach((fn) => {
       try {
-        fn?.()
+        fn?.();
       } catch (_) {}
-    })
-    __eventOffs.length = 0
-    if (__saveTimer) clearTimeout(__saveTimer)
+    });
+    __eventOffs.length = 0;
+    if (__saveTimer) clearTimeout(__saveTimer);
   } catch (_) {}
-})
+});
 
 // 保存到后端
 async function save() {
-  const file = props.file
+  const file = props.file;
   if (!file) {
     try {
-      alert(t('error.missingFilePath'))
+      alert(t('error.missingFilePath'));
     } catch (_) {}
-    return
+    return;
   }
 
   // 先保存当前草稿
-  saveName()
-  saveDesc()
-  savePersonaName()
-  savePersonaBadge()
+  saveName();
+  saveDesc();
+  savePersonaName();
+  savePersonaBadge();
 
   const content = {
     name: currentData.value.name || '',
     description: currentData.value.description || '',
     persona_name: currentData.value.persona_name || '',
     persona_badge: currentData.value.persona_badge || '',
-  }
+  };
 
   // 处理图标
-  let iconBase64 = undefined
+  let iconBase64 = undefined;
   if (iconFile.value) {
     try {
-      iconBase64 = await fileToBase64(iconFile.value)
+      iconBase64 = await fileToBase64(iconFile.value);
     } catch (err) {
-      console.error('[PersonaDetailView] Icon conversion failed:', err)
+      console.error('[PersonaDetailView] Icon conversion failed:', err);
     }
   } else if (iconDeleted.value && iconLoadedFromServer.value) {
-    iconBase64 = ''
+    iconBase64 = '';
   }
 
   // 处理头像
-  let avatarBase64 = undefined
+  let avatarBase64 = undefined;
   if (avatarFile.value) {
     try {
-      avatarBase64 = await fileToBase64(avatarFile.value)
+      avatarBase64 = await fileToBase64(avatarFile.value);
     } catch (err) {
-      console.error('[PersonaDetailView] Avatar conversion failed:', err)
+      console.error('[PersonaDetailView] Avatar conversion failed:', err);
     }
   } else if (avatarDeleted.value && avatarLoadedFromServer.value) {
-    avatarBase64 = ''
+    avatarBase64 = '';
   }
 
-  saving.value = true
-  savedOk.value = false
+  saving.value = true;
+  savedOk.value = false;
   if (__saveTimer) {
     try {
-      clearTimeout(__saveTimer)
+      clearTimeout(__saveTimer);
     } catch {}
-    __saveTimer = null
+    __saveTimer = null;
   }
 
-  const tag = `persona_save_${Date.now()}`
+  const tag = `persona_save_${Date.now()}`;
 
   // 监听保存结果（一次性）
   const offOk = Host.events.on(
     Catalog.EVT_CATALOG_PERSONA_UPDATE_OK,
     async ({ file: resFile, tag: resTag }) => {
-      if (resFile !== file || resTag !== tag) return
-      console.log('[PersonaDetailView] 保存成功（事件）')
-      savedOk.value = true
-      saving.value = false
+      if (resFile !== file || resTag !== tag) return;
+      console.log('[PersonaDetailView] 保存成功（事件）');
+      savedOk.value = true;
+      saving.value = false;
       if (savedOk.value) {
         __saveTimer = setTimeout(() => {
-          savedOk.value = false
-        }, 1800)
+          savedOk.value = false;
+        }, 1800);
       }
 
       // 保存成功后，刷新侧边栏列表
       try {
-        console.log('[PersonaDetailView] 刷新人设列表')
+        console.log('[PersonaDetailView] 刷新人设列表');
         Host.events.emit(Catalog.EVT_CATALOG_PERSONAS_REQ, {
           requestId: Date.now(),
-        })
+        });
       } catch (err) {
-        console.warn('[PersonaDetailView] 刷新人设列表失败:', err)
+        console.warn('[PersonaDetailView] 刷新人设列表失败:', err);
       }
 
       // 保存成功后，检查是否是当前使用的人设，如果是则刷新 store
       try {
-        const chatSettingsStore = useChatSettingsStore()
-        const personaStore = usePersonaStore()
-        const currentPersonaFile = chatSettingsStore.personaFile
+        const chatSettingsStore = useChatSettingsStore();
+        const personaStore = usePersonaStore();
+        const currentPersonaFile = chatSettingsStore.personaFile;
         if (currentPersonaFile && currentPersonaFile === file) {
-          console.log('[PersonaDetailView] 刷新人设 store')
-          await personaStore.refreshFromPersonaFile(file)
+          console.log('[PersonaDetailView] 刷新人设 store');
+          await personaStore.refreshFromPersonaFile(file);
         }
       } catch (err) {
-        console.warn('[PersonaDetailView] 刷新人设 store 失败:', err)
+        console.warn('[PersonaDetailView] 刷新人设 store 失败:', err);
       }
 
       try {
-        offOk?.()
+        offOk?.();
       } catch (_) {}
       try {
-        offFail?.()
+        offFail?.();
       } catch (_) {}
     },
-  )
+  );
 
   const offFail = Host.events.on(
     Catalog.EVT_CATALOG_PERSONA_UPDATE_FAIL,
     ({ file: resFile, message, tag: resTag }) => {
-      if (resFile && resFile !== file) return
-      if (resTag && resTag !== tag) return
-      console.error('[PersonaDetailView] 保存失败（事件）:', message)
+      if (resFile && resFile !== file) return;
+      if (resTag && resTag !== tag) return;
+      console.error('[PersonaDetailView] 保存失败（事件）:', message);
       try {
-        alert(t('detail.persona.saveFailed') + '：' + message)
+        alert(t('detail.persona.saveFailed') + '：' + message);
       } catch (_) {}
-      saving.value = false
+      saving.value = false;
       try {
-        offOk?.()
+        offOk?.();
       } catch (_) {}
       try {
-        offFail?.()
+        offFail?.();
       } catch (_) {}
     },
-  )
+  );
 
-  __eventOffs.push(offOk, offFail)
+  __eventOffs.push(offOk, offFail);
 
   // 发送保存请求事件
   Host.events.emit(Catalog.EVT_CATALOG_PERSONA_UPDATE_REQ, {
@@ -403,15 +403,15 @@ async function save() {
     iconBase64,
     avatarBase64,
     tag,
-  })
+  });
 }
 
 // 初始化 Lucide 图标
 onMounted(async () => {
-  window.lucide?.createIcons?.()
-  await loadExistingIcon()
-  await loadExistingAvatar()
-})
+  window.lucide?.createIcons?.();
+  await loadExistingIcon();
+  await loadExistingAvatar();
+});
 </script>
 
 <template>

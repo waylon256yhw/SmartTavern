@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
-import { useCharacterStore } from '@/features/characters/store'
-import type { RegexRule } from '@/features/presets/types'
+import { ref, watch, nextTick } from 'vue';
+import { useCharacterStore } from '@/features/characters/store';
+import type { RegexRule } from '@/features/presets/types';
 
-const props = defineProps<{ rule: RegexRule }>()
+const props = defineProps<{ rule: RegexRule }>();
 
-const store = useCharacterStore()
-const editing = ref(false)
+const store = useCharacterStore();
+const editing = ref(false);
 
-const enabledLabel = (v: boolean) => (v ? '已启用' : '未启用')
+const enabledLabel = (v: boolean) => (v ? '已启用' : '未启用');
 
-const draftName = ref(props.rule.name)
-const draftEnabled = ref(props.rule.enabled ? 'true' : 'false')
-const draftPlacement = ref<string>(props.rule.placement as any)
-const draftFind = ref<string>(props.rule.find_regex)
-const draftReplace = ref<string>(props.rule.replace_regex)
+const draftName = ref(props.rule.name);
+const draftEnabled = ref(props.rule.enabled ? 'true' : 'false');
+const draftPlacement = ref<string>(props.rule.placement as any);
+const draftFind = ref<string>(props.rule.find_regex);
+const draftReplace = ref<string>(props.rule.replace_regex);
 
 /* 选项枚举（与后端实现保持一致） */
-const TARGET_PREFIXES = ['preset', 'world_book', 'history', 'char', 'persona'] as const
-type TargetPrefix = (typeof TARGET_PREFIXES)[number]
-const VIEWS = ['user_view', 'assistant_view'] as const
-type ViewKey = (typeof VIEWS)[number]
+const TARGET_PREFIXES = ['preset', 'world_book', 'history', 'char', 'persona'] as const;
+type TargetPrefix = (typeof TARGET_PREFIXES)[number];
+const VIEWS = ['user_view', 'assistant_view'] as const;
+type ViewKey = (typeof VIEWS)[number];
 
 /* 细粒度来源类型（与后端各模块输出的 source.type 对齐） */
 const SOURCE_TYPES = [
@@ -38,8 +38,8 @@ const SOURCE_TYPES = [
   // description placeholders
   'char.description',
   'persona.description',
-] as const
-type SourceTypeKey = (typeof SOURCE_TYPES)[number]
+] as const;
+type SourceTypeKey = (typeof SOURCE_TYPES)[number];
 
 /* 勾选框选择状态 */
 const selectedTargets = ref<Record<TargetPrefix, boolean>>({
@@ -48,11 +48,11 @@ const selectedTargets = ref<Record<TargetPrefix, boolean>>({
   history: (props.rule.targets || []).includes('history'),
   char: (props.rule.targets || []).includes('char'),
   persona: (props.rule.targets || []).includes('persona'),
-})
+});
 const selectedViews = ref<Record<ViewKey, boolean>>({
   user_view: (props.rule.views || []).includes('user_view'),
   assistant_view: (props.rule.views || []).includes('assistant_view'),
-})
+});
 const selectedSourceTypes = ref<Record<SourceTypeKey, boolean>>({
   'history.user': (props.rule.targets || []).includes('history.user'),
   'history.assistant': (props.rule.targets || []).includes('history.assistant'),
@@ -64,30 +64,30 @@ const selectedSourceTypes = ref<Record<SourceTypeKey, boolean>>({
   'world_book.in-chat': (props.rule.targets || []).includes('world_book.in-chat'),
   'char.description': (props.rule.targets || []).includes('char.description'),
   'persona.description': (props.rule.targets || []).includes('persona.description'),
-})
-const draftMinDepth = ref<string>(props.rule.min_depth != null ? String(props.rule.min_depth) : '')
-const draftMaxDepth = ref<string>(props.rule.max_depth != null ? String(props.rule.max_depth) : '')
-const draftDescription = ref<string>(props.rule.description ?? '')
+});
+const draftMinDepth = ref<string>(props.rule.min_depth != null ? String(props.rule.min_depth) : '');
+const draftMaxDepth = ref<string>(props.rule.max_depth != null ? String(props.rule.max_depth) : '');
+const draftDescription = ref<string>(props.rule.description ?? '');
 
 function resetDraft() {
-  draftName.value = props.rule.name
-  draftEnabled.value = props.rule.enabled ? 'true' : 'false'
-  draftPlacement.value = props.rule.placement
-  draftFind.value = props.rule.find_regex
-  draftReplace.value = props.rule.replace_regex
-  const arrT = (props.rule.targets || []).map((x) => String(x))
+  draftName.value = props.rule.name;
+  draftEnabled.value = props.rule.enabled ? 'true' : 'false';
+  draftPlacement.value = props.rule.placement;
+  draftFind.value = props.rule.find_regex;
+  draftReplace.value = props.rule.replace_regex;
+  const arrT = (props.rule.targets || []).map((x) => String(x));
   selectedTargets.value = {
     preset: arrT.includes('preset'),
     world_book: arrT.includes('world_book'),
     history: arrT.includes('history'),
     char: arrT.includes('char'),
     persona: arrT.includes('persona'),
-  }
-  const arrV = (props.rule.views || []).map((x) => String(x))
+  };
+  const arrV = (props.rule.views || []).map((x) => String(x));
   selectedViews.value = {
     user_view: arrV.includes('user_view'),
     assistant_view: arrV.includes('assistant_view'),
-  }
+  };
   selectedSourceTypes.value = {
     'history.user': arrT.includes('history.user'),
     'history.assistant': arrT.includes('history.assistant'),
@@ -99,39 +99,39 @@ function resetDraft() {
     'world_book.in-chat': arrT.includes('world_book.in-chat'),
     'char.description': arrT.includes('char.description'),
     'persona.description': arrT.includes('persona.description'),
-  }
-  draftMinDepth.value = props.rule.min_depth != null ? String(props.rule.min_depth) : ''
-  draftMaxDepth.value = props.rule.max_depth != null ? String(props.rule.max_depth) : ''
-  draftDescription.value = props.rule.description ?? ''
+  };
+  draftMinDepth.value = props.rule.min_depth != null ? String(props.rule.min_depth) : '';
+  draftMaxDepth.value = props.rule.max_depth != null ? String(props.rule.max_depth) : '';
+  draftDescription.value = props.rule.description ?? '';
 }
 
 watch(
   () => props.rule,
   () => {
-    if (!editing.value) resetDraft()
+    if (!editing.value) resetDraft();
   },
   { deep: false },
-)
+);
 
 function onEdit() {
-  resetDraft()
-  editing.value = true
+  resetDraft();
+  editing.value = true;
 }
 
 function onCancel() {
-  resetDraft()
-  editing.value = false
+  resetDraft();
+  editing.value = false;
 }
 
 function onDelete() {
-  store.removeRegexRule(props.rule.id)
+  store.removeRegexRule(props.rule.id);
 }
 
 function toNumOrUndef(text: string): number | undefined {
-  const t = text.trim()
-  if (t === '') return undefined
-  const n = Number(t)
-  return Number.isFinite(n) ? n : undefined
+  const t = text.trim();
+  if (t === '') return undefined;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : undefined;
 }
 
 async function onSave() {
@@ -151,18 +151,18 @@ async function onSave() {
         ? draftPlacement.value
         : 'after_macro',
     views: VIEWS.filter((v) => selectedViews.value[v]),
-  }
-  const minD = toNumOrUndef(draftMinDepth.value)
-  const maxD = toNumOrUndef(draftMaxDepth.value)
-  if (minD !== undefined) (updated as any).min_depth = minD
-  if (maxD !== undefined) (updated as any).max_depth = maxD
-  const desc = draftDescription.value.trim()
-  if (desc) (updated as any).description = desc
+  };
+  const minD = toNumOrUndef(draftMinDepth.value);
+  const maxD = toNumOrUndef(draftMaxDepth.value);
+  if (minD !== undefined) (updated as any).min_depth = minD;
+  if (maxD !== undefined) (updated as any).max_depth = maxD;
+  const desc = draftDescription.value.trim();
+  if (desc) (updated as any).description = desc;
 
-  store.replaceRegexRule(updated)
-  editing.value = false
-  await nextTick()
-  ;(window as any).lucide?.createIcons?.()
+  store.replaceRegexRule(updated);
+  editing.value = false;
+  await nextTick();
+  (window as any).lucide?.createIcons?.();
 }
 </script>
 

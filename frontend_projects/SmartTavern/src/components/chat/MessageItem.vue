@@ -391,20 +391,20 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted, onBeforeUnmount, watch, computed } from 'vue'
-import usePalette from '@/composables/usePalette'
-import HtmlStage from '@/components/chat/HtmlStage.vue'
-import Host from '@/workflow/core/host'
-import * as Branch from '@/workflow/channels/branch'
-import * as Message from '@/workflow/channels/message'
-import { useMessagesStore } from '@/stores/chatMessages'
-import { useI18n } from '@/locales'
-import { useAppearanceSettingsStore } from '@/stores/appearanceSettings'
-import { storeToRefs } from 'pinia'
+import { ref, nextTick, onMounted, onBeforeUnmount, watch, computed } from 'vue';
+import usePalette from '@/composables/usePalette';
+import HtmlStage from '@/components/chat/HtmlStage.vue';
+import Host from '@/workflow/core/host';
+import * as Branch from '@/workflow/channels/branch';
+import * as Message from '@/workflow/channels/message';
+import { useMessagesStore } from '@/stores/chatMessages';
+import { useI18n } from '@/locales';
+import { useAppearanceSettingsStore } from '@/stores/appearanceSettings';
+import { storeToRefs } from 'pinia';
 
-const { t } = useI18n()
-const appearanceStore = useAppearanceSettingsStore()
-const { timezone, dateTimeFormat, messageSidebarWidth } = storeToRefs(appearanceStore)
+const { t } = useI18n();
+const appearanceStore = useAppearanceSettingsStore();
+const { timezone, dateTimeFormat, messageSidebarWidth } = storeToRefs(appearanceStore);
 
 /**
  * 根据用户设置的时区和格式，格式化时间戳
@@ -415,14 +415,14 @@ const { timezone, dateTimeFormat, messageSidebarWidth } = storeToRefs(appearance
  * @returns {string} 格式化后的时间字符串
  */
 function formatTimestamp(timestamp, timezone, format, t) {
-  if (!timestamp) return ''
+  if (!timestamp) return '';
 
   try {
-    const date = new Date(timestamp)
-    if (isNaN(date.getTime())) return ''
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return '';
 
     // 转换到目标时区
-    const options = { timeZone: timezone || 'UTC' }
+    const options = { timeZone: timezone || 'UTC' };
     const formatter = new Intl.DateTimeFormat('en-US', {
       ...options,
       year: 'numeric',
@@ -431,40 +431,40 @@ function formatTimestamp(timestamp, timezone, format, t) {
       hour: '2-digit',
       minute: '2-digit',
       hour12: format?.includes('hh:mm A') || false,
-    })
+    });
 
-    const parts = formatter.formatToParts(date)
-    const getValue = (type) => parts.find((p) => p.type === type)?.value || ''
+    const parts = formatter.formatToParts(date);
+    const getValue = (type) => parts.find((p) => p.type === type)?.value || '';
 
-    const year = getValue('year')
-    const month = getValue('month')
-    const day = getValue('day')
-    const hour = getValue('hour')
-    const minute = getValue('minute')
-    let dayPeriod = getValue('dayPeriod') // AM/PM
+    const year = getValue('year');
+    const month = getValue('month');
+    const day = getValue('day');
+    const hour = getValue('hour');
+    const minute = getValue('minute');
+    let dayPeriod = getValue('dayPeriod'); // AM/PM
 
     // 使用 i18n 本地化 AM/PM
     if (dayPeriod) {
-      dayPeriod = dayPeriod === 'AM' ? t('common.am') : t('common.pm')
+      dayPeriod = dayPeriod === 'AM' ? t('common.am') : t('common.pm');
     }
 
     // 根据格式模板替换
-    let result = format || 'YYYY-MM-DD HH:mm'
-    result = result.replace('YYYY', year)
-    result = result.replace('MM', month)
-    result = result.replace('DD', day)
-    result = result.replace('HH', hour)
-    result = result.replace('hh', hour)
-    result = result.replace('mm', minute)
-    result = result.replace(' A', dayPeriod ? ` ${dayPeriod}` : '')
-    result = result.replace('年', '年')
-    result = result.replace('月', '月')
-    result = result.replace('日', '日')
+    let result = format || 'YYYY-MM-DD HH:mm';
+    result = result.replace('YYYY', year);
+    result = result.replace('MM', month);
+    result = result.replace('DD', day);
+    result = result.replace('HH', hour);
+    result = result.replace('hh', hour);
+    result = result.replace('mm', minute);
+    result = result.replace(' A', dayPeriod ? ` ${dayPeriod}` : '');
+    result = result.replace('年', '年');
+    result = result.replace('月', '月');
+    result = result.replace('日', '日');
 
-    return result
+    return result;
   } catch (e) {
-    console.error('Format timestamp error:', e)
-    return ''
+    console.error('Format timestamp error:', e);
+    return '';
   }
 }
 
@@ -502,9 +502,9 @@ const props = defineProps({
   badgeText: { type: String, default: null },
   // iframe 渲染优化：是否应该渲染 iframe
   shouldRenderIframe: { type: Boolean, default: true },
-})
+});
 
-const msgStore = useMessagesStore()
+const msgStore = useMessagesStore();
 const emit = defineEmits([
   'delete',
   'regenerate',
@@ -512,167 +512,167 @@ const emit = defineEmits([
   'update',
   'branch-switched',
   'iframe-loaded',
-])
+]);
 
 // 计算格式化后的时间显示（使用用户设置，响应式更新）
 const formattedTime = computed(() => {
-  return formatTimestamp(props.msg.node_updated_at, timezone.value, dateTimeFormat.value, t)
-})
+  return formatTimestamp(props.msg.node_updated_at, timezone.value, dateTimeFormat.value, t);
+});
 
 function roleLabel(role) {
-  return t(`role.${role}`) || t('common.unknown')
+  return t(`role.${role}`) || t('common.unknown');
 }
 function nameOf(msg) {
-  return roleLabel(msg.role)
+  return roleLabel(msg.role);
 }
 
-const { ensurePaletteFor, stripeStyle } = usePalette()
+const { ensurePaletteFor, stripeStyle } = usePalette();
 
 // 根据头像 URL 动态提取调色板并驱动彩条渐变
 async function updatePaletteFromAvatar() {
   try {
     // 将传入的 avatarUrl 同步到 msg 上，供 usePalette 使用
-    props.msg.avatarUrl = props.avatarUrl || null
-    await ensurePaletteFor(props.msg)
+    props.msg.avatarUrl = props.avatarUrl || null;
+    await ensurePaletteFor(props.msg);
   } catch (_) {}
 }
 // 监听头像 URL 变化，实时更新彩条渐变；初始立即执行
 watch(
   () => props.avatarUrl,
   () => {
-    updatePaletteFromAvatar()
+    updatePaletteFromAvatar();
   },
   { immediate: true },
-)
+);
 
 // 菜单/复制/编辑态
-const menuOpen = ref(false)
-const copied = ref(false)
-const isEditing = ref(false)
-const editingContent = ref('')
-const editTextareaRef = ref(null)
-const saveStatus = ref(null) // null | 'saving' | 'success' | 'error'
-const saveMessage = ref('')
-const deleteStatus = ref(null) // null | 'deleting' | 'success' | 'error'
-const deleteMessage = ref('')
-const switchStatus = ref(null) // null | 'switching' | 'success'
-const switchMessage = ref('')
+const menuOpen = ref(false);
+const copied = ref(false);
+const isEditing = ref(false);
+const editingContent = ref('');
+const editTextareaRef = ref(null);
+const saveStatus = ref(null); // null | 'saving' | 'success' | 'error'
+const saveMessage = ref('');
+const deleteStatus = ref(null); // null | 'deleting' | 'success' | 'error'
+const deleteMessage = ref('');
+const switchStatus = ref(null); // null | 'switching' | 'success'
+const switchMessage = ref('');
 
 // 事件监听清理器集合
-const __uiOffs = []
+const __uiOffs = [];
 
 function refreshIcons() {
   nextTick(() => {
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
-      window.lucide.createIcons()
+      window.lucide.createIcons();
     }
     if (typeof window.initFlowbite === 'function') {
       try {
-        window.initFlowbite()
+        window.initFlowbite();
       } catch (_) {}
     }
-  })
+  });
 }
 
 // 头像加载失败回退处理
 function onAvatarError(e) {
-  console.warn(t('chat.errors.avatarLoadFailed'))
+  console.warn(t('chat.errors.avatarLoadFailed'));
   // 移除图片元素，让文字占位符显示
   if (e.target) {
-    e.target.style.display = 'none'
+    e.target.style.display = 'none';
   }
   // 回退到角色渐变并更新彩条
   try {
-    props.msg.avatarUrl = null
+    props.msg.avatarUrl = null;
     // 异步更新调色板（无需等待）
-    Promise.resolve(ensurePaletteFor(props.msg))
+    Promise.resolve(ensurePaletteFor(props.msg));
   } catch (_) {}
 }
 
 function toggleMenu() {
-  menuOpen.value = !menuOpen.value
-  refreshIcons()
+  menuOpen.value = !menuOpen.value;
+  refreshIcons();
 }
 
 function onGlobalClick(e) {
-  const menuWrapper = e.target.closest('.menu-wrapper')
+  const menuWrapper = e.target.closest('.menu-wrapper');
   if (!menuWrapper) {
-    menuOpen.value = false
+    menuOpen.value = false;
   }
 }
 
 onMounted(() => {
-  ensurePaletteFor(props.msg)
-  document.addEventListener('click', onGlobalClick)
-  refreshIcons()
-})
+  ensurePaletteFor(props.msg);
+  document.addEventListener('click', onGlobalClick);
+  refreshIcons();
+});
 onBeforeUnmount(() => {
-  document.removeEventListener('click', onGlobalClick)
+  document.removeEventListener('click', onGlobalClick);
   // 清理所有事件监听器
   try {
     __uiOffs.forEach((fn) => {
       try {
-        fn?.()
+        fn?.();
       } catch (_) {}
-    })
-    __uiOffs.length = 0
+    });
+    __uiOffs.length = 0;
   } catch (_) {}
-})
+});
 
 function copyMessage() {
   try {
-    const textToCopy = msgStore.getMessageContent(props.msg.id) || props.msg.content || ''
+    const textToCopy = msgStore.getMessageContent(props.msg.id) || props.msg.content || '';
     navigator.clipboard.writeText(textToCopy).then(() => {
-      copied.value = true
-      refreshIcons()
+      copied.value = true;
+      refreshIcons();
       setTimeout(() => {
-        copied.value = false
-        refreshIcons()
-      }, 1600)
-    })
+        copied.value = false;
+        refreshIcons();
+      }, 1600);
+    });
   } catch (_) {}
-  menuOpen.value = false
+  menuOpen.value = false;
 }
 
 async function switchBranch(direction) {
-  if (switchStatus.value === 'switching') return
+  if (switchStatus.value === 'switching') return;
 
   if (!props.branchInfo || !props.conversationFile) {
-    console.error(t('chat.errors.switchBranchFailed'))
-    return
+    console.error(t('chat.errors.switchBranchFailed'));
+    return;
   }
 
   // 计算目标 j 值
-  const currentJ = props.branchInfo.j
-  const totalN = props.branchInfo.n
-  let targetJ = currentJ
+  const currentJ = props.branchInfo.j;
+  const totalN = props.branchInfo.n;
+  let targetJ = currentJ;
 
-  if (direction === 'left') targetJ = currentJ - 1
-  else if (direction === 'right') targetJ = currentJ + 1
+  if (direction === 'left') targetJ = currentJ - 1;
+  else if (direction === 'right') targetJ = currentJ + 1;
 
   if (targetJ < 1) {
-    console.warn(`Target branch ${targetJ} < 1`)
-    return
+    console.warn(`Target branch ${targetJ} < 1`);
+    return;
   }
 
   if (targetJ > totalN) {
-    console.log(`At last branch, triggering retry to create new branch`)
-    emitRegenerate()
-    return
+    console.log(`At last branch, triggering retry to create new branch`);
+    emitRegenerate();
+    return;
   }
 
-  switchStatus.value = 'switching'
-  switchMessage.value = t('chat.branch.switching')
-  refreshIcons()
+  switchStatus.value = 'switching';
+  switchMessage.value = t('chat.branch.switching');
+  refreshIcons();
 
-  const tag = `switch_${Date.now()}`
+  const tag = `switch_${Date.now()}`;
   const offOk = Host.events.on(
     Branch.EVT_BRANCH_SWITCH_OK,
     async ({ conversationFile, node, active_path, latest, tag: rtag }) => {
-      if (conversationFile !== props.conversationFile || rtag !== tag) return
+      if (conversationFile !== props.conversationFile || rtag !== tag) return;
 
       if (node) {
-        props.msg.id = node.node_id
+        props.msg.id = node.node_id;
         // 不再依赖 node.role，角色在兄弟分支切换中保持不变
 
         emit('branch-switched', {
@@ -680,288 +680,288 @@ async function switchBranch(direction) {
           branchInfo: { j: node.j, n: node.n },
           latest,
           active_path,
-        })
+        });
 
-        await nextTick()
+        await nextTick();
 
-        switchStatus.value = 'success'
-        switchMessage.value = t('chat.branch.switched')
-        refreshIcons()
+        switchStatus.value = 'success';
+        switchMessage.value = t('chat.branch.switched');
+        refreshIcons();
 
         setTimeout(() => {
-          switchStatus.value = null
-          switchMessage.value = ''
-          refreshIcons()
-        }, 1000)
+          switchStatus.value = null;
+          switchMessage.value = '';
+          refreshIcons();
+        }, 1000);
       }
 
       try {
-        offOk?.()
+        offOk?.();
       } catch (_) {}
       try {
-        offFail?.()
+        offFail?.();
       } catch (_) {}
     },
-  )
+  );
   const offFail = Host.events.on(
     Branch.EVT_BRANCH_SWITCH_FAIL,
     ({ conversationFile, message, tag: rtag }) => {
-      if (conversationFile && conversationFile !== props.conversationFile) return
-      if (rtag && rtag !== tag) return
-      console.error(t('chat.errors.switchBranchFailed') + ':', message)
-      switchStatus.value = null
-      switchMessage.value = ''
-      refreshIcons()
+      if (conversationFile && conversationFile !== props.conversationFile) return;
+      if (rtag && rtag !== tag) return;
+      console.error(t('chat.errors.switchBranchFailed') + ':', message);
+      switchStatus.value = null;
+      switchMessage.value = '';
+      refreshIcons();
       try {
-        offOk?.()
+        offOk?.();
       } catch (_) {}
       try {
-        offFail?.()
+        offFail?.();
       } catch (_) {}
     },
-  )
+  );
 
-  __uiOffs.push(offOk, offFail)
+  __uiOffs.push(offOk, offFail);
   Host.events.emit(Branch.EVT_BRANCH_SWITCH_REQ, {
     conversationFile: props.conversationFile,
     targetJ,
     tag,
-  })
+  });
 }
 
 async function emitDelete() {
-  if (deleteStatus.value === 'deleting') return
+  if (deleteStatus.value === 'deleting') return;
 
-  menuOpen.value = false
+  menuOpen.value = false;
 
   if (!props.conversationFile) {
-    console.error(t('chat.errors.cannotDelete'))
-    deleteStatus.value = 'error'
-    deleteMessage.value = t('chat.errors.missingConversationFile')
+    console.error(t('chat.errors.cannotDelete'));
+    deleteStatus.value = 'error';
+    deleteMessage.value = t('chat.errors.missingConversationFile');
     setTimeout(() => {
-      deleteStatus.value = null
-      deleteMessage.value = ''
-    }, 2000)
-    return
+      deleteStatus.value = null;
+      deleteMessage.value = '';
+    }, 2000);
+    return;
   }
 
-  deleteStatus.value = 'deleting'
-  deleteMessage.value = t('chat.message.deleting')
-  refreshIcons()
+  deleteStatus.value = 'deleting';
+  deleteMessage.value = t('chat.message.deleting');
+  refreshIcons();
 
-  const tag = `delete_${Date.now()}`
-  const beforeDepth = props.idx + 1
+  const tag = `delete_${Date.now()}`;
+  const beforeDepth = props.idx + 1;
 
   const offOk = Host.events.on(
     Branch.EVT_BRANCH_DELETE_OK,
     ({ conversationFile, active_path, latest, switchedToNodeId, tag: rtag }) => {
-      if (conversationFile !== props.conversationFile || rtag !== tag) return
+      if (conversationFile !== props.conversationFile || rtag !== tag) return;
 
-      const newActivePath = Array.isArray(active_path) ? active_path : []
-      const afterDepth = newActivePath.length
+      const newActivePath = Array.isArray(active_path) ? active_path : [];
+      const afterDepth = newActivePath.length;
 
       if (afterDepth < beforeDepth) {
-        deleteStatus.value = 'success'
-        deleteMessage.value = t('chat.message.deleteSuccess')
-        refreshIcons()
+        deleteStatus.value = 'success';
+        deleteMessage.value = t('chat.message.deleteSuccess');
+        refreshIcons();
 
         setTimeout(() => {
-          emit('delete', { id: props.msg.id, active_path: newActivePath, latest })
-          deleteStatus.value = null
-          deleteMessage.value = ''
-        }, 500)
+          emit('delete', { id: props.msg.id, active_path: newActivePath, latest });
+          deleteStatus.value = null;
+          deleteMessage.value = '';
+        }, 500);
       } else {
         // 新逻辑：不直接依赖完整文档，交由外层根据 active_path 刷新视图
-        emit('branch-switched', { nodeId: switchedToNodeId, latest, active_path: newActivePath })
-        deleteStatus.value = 'success'
-        deleteMessage.value = t('chat.message.switchedToBranch')
-        refreshIcons()
+        emit('branch-switched', { nodeId: switchedToNodeId, latest, active_path: newActivePath });
+        deleteStatus.value = 'success';
+        deleteMessage.value = t('chat.message.switchedToBranch');
+        refreshIcons();
 
         setTimeout(() => {
-          deleteStatus.value = null
-          deleteMessage.value = ''
-          refreshIcons()
-        }, 1500)
+          deleteStatus.value = null;
+          deleteMessage.value = '';
+          refreshIcons();
+        }, 1500);
       }
 
       try {
-        offOk?.()
+        offOk?.();
       } catch (_) {}
       try {
-        offFail?.()
+        offFail?.();
       } catch (_) {}
     },
-  )
+  );
   const offFail = Host.events.on(
     Branch.EVT_BRANCH_DELETE_FAIL,
     ({ conversationFile, message, tag: rtag }) => {
-      if (conversationFile && conversationFile !== props.conversationFile) return
-      if (rtag && rtag !== tag) return
-      console.error(t('chat.message.deleteFailed') + ':', message)
-      deleteStatus.value = 'error'
-      deleteMessage.value = t('chat.message.deleteFailed')
+      if (conversationFile && conversationFile !== props.conversationFile) return;
+      if (rtag && rtag !== tag) return;
+      console.error(t('chat.message.deleteFailed') + ':', message);
+      deleteStatus.value = 'error';
+      deleteMessage.value = t('chat.message.deleteFailed');
       setTimeout(() => {
-        deleteStatus.value = null
-        deleteMessage.value = ''
-        refreshIcons()
-      }, 2500)
+        deleteStatus.value = null;
+        deleteMessage.value = '';
+        refreshIcons();
+      }, 2500);
       try {
-        offOk?.()
+        offOk?.();
       } catch (_) {}
       try {
-        offFail?.()
+        offFail?.();
       } catch (_) {}
     },
-  )
+  );
 
-  __uiOffs.push(offOk, offFail)
+  __uiOffs.push(offOk, offFail);
   Host.events.emit(Branch.EVT_BRANCH_DELETE_REQ, {
     conversationFile: props.conversationFile,
     nodeId: props.msg.id,
     tag,
-  })
+  });
 }
 function emitRegenerate() {
-  emit('regenerate', props.msg)
+  emit('regenerate', props.msg);
 }
 function emitEdit() {
   // 进入编辑模式（使用 Store 标记并读取原始内容）
-  isEditing.value = true
+  isEditing.value = true;
   try {
-    msgStore.startEdit(props.msg.id)
+    msgStore.startEdit(props.msg.id);
   } catch (_) {}
-  editingContent.value = msgStore.getMessageContent(props.msg.id)
-  refreshIcons()
+  editingContent.value = msgStore.getMessageContent(props.msg.id);
+  refreshIcons();
   // 等待 DOM 更新后自动调整 textarea 高度
   nextTick(() => {
-    autoResizeTextarea()
-  })
+    autoResizeTextarea();
+  });
 }
 
 // 自动调整 textarea 高度以适应内容
 function autoResizeTextarea() {
-  const textarea = editTextareaRef.value
+  const textarea = editTextareaRef.value;
   if (textarea) {
     // 先重置高度以获取正确的 scrollHeight
-    textarea.style.height = 'auto'
-    textarea.style.height = textarea.scrollHeight + 'px'
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
   }
 }
 
 function cancelEdit() {
-  isEditing.value = false
-  editingContent.value = ''
+  isEditing.value = false;
+  editingContent.value = '';
   try {
-    msgStore.cancelEdit(props.msg.id)
+    msgStore.cancelEdit(props.msg.id);
   } catch (_) {}
-  refreshIcons()
+  refreshIcons();
 }
 
 async function saveEdit() {
-  if (saveStatus.value === 'saving') return
+  if (saveStatus.value === 'saving') return;
 
-  const newContent = editingContent.value.trim()
+  const newContent = editingContent.value.trim();
   if (!newContent) {
-    cancelEdit()
-    return
+    cancelEdit();
+    return;
   }
 
   if (!props.conversationFile) {
-    console.error(t('chat.errors.cannotSaveEdit'))
-    saveStatus.value = 'error'
-    saveMessage.value = t('chat.errors.missingConversationFile')
+    console.error(t('chat.errors.cannotSaveEdit'));
+    saveStatus.value = 'error';
+    saveMessage.value = t('chat.errors.missingConversationFile');
     setTimeout(() => {
-      saveStatus.value = null
-      saveMessage.value = ''
-    }, 2000)
-    return
+      saveStatus.value = null;
+      saveMessage.value = '';
+    }, 2000);
+    return;
   }
 
-  saveStatus.value = 'saving'
-  saveMessage.value = t('chat.message.saving')
+  saveStatus.value = 'saving';
+  saveMessage.value = t('chat.message.saving');
 
-  const tag = `edit_${Date.now()}`
+  const tag = `edit_${Date.now()}`;
   const offOk = Host.events.on(
     Message.EVT_MESSAGE_EDIT_OK,
     ({ conversationFile, nodeId, content, node_updated_at, doc, tag: rtag }) => {
       if (conversationFile !== props.conversationFile || nodeId !== props.msg.id || rtag !== tag)
-        return
+        return;
 
-      props.msg.content = content
+      props.msg.content = content;
       // 更新节点时间戳
       if (node_updated_at) {
-        props.msg.node_updated_at = node_updated_at
+        props.msg.node_updated_at = node_updated_at;
       }
-      emit('update', props.msg)
+      emit('update', props.msg);
 
-      isEditing.value = false
-      editingContent.value = ''
+      isEditing.value = false;
+      editingContent.value = '';
       try {
-        msgStore.finishEdit(props.msg.id)
+        msgStore.finishEdit(props.msg.id);
       } catch (_) {}
       // 更新 rawMessages 中对应消息的内容和时间戳
       try {
-        const rawMsgs = msgStore.rawMessages || []
-        const idx = rawMsgs.findIndex((m) => m && m.id === nodeId)
+        const rawMsgs = msgStore.rawMessages || [];
+        const idx = rawMsgs.findIndex((m) => m && m.id === nodeId);
         if (idx >= 0 && rawMsgs[idx]) {
-          rawMsgs[idx].content = content
+          rawMsgs[idx].content = content;
           if (node_updated_at) {
-            rawMsgs[idx].node_updated_at = node_updated_at
+            rawMsgs[idx].node_updated_at = node_updated_at;
           }
         }
         // 触发响应式更新：更新 rawMessages 引用，watch(newRaw) 将自动调用 user_view 处理
-        msgStore.updateRawMessages?.([...rawMsgs])
+        msgStore.updateRawMessages?.([...rawMsgs]);
       } catch (_) {}
 
-      saveStatus.value = 'success'
-      saveMessage.value = t('chat.message.saveSuccess')
-      refreshIcons()
+      saveStatus.value = 'success';
+      saveMessage.value = t('chat.message.saveSuccess');
+      refreshIcons();
 
       setTimeout(() => {
-        saveStatus.value = null
-        saveMessage.value = ''
-        refreshIcons()
-      }, 1500)
+        saveStatus.value = null;
+        saveMessage.value = '';
+        refreshIcons();
+      }, 1500);
 
       try {
-        offOk?.()
+        offOk?.();
       } catch (_) {}
       try {
-        offFail?.()
+        offFail?.();
       } catch (_) {}
     },
-  )
+  );
   const offFail = Host.events.on(
     Message.EVT_MESSAGE_EDIT_FAIL,
     ({ conversationFile, nodeId, message, tag: rtag }) => {
-      if (conversationFile && conversationFile !== props.conversationFile) return
-      if (nodeId && nodeId !== props.msg.id) return
-      if (rtag && rtag !== tag) return
+      if (conversationFile && conversationFile !== props.conversationFile) return;
+      if (nodeId && nodeId !== props.msg.id) return;
+      if (rtag && rtag !== tag) return;
 
-      console.error(t('chat.message.saveFailed') + ':', message)
-      saveStatus.value = 'error'
-      saveMessage.value = t('chat.message.saveFailed')
+      console.error(t('chat.message.saveFailed') + ':', message);
+      saveStatus.value = 'error';
+      saveMessage.value = t('chat.message.saveFailed');
       setTimeout(() => {
-        saveStatus.value = null
-        saveMessage.value = ''
-      }, 2500)
+        saveStatus.value = null;
+        saveMessage.value = '';
+      }, 2500);
 
       try {
-        offOk?.()
+        offOk?.();
       } catch (_) {}
       try {
-        offFail?.()
+        offFail?.();
       } catch (_) {}
     },
-  )
+  );
 
-  __uiOffs.push(offOk, offFail)
+  __uiOffs.push(offOk, offFail);
   Host.events.emit(Message.EVT_MESSAGE_EDIT_REQ, {
     conversationFile: props.conversationFile,
     nodeId: props.msg.id,
     content: newContent,
     tag,
-  })
+  });
 }
 </script>
 

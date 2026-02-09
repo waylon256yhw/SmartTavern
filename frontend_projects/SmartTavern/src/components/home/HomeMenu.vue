@@ -1,11 +1,11 @@
 <script setup>
-import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
-import Host from '@/workflow/core/host'
-import { getHomeMenuContext } from '@/workflow/slots/homeMenu/context'
-import * as Conversation from '@/workflow/channels/conversation'
-import { useI18n } from '@/locales'
+import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue';
+import Host from '@/workflow/core/host';
+import { getHomeMenuContext } from '@/workflow/slots/homeMenu/context';
+import * as Conversation from '@/workflow/channels/conversation';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const emit = defineEmits([
   'new-game',
@@ -13,170 +13,170 @@ const emit = defineEmits([
   'open-appearance',
   'open-plugins',
   'open-options',
-])
+]);
 
 // 翻译按钮标签
 // 优先使用 labelKey 动态翻译（支持语言切换），若无则使用静态 label
 function translateLabel(btn) {
   if (btn.labelKey) {
-    const translated = t(btn.labelKey)
+    const translated = t(btn.labelKey);
     // 如果翻译结果不是键本身，则使用翻译
     if (translated && translated !== btn.labelKey) {
-      return translated
+      return translated;
     }
   }
-  return btn.label
+  return btn.label;
 }
 
 // 由后端接口 list_conversations 决定是否显示"Load Game"（事件驱动）
 // - 不再依赖 localStorage；若接口失败则默认为 false
-const serverHasSaves = ref(false)
-const __eventOffs = [] // 事件监听清理器
+const serverHasSaves = ref(false);
+const __eventOffs = []; // 事件监听清理器
 
 async function refreshServerHasSaves() {
-  const tag = `check_saves_${Date.now()}`
+  const tag = `check_saves_${Date.now()}`;
 
   try {
     // 监听对话列表结果（一次性）
     const offOk = Host.events.on(
       Conversation.EVT_CONVERSATION_LIST_OK,
       ({ items, tag: resTag }) => {
-        if (resTag !== tag) return
+        if (resTag !== tag) return;
 
-        const arr = Array.isArray(items) ? items : []
-        serverHasSaves.value = arr.length > 0
-        ctxTick.value++
+        const arr = Array.isArray(items) ? items : [];
+        serverHasSaves.value = arr.length > 0;
+        ctxTick.value++;
 
         try {
-          offOk?.()
+          offOk?.();
         } catch (_) {}
         try {
-          offFail?.()
+          offFail?.();
         } catch (_) {}
       },
-    )
+    );
 
     const offFail = Host.events.on(Conversation.EVT_CONVERSATION_LIST_FAIL, ({ tag: resTag }) => {
-      if (resTag && resTag !== tag) return
+      if (resTag && resTag !== tag) return;
 
-      console.warn('[HomeMenu] list_conversations failed')
-      serverHasSaves.value = false
-      ctxTick.value++
+      console.warn('[HomeMenu] list_conversations failed');
+      serverHasSaves.value = false;
+      ctxTick.value++;
 
       try {
-        offOk?.()
+        offOk?.();
       } catch (_) {}
       try {
-        offFail?.()
+        offFail?.();
       } catch (_) {}
-    })
+    });
 
-    __eventOffs.push(offOk, offFail)
+    __eventOffs.push(offOk, offFail);
 
     // 发送列表请求事件
-    Host.events.emit(Conversation.EVT_CONVERSATION_LIST_REQ, { tag })
+    Host.events.emit(Conversation.EVT_CONVERSATION_LIST_REQ, { tag });
   } catch (e) {
-    console.warn('[HomeMenu] refreshServerHasSaves error:', e)
-    serverHasSaves.value = false
-    ctxTick.value++
+    console.warn('[HomeMenu] refreshServerHasSaves error:', e);
+    serverHasSaves.value = false;
+    ctxTick.value++;
   }
 }
 
 // 从 WorkflowHost 读取开始页按钮（home-menu 插槽）
-const ctxTick = ref(0)
+const ctxTick = ref(0);
 const buttons = computed(() => {
   // 引用 ctxTick 作为依赖，使上下文变化触发重算
-  void ctxTick.value
+  void ctxTick.value;
   // 以服务端 hasSaves 为准，覆盖基础上下文
-  const base = getHomeMenuContext()
-  const ctx = { ...base, hasSaves: !!serverHasSaves.value }
-  return Host.listHomeButtons(ctx)
-})
+  const base = getHomeMenuContext();
+  const ctx = { ...base, hasSaves: !!serverHasSaves.value };
+  return Host.listHomeButtons(ctx);
+});
 
 // 根据环境变化（窗口尺寸/焦点）刷新上下文；hasSaves 由后端接口决定
-let __onResize = null
-let __onStorage = null
-let __onFocus = null
+let __onResize = null;
+let __onStorage = null;
+let __onFocus = null;
 onMounted(() => {
   __onResize = () => {
-    ctxTick.value++
-  }
+    ctxTick.value++;
+  };
   // storage 事件保留用于其它上下文字段刷新，但不再决定 hasSaves
   __onStorage = (e) => {
-    if (!e || e.key === 'st:saves.count') ctxTick.value++
-  }
+    if (!e || e.key === 'st:saves.count') ctxTick.value++;
+  };
   __onFocus = () => {
-    refreshServerHasSaves()
-  }
-  window.addEventListener('resize', __onResize)
-  window.addEventListener('storage', __onStorage)
-  window.addEventListener('focus', __onFocus)
+    refreshServerHasSaves();
+  };
+  window.addEventListener('resize', __onResize);
+  window.addEventListener('storage', __onStorage);
+  window.addEventListener('focus', __onFocus);
   // 首次挂载主动拉取服务端会话列表
-  refreshServerHasSaves()
+  refreshServerHasSaves();
   // 初次渲染后刷新图标
   nextTick(() => {
     try {
-      window?.lucide?.createIcons?.()
+      window?.lucide?.createIcons?.();
     } catch (_) {}
-  })
-})
+  });
+});
 onUnmounted(() => {
-  if (__onResize) window.removeEventListener('resize', __onResize)
-  if (__onStorage) window.removeEventListener('storage', __onStorage)
-  if (__onFocus) window.removeEventListener('focus', __onFocus)
+  if (__onResize) window.removeEventListener('resize', __onResize);
+  if (__onStorage) window.removeEventListener('storage', __onStorage);
+  if (__onFocus) window.removeEventListener('focus', __onFocus);
   try {
     __eventOffs?.forEach((fn) => {
       try {
-        fn?.()
+        fn?.();
       } catch (_) {}
-    })
-    __eventOffs.length = 0
+    });
+    __eventOffs.length = 0;
   } catch (_) {}
-})
+});
 // 当按钮列表发生变化时，刷新图标
 watch(buttons, () =>
   nextTick(() => {
     try {
-      window?.lucide?.createIcons?.()
+      window?.lucide?.createIcons?.();
     } catch (_) {}
   }),
-)
+);
 
 function onClick(btn) {
   try {
-    Host.events.emit(btn.actionId, btn.params ?? null)
+    Host.events.emit(btn.actionId, btn.params ?? null);
   } catch (e) {
-    console.warn('[HomeMenu] action emit failed:', btn?.actionId, e)
+    console.warn('[HomeMenu] action emit failed:', btn?.actionId, e);
   }
 
   // 兼容现有父层事件（最小化改造：仍然向上传递旧事件）
   switch (btn.actionId) {
     case 'ui.home.newGame':
-      emit('new-game')
-      break
+      emit('new-game');
+      break;
     case 'ui.home.openLoad':
-      emit('open-load')
-      break
+      emit('open-load');
+      break;
     case 'ui.home.openAppearance':
-      emit('open-appearance')
-      break
+      emit('open-appearance');
+      break;
     case 'ui.home.openPlugins':
-      emit('open-plugins')
-      break
+      emit('open-plugins');
+      break;
     case 'ui.home.openOptions':
-      emit('open-options')
-      break
+      emit('open-options');
+      break;
     default:
       // 其他 actionId 由 Host.events.emit 处理
-      break
+      break;
   }
 
   // 刷新 lucide 图标（动态渲染后）
   nextTick(() => {
     try {
-      window?.lucide?.createIcons?.()
+      window?.lucide?.createIcons?.();
     } catch (_) {}
-  })
+  });
 }
 </script>
 

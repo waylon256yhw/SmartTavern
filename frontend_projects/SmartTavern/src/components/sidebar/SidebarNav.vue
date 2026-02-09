@@ -1,28 +1,28 @@
 <script setup>
-import { computed, onMounted, onUpdated } from 'vue'
-import PreviewCard from './PreviewCard.vue'
-import { useI18n } from '@/locales'
+import { computed, onMounted, onUpdated } from 'vue';
+import PreviewCard from './PreviewCard.vue';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
-const emit = defineEmits(['update:view', 'update:theme'])
+const emit = defineEmits(['update:view', 'update:theme']);
 
 const props = defineProps({
   view: { type: String, default: 'start' }, // 'start' | 'threaded' | 'sandbox'
   theme: { type: String, default: 'system' }, // 'system' | 'light' | 'dark'
-})
+});
 
 // 从 Host 获取侧边栏项（动态）
 // 使用 labelKey/descKey 进行动态翻译，支持语言切换
 const items = computed(() => {
-  if (typeof window === 'undefined' || !window.STHost) return []
+  if (typeof window === 'undefined' || !window.STHost) return [];
   try {
     // 获取侧边栏项（带上下文）
     const ctx = {
       view: props.view,
       theme: props.theme,
-    }
-    const list = window.STHost.listSidebarItems(ctx)
+    };
+    const list = window.STHost.listSidebarItems(ctx);
     // 转换为组件需要的格式
     // 优先使用 labelKey/descKey 动态翻译，若无则使用静态 label/desc
     return list.map((item) => ({
@@ -33,38 +33,38 @@ const items = computed(() => {
       disabled: item.disabled || false,
       actionId: item.actionId,
       params: item.params || {},
-    }))
+    }));
   } catch (e) {
-    console.warn('[SidebarNav] failed to get items:', e)
-    return []
+    console.warn('[SidebarNav] failed to get items:', e);
+    return [];
   }
-})
+});
 
 function onClick(item) {
-  if (item.disabled) return
+  if (item.disabled) return;
 
   // 触发侧边栏项的事件
   if (typeof window !== 'undefined' && window.STHost && window.STHost.events) {
     try {
-      window.STHost.events.emit(item.actionId, item.params || {})
+      window.STHost.events.emit(item.actionId, item.params || {});
     } catch (e) {
-      console.warn('[SidebarNav] emit error:', e)
+      console.warn('[SidebarNav] emit error:', e);
     }
   }
 }
 
 function gotoHome() {
-  emit('update:view', 'start')
+  emit('update:view', 'start');
 }
 
 function toggleTheme() {
-  const order = ['system', 'light', 'dark']
-  const i = Math.max(0, order.indexOf(props.theme))
-  emit('update:theme', order[(i + 1) % order.length])
+  const order = ['system', 'light', 'dark'];
+  const i = Math.max(0, order.indexOf(props.theme));
+  emit('update:theme', order[(i + 1) % order.length]);
 }
 
-onMounted(() => window.lucide?.createIcons?.())
-onUpdated(() => window.lucide?.createIcons?.())
+onMounted(() => window.lucide?.createIcons?.());
+onUpdated(() => window.lucide?.createIcons?.());
 </script>
 
 <template>

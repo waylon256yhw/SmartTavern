@@ -1,9 +1,9 @@
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
-import useAppearanceSandbox from '@/composables/appearance/useAppearanceSandbox'
-import { useI18n } from '@/locales'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import useAppearanceSandbox from '@/composables/appearance/useAppearanceSandbox';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 /**
  * 前端沙盒外观配置（拆分自 AppearancePanel）
@@ -14,50 +14,50 @@ const { t } = useI18n()
  */
 
 // live tuning indicator + overlay suppression
-const tuning = ref(false)
-const activeTuningSlider = ref(null)
+const tuning = ref(false);
+const activeTuningSlider = ref(null);
 
 /* 强制隐藏半透明背板/浮标（行内样式最高优先级），结束时恢复 */
-let __tuningHiddenEls = []
+let __tuningHiddenEls = [];
 function __hideOverlaysForTuning() {
-  const selectors = ['.st-panel-backdrop', '.sd-backdrop', '.sd-fab']
-  __tuningHiddenEls = []
+  const selectors = ['.st-panel-backdrop', '.sd-backdrop', '.sd-fab'];
+  __tuningHiddenEls = [];
   selectors.forEach((sel) => {
     document.querySelectorAll(sel).forEach((el) => {
-      __tuningHiddenEls.push({ el, style: el.getAttribute('style') })
+      __tuningHiddenEls.push({ el, style: el.getAttribute('style') });
       try {
-        el.style.setProperty('display', 'none', 'important')
-        el.style.setProperty('visibility', 'hidden', 'important')
-        el.style.setProperty('pointer-events', 'none', 'important')
+        el.style.setProperty('display', 'none', 'important');
+        el.style.setProperty('visibility', 'hidden', 'important');
+        el.style.setProperty('pointer-events', 'none', 'important');
       } catch (_) {}
-    })
-  })
+    });
+  });
 }
 function __restoreOverlaysForTuning() {
   __tuningHiddenEls.forEach(({ el, style }) => {
     try {
-      if (style != null) el.setAttribute('style', style)
-      else el.removeAttribute('style')
+      if (style != null) el.setAttribute('style', style);
+      else el.removeAttribute('style');
     } catch (_) {}
-  })
-  __tuningHiddenEls = []
+  });
+  __tuningHiddenEls = [];
 }
 
 function onTuningStart(sliderName) {
-  tuning.value = true
-  activeTuningSlider.value = sliderName
-  document.body.classList.add('st-live-tuning')
-  document.body.setAttribute('data-active-slider', sliderName)
-  __hideOverlaysForTuning()
-  window.addEventListener('pointerup', onTuningEndOnce, { once: true })
-  window.addEventListener('touchend', onTuningEndOnce, { once: true })
+  tuning.value = true;
+  activeTuningSlider.value = sliderName;
+  document.body.classList.add('st-live-tuning');
+  document.body.setAttribute('data-active-slider', sliderName);
+  __hideOverlaysForTuning();
+  window.addEventListener('pointerup', onTuningEndOnce, { once: true });
+  window.addEventListener('touchend', onTuningEndOnce, { once: true });
 }
 function onTuningEndOnce() {
-  tuning.value = false
-  activeTuningSlider.value = null
-  document.body.classList.remove('st-live-tuning')
-  document.body.removeAttribute('data-active-slider')
-  __restoreOverlaysForTuning()
+  tuning.value = false;
+  activeTuningSlider.value = null;
+  document.body.classList.remove('st-live-tuning');
+  document.body.removeAttribute('data-active-slider');
+  __restoreOverlaysForTuning();
 }
 
 // Composable: state + helpers
@@ -69,7 +69,7 @@ const {
   setRootVarUnitless,
   buildSnapshot,
   saveSnapshotLS,
-} = useAppearanceSandbox()
+} = useAppearanceSandbox();
 
 // Destructure refs for template parity
 const {
@@ -85,7 +85,7 @@ const {
   sandboxBgBlurPx,
   // 新增：沙盒容器显示模式选择（auto/fixed/inline）
   sandboxDisplayModeSel,
-} = state
+} = state;
 
 // 持久化：任意外观变更立即保存到浏览器，避免刷新后丢失
 // 注意：state 是普通对象（包含 ref），需要监听所有 ref 的数组
@@ -104,11 +104,11 @@ watch(
   ],
   () => {
     try {
-      const snap = buildSnapshot()
-      saveSnapshotLS(snap)
+      const snap = buildSnapshot();
+      saveSnapshotLS(snap);
     } catch (_) {}
   },
-)
+);
 
 // Presets (unchanged)
 const aspectPresets = [
@@ -116,139 +116,139 @@ const aspectPresets = [
   { label: '4:3', v: [4, 3] },
   { label: '21:9', v: [21, 9] },
   { label: '1:1', v: [1, 1] },
-]
+];
 
 // Handlers: same signatures, write via helpers
 function onSandboxAspectPreset(e) {
-  const raw = e.target.value
-  if (!raw) return
-  const [ax, ay] = raw.split(',').map(Number)
+  const raw = e.target.value;
+  if (!raw) return;
+  const [ax, ay] = raw.split(',').map(Number);
   if (ax > 0 && ay > 0) {
-    sandboxAspectX.value = ax
-    sandboxAspectY.value = ay
-    setRootVarUnitless('--st-sandbox-aspect', `${ax} / ${ay}`)
+    sandboxAspectX.value = ax;
+    sandboxAspectY.value = ay;
+    setRootVarUnitless('--st-sandbox-aspect', `${ax} / ${ay}`);
   }
 }
 function onSandboxAspectNumInputX(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v > 0) {
-    sandboxAspectX.value = v
-    setRootVarUnitless('--st-sandbox-aspect', `${sandboxAspectX.value} / ${sandboxAspectY.value}`)
+    sandboxAspectX.value = v;
+    setRootVarUnitless('--st-sandbox-aspect', `${sandboxAspectX.value} / ${sandboxAspectY.value}`);
   }
 }
 function onSandboxAspectNumInputY(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v > 0) {
-    sandboxAspectY.value = v
-    setRootVarUnitless('--st-sandbox-aspect', `${sandboxAspectX.value} / ${sandboxAspectY.value}`)
+    sandboxAspectY.value = v;
+    setRootVarUnitless('--st-sandbox-aspect', `${sandboxAspectX.value} / ${sandboxAspectY.value}`);
   }
 }
 
 // 尺寸与圆角/内边距
 function onSandboxMaxWidthNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 640 && v <= sandboxMaxWidthLimit.value) {
-    sandboxMaxWidth.value = v
-    setRootVar('--st-sandbox-max-width', sandboxMaxWidth.value)
+    sandboxMaxWidth.value = v;
+    setRootVar('--st-sandbox-max-width', sandboxMaxWidth.value);
   }
 }
 function onSandboxMaxWidthRangeInput(e) {
-  sandboxMaxWidth.value = Number(e.target.value)
-  setRootVar('--st-sandbox-max-width', sandboxMaxWidth.value)
+  sandboxMaxWidth.value = Number(e.target.value);
+  setRootVar('--st-sandbox-max-width', sandboxMaxWidth.value);
 }
 function onSandboxMaxWidthLimitInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 640 && v <= 3840) {
-    sandboxMaxWidthLimit.value = v
+    sandboxMaxWidthLimit.value = v;
     if (sandboxMaxWidth.value > v) {
-      sandboxMaxWidth.value = v
-      setRootVar('--st-sandbox-max-width', sandboxMaxWidth.value)
+      sandboxMaxWidth.value = v;
+      setRootVar('--st-sandbox-max-width', sandboxMaxWidth.value);
     }
   }
 }
 function onSandboxPaddingNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 0 && v <= 48) {
-    sandboxPadding.value = v
-    setRootVar('--st-sandbox-padding', sandboxPadding.value)
+    sandboxPadding.value = v;
+    setRootVar('--st-sandbox-padding', sandboxPadding.value);
   }
 }
 function onSandboxPaddingRangeInput(e) {
-  sandboxPadding.value = Number(e.target.value)
-  setRootVar('--st-sandbox-padding', sandboxPadding.value)
+  sandboxPadding.value = Number(e.target.value);
+  setRootVar('--st-sandbox-padding', sandboxPadding.value);
 }
 function onSandboxRadiusNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 0 && v <= 32) {
-    sandboxRadius.value = v
-    setRootVar('--st-sandbox-radius', sandboxRadius.value)
+    sandboxRadius.value = v;
+    setRootVar('--st-sandbox-radius', sandboxRadius.value);
   }
 }
 function onSandboxRadiusRangeInput(e) {
-  sandboxRadius.value = Number(e.target.value)
-  setRootVar('--st-sandbox-radius', sandboxRadius.value)
+  sandboxRadius.value = Number(e.target.value);
+  setRootVar('--st-sandbox-radius', sandboxRadius.value);
 }
 
 // 不透明度（%→小数写 CSS）
 function onSandboxBgOpacityNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 0 && v <= 100) {
-    sandboxBgOpacityPct.value = v
-    setRootVarUnitless('--st-sandbox-bg-opacity', String(v / 100))
+    sandboxBgOpacityPct.value = v;
+    setRootVarUnitless('--st-sandbox-bg-opacity', String(v / 100));
   }
 }
 function onSandboxBgOpacityRangeInput(e) {
-  sandboxBgOpacityPct.value = Number(e.target.value)
-  setRootVarUnitless('--st-sandbox-bg-opacity', String(sandboxBgOpacityPct.value / 100))
+  sandboxBgOpacityPct.value = Number(e.target.value);
+  setRootVarUnitless('--st-sandbox-bg-opacity', String(sandboxBgOpacityPct.value / 100));
 }
 
 /* Blur handlers (px) */
 function onSandboxBgBlurNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 0 && v <= 50) {
-    sandboxBgBlurPx.value = v
-    setRootVar('--st-sandbox-bg-blur', v)
+    sandboxBgBlurPx.value = v;
+    setRootVar('--st-sandbox-bg-blur', v);
   }
 }
 function onSandboxBgBlurRangeInput(e) {
-  sandboxBgBlurPx.value = Number(e.target.value)
-  setRootVar('--st-sandbox-bg-blur', sandboxBgBlurPx.value)
+  sandboxBgBlurPx.value = Number(e.target.value);
+  setRootVar('--st-sandbox-bg-blur', sandboxBgBlurPx.value);
 }
 function onSandboxStageBgOpacityNumberInput(e) {
-  const v = Number(e.target.value)
+  const v = Number(e.target.value);
   if (v >= 0 && v <= 100) {
-    sandboxStageBgOpacityPct.value = v
-    setRootVarUnitless('--st-sandbox-stage-bg-opacity', String(v / 100))
+    sandboxStageBgOpacityPct.value = v;
+    setRootVarUnitless('--st-sandbox-stage-bg-opacity', String(v / 100));
   }
 }
 function onSandboxStageBgOpacityRangeInput(e) {
-  sandboxStageBgOpacityPct.value = Number(e.target.value)
-  setRootVarUnitless('--st-sandbox-stage-bg-opacity', String(sandboxStageBgOpacityPct.value / 100))
+  sandboxStageBgOpacityPct.value = Number(e.target.value);
+  setRootVarUnitless('--st-sandbox-stage-bg-opacity', String(sandboxStageBgOpacityPct.value / 100));
 }
 
 // Lifecycle: init + auto-save broadcast
-let __dispose = null
+let __dispose = null;
 onMounted(() => {
-  initFromCSS()
-  __dispose = startAutoSave({ intervalMs: 1000 })
+  initFromCSS();
+  __dispose = startAutoSave({ intervalMs: 1000 });
   // 实时保存并广播：切换显示模式即刻生效
   watch(
     sandboxDisplayModeSel,
     (v) => {
       try {
-        const snap = buildSnapshot()
+        const snap = buildSnapshot();
         // 确保写入最新选择
-        snap.sandboxDisplayModeSel = String(v)
-        saveSnapshotLS(snap)
-        window.dispatchEvent(new CustomEvent('stAppearanceSandboxUpdate', { detail: snap }))
+        snap.sandboxDisplayModeSel = String(v);
+        saveSnapshotLS(snap);
+        window.dispatchEvent(new CustomEvent('stAppearanceSandboxUpdate', { detail: snap }));
       } catch (_) {}
     },
     { immediate: true },
-  )
-})
+  );
+});
 onBeforeUnmount(() => {
-  if (typeof __dispose === 'function') __dispose()
-})
+  if (typeof __dispose === 'function') __dispose();
+});
 </script>
 
 <template>

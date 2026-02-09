@@ -1,17 +1,17 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import Host from '@/workflow/core/host'
-import { PluginLoader } from '@/workflow/loader.js'
-import DataCatalog from '@/services/dataCatalog'
-import ImportConflictModal from '@/components/common/ImportConflictModal.vue'
-import ImportErrorModal from '@/components/common/ImportErrorModal.vue'
-import ExportModal from '@/components/common/ExportModal.vue'
-import DeleteConfirmModal from '@/components/common/DeleteConfirmModal.vue'
-import ContentViewModal from '@/components/common/ContentViewModal.vue'
-import PluginDetailView from '@/components/content/PluginDetailView.vue'
-import { useI18n } from '@/locales'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import Host from '@/workflow/core/host';
+import { PluginLoader } from '@/workflow/loader.js';
+import DataCatalog from '@/services/dataCatalog';
+import ImportConflictModal from '@/components/common/ImportConflictModal.vue';
+import ImportErrorModal from '@/components/common/ImportErrorModal.vue';
+import ExportModal from '@/components/common/ExportModal.vue';
+import DeleteConfirmModal from '@/components/common/DeleteConfirmModal.vue';
+import ContentViewModal from '@/components/common/ContentViewModal.vue';
+import PluginDetailView from '@/components/content/PluginDetailView.vue';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   anchorLeft: { type: Number, default: 308 },
@@ -20,9 +20,9 @@ const props = defineProps({
   top: { type: Number, default: 64 },
   bottom: { type: Number, default: 12 },
   conversationFile: { type: String, default: null },
-})
+});
 
-const emit = defineEmits(['close', 'use', 'delete', 'import', 'export'])
+const emit = defineEmits(['close', 'use', 'delete', 'import', 'export']);
 
 const panelStyle = computed(() => ({
   position: 'fixed',
@@ -31,223 +31,223 @@ const panelStyle = computed(() => ({
   bottom: props.bottom + 'px',
   width: props.width + 'px',
   zIndex: String(props.zIndex),
-}))
+}));
 
 // 插件清单：从后端扫描 plugins
-const plugins = ref([])
+const plugins = ref([]);
 
 // 加载状态
-const loading = ref(true)
+const loading = ref(true);
 
 // 正在处理的条目（防止重复点击）
-const pending = ref({})
+const pending = ref({});
 
 // 导入相关状态
-const fileInputRef = ref(null)
-const importing = ref(false)
-const importError = ref(null)
-const pendingImportFile = ref(null)
+const fileInputRef = ref(null);
+const importing = ref(false);
+const importError = ref(null);
+const pendingImportFile = ref(null);
 
 // 导入冲突弹窗状态
-const showImportConflictModal = ref(false)
-const importConflictExistingName = ref('')
-const importConflictSuggestedName = ref('')
+const showImportConflictModal = ref(false);
+const importConflictExistingName = ref('');
+const importConflictSuggestedName = ref('');
 
 // 导出弹窗状态
-const showExportModal = ref(false)
+const showExportModal = ref(false);
 
 // 导入错误弹窗状态
-const showImportErrorModal = ref(false)
-const importErrorCode = ref('')
-const importErrorMessage = ref('')
-const importExpectedType = ref('')
-const importActualType = ref('')
+const showImportErrorModal = ref(false);
+const importErrorCode = ref('');
+const importErrorMessage = ref('');
+const importExpectedType = ref('');
+const importActualType = ref('');
 
 // 删除确认弹窗状态
-const showDeleteConfirmModal = ref(false)
-const deleteTarget = ref(null)
-const deleting = ref(false)
+const showDeleteConfirmModal = ref(false);
+const deleteTarget = ref(null);
+const deleting = ref(false);
 
 // 详情面板状态
-const showDetailModal = ref(false)
-const detailPlugin = ref(null)
-const detailPluginDir = ref('')
+const showDetailModal = ref(false);
+const detailPlugin = ref(null);
+const detailPluginDir = ref('');
 
 /** 规范化插件 ID：使用文件路径派生稳定 ID，便于 load/unload */
 function mkId(file) {
-  const safe = String(file || '').replace(/[^a-zA-Z0-9:_\-./]/g, '_')
-  return `plg:${safe}`
+  const safe = String(file || '').replace(/[^a-zA-Z0-9:_\-./]/g, '_');
+  return `plg:${safe}`;
 }
 
 /** 判断是否已加载（基于派生的 id） */
 function isLoaded(file) {
   try {
-    const id = mkId(file)
-    return PluginLoader?.has?.(id) === true
+    const id = mkId(file);
+    return PluginLoader?.has?.(id) === true;
   } catch (_) {
-    return false
+    return false;
   }
 }
 
 async function onUse(dir) {
-  const id = mkId(dir)
-  if (pending.value[id]) return
-  pending.value[id] = true
+  const id = mkId(dir);
+  if (pending.value[id]) return;
+  pending.value[id] = true;
   try {
-    await PluginLoader.loadPluginByDir(String(dir).replace(/\\/g, '/'), { id, replace: true })
-    Host.pushToast?.({ type: 'success', message: `已加载插件：${dir}`, timeout: 1800 })
-    emit('use', dir)
+    await PluginLoader.loadPluginByDir(String(dir).replace(/\\/g, '/'), { id, replace: true });
+    Host.pushToast?.({ type: 'success', message: `已加载插件：${dir}`, timeout: 1800 });
+    emit('use', dir);
   } catch (e) {
-    console.warn('[PluginsPanel] load plugin failed:', e)
-    Host.pushToast?.({ type: 'error', message: `加载失败：${e?.message || e}`, timeout: 2200 })
+    console.warn('[PluginsPanel] load plugin failed:', e);
+    Host.pushToast?.({ type: 'error', message: `加载失败：${e?.message || e}`, timeout: 2200 });
   } finally {
-    delete pending.value[id]
+    delete pending.value[id];
     nextTick(() => {
       try {
-        window?.lucide?.createIcons?.()
+        window?.lucide?.createIcons?.();
       } catch (_) {}
-    })
+    });
   }
 }
 
 async function onUnload(dir) {
-  const realId = mkId(dir)
-  if (pending.value[realId]) return
-  pending.value[realId] = true
+  const realId = mkId(dir);
+  if (pending.value[realId]) return;
+  pending.value[realId] = true;
   try {
-    const ok = await PluginLoader.unload(realId)
+    const ok = await PluginLoader.unload(realId);
     if (ok) {
-      Host.pushToast?.({ type: 'info', message: `已卸载插件：${dir}`, timeout: 1600 })
-      emit('delete', dir)
+      Host.pushToast?.({ type: 'info', message: `已卸载插件：${dir}`, timeout: 1600 });
+      emit('delete', dir);
     } else {
-      Host.pushToast?.({ type: 'warning', message: `未找到已加载的插件实例`, timeout: 1800 })
+      Host.pushToast?.({ type: 'warning', message: `未找到已加载的插件实例`, timeout: 1800 });
     }
   } catch (e) {
-    console.warn('[PluginsPanel] unload plugin failed:', e)
-    Host.pushToast?.({ type: 'error', message: `卸载失败：${e?.message || e}`, timeout: 2200 })
+    console.warn('[PluginsPanel] unload plugin failed:', e);
+    Host.pushToast?.({ type: 'error', message: `卸载失败：${e?.message || e}`, timeout: 2200 });
   } finally {
-    delete pending.value[realId]
+    delete pending.value[realId];
     nextTick(() => {
       try {
-        window?.lucide?.createIcons?.()
+        window?.lucide?.createIcons?.();
       } catch (_) {}
-    })
+    });
   }
 }
 
 function close() {
-  emit('close')
+  emit('close');
 }
 
 // ==================== 删除功能 ====================
 
 function onDeletePlugin(it) {
-  const dir = String(it?.dir || it?.key || '')
-  if (!dir) return
+  const dir = String(it?.dir || it?.key || '');
+  if (!dir) return;
 
   deleteTarget.value = {
     key: dir,
     name: it.name || getFolderName(dir),
     folderPath: dir,
-  }
-  showDeleteConfirmModal.value = true
+  };
+  showDeleteConfirmModal.value = true;
 }
 
 function closeDeleteConfirmModal() {
-  showDeleteConfirmModal.value = false
-  deleteTarget.value = null
+  showDeleteConfirmModal.value = false;
+  deleteTarget.value = null;
 }
 
 async function handleDeleteConfirm() {
-  if (!deleteTarget.value) return
+  if (!deleteTarget.value) return;
 
-  const dir = deleteTarget.value.key
-  const id = mkId(dir)
+  const dir = deleteTarget.value.key;
+  const id = mkId(dir);
 
-  deleting.value = true
+  deleting.value = true;
   try {
     // 先卸载插件（如果已加载）
     try {
-      await PluginLoader.unload(id)
+      await PluginLoader.unload(id);
     } catch (_) {
       // 忽略卸载错误
     }
 
     // 删除插件目录
-    const result = await DataCatalog.deleteDataFolder(deleteTarget.value.folderPath)
+    const result = await DataCatalog.deleteDataFolder(deleteTarget.value.folderPath);
     if (result.success) {
       // 刷新列表
-      await loadPlugins()
-      emit('delete', dir)
+      await loadPlugins();
+      emit('delete', dir);
       Host.pushToast?.({
         type: 'success',
         message: `已删除插件：${deleteTarget.value.name}`,
         timeout: 1800,
-      })
+      });
     } else {
       Host.pushToast?.({
         type: 'error',
         message: result.message || t('error.deleteFailed', { error: result.error || '' }),
         timeout: 2200,
-      })
+      });
     }
   } catch (err) {
-    console.error('[PluginsPanel] Delete error:', err)
+    console.error('[PluginsPanel] Delete error:', err);
     Host.pushToast?.({
       type: 'error',
       message: t('error.deleteFailed', { error: err.message || '' }),
       timeout: 2200,
-    })
+    });
   } finally {
-    deleting.value = false
-    closeDeleteConfirmModal()
+    deleting.value = false;
+    closeDeleteConfirmModal();
   }
 }
 
-const isLucide = (v) => typeof v === 'string' && /^[a-z\-]+$/.test(v)
+const isLucide = (v) => typeof v === 'string' && /^[a-z\-]+$/.test(v);
 
 // 从目录路径提取文件夹名称
 function getFolderName(dirPath) {
-  if (!dirPath) return ''
-  const parts = dirPath.split('/')
+  if (!dirPath) return '';
+  const parts = dirPath.split('/');
   // 插件目录的最后一部分就是文件夹名
-  return parts[parts.length - 1] || ''
+  return parts[parts.length - 1] || '';
 }
 
 // 拉取后端插件清单，并富化 icon（icon.png）
 async function loadPlugins() {
-  loading.value = true
+  loading.value = true;
   try {
-    const sw = await DataCatalog.getPluginsSwitch()
+    const sw = await DataCatalog.getPluginsSwitch();
     if (!Array.isArray(sw?.enabled)) {
       Host.pushToast?.({
         type: 'error',
         message: '缺失插件开关文件（plugins_switch.json）',
         timeout: 2800,
-      })
-      plugins.value = []
-      return
+      });
+      plugins.value = [];
+      return;
     }
-    const enabledArr = sw.enabled.map((x) => String(x))
-    const enabledSet = new Set(enabledArr)
+    const enabledArr = sw.enabled.map((x) => String(x));
+    const enabledSet = new Set(enabledArr);
 
-    const res = await DataCatalog.listPlugins() // backend: smarttavern/data_catalog/list_plugins
-    const arr = Array.isArray(res?.items) ? res.items : []
-    const errs = Array.isArray(res?.errors) ? res.errors : []
+    const res = await DataCatalog.listPlugins(); // backend: smarttavern/data_catalog/list_plugins
+    const arr = Array.isArray(res?.items) ? res.items : [];
+    const errs = Array.isArray(res?.errors) ? res.errors : [];
     for (const er of errs) {
       Host.pushToast?.({
         type: 'warning',
         message: `插件目录缺失：${er?.file || ''}`,
         timeout: 2600,
-      })
+      });
     }
 
     const items = await Promise.all(
       arr.map(async (it) => {
-        const dir = String(it.dir || '')
-        const name = it.name || dir.split('/').pop() || '未命名'
-        const desc = it.description || ''
-        const plugName = dir.split('/').pop() || dir
+        const dir = String(it.dir || '');
+        const name = it.name || dir.split('/').pop() || '未命名';
+        const desc = it.description || '';
+        const plugName = dir.split('/').pop() || dir;
         const obj = {
           key: dir,
           icon: 'puzzle',
@@ -256,58 +256,58 @@ async function loadPlugins() {
           dir,
           enabled: enabledSet === null ? true : enabledSet.has(plugName),
           avatarUrl: null,
-        }
+        };
         // 目录 -> icon.png
-        const iconPath = dir ? `${dir}/icon.png` : ''
+        const iconPath = dir ? `${dir}/icon.png` : '';
         if (iconPath) {
           try {
-            const { blob } = await DataCatalog.getPluginsAssetBlob(iconPath)
-            obj.avatarUrl = URL.createObjectURL(blob)
+            const { blob } = await DataCatalog.getPluginsAssetBlob(iconPath);
+            obj.avatarUrl = URL.createObjectURL(blob);
           } catch (_) {
             // ignore; fallback emoji/lucide
           }
         }
-        return obj
+        return obj;
       }),
-    )
-    plugins.value = items
+    );
+    plugins.value = items;
   } catch (e) {
-    console.warn('[PluginsPanel] loadPlugins failed:', e)
+    console.warn('[PluginsPanel] loadPlugins failed:', e);
   } finally {
-    loading.value = false
+    loading.value = false;
     nextTick(() => {
       try {
-        window?.lucide?.createIcons?.()
+        window?.lucide?.createIcons?.();
       } catch (_) {}
-    })
+    });
   }
 }
 
 // Transition 完成后初始化图标
 function handleTransitionComplete() {
   try {
-    window?.lucide?.createIcons?.()
+    window?.lucide?.createIcons?.();
   } catch (_) {}
 }
 
 onMounted(async () => {
-  await loadPlugins()
+  await loadPlugins();
   // 初次渲染后刷新图标
   setTimeout(() => {
     try {
-      window?.lucide?.createIcons?.()
+      window?.lucide?.createIcons?.();
     } catch (_) {}
-  }, 50)
-})
-onUnmounted(() => {})
+  }, 50);
+});
+onUnmounted(() => {});
 async function onToggle(it) {
-  const dir = String(it?.dir || it?.key || '')
-  if (!dir) return
-  const id = mkId(dir)
-  if (pending.value[id]) return
-  pending.value[id] = true
+  const dir = String(it?.dir || it?.key || '');
+  if (!dir) return;
+  const id = mkId(dir);
+  if (pending.value[id]) return;
+  pending.value[id] = true;
 
-  const name = dir.split('/').pop() || dir
+  const name = dir.split('/').pop() || dir;
   const allNames = (plugins.value || []).map(
     (x) =>
       String(x.dir || x.key || '')
@@ -315,235 +315,235 @@ async function onToggle(it) {
         .pop() ||
       x.name ||
       '',
-  )
+  );
   try {
     // 严格开关模式：必须存在并返回 enabled 数组
-    const sw = await DataCatalog.getPluginsSwitch()
+    const sw = await DataCatalog.getPluginsSwitch();
     if (!Array.isArray(sw?.enabled)) {
       Host.pushToast?.({
         type: 'error',
         message: '缺失插件开关文件（plugins_switch.json）',
         timeout: 2800,
-      })
-      return
+      });
+      return;
     }
-    const set = new Set(sw.enabled.map((x) => String(x)))
+    const set = new Set(sw.enabled.map((x) => String(x)));
 
-    let nextEnabled = []
+    let nextEnabled = [];
     if (it.enabled) {
       // 禁用：从 enabled 删除
-      set.delete(name)
-      nextEnabled = Array.from(set)
-      const nextDisabled = allNames.filter((n) => nextEnabled.indexOf(n) === -1)
-      await DataCatalog.updatePluginsSwitch({ enabled: nextEnabled, disabled: nextDisabled })
-      await PluginLoader.unload(id)
-      it.enabled = false
-      Host.pushToast?.({ type: 'info', message: `已禁用插件：${name}`, timeout: 1600 })
+      set.delete(name);
+      nextEnabled = Array.from(set);
+      const nextDisabled = allNames.filter((n) => nextEnabled.indexOf(n) === -1);
+      await DataCatalog.updatePluginsSwitch({ enabled: nextEnabled, disabled: nextDisabled });
+      await PluginLoader.unload(id);
+      it.enabled = false;
+      Host.pushToast?.({ type: 'info', message: `已禁用插件：${name}`, timeout: 1600 });
     } else {
       // 启用：添加到 enabled
-      set.add(name)
-      nextEnabled = Array.from(set)
-      const nextDisabled = allNames.filter((n) => nextEnabled.indexOf(n) === -1)
-      await DataCatalog.updatePluginsSwitch({ enabled: nextEnabled, disabled: nextDisabled })
-      await PluginLoader.loadPluginByDir(dir, { id, replace: true })
-      it.enabled = true
-      Host.pushToast?.({ type: 'success', message: `已启用插件：${name}`, timeout: 1600 })
+      set.add(name);
+      nextEnabled = Array.from(set);
+      const nextDisabled = allNames.filter((n) => nextEnabled.indexOf(n) === -1);
+      await DataCatalog.updatePluginsSwitch({ enabled: nextEnabled, disabled: nextDisabled });
+      await PluginLoader.loadPluginByDir(dir, { id, replace: true });
+      it.enabled = true;
+      Host.pushToast?.({ type: 'success', message: `已启用插件：${name}`, timeout: 1600 });
     }
   } catch (e) {
-    console.warn('[PluginsPanel] toggle failed:', e)
-    Host.pushToast?.({ type: 'error', message: `操作失败：${e?.message || e}`, timeout: 2200 })
+    console.warn('[PluginsPanel] toggle failed:', e);
+    Host.pushToast?.({ type: 'error', message: `操作失败：${e?.message || e}`, timeout: 2200 });
   } finally {
-    delete pending.value[id]
+    delete pending.value[id];
     nextTick(() => {
       try {
-        window?.lucide?.createIcons?.()
+        window?.lucide?.createIcons?.();
       } catch (_) {}
-    })
+    });
   }
 }
 
 // ==================== 导入功能 ====================
 
 function triggerImport() {
-  importError.value = null
-  if (fileInputRef.value) fileInputRef.value.click()
+  importError.value = null;
+  if (fileInputRef.value) fileInputRef.value.click();
 }
 
 function extractPluginName(filename) {
-  return filename.replace(/\.(json|zip|png)$/i, '')
+  return filename.replace(/\.(json|zip|png)$/i, '');
 }
 
 async function handleFileSelect(event) {
-  const files = event.target.files
-  if (!files || files.length === 0) return
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
 
-  const file = files[0]
-  const validTypes = ['.json', '.zip', '.png']
-  const ext = '.' + (file.name.split('.').pop() || '').toLowerCase()
+  const file = files[0];
+  const validTypes = ['.json', '.zip', '.png'];
+  const ext = '.' + (file.name.split('.').pop() || '').toLowerCase();
   if (!validTypes.includes(ext)) {
-    importError.value = t('error.invalidFileType', { ext })
-    event.target.value = ''
-    return
+    importError.value = t('error.invalidFileType', { ext });
+    event.target.value = '';
+    return;
   }
 
   // 直接调用导入，后端会处理名称冲突检测
-  await doImport(file, false)
-  event.target.value = ''
+  await doImport(file, false);
+  event.target.value = '';
 }
 
 async function doImport(file, overwrite = false, targetName = null) {
-  importing.value = true
-  importError.value = null
+  importing.value = true;
+  importError.value = null;
 
   try {
-    const result = await DataCatalog.importDataFromFile('plugin', file, targetName, overwrite)
+    const result = await DataCatalog.importDataFromFile('plugin', file, targetName, overwrite);
     if (result.success) {
       // 刷新插件列表
-      await loadPlugins()
+      await loadPlugins();
 
       // 如果插件已注册，自动加载
       if (result.registered) {
-        const pluginDir = `backend_projects/SmartTavern/plugins/${result.folder}`
-        const id = mkId(pluginDir)
+        const pluginDir = `backend_projects/SmartTavern/plugins/${result.folder}`;
+        const id = mkId(pluginDir);
         try {
-          await PluginLoader.loadPluginByDir(pluginDir, { id, replace: true })
+          await PluginLoader.loadPluginByDir(pluginDir, { id, replace: true });
           Host.pushToast?.({
             type: 'success',
             message: t('toast.plugin.importedAndEnabled', { name: result.name }),
             timeout: 2000,
-          })
+          });
         } catch (e) {
-          console.warn('[PluginsPanel] Auto load plugin failed:', e)
+          console.warn('[PluginsPanel] Auto load plugin failed:', e);
           Host.pushToast?.({
             type: 'warning',
             message: t('toast.plugin.importAutoLoadFailed', { error: e?.message || e }),
             timeout: 2800,
-          })
+          });
         }
       } else {
         Host.pushToast?.({
           type: 'success',
           message: t('toast.plugin.imported', { name: result.name }),
           timeout: 1800,
-        })
+        });
       }
 
-      emit('import', result)
+      emit('import', result);
     } else {
       // 检查是否是需要显示专用弹窗的错误
-      const errorCode = result.error || ''
+      const errorCode = result.error || '';
       if (errorCode === 'NAME_EXISTS') {
         // 名称冲突，显示冲突弹窗
-        openImportConflictModal(file, result.folder_name, result.suggested_name)
+        openImportConflictModal(file, result.folder_name, result.suggested_name);
       } else if (
         errorCode === 'TYPE_MISMATCH' ||
         errorCode === 'NO_TYPE_INFO' ||
         errorCode === 'NO_TYPE_IN_FILENAME'
       ) {
-        openImportErrorModal(errorCode, result.message, result.expected_type, result.actual_type)
+        openImportErrorModal(errorCode, result.message, result.expected_type, result.actual_type);
       } else {
-        importError.value = result.message || result.error || t('error.importFailed')
+        importError.value = result.message || result.error || t('error.importFailed');
       }
     }
   } catch (err) {
-    console.error('[PluginsPanel] Import error:', err)
-    importError.value = err.message || t('error.importFailed')
+    console.error('[PluginsPanel] Import error:', err);
+    importError.value = err.message || t('error.importFailed');
   } finally {
-    importing.value = false
+    importing.value = false;
   }
 }
 
 // 打开导入错误弹窗
 function openImportErrorModal(code, message, expected, actual) {
-  importErrorCode.value = code
-  importErrorMessage.value = message || ''
-  importExpectedType.value = expected || 'plugin'
-  importActualType.value = actual || ''
-  showImportErrorModal.value = true
+  importErrorCode.value = code;
+  importErrorMessage.value = message || '';
+  importExpectedType.value = expected || 'plugin';
+  importActualType.value = actual || '';
+  showImportErrorModal.value = true;
 }
 
 // 关闭导入错误弹窗
 function closeImportErrorModal() {
-  showImportErrorModal.value = false
+  showImportErrorModal.value = false;
 }
 
 function openImportConflictModal(file, existingName, suggestedName) {
-  pendingImportFile.value = file
-  importConflictExistingName.value = existingName
-  importConflictSuggestedName.value = suggestedName
-  showImportConflictModal.value = true
+  pendingImportFile.value = file;
+  importConflictExistingName.value = existingName;
+  importConflictSuggestedName.value = suggestedName;
+  showImportConflictModal.value = true;
 }
 
 function closeImportConflictModal() {
-  showImportConflictModal.value = false
-  pendingImportFile.value = null
+  showImportConflictModal.value = false;
+  pendingImportFile.value = null;
 }
 
 async function handleConflictOverwrite() {
-  const file = pendingImportFile.value
-  closeImportConflictModal()
-  if (file) await doImport(file, true)
+  const file = pendingImportFile.value;
+  closeImportConflictModal();
+  if (file) await doImport(file, true);
 }
 
 async function handleConflictRename(targetName) {
-  const file = pendingImportFile.value
-  closeImportConflictModal()
-  if (file) await doImport(file, false, targetName)
+  const file = pendingImportFile.value;
+  closeImportConflictModal();
+  if (file) await doImport(file, false, targetName);
 }
 
 // ==================== 导出功能 ====================
 
 function openExportModal() {
-  showExportModal.value = true
+  showExportModal.value = true;
 }
 
 function closeExportModal() {
-  showExportModal.value = false
+  showExportModal.value = false;
 }
 
 function handleExportComplete(result) {
-  emit('export', result)
+  emit('export', result);
 }
 
 // ==================== 详情面板功能 ====================
 
 async function onViewPlugin(it) {
-  const dir = String(it?.dir || it?.key || '')
-  if (!dir) return
+  const dir = String(it?.dir || it?.key || '');
+  if (!dir) return;
 
   try {
-    const result = await DataCatalog.getPluginDetail(dir)
+    const result = await DataCatalog.getPluginDetail(dir);
     if (result.error) {
       Host.pushToast?.({
         type: 'error',
         message: `获取插件详情失败：${result.message || result.error}`,
         timeout: 2200,
-      })
-      return
+      });
+      return;
     }
 
-    detailPlugin.value = result.content || {}
-    detailPluginDir.value = dir
-    showDetailModal.value = true
+    detailPlugin.value = result.content || {};
+    detailPluginDir.value = dir;
+    showDetailModal.value = true;
   } catch (err) {
-    console.error('[PluginsPanel] Get plugin detail error:', err)
+    console.error('[PluginsPanel] Get plugin detail error:', err);
     Host.pushToast?.({
       type: 'error',
       message: `获取插件详情失败：${err.message || err}`,
       timeout: 2200,
-    })
+    });
   }
 }
 
 function closeDetailModal() {
-  showDetailModal.value = false
-  detailPlugin.value = null
-  detailPluginDir.value = ''
+  showDetailModal.value = false;
+  detailPlugin.value = null;
+  detailPluginDir.value = '';
 }
 
 function handlePluginSaved(payload) {
-  console.log('[PluginsPanel] Plugin saved, refreshing list')
-  loadPlugins()
+  console.log('[PluginsPanel] Plugin saved, refreshing list');
+  loadPlugins();
 }
 </script>
 

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useI18n } from '@/locales'
-import StylesService from '@/services/stylesService'
-import BackgroundsManager from '@/features/backgrounds/manager'
-import type { PageName, Orientation } from '@/services/backgroundsService'
+import { ref, onMounted } from 'vue';
+import { useI18n } from '@/locales';
+import StylesService from '@/services/stylesService';
+import BackgroundsManager from '@/features/backgrounds/manager';
+import type { PageName, Orientation } from '@/services/backgroundsService';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 /**
  * 背景图片管理（横版/竖版分别管理）
@@ -15,17 +15,17 @@ const { t } = useI18n()
  */
 
 interface BackgroundInfo {
-  file: string | null
-  hash: string | null
-  size: number
-  preview: string | null
+  file: string | null;
+  hash: string | null;
+  size: number;
+  preview: string | null;
 }
 
 interface BackgroundState {
-  landscape: Record<PageName, BackgroundInfo>
-  portrait: Record<PageName, BackgroundInfo>
-  loading: boolean
-  uploading: Record<string, boolean>
+  landscape: Record<PageName, BackgroundInfo>;
+  portrait: Record<PageName, BackgroundInfo>;
+  loading: boolean;
+  uploading: Record<string, boolean>;
 }
 
 const state = ref<BackgroundState>({
@@ -41,37 +41,37 @@ const state = ref<BackgroundState>({
   },
   loading: true,
   uploading: {},
-})
+});
 
 const pages: Array<{ key: PageName; labelKey: string }> = [
   { key: 'HomePage', labelKey: 'appearance.backgrounds.startPage' },
   { key: 'ThreadedChat', labelKey: 'appearance.backgrounds.threadedPage' },
   { key: 'SandboxChat', labelKey: 'appearance.backgrounds.sandboxPage' },
-]
+];
 
 /**
  * 从持久化缓存加载图片
  */
 async function loadImageFromCache(hash: string): Promise<string | null> {
   try {
-    const cached = localStorage.getItem(`st:bg:${hash}`)
+    const cached = localStorage.getItem(`st:bg:${hash}`);
     if (cached) {
       // 验证缓存的 blob URL 是否仍然有效
       try {
-        const response = await fetch(cached)
+        const response = await fetch(cached);
         if (response.ok) {
-          console.info(`[BackgroundsManager] Using cached blob URL for hash: ${hash}`)
-          return cached
+          console.info(`[BackgroundsManager] Using cached blob URL for hash: ${hash}`);
+          return cached;
         }
       } catch {
         // blob URL 已失效，清除缓存
-        localStorage.removeItem(`st:bg:${hash}`)
+        localStorage.removeItem(`st:bg:${hash}`);
       }
     }
   } catch (err) {
-    console.warn(`[BackgroundsManager] Failed to load from cache:`, err)
+    console.warn(`[BackgroundsManager] Failed to load from cache:`, err);
   }
-  return null
+  return null;
 }
 
 /**
@@ -79,10 +79,10 @@ async function loadImageFromCache(hash: string): Promise<string | null> {
  */
 function saveImageToCache(hash: string, blobUrl: string): void {
   try {
-    localStorage.setItem(`st:bg:${hash}`, blobUrl)
-    console.info(`[BackgroundsManager] Saved to cache: ${hash}`)
+    localStorage.setItem(`st:bg:${hash}`, blobUrl);
+    console.info(`[BackgroundsManager] Saved to cache: ${hash}`);
   } catch (err) {
-    console.warn(`[BackgroundsManager] Failed to save to cache:`, err)
+    console.warn(`[BackgroundsManager] Failed to save to cache:`, err);
   }
 }
 
@@ -90,42 +90,42 @@ function saveImageToCache(hash: string, blobUrl: string): void {
  * 加载背景图片信息（优化版：先获取哈希，再决定是否下载）
  */
 async function loadBackgrounds(): Promise<void> {
-  state.value.loading = true
+  state.value.loading = true;
   try {
     // 步骤1：获取所有背景图片的哈希值
-    const hashResponse = await StylesService.getPageBackgroundsHash()
+    const hashResponse = await StylesService.getPageBackgroundsHash();
 
     // 步骤2：加载横版预览
     for (const page of pages) {
-      const hash = hashResponse.landscape?.[page.key]
+      const hash = hashResponse.landscape?.[page.key];
       if (hash) {
         // 先尝试从缓存加载
-        const cachedUrl = await loadImageFromCache(hash)
+        const cachedUrl = await loadImageFromCache(hash);
         if (cachedUrl) {
           state.value.landscape[page.key] = {
             file: `${page.key}_landscape.png`,
             hash,
             size: 0,
             preview: cachedUrl,
-          }
-          console.info(`[BackgroundsManager] Loaded landscape from cache: ${page.key} (${hash})`)
+          };
+          console.info(`[BackgroundsManager] Loaded landscape from cache: ${page.key} (${hash})`);
         } else {
           // 缓存未命中，从后端下载
           try {
-            const { blob, size } = await StylesService.getPageBackgroundBlob(page.key, 'landscape')
-            const url = URL.createObjectURL(blob)
+            const { blob, size } = await StylesService.getPageBackgroundBlob(page.key, 'landscape');
+            const url = URL.createObjectURL(blob);
             state.value.landscape[page.key] = {
               file: `${page.key}_landscape.png`,
               hash,
               size,
               preview: url,
-            }
-            saveImageToCache(hash, url)
+            };
+            saveImageToCache(hash, url);
             console.info(
               `[BackgroundsManager] Downloaded and cached landscape: ${page.key} (${hash})`,
-            )
+            );
           } catch (err) {
-            console.warn(`[BackgroundsManager] Failed to load landscape: ${page.key}`, err)
+            console.warn(`[BackgroundsManager] Failed to load landscape: ${page.key}`, err);
           }
         }
       }
@@ -133,43 +133,43 @@ async function loadBackgrounds(): Promise<void> {
 
     // 步骤3：加载竖版预览
     for (const page of pages) {
-      const hash = hashResponse.portrait?.[page.key]
+      const hash = hashResponse.portrait?.[page.key];
       if (hash) {
         // 先尝试从缓存加载
-        const cachedUrl = await loadImageFromCache(hash)
+        const cachedUrl = await loadImageFromCache(hash);
         if (cachedUrl) {
           state.value.portrait[page.key] = {
             file: `${page.key}_portrait.png`,
             hash,
             size: 0,
             preview: cachedUrl,
-          }
-          console.info(`[BackgroundsManager] Loaded portrait from cache: ${page.key} (${hash})`)
+          };
+          console.info(`[BackgroundsManager] Loaded portrait from cache: ${page.key} (${hash})`);
         } else {
           // 缓存未命中，从后端下载
           try {
-            const { blob, size } = await StylesService.getPageBackgroundBlob(page.key, 'portrait')
-            const url = URL.createObjectURL(blob)
+            const { blob, size } = await StylesService.getPageBackgroundBlob(page.key, 'portrait');
+            const url = URL.createObjectURL(blob);
             state.value.portrait[page.key] = {
               file: `${page.key}_portrait.png`,
               hash,
               size,
               preview: url,
-            }
-            saveImageToCache(hash, url)
+            };
+            saveImageToCache(hash, url);
             console.info(
               `[BackgroundsManager] Downloaded and cached portrait: ${page.key} (${hash})`,
-            )
+            );
           } catch (err) {
-            console.warn(`[BackgroundsManager] Failed to load portrait: ${page.key}`, err)
+            console.warn(`[BackgroundsManager] Failed to load portrait: ${page.key}`, err);
           }
         }
       }
     }
   } catch (err) {
-    console.error('[BackgroundsManager] Failed to load backgrounds:', err)
+    console.error('[BackgroundsManager] Failed to load backgrounds:', err);
   } finally {
-    state.value.loading = false
+    state.value.loading = false;
   }
 }
 
@@ -177,21 +177,21 @@ async function loadBackgrounds(): Promise<void> {
  * 上传背景图片
  */
 async function onFileChange(page: PageName, orientation: Orientation, event: Event): Promise<void> {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
 
-  const uploadKey = `${page}-${orientation}`
-  state.value.uploading[uploadKey] = true
+  const uploadKey = `${page}-${orientation}`;
+  state.value.uploading[uploadKey] = true;
 
   try {
-    const result = await StylesService.uploadPageBackgroundFromFile(page, orientation, file)
+    const result = await StylesService.uploadPageBackgroundFromFile(page, orientation, file);
 
     if (!result.success) {
-      throw new Error(result.error || result.message || '上传失败')
+      throw new Error(result.error || result.message || '上传失败');
     }
 
-    console.info(`[BackgroundsManager] Uploaded ${page} (${orientation}):`, result)
+    console.info(`[BackgroundsManager] Uploaded ${page} (${orientation}):`, result);
 
     // 更新状态并加载预览
     state.value[orientation][page] = {
@@ -199,33 +199,33 @@ async function onFileChange(page: PageName, orientation: Orientation, event: Eve
       hash: result.hash,
       size: result.size,
       preview: null,
-    }
+    };
 
     // 上传后重新加载该图片（使用哈希校验）
     if (result.hash) {
       try {
-        const { blob } = await StylesService.getPageBackgroundBlob(page, orientation)
-        const url = URL.createObjectURL(blob)
-        state.value[orientation][page].preview = url
-        saveImageToCache(result.hash, url)
+        const { blob } = await StylesService.getPageBackgroundBlob(page, orientation);
+        const url = URL.createObjectURL(blob);
+        state.value[orientation][page].preview = url;
+        saveImageToCache(result.hash, url);
         console.info(
           `[BackgroundsManager] Uploaded and cached: ${page} (${orientation}, hash: ${result.hash})`,
-        )
+        );
       } catch (err) {
-        console.warn(`[BackgroundsManager] Failed to load preview after upload:`, err)
+        console.warn(`[BackgroundsManager] Failed to load preview after upload:`, err);
       }
     }
 
     // 刷新背景管理器（使新背景生效）
-    await BackgroundsManager.refresh()
+    await BackgroundsManager.refresh();
 
     // 清空输入框
-    input.value = ''
+    input.value = '';
   } catch (err) {
-    console.error(`[BackgroundsManager] Failed to upload ${page} (${orientation}):`, err)
-    alert(`上传失败: ${err}`)
+    console.error(`[BackgroundsManager] Failed to upload ${page} (${orientation}):`, err);
+    alert(`上传失败: ${err}`);
   } finally {
-    state.value.uploading[uploadKey] = false
+    state.value.uploading[uploadKey] = false;
   }
 }
 
@@ -233,14 +233,14 @@ async function onFileChange(page: PageName, orientation: Orientation, event: Eve
  * 格式化文件大小
  */
 function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 onMounted(() => {
-  loadBackgrounds()
-})
+  loadBackgrounds();
+});
 </script>
 
 <template>

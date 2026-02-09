@@ -1,112 +1,112 @@
 <script setup>
-import { ref, watch, nextTick, onBeforeUnmount, computed } from 'vue'
-import ContentViewModal from '@/components/common/ContentViewModal.vue'
-import Host from '@/workflow/core/host'
-import * as Catalog from '@/workflow/channels/catalog'
-import * as Conversation from '@/workflow/channels/conversation'
-import { useI18n } from '@/locales'
+import { ref, watch, nextTick, onBeforeUnmount, computed } from 'vue';
+import ContentViewModal from '@/components/common/ContentViewModal.vue';
+import Host from '@/workflow/core/host';
+import * as Catalog from '@/workflow/channels/catalog';
+import * as Conversation from '@/workflow/channels/conversation';
+import { useI18n } from '@/locales';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   show: { type: Boolean, default: false },
   title: { type: String, default: '' },
   icon: { type: String, default: '' },
-})
+});
 
-const effectiveTitle = computed(() => props.title || t('home.newChat.title'))
+const effectiveTitle = computed(() => props.title || t('home.newChat.title'));
 
-const emit = defineEmits(['update:show', 'confirm', 'close'])
+const emit = defineEmits(['update:show', 'confirm', 'close']);
 
-const newChatName = ref('')
-const newChatDesc = ref('')
-const nameReplaced = ref(false)
-const newChatType = ref('threaded') // 'threaded' | 'sandbox'
+const newChatName = ref('');
+const newChatDesc = ref('');
+const nameReplaced = ref(false);
+const newChatType = ref('threaded'); // 'threaded' | 'sandbox'
 
 // 已存在的对话：文件基名（不含扩展名）与内部 name
-const existingFileBases = ref(new Set())
-const existingTitles = ref(new Set())
+const existingFileBases = ref(new Set());
+const existingTitles = ref(new Set());
 
 // 重名检测状态
-const nameDupByFile = ref(false)
-const nameDupByTitle = ref(false)
+const nameDupByFile = ref(false);
+const nameDupByTitle = ref(false);
 
 // 下拉选项（运行时从后端装载）
-const presetOptions = ref([])
-const characterOptionsRaw = ref([]) // 原始角色卡列表
-const personaOptions = ref([])
-const regexOptions = ref([])
-const worldbookOptions = ref([])
-const llmConfigOptions = ref([])
+const presetOptions = ref([]);
+const characterOptionsRaw = ref([]); // 原始角色卡列表
+const personaOptions = ref([]);
+const regexOptions = ref([]);
+const worldbookOptions = ref([]);
+const llmConfigOptions = ref([]);
 
 // 根据对话类型筛选角色卡列表
 const characterOptions = computed(() => {
-  if (!newChatType.value) return characterOptionsRaw.value
+  if (!newChatType.value) return characterOptionsRaw.value;
 
   // 筛选匹配当前对话类型的角色卡
   return characterOptionsRaw.value.filter((opt) => {
     // 如果角色卡没有type字段，视为兼容所有类型
-    if (!opt.type) return true
+    if (!opt.type) return true;
     // 如果type匹配当前选择的对话类型，则显示
-    return opt.type === newChatType.value
-  })
-})
+    return opt.type === newChatType.value;
+  });
+});
 
-const selectedPreset = ref('')
-const selectedCharacter = ref('')
-const selectedPersona = ref('')
-const selectedRegex = ref('')
-const selectedWorldbook = ref('')
-const selectedLLMConfig = ref('')
+const selectedPreset = ref('');
+const selectedCharacter = ref('');
+const selectedPersona = ref('');
+const selectedRegex = ref('');
+const selectedWorldbook = ref('');
+const selectedLLMConfig = ref('');
 
 // 监听对话类型变化，清空不匹配的角色卡选择
 watch(newChatType, (newType) => {
-  if (!selectedCharacter.value) return
+  if (!selectedCharacter.value) return;
 
   // 检查当前选择的角色卡是否匹配新的对话类型
-  const currentChar = characterOptionsRaw.value.find((opt) => opt.file === selectedCharacter.value)
+  const currentChar = characterOptionsRaw.value.find((opt) => opt.file === selectedCharacter.value);
   if (currentChar && currentChar.type && currentChar.type !== newType) {
     // 如果角色卡类型与新选择的对话类型不匹配，清空角色卡选择
-    selectedCharacter.value = ''
+    selectedCharacter.value = '';
   }
-})
+});
 
 // 加载与提交状态
-const loadingLists = ref(false)
-const submitting = ref(false)
-const fetchError = ref('')
-const newGameError = ref('')
+const loadingLists = ref(false);
+const submitting = ref(false);
+const fetchError = ref('');
+const newGameError = ref('');
 
 // 事件监听清理器
-const __eventOffs = []
+const __eventOffs = [];
 
 onBeforeUnmount(() => {
   try {
     __eventOffs?.forEach((fn) => {
       try {
-        fn?.()
+        fn?.();
       } catch (_) {}
-    })
-    __eventOffs.length = 0
+    });
+    __eventOffs.length = 0;
   } catch (_) {}
-})
+});
 
 function resetForm() {
-  newChatName.value = ''
-  newChatDesc.value = ''
-  newChatType.value = 'threaded'
-  selectedPreset.value = ''
-  selectedCharacter.value = ''
-  selectedPersona.value = ''
-  selectedRegex.value = ''
-  selectedWorldbook.value = ''
-  selectedLLMConfig.value = ''
-  newGameError.value = ''
-  fetchError.value = ''
-  existingFileBases.value = new Set()
-  existingTitles.value = new Set()
-  nameDupByFile.value = false
-  nameDupByTitle.value = false
+  newChatName.value = '';
+  newChatDesc.value = '';
+  newChatType.value = 'threaded';
+  selectedPreset.value = '';
+  selectedCharacter.value = '';
+  selectedPersona.value = '';
+  selectedRegex.value = '';
+  selectedWorldbook.value = '';
+  selectedLLMConfig.value = '';
+  newGameError.value = '';
+  fetchError.value = '';
+  existingFileBases.value = new Set();
+  existingTitles.value = new Set();
+  nameDupByFile.value = false;
+  nameDupByTitle.value = false;
 }
 
 /**
@@ -114,42 +114,42 @@ function resetForm() {
  * 其余字符保留，后端仍做最终安全处理与唯一化
  */
 function toFileBase(n) {
-  const s = String(n ?? '')
+  const s = String(n ?? '');
   return s
     .replace(/[\\/:*?"<>|]/g, '-')
     .replace(/[ \.]+$/g, '')
-    .trim()
+    .trim();
 }
 function validateName(n) {
-  const base = toFileBase(n)
-  nameDupByFile.value = !!base && existingFileBases.value?.has(base)
-  const title = String(n ?? '').trim()
-  nameDupByTitle.value = !!title && existingTitles.value?.has(title)
+  const base = toFileBase(n);
+  nameDupByFile.value = !!base && existingFileBases.value?.has(base);
+  const title = String(n ?? '').trim();
+  nameDupByTitle.value = !!title && existingTitles.value?.has(title);
 }
 
 watch(newChatName, (v) => {
-  if (v == null) return
-  const s = String(v)
+  if (v == null) return;
+  const s = String(v);
   // 替换不允许字符，并去掉结尾的空格/点，避免路径问题
   const nv = s
     .replace(/[\\/:*?"<>|]/g, '-') // 特殊字符 → “-”
-    .replace(/[ \.]+$/g, '') // 结尾空格与点移除
-  nameReplaced.value = nv !== s
-  if (nv !== s) newChatName.value = nv
-  validateName(newChatName.value)
-})
+    .replace(/[ \.]+$/g, ''); // 结尾空格与点移除
+  nameReplaced.value = nv !== s;
+  if (nv !== s) newChatName.value = nv;
+  validateName(newChatName.value);
+});
 
 function baseName(file) {
-  const s = String(file || '')
-  const i = s.lastIndexOf('/')
-  return i >= 0 ? s.slice(i + 1) : s
+  const s = String(file || '');
+  const i = s.lastIndexOf('/');
+  return i >= 0 ? s.slice(i + 1) : s;
 }
 
 async function loadLists() {
-  loadingLists.value = true
-  fetchError.value = ''
+  loadingLists.value = true;
+  fetchError.value = '';
 
-  const tag = `load_lists_${Date.now()}`
+  const tag = `load_lists_${Date.now()}`;
 
   // 用于收集各类型数据
   const results = {
@@ -160,174 +160,178 @@ async function loadLists() {
     worlds: null,
     llmConfigs: null,
     convs: null,
-  }
+  };
 
-  let completed = 0
-  const total = 7
+  let completed = 0;
+  const total = 7;
 
   const checkComplete = () => {
     if (completed >= total) {
       try {
         const mapOpts = (res, required, placeholder) => {
-          const items = Array.isArray(res?.items) ? res.items : []
+          const items = Array.isArray(res?.items) ? res.items : [];
           const opts = items.map((it) => ({
             value: it.file,
             label: it.name || baseName(it.file),
             file: it.file,
             type: it.type || null, // 保留type字段（角色卡类型）
-          }))
-          const head = { value: '', label: placeholder, file: '', type: null }
+          }));
+          const head = { value: '', label: placeholder, file: '', type: null };
           return required
             ? [head, ...opts]
-            : [{ value: '', label: t('home.newChat.optional'), file: '', type: null }, ...opts]
-        }
+            : [{ value: '', label: t('home.newChat.optional'), file: '', type: null }, ...opts];
+        };
 
         llmConfigOptions.value = mapOpts(
           results.llmConfigs,
           true,
           t('home.newChat.llmConfigPlaceholder'),
-        )
-        presetOptions.value = mapOpts(results.presets, true, t('home.newChat.presetPlaceholder'))
+        );
+        presetOptions.value = mapOpts(results.presets, true, t('home.newChat.presetPlaceholder'));
         characterOptionsRaw.value = mapOpts(
           results.chars,
           true,
           t('home.newChat.characterPlaceholder'),
-        )
-        personaOptions.value = mapOpts(results.personas, true, t('home.newChat.personaPlaceholder'))
-        regexOptions.value = mapOpts(results.regex, false, t('home.newChat.optional'))
-        worldbookOptions.value = mapOpts(results.worlds, false, t('home.newChat.optional'))
+        );
+        personaOptions.value = mapOpts(
+          results.personas,
+          true,
+          t('home.newChat.personaPlaceholder'),
+        );
+        regexOptions.value = mapOpts(results.regex, false, t('home.newChat.optional'));
+        worldbookOptions.value = mapOpts(results.worlds, false, t('home.newChat.optional'));
 
         // 组装重名检测集合
-        const bases = new Set()
-        const titles = new Set()
-        const convItems = Array.isArray(results.convs?.items) ? results.convs.items : []
+        const bases = new Set();
+        const titles = new Set();
+        const convItems = Array.isArray(results.convs?.items) ? results.convs.items : [];
         convItems.forEach((it) => {
-          const f = String(it?.file || '')
-          const bn = baseName(f).replace(/\.json$/i, '')
-          if (bn) bases.add(bn)
-          const nm = (it?.name ?? '').trim()
-          if (nm) titles.add(nm)
-        })
-        existingFileBases.value = bases
-        existingTitles.value = titles
-        validateName(newChatName.value)
+          const f = String(it?.file || '');
+          const bn = baseName(f).replace(/\.json$/i, '');
+          if (bn) bases.add(bn);
+          const nm = (it?.name ?? '').trim();
+          if (nm) titles.add(nm);
+        });
+        existingFileBases.value = bases;
+        existingTitles.value = titles;
+        validateName(newChatName.value);
 
         nextTick(() => {
           try {
-            window?.lucide?.createIcons?.()
+            window?.lucide?.createIcons?.();
           } catch (_) {}
           if (typeof window.initFlowbite === 'function') {
             try {
-              window.initFlowbite()
+              window.initFlowbite();
             } catch (_) {}
           }
-        })
+        });
       } catch (e) {
-        fetchError.value = e?.message || t('home.newChat.listFailed')
+        fetchError.value = e?.message || t('home.newChat.listFailed');
       } finally {
-        loadingLists.value = false
+        loadingLists.value = false;
       }
     }
-  }
+  };
 
   try {
     // 监听各类数据加载结果
     const offPresetOk = Host.events.on(
       Catalog.EVT_CATALOG_LIST_OK,
       ({ category, items, tag: resTag }) => {
-        if (resTag !== tag) return
+        if (resTag !== tag) return;
         if (category === 'preset') {
-          results.presets = { items }
-          completed++
-          checkComplete()
+          results.presets = { items };
+          completed++;
+          checkComplete();
         }
       },
-    )
+    );
 
     const offCharOk = Host.events.on(
       Catalog.EVT_CATALOG_LIST_OK,
       ({ category, items, tag: resTag }) => {
-        if (resTag !== tag) return
+        if (resTag !== tag) return;
         if (category === 'character') {
-          results.chars = { items }
-          completed++
-          checkComplete()
+          results.chars = { items };
+          completed++;
+          checkComplete();
         }
       },
-    )
+    );
 
     const offPersonaOk = Host.events.on(
       Catalog.EVT_CATALOG_LIST_OK,
       ({ category, items, tag: resTag }) => {
-        if (resTag !== tag) return
+        if (resTag !== tag) return;
         if (category === 'persona') {
-          results.personas = { items }
-          completed++
-          checkComplete()
+          results.personas = { items };
+          completed++;
+          checkComplete();
         }
       },
-    )
+    );
 
     const offRegexOk = Host.events.on(
       Catalog.EVT_CATALOG_LIST_OK,
       ({ category, items, tag: resTag }) => {
-        if (resTag !== tag) return
+        if (resTag !== tag) return;
         if (category === 'regex') {
-          results.regex = { items }
-          completed++
-          checkComplete()
+          results.regex = { items };
+          completed++;
+          checkComplete();
         }
       },
-    )
+    );
 
     const offWorldOk = Host.events.on(
       Catalog.EVT_CATALOG_LIST_OK,
       ({ category, items, tag: resTag }) => {
-        if (resTag !== tag) return
+        if (resTag !== tag) return;
         if (category === 'worldbook') {
-          results.worlds = { items }
-          completed++
-          checkComplete()
+          results.worlds = { items };
+          completed++;
+          checkComplete();
         }
       },
-    )
+    );
 
     const offLLMOk = Host.events.on(
       Catalog.EVT_CATALOG_LIST_OK,
       ({ category, items, tag: resTag }) => {
-        if (resTag !== tag) return
+        if (resTag !== tag) return;
         if (category === 'llm_config') {
-          results.llmConfigs = { items }
-          completed++
-          checkComplete()
+          results.llmConfigs = { items };
+          completed++;
+          checkComplete();
         }
       },
-    )
+    );
 
     const offConvOk = Host.events.on(
       Conversation.EVT_CONVERSATION_LIST_OK,
       ({ items, tag: resTag }) => {
-        if (resTag !== tag) return
-        results.convs = { items }
-        completed++
-        checkComplete()
+        if (resTag !== tag) return;
+        results.convs = { items };
+        completed++;
+        checkComplete();
       },
-    )
+    );
 
     const offFail = Host.events.on(Catalog.EVT_CATALOG_LIST_FAIL, ({ message, tag: resTag }) => {
-      if (resTag && resTag !== tag) return
-      fetchError.value = message || t('home.newChat.listFailed')
-      loadingLists.value = false
-    })
+      if (resTag && resTag !== tag) return;
+      fetchError.value = message || t('home.newChat.listFailed');
+      loadingLists.value = false;
+    });
 
     const offConvFail = Host.events.on(
       Conversation.EVT_CONVERSATION_LIST_FAIL,
       ({ message, tag: resTag }) => {
-        if (resTag && resTag !== tag) return
-        fetchError.value = message || t('home.newChat.convListFailed')
-        loadingLists.value = false
+        if (resTag && resTag !== tag) return;
+        fetchError.value = message || t('home.newChat.convListFailed');
+        loadingLists.value = false;
       },
-    )
+    );
 
     __eventOffs.push(
       offPresetOk,
@@ -339,19 +343,19 @@ async function loadLists() {
       offConvOk,
       offFail,
       offConvFail,
-    )
+    );
 
     // 发送所有列表请求
-    Host.events.emit(Catalog.EVT_CATALOG_LIST_REQ, { category: 'preset', tag })
-    Host.events.emit(Catalog.EVT_CATALOG_LIST_REQ, { category: 'character', tag })
-    Host.events.emit(Catalog.EVT_CATALOG_LIST_REQ, { category: 'persona', tag })
-    Host.events.emit(Catalog.EVT_CATALOG_LIST_REQ, { category: 'regex', tag })
-    Host.events.emit(Catalog.EVT_CATALOG_LIST_REQ, { category: 'worldbook', tag })
-    Host.events.emit(Catalog.EVT_CATALOG_LIST_REQ, { category: 'llm_config', tag })
-    Host.events.emit(Conversation.EVT_CONVERSATION_LIST_REQ, { tag })
+    Host.events.emit(Catalog.EVT_CATALOG_LIST_REQ, { category: 'preset', tag });
+    Host.events.emit(Catalog.EVT_CATALOG_LIST_REQ, { category: 'character', tag });
+    Host.events.emit(Catalog.EVT_CATALOG_LIST_REQ, { category: 'persona', tag });
+    Host.events.emit(Catalog.EVT_CATALOG_LIST_REQ, { category: 'regex', tag });
+    Host.events.emit(Catalog.EVT_CATALOG_LIST_REQ, { category: 'worldbook', tag });
+    Host.events.emit(Catalog.EVT_CATALOG_LIST_REQ, { category: 'llm_config', tag });
+    Host.events.emit(Conversation.EVT_CONVERSATION_LIST_REQ, { tag });
   } catch (e) {
-    fetchError.value = e?.message || t('home.newChat.listFailed')
-    loadingLists.value = false
+    fetchError.value = e?.message || t('home.newChat.listFailed');
+    loadingLists.value = false;
   }
 }
 
@@ -359,28 +363,28 @@ watch(
   () => props.show,
   (v) => {
     if (v) {
-      resetForm()
-      loadLists()
+      resetForm();
+      loadLists();
     }
   },
-)
+);
 
 async function onSubmit() {
-  const name = (newChatName.value ?? '').trim()
+  const name = (newChatName.value ?? '').trim();
 
   // 必填字段：新对话名称 / 预设 / 角色卡 / 用户信息（persona）
   if (!name || !selectedPreset.value || !selectedCharacter.value || !selectedPersona.value) {
-    newGameError.value = t('home.newChat.requiredError')
-    return
+    newGameError.value = t('home.newChat.requiredError');
+    return;
   }
 
   // 重名校验
   if (nameDupByFile.value || nameDupByTitle.value) {
-    newGameError.value = t('home.newChat.duplicateError')
-    return
+    newGameError.value = t('home.newChat.duplicateError');
+    return;
   }
 
-  newGameError.value = ''
+  newGameError.value = '';
   const payload = {
     name,
     description: (newChatDesc.value ?? '').trim(),
@@ -392,64 +396,64 @@ async function onSubmit() {
     persona: selectedPersona.value,
     regex: selectedRegex.value || null,
     worldbook: selectedWorldbook.value || null,
-  }
+  };
 
   // 无论是 threaded 还是 sandbox，都调用后端创建对话 API
-  submitting.value = true
-  const createTag = `create_${Date.now()}`
+  submitting.value = true;
+  const createTag = `create_${Date.now()}`;
 
   try {
     // 监听创建结果（一次性）
     const offOk = Host.events.on(
       Conversation.EVT_CONVERSATION_CREATE_OK,
       ({ result, tag: resTag }) => {
-        if (resTag !== createTag) return
+        if (resTag !== createTag) return;
 
         // 将创建结果上抛：包含文件路径，便于上层后续打开该对话
-        emit('confirm', { ...payload, ...result })
-        emit('update:show', false)
-        submitting.value = false
+        emit('confirm', { ...payload, ...result });
+        emit('update:show', false);
+        submitting.value = false;
 
         try {
-          offOk?.()
+          offOk?.();
         } catch (_) {}
         try {
-          offFail?.()
+          offFail?.();
         } catch (_) {}
       },
-    )
+    );
 
     const offFail = Host.events.on(
       Conversation.EVT_CONVERSATION_CREATE_FAIL,
       ({ message, tag: resTag }) => {
-        if (resTag && resTag !== createTag) return
+        if (resTag && resTag !== createTag) return;
 
-        newGameError.value = message || t('home.newChat.createFailed')
-        submitting.value = false
+        newGameError.value = message || t('home.newChat.createFailed');
+        submitting.value = false;
 
         try {
-          offOk?.()
+          offOk?.();
         } catch (_) {}
         try {
-          offFail?.()
+          offFail?.();
         } catch (_) {}
       },
-    )
+    );
 
-    __eventOffs.push(offOk, offFail)
+    __eventOffs.push(offOk, offFail);
 
     // 发送创建请求（展开 payload，避免嵌套）
-    Host.events.emit(Conversation.EVT_CONVERSATION_CREATE_REQ, { ...payload, tag: createTag })
+    Host.events.emit(Conversation.EVT_CONVERSATION_CREATE_REQ, { ...payload, tag: createTag });
   } catch (e) {
-    newGameError.value = e?.message || t('home.newChat.createFailed')
-    submitting.value = false
+    newGameError.value = e?.message || t('home.newChat.createFailed');
+    submitting.value = false;
   }
 }
 
 function onCancel() {
-  if (submitting.value) return
-  emit('close')
-  emit('update:show', false)
+  if (submitting.value) return;
+  emit('close');
+  emit('update:show', false);
 }
 </script>
 

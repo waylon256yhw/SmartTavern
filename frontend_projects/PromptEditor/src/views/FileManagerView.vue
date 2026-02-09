@@ -102,14 +102,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watchEffect } from 'vue'
-import { useFileManagerStore } from '@/features/files/fileManager'
-import type { TypeKey } from '@/features/files/fileManager'
+import { ref, computed, onMounted, watchEffect } from 'vue';
+import { useFileManagerStore } from '@/features/files/fileManager';
+import type { TypeKey } from '@/features/files/fileManager';
 
-const store = useFileManagerStore()
-const tab = ref<TypeKey>(store.getCurrentType || 'presets')
+const store = useFileManagerStore();
+const tab = ref<TypeKey>(store.getCurrentType || 'presets');
 
-type TabDef = { key: TypeKey; cn: string; en: string }
+type TabDef = { key: TypeKey; cn: string; en: string };
 const tabs: TabDef[] = [
   { key: 'presets', cn: '预设', en: 'Presets' },
   { key: 'worldbook', cn: '世界书', en: 'World Book' },
@@ -117,88 +117,88 @@ const tabs: TabDef[] = [
   { key: 'regex', cn: '正则', en: 'Regex' },
   { key: 'user', cn: '用户信息', en: 'User' },
   { key: 'history', cn: '对话历史', en: 'History' },
-]
+];
 
 onMounted(() => {
-  store.load()
+  store.load();
   // 同步当前类型到 Store（用于全局导入时在“文件”页签下做归类）
-  store.setCurrentType(tab.value)
-  ;(window as any).lucide?.createIcons?.()
-})
+  store.setCurrentType(tab.value);
+  (window as any).lucide?.createIcons?.();
+});
 watchEffect(() => {
-  store.setCurrentType(tab.value)
-  ;(window as any).lucide?.createIcons?.()
-})
+  store.setCurrentType(tab.value);
+  (window as any).lucide?.createIcons?.();
+});
 
-const files = computed(() => store.list(tab.value))
-const activeName = computed(() => store.activeName(tab.value))
+const files = computed(() => store.list(tab.value));
+const activeName = computed(() => store.activeName(tab.value));
 
 function onSetActive(name: string) {
-  store.setActive(tab.value, name)
+  store.setActive(tab.value, name);
 }
 function onToggleEnable(name: string) {
-  store.toggleEnable(tab.value, name as string)
+  store.toggleEnable(tab.value, name as string);
 }
 function onDelete(name: string) {
-  store.removeFile(tab.value, name)
+  store.removeFile(tab.value, name);
 }
 function clearCurrentType() {
-  store.clearType(tab.value)
+  store.clearType(tab.value);
 }
 
 function formatTime(ts?: number): string {
-  if (!ts) return '--'
-  const d = new Date(ts)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  if (!ts) return '--';
+  const d = new Date(ts);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function summaryFor(type: TypeKey, data: any): string {
   try {
     switch (type) {
       case 'presets': {
-        const prompts = Array.isArray(data?.prompts) ? data.prompts.length : 0
-        const rules = Array.isArray(data?.regex_rules) ? data.regex_rules.length : 0
-        const worlds = Array.isArray(data?.world_books) ? data.world_books.length : 0
-        return `类型: 预设 · prompts: ${prompts} · regex: ${rules} · world: ${worlds}`
+        const prompts = Array.isArray(data?.prompts) ? data.prompts.length : 0;
+        const rules = Array.isArray(data?.regex_rules) ? data.regex_rules.length : 0;
+        const worlds = Array.isArray(data?.world_books) ? data.world_books.length : 0;
+        return `类型: 预设 · prompts: ${prompts} · regex: ${rules} · world: ${worlds}`;
       }
       case 'worldbook': {
-        let n = 0
-        if (Array.isArray(data?.entries)) n = data.entries.length
-        else if (Array.isArray(data?.world_book?.entries)) n = data.world_book.entries.length
-        else if (Array.isArray(data)) n = data.length
-        return `类型: 世界书 · entries: ${n}`
+        let n = 0;
+        if (Array.isArray(data?.entries)) n = data.entries.length;
+        else if (Array.isArray(data?.world_book?.entries)) n = data.world_book.entries.length;
+        else if (Array.isArray(data)) n = data.length;
+        return `类型: 世界书 · entries: ${n}`;
       }
       case 'characters': {
-        const messages = Array.isArray(data?.message) ? data.message.length : 0
-        const wb = Array.isArray(data?.world_book?.entries) ? data.world_book.entries.length : 0
-        const rules = Array.isArray(data?.regex_rules) ? data.regex_rules.length : 0
-        return `类型: 角色卡 · messages: ${messages} · world: ${wb} · regex: ${rules}`
+        const messages = Array.isArray(data?.message) ? data.message.length : 0;
+        const wb = Array.isArray(data?.world_book?.entries) ? data.world_book.entries.length : 0;
+        const rules = Array.isArray(data?.regex_rules) ? data.regex_rules.length : 0;
+        return `类型: 角色卡 · messages: ${messages} · world: ${wb} · regex: ${rules}`;
       }
       case 'regex': {
         const rules = Array.isArray(data)
           ? data.length
           : Array.isArray(data?.regex_rules)
             ? data.regex_rules.length
-            : 0
-        return `类型: 正则 · rules: ${rules}`
+            : 0;
+        return `类型: 正则 · rules: ${rules}`;
       }
       case 'user': {
-        const name = typeof data?.name === 'string' ? data.name : ''
-        const desc = typeof data?.description === 'string' ? data.description : ''
-        return `类型: 用户信息 · name: ${name || '未命名'} · 描述: ${desc ? (desc.length > 24 ? desc.slice(0, 24) + '…' : desc) : '—'}`
+        const name = typeof data?.name === 'string' ? data.name : '';
+        const desc = typeof data?.description === 'string' ? data.description : '';
+        return `类型: 用户信息 · name: ${name || '未命名'} · 描述: ${desc ? (desc.length > 24 ? desc.slice(0, 24) + '…' : desc) : '—'}`;
       }
       case 'history': {
         const arr = Array.isArray(data)
           ? data.length
           : data && typeof data === 'object'
             ? Object.keys(data).length
-            : 0
-        return `类型: 历史 · 项目数: ${arr}`
+            : 0;
+        return `类型: 历史 · 项目数: ${arr}`;
       }
     }
   } catch {}
-  return '类型: 未知'
+  return '类型: 未知';
 }
 </script>
 

@@ -1,45 +1,45 @@
 <script setup>
-import { ref, computed, watch, toRef } from 'vue'
-import { useI18n } from '@/locales'
-import { useFocusTrap } from '@/composables/useFocusTrap'
+import { ref, computed, watch, toRef } from 'vue';
+import { useI18n } from '@/locales';
+import { useFocusTrap } from '@/composables/useFocusTrap';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
   show: { type: Boolean, default: false },
   itemName: { type: String, default: '' },
   dataTypeName: { type: String, default: '' },
   loading: { type: Boolean, default: false },
-})
+});
 
-const emit = defineEmits(['close', 'confirm'])
+const emit = defineEmits(['close', 'confirm']);
 
-const visible = ref(props.show)
+const visible = ref(props.show);
 
 watch(
   () => props.show,
   (v) => {
-    visible.value = v
+    visible.value = v;
   },
-)
+);
 
 function close() {
-  if (props.loading) return
-  emit('close')
+  if (props.loading) return;
+  emit('close');
 }
 
 function confirm() {
-  if (props.loading) return
-  emit('confirm')
+  if (props.loading) return;
+  emit('confirm');
 }
 
 // 键盘事件处理
 function handleKeydown(e) {
-  if (!visible.value) return
+  if (!visible.value) return;
   if (e.key === 'Escape') {
-    close()
+    close();
   } else if (e.key === 'Enter' && !props.loading) {
-    confirm()
+    confirm();
   }
 }
 
@@ -48,16 +48,16 @@ watch(
   visible,
   (v) => {
     if (v) {
-      window.addEventListener('keydown', handleKeydown)
+      window.addEventListener('keydown', handleKeydown);
     } else {
-      window.removeEventListener('keydown', handleKeydown)
+      window.removeEventListener('keydown', handleKeydown);
     }
   },
   { immediate: true },
-)
+);
 
-const modalRef = ref(null)
-useFocusTrap(modalRef, visible)
+const modalRef = ref(null);
+useFocusTrap(modalRef, visible);
 </script>
 
 <template>
