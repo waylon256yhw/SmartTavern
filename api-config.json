@@ -1,0 +1,11 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8050
+  },
+  "static_files": {
+    "enabled": true,
+    "directory": "/app/frontend_dist",
+    "url_prefix": "/"
+  }
+}

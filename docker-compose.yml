@@ -1,0 +1,25 @@
+services:
+  frontend-build:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    volumes:
+      - frontend_dist:/app/dist
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8050:8050"
+    volumes:
+      - frontend_dist:/app/frontend_dist:ro
+      - ./backend_projects/SmartTavern/data:/app/backend_projects/SmartTavern/data
+      - ./api-config.json:/app/api-config.json:ro
+    depends_on:
+      frontend-build:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  frontend_dist:

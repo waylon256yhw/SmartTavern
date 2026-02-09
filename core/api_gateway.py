@@ -19,7 +19,7 @@ import threading
 try:
     from fastapi import FastAPI, HTTPException, Request, Response, WebSocket
     from fastapi.middleware.cors import CORSMiddleware
-    from fastapi.responses import JSONResponse
+    from fastapi.responses import JSONResponse, FileResponse
     from fastapi.staticfiles import StaticFiles
     from fastapi.websockets import WebSocketDisconnect
     from starlette.websockets import WebSocketState
@@ -764,17 +764,42 @@ class APIGateway:
         """设置静态文件服务"""
         if not self.app or not self.config or not self.config.static_files_enabled:
             return
-            
+
         if not self.config.static_directory:
             logger.warning("⚠️ 静态文件目录未配置")
             return
-            
+
         static_path = Path(self.config.static_directory)
-        if static_path.exists():
+        if not static_path.exists():
+            logger.warning(f"⚠️ 静态文件目录不存在: {self.config.static_directory}")
+            return
+
+        if self.config.static_url_prefix == "/":
+            assets_dir = static_path / "assets"
+            if assets_dir.exists():
+                self.app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="static_assets")
+                logger.info(f"✓ 静态资源: /assets -> {assets_dir}")
+            self._spa_index = static_path / "index.html"
+            logger.info(f"✓ SPA 模式: {self.config.static_directory}")
+        else:
             self.app.mount(self.config.static_url_prefix, StaticFiles(directory=str(static_path)), name="static")
             logger.info(f"✓ 静态文件服务: {self.config.static_url_prefix} -> {self.config.static_directory}")
-        else:
-            logger.warning(f"⚠️ 静态文件目录不存在: {self.config.static_directory}")
+
+    def setup_spa_fallback(self):
+        """注册 SPA catch-all 路由（必须在所有 API 路由之后调用）"""
+        index_path = getattr(self, "_spa_index", None)
+        if not self.app or not index_path:
+            return
+
+        spa_index = index_path
+
+        @self.app.get("/{full_path:path}")
+        async def _spa_fallback(full_path: str):
+            if spa_index.exists():
+                return FileResponse(str(spa_index))
+            raise HTTPException(404)
+
+        logger.info("✓ SPA fallback 路由已注册")
     
     def start_server(self, background: bool = False):
         """启动API服务器"""
@@ -795,7 +820,8 @@ class APIGateway:
         self.discover_and_register_functions()
         self.setup_websocket()
         self.setup_static_files()
-        self._register_endpoints_to_fastapi()  # 重新注册以包含自动发现的端点
+        self._register_endpoints_to_fastapi()
+        self.setup_spa_fallback()
         
         if background:
             # 后台运行

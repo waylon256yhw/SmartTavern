@@ -116,11 +116,11 @@ def create_app():
     gw_config = GatewayConfig(host="0.0.0.0", port=8050, debug=False)
     gateway = get_api_gateway(config=gw_config)
 
-    # 注册功能路由到 FastAPI
     gateway.discover_and_register_functions()
     gateway.setup_websocket()
     gateway.setup_static_files()
     gateway._register_endpoints_to_fastapi()
+    gateway.setup_spa_fallback()
 
     return gateway.app
 
@@ -166,11 +166,11 @@ def main():
     gw_config = GatewayConfig(host=args.host, port=args.port, debug=False)  # 避免 uvicorn reload 警告
     gateway = get_api_gateway(config=gw_config, config_file=args.config)
 
-    # 完整注册
     gateway.discover_and_register_functions()
     gateway.setup_websocket()
     gateway.setup_static_files()
     gateway._register_endpoints_to_fastapi()
+    gateway.setup_spa_fallback()
 
     print(f"[INFO] Starting API Gateway on http://{args.host}:{args.port} (background={args.background}) ...")
     gateway.start_server(background=args.background)

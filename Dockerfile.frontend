@@ -1,0 +1,9 @@
+FROM oven/bun:1.2
+WORKDIR /app
+
+COPY frontend_projects/SmartTavern/package.json frontend_projects/SmartTavern/bun.lock* ./
+RUN bun install --frozen-lockfile
+
+COPY frontend_projects/SmartTavern/ ./
+COPY frontend_projects/SmartTavern/.env.production .env.production
+RUN bun run build
