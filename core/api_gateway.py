@@ -130,7 +130,7 @@ class GatewayConfig:
             # 服务器配置
             host=server_config.get("host", "0.0.0.0"),
             port=server_config.get("port", 8050),
-            debug=server_config.get("debug", True),
+            debug=server_config.get("debug", False),
             cors_origins=server_config.get("cors_origins", ["*"]),
             
             # API配置
