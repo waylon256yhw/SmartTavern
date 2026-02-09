@@ -12,3 +12,7 @@ __pycache__/
 *$py.class
 demo_branch_backend
 demo_branch_frontend
+
+# uv / packaging
+.venv/
+*.egg-info/

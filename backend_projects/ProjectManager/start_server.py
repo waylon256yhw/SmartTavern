@@ -19,9 +19,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 import importlib.util
 
-# 添加框架根目录到Python路径
 framework_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(framework_root))
 
 try:
     import core

@@ -6,7 +6,7 @@ echo ====================================
 
 REM 启动后端 API 服务
 echo [1/3] 正在启动后端 API 服务...
-start "SmartTavern Backend APIs" cmd /k python start_all_apis.py
+start "SmartTavern Backend APIs" cmd /k uv run smarttavern
 
 REM 等待 2 秒让后端服务启动
 timeout /t 2 /nobreak >nul

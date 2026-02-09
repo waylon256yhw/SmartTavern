@@ -8,7 +8,7 @@ This script:
  - Starts the unified API Gateway (FastAPI + Uvicorn)
 
 Usage:
-  python start_all_apis.py [--host 0.0.0.0] [--port 8050] [--background] [--config api-config.json] [--reload]
+  uv run smarttavern [--host 0.0.0.0] [--port 8050] [--background] [--config api-config.json] [--reload]
 
 Notes:
  - Requires fastapi and uvicorn installed.
@@ -23,13 +23,6 @@ import importlib
 import os
 
 REPO_ROOT = Path(__file__).resolve().parent
-
-def _append_sys_path() -> None:
-    """确保仓库根目录可被导入（core, api 包）"""
-    root_str = str(REPO_ROOT)
-    if root_str not in sys.path:
-        sys.path.insert(0, root_str)
-
 
 def _enable_inproc_defaults() -> None:
     """默认开启 core 进程内直调（所有命名空间）。
@@ -103,7 +96,6 @@ def create_app():
     Uvicorn factory 模式入口。用于 --reload 时满足“以导入字符串传入应用”的要求。
     返回 FastAPI app 实例。
     """
-    _append_sys_path()
     _enable_inproc_defaults()
     imported = load_all_api_modules()
     print(f"[INFO] Imported {imported} backend modules under 'api.modules' and 'api.workflow'.")
@@ -133,7 +125,6 @@ def create_app():
     return gateway.app
 
 def main():
-    _append_sys_path()
     _enable_inproc_defaults()
     parser = argparse.ArgumentParser(description="Start all backend APIs (API Gateway)")
     parser.add_argument("--host", default="0.0.0.0", help="Bind host (default: 0.0.0.0)")
