@@ -13,6 +13,8 @@ __pycache__/
 demo_branch_backend
 demo_branch_frontend
 
+docs/
+
 # uv / packaging
 .venv/
 *.egg-info/
