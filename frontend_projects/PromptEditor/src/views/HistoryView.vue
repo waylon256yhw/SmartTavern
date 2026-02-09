@@ -591,8 +591,8 @@ void handleExportBranches
               <button
                 class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
                 @click="
-                  inlineFor = nid
-                  menuFor = null
+                  inlineFor = nid;
+                  menuFor = null;
                 "
               >
                 追加子节点…
@@ -649,8 +649,8 @@ void handleExportBranches
               <button
                 class="px-3 h-10 rounded-4 border border-gray-900 text-black bg-white hover:bg-gray-100 transition"
                 @click="
-                  inlineFor = null
-                  inlineText = ''
+                  inlineFor = null;
+                  inlineText = '';
                 "
               >
                 取消

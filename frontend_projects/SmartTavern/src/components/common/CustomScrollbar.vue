@@ -277,12 +277,12 @@ defineExpose({
   <div
     class="custom-scrollbar-wrapper"
     @mouseenter="
-      isHovering = true
-      reveal()
+      isHovering = true;
+      reveal();
     "
     @mouseleave="
-      isHovering = false
-      scheduleHide()
+      isHovering = false;
+      scheduleHide();
     "
     @mousemove="handleWrapperMouseMove"
   >
