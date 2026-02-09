@@ -81,7 +81,7 @@ def _read_upload(obj, default_name="upload.bin"):
     """读取上传对象内容，返回 (bytes, filename)"""
     if hasattr(obj, 'file'):
         return obj.file.read(), getattr(obj, 'filename', None) or default_name
-    elif hasattr(obj, 'name') and hasattr(obj, 'read'):
+    elif hasattr(obj, 'read'):
         return obj.read(), getattr(obj, 'name', None) or default_name
     elif isinstance(obj, (bytes, bytearray)):
         return obj, default_name
@@ -1108,9 +1108,12 @@ def _install_project(project_dir, target_subdir, expected_role, manager):
     shutil.copytree(str(project_dir), str(target_dir))
     logger.info(f"✓ 已复制项目到: {target_dir}")
 
-    manager._discover_and_load_projects()
-    if target_subdir == "backend_projects":
-        manager._discover_and_load_backend_projects()
+    try:
+        manager._discover_and_load_projects()
+        if target_subdir == "backend_projects":
+            manager._discover_and_load_backend_projects()
+    except Exception:
+        pass
 
     return {
         "success": True,
@@ -1175,10 +1178,10 @@ def delete_project(project_name: str):
         return {"success": False, "error": str(e)}
 
 def _persist_port_to_config(config_path, constant_name, new_value):
-    """正则替换 modularflow_config.py 中的端口常量"""
+    """正则替换 modularflow_config.py 中的端口常量（仅处理简单赋值行）"""
     text = Path(config_path).read_text(encoding='utf-8')
-    pattern = rf'^({re.escape(constant_name)}\s*=\s*)\S+(.*)'
-    replacement = rf'\g<1>{new_value}\2'
+    pattern = rf'^({re.escape(constant_name)}\s*=\s*)(.+?)(\s*#.*)?$'
+    replacement = rf'\g<1>{new_value}\3'
     new_text, count = re.subn(pattern, replacement, text, count=1, flags=re.MULTILINE)
     if count == 0:
         return False
