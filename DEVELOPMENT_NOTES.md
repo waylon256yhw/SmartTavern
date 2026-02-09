@@ -240,7 +240,60 @@ resp = core.call_api("project_manager/start_project", {"project_name": "ProjectM
 
 ---
 
-## 9) 最佳实践清单
+## 9) 开发环境与代码规范
+
+### 环境搭建
+
+```bash
+uv sync                      # 安装 Python 依赖（含 ruff、pre-commit）
+uv run pre-commit install    # 注册 git hooks，提交时自动格式化
+```
+
+### 代码格式化工具链
+
+| 工具 | 范围 | 配置位置 |
+|------|------|----------|
+| [Ruff](https://docs.astral.sh/ruff/) | Python lint + format | `pyproject.toml` `[tool.ruff]` |
+| [Prettier](https://prettier.io/) | Vue / TS / CSS / HTML | `.prettierrc.json` |
+| [pre-commit](https://pre-commit.com/) | 提交时自动执行上述工具 | `.pre-commit-config.yaml` |
+
+- pre-commit 自管 Prettier（通过 `mirrors-prettier`），无需在前端项目单独安装
+- `.vue` 文件启用 `semi: true`（防止 Prettier 吃掉内联事件处理器分号），`.ts`/`.js` 保持 `semi: false`
+
+### 手动执行
+
+```bash
+# Python
+uv run ruff check --fix api/ core/ orchestrators/ shared/
+uv run ruff format api/ core/ orchestrators/ shared/
+
+# Frontend
+npx prettier@3.8.1 --write "frontend_projects/SmartTavern/src/**/*.{vue,ts,js,css}"
+```
+
+### Ruff 规则说明
+
+- `line-length = 120`：比默认 88 宽，减少长行重排
+- `ignore` 中包含 `RUF001/002/003`（允许中文全角标点）、`E402`（模块级 import 位置）、`B008`（FastAPI `Depends()`）等
+- `__init__.py` 豁免 `F401`（允许 re-export）
+
+### Docker 构建
+
+```bash
+docker compose up -d --build   # 多阶段构建：Bun 前端 + Python 后端，单容器 :8050
+```
+
+### git blame
+
+格式化 commit 已记录在 `.git-blame-ignore-revs`，clone 后执行一次即可：
+
+```bash
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```
+
+---
+
+## 10) 最佳实践清单
 
 - 使用 `import core` 门面，不硬编码文件路径。
 - 模块间调用必须走 API，严禁直接 `import impl`。
@@ -252,7 +305,7 @@ resp = core.call_api("project_manager/start_project", {"project_name": "ProjectM
 
 ---
 
-## 10) 常见错误与排查
+## 11) 常见错误与排查
 
 - “Cannot read properties of undefined (reading 'getProjectStatus')”
   - 前端 `window.apiClient` 未初始化；确保按顺序引入 `api.js → main.js` 并调用

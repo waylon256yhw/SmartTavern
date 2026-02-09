@@ -47,13 +47,16 @@ docker compose up -d
 # 1. 安装后端依赖（自动创建 .venv）
 uv sync
 
-# 2. 安装前端依赖
+# 2. 注册 pre-commit hooks（Ruff + Prettier 自动格式化）
+uv run pre-commit install
+
+# 3. 安装前端依赖
 cd frontend_projects/SmartTavern && bun install && cd ../..
 
-# 3. 启动后端 API 网关（默认监听 0.0.0.0:8050）
+# 4. 启动后端 API 网关（默认监听 0.0.0.0:8050）
 uv run smarttavern
 
-# 4. 启动前端开发服务器（另开终端）
+# 5. 启动前端开发服务器（另开终端）
 cd frontend_projects/SmartTavern && bun run dev
 ```
 
@@ -82,7 +85,10 @@ Windows 用户可直接双击 `Start.bat` 一键启动（需预装 uv）。
 SmartTavern/
 ├── Dockerfile                     # 多阶段构建（Bun 前端 + Python 后端）
 ├── docker-compose.yml             # 容器编排
-├── pyproject.toml                 # 项目元数据与依赖（uv/hatchling）
+├── pyproject.toml                 # 项目元数据、依赖与 Ruff 配置
+├── .pre-commit-config.yaml        # pre-commit hooks（Ruff + Prettier）
+├── .prettierrc.json               # Prettier 配置（.vue 启用分号）
+├── .git-blame-ignore-revs         # git blame 跳过格式化 commit
 ├── start_all_apis.py              # 后端统一入口（uv run smarttavern）
 ├── core/                          # 框架核心
 │   ├── api_gateway.py             #   FastAPI 网关（REST + WebSocket）
@@ -129,6 +135,24 @@ InputRow → completionBridge → chat_completion API
   → assets_normalizer → prompt_raw → prompt_postprocess → llm_api
   → chat_branches（保存） → 前端 SSE 流式渲染
 ```
+
+## 代码规范
+
+项目使用 [Ruff](https://docs.astral.sh/ruff/)（Python lint + format）和 [Prettier](https://prettier.io/)（Vue/TS/CSS）统一代码风格，通过 [pre-commit](https://pre-commit.com/) 在提交时自动执行。
+
+```bash
+# 手动检查
+uv run ruff check .                    # Python lint
+uv run ruff format --check .           # Python format
+npx prettier@3.8.1 --check "**/*.vue"  # Vue/TS format
+
+# 手动修复
+uv run ruff check --fix .
+uv run ruff format .
+npx prettier@3.8.1 --write "**/*.vue"
+```
+
+配置详见 `pyproject.toml`（`[tool.ruff]`）和 `.prettierrc.json`。
 
 ## 开发文档
 
