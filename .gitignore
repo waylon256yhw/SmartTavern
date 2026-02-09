@@ -19,3 +19,6 @@ docs/
 # uv / packaging
 .venv/
 *.egg-info/
+
+# Screenshots (debug artifacts)
+screenshots/
