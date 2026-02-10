@@ -136,7 +136,6 @@ class UnifiedServiceManager:
         """
         if self._plugins_initialized:
             return 0
-        self._plugins_initialized = True
 
         try:
             from api.plugins.SmartTavern import initialize_plugins
@@ -149,6 +148,7 @@ class UnifiedServiceManager:
             if self._verbose:
                 print(f"  ✓ 插件系统初始化完成: {successful_count}/{len(loaded_plugins)} 个插件成功加载")
 
+            self._plugins_initialized = True
             return successful_count
 
         except Exception as e:
