@@ -2,12 +2,14 @@
 import { ref, onMounted, watch } from 'vue';
 import SandboxStage from '@/components/sandbox/SandboxStage.vue';
 import { useChatSettingsStore } from '@/stores/chatSettings';
+import { useAppearanceSettingsStore } from '@/stores/appearanceSettings';
 import DataCatalog from '@/services/dataCatalog';
 import JSZip from 'jszip';
 import { useI18n } from '@/locales';
 
 const { t } = useI18n();
 const chatSettingsStore = useChatSettingsStore();
+const appearanceStore = useAppearanceSettingsStore();
 
 // 状态管理
 const loading = ref(true);
@@ -168,7 +170,12 @@ onMounted(() => {
     </div>
 
     <!-- 显示内容 -->
-    <SandboxStage v-else-if="htmlContent" :html="htmlContent" :base-url="baseUrl" />
+    <SandboxStage
+      v-else-if="htmlContent"
+      :html="htmlContent"
+      :base-url="baseUrl"
+      :trust-level="appearanceStore.sandboxTrustLevel"
+    />
   </section>
 </template>
 

@@ -801,9 +801,154 @@ export function getSandboxBridgeScriptTag(): string {
   return `<script>${generateSandboxBridgeScript()}</script>`
 }
 
+/**
+ * 生成 guarded 模式桥接脚本（只读子集，通过 postMessage RPC 调用）
+ * 不引用 window.parent.*，而是依赖 client.js 注入的 __stRpc.call()
+ */
+export function generateGuardedBridgeScript(): string {
+  return `
+(function() {
+  'use strict';
+
+  var rpc = window.__stRpc;
+  if (!rpc || typeof rpc.call !== 'function') {
+    console.error('[GuardedBridge] __stRpc not available — client.js must be loaded first');
+    return;
+  }
+
+  function rpcGet(method) {
+    return function() {
+      var args = Array.prototype.slice.call(arguments);
+      return rpc.call(method, args);
+    };
+  }
+
+  // Read-only API subset (state reads)
+  var getCharAvatarPath = rpcGet('getCharAvatarPath');
+  var getPersonaAvatarPath = rpcGet('getPersonaAvatarPath');
+  var getChar = rpcGet('getChar');
+  var getPersona = rpcGet('getPersona');
+  var getVariable = rpcGet('getVariable');
+  var getVariables = rpcGet('getVariables');
+  var getVariableJSON = rpcGet('getVariableJSON');
+  var getChatSettings = rpcGet('getChatSettings');
+  var getChatSettingsField = rpcGet('getChatSettingsField');
+  var getLlmConfig = rpcGet('getLlmConfig');
+  var getLlmConfigField = rpcGet('getLlmConfigField');
+  var getPreset = rpcGet('getPreset');
+  var getWorldBooks = rpcGet('getWorldBooks');
+  var getRegexRules = rpcGet('getRegexRules');
+
+  // UI actions: read-only subset
+  var showToast = rpcGet('showToast');
+  showToast.success = function(message, timeout) { return showToast({ type: 'success', message: message, timeout: timeout }); };
+  showToast.error = function(message, timeout) { return showToast({ type: 'error', message: message, timeout: timeout }); };
+  showToast.warning = function(message, timeout) { return showToast({ type: 'warning', message: message, timeout: timeout }); };
+  showToast.info = function(message, timeout) { return showToast({ type: 'info', message: message, timeout: timeout }); };
+
+  // Blocked APIs — return clear errors
+  function blocked(name) {
+    return function() {
+      return Promise.reject(new Error('[GuardedBridge] ' + name + ' is not available in guarded mode'));
+    };
+  }
+
+  var setVariable = blocked('setVariable');
+  var setVariables = blocked('setVariables');
+  var deleteVariable = blocked('deleteVariable');
+  var deleteVariables = blocked('deleteVariables');
+  var chatCompletion = blocked('chatCompletion');
+  var chatCompletionWithCurrentConfig = blocked('chatCompletionWithCurrentConfig');
+  var assemblePrompt = blocked('assemblePrompt');
+  var assemblePromptWithCurrentConfig = blocked('assemblePromptWithCurrentConfig');
+  var postprocessPrompt = blocked('postprocessPrompt');
+  var postprocessPromptWithCurrentConfig = blocked('postprocessPromptWithCurrentConfig');
+  var routePromptWithHooks = blocked('routePromptWithHooks');
+  var completeWithHooks = blocked('completeWithHooks');
+  var showOptions = blocked('showOptions');
+  var HostEvents = {
+    emit: function() { console.warn('[GuardedBridge] HostEvents.emit is not available in guarded mode'); },
+    on: function() { console.warn('[GuardedBridge] HostEvents.on is not available in guarded mode'); return function() {}; }
+  };
+
+  // Mount to window
+  window.getCharAvatarPath = getCharAvatarPath;
+  window.getPersonaAvatarPath = getPersonaAvatarPath;
+  window.getChar = getChar;
+  window.getPersona = getPersona;
+  window.getVariable = getVariable;
+  window.getVariables = getVariables;
+  window.getVariableJSON = getVariableJSON;
+  window.setVariable = setVariable;
+  window.setVariables = setVariables;
+  window.deleteVariable = deleteVariable;
+  window.deleteVariables = deleteVariables;
+  window.getChatSettings = getChatSettings;
+  window.getChatSettingsField = getChatSettingsField;
+  window.getLlmConfig = getLlmConfig;
+  window.getLlmConfigField = getLlmConfigField;
+  window.getPreset = getPreset;
+  window.getWorldBooks = getWorldBooks;
+  window.getRegexRules = getRegexRules;
+  window.chatCompletion = chatCompletion;
+  window.chatCompletionWithCurrentConfig = chatCompletionWithCurrentConfig;
+  window.assemblePrompt = assemblePrompt;
+  window.assemblePromptWithCurrentConfig = assemblePromptWithCurrentConfig;
+  window.postprocessPrompt = postprocessPrompt;
+  window.postprocessPromptWithCurrentConfig = postprocessPromptWithCurrentConfig;
+  window.routePromptWithHooks = routePromptWithHooks;
+  window.completeWithHooks = completeWithHooks;
+  window.showToast = showToast;
+  window.showOptions = showOptions;
+  window.HostEvents = HostEvents;
+
+  window.STSandbox = {
+    getCharAvatarPath: getCharAvatarPath,
+    getPersonaAvatarPath: getPersonaAvatarPath,
+    getChar: getChar,
+    getPersona: getPersona,
+    getVariable: getVariable,
+    getVariables: getVariables,
+    getVariableJSON: getVariableJSON,
+    setVariable: setVariable,
+    setVariables: setVariables,
+    deleteVariable: deleteVariable,
+    deleteVariables: deleteVariables,
+    getChatSettings: getChatSettings,
+    getChatSettingsField: getChatSettingsField,
+    getLlmConfig: getLlmConfig,
+    getLlmConfigField: getLlmConfigField,
+    getPreset: getPreset,
+    getWorldBooks: getWorldBooks,
+    getRegexRules: getRegexRules,
+    chatCompletion: chatCompletion,
+    chatCompletionWithCurrentConfig: chatCompletionWithCurrentConfig,
+    assemblePrompt: assemblePrompt,
+    assemblePromptWithCurrentConfig: assemblePromptWithCurrentConfig,
+    postprocessPrompt: postprocessPrompt,
+    postprocessPromptWithCurrentConfig: postprocessPromptWithCurrentConfig,
+    routePromptWithHooks: routePromptWithHooks,
+    completeWithHooks: completeWithHooks,
+    showToast: showToast,
+    showOptions: showOptions,
+    HostEvents: HostEvents,
+    version: '1.7.0-guarded'
+  };
+
+  console.log('[GuardedBridge] Guarded bridge ready (read-only subset):', Object.keys(window.STSandbox));
+})();
+`.trim()
+}
+
+export function getGuardedBridgeScriptTag(): string {
+  return `<script>${generateGuardedBridgeScript()}</script>`
+}
+
 const sandboxBridge = {
   generateSandboxBridgeScript,
   getSandboxBridgeScriptTag,
+  generateGuardedBridgeScript,
+  getGuardedBridgeScriptTag,
 }
 
 export default sandboxBridge

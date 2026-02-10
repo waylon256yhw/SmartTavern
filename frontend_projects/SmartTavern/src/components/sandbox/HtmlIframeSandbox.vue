@@ -2,8 +2,8 @@
   <iframe
     ref="frame"
     class="st-iframe"
-    :sandbox="sandbox"
-    :allow="allow"
+    :sandbox="effectiveSandbox"
+    :allow="effectiveAllow"
     allowfullscreen
     :srcdoc="computedSrcdoc"
     :style="autoHeight && heightPx > 0 ? { height: heightPx + 'px' } : null"
@@ -13,24 +13,25 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, watch, onBeforeUnmount, nextTick } from 'vue';
-import { generateSandboxBridgeScript } from '@/utils/sandboxBridge';
+import { generateSandboxBridgeScript, generateGuardedBridgeScript } from '@/utils/sandboxBridge';
+import { SANDBOX_ATTRS, ALLOW_ATTRS } from '@/features/themes/sandbox/types';
+import type { TrustLevel } from '@/features/themes/sandbox/types';
+import { createSandboxHost } from '@/features/themes/sandbox/host';
+import type { SandboxHost } from '@/features/themes/sandbox/host';
+// Raw import of client.js source for guarded mode injection
+import clientJsSrc from '@/features/themes/sandbox/client.js?raw';
 
 const props = defineProps({
   html: { type: String, default: '' },
   baseUrl: { type: String, default: '' },
-  sandbox: {
-    type: String,
-    default:
-      'allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-popups-to-escape-sandbox allow-presentation allow-pointer-lock allow-orientation-lock allow-top-navigation-by-user-activation allow-storage-access-by-user-activation',
+  trustLevel: {
+    type: String as () => TrustLevel,
+    default: 'trusted' as TrustLevel,
   },
-  allow: {
-    type: String,
-    default:
-      'fullscreen *; clipboard-read *; clipboard-write *; geolocation *; microphone *; camera *; autoplay *; encrypted-media *; payment *; usb *; serial *; midi *; gyroscope *; magnetometer *; xr-spatial-tracking *; display-capture *; gamepad *; idle-detection *',
-  },
+  sandbox: { type: String, default: '' },
+  allow: { type: String, default: '' },
   injectCss: { type: String, default: '' },
   csp: { type: String, default: '' },
-  // 新增：自适应高度模式（默认开启）
   autoHeight: { type: Boolean, default: true },
 });
 
@@ -41,21 +42,102 @@ const heightPx = ref<number>(0);
 
 let __ro: ResizeObserver | null = null;
 let __onLoad: ((this: HTMLIFrameElement, ev: Event) => any) | null = null;
+let __sandboxHost: SandboxHost | null = null;
+let __guardedNonce: string | null = null;
+
+const effectiveSandbox = computed(() => {
+  if (props.sandbox) return props.sandbox;
+  return SANDBOX_ATTRS[props.trustLevel] ?? SANDBOX_ATTRS.trusted;
+});
+
+const effectiveAllow = computed(() => {
+  if (props.allow) return props.allow;
+  return ALLOW_ATTRS[props.trustLevel] ?? ALLOW_ATTRS.trusted;
+});
+
+function buildBridgeScripts(): string {
+  const scriptOpen = '<' + 'script>';
+  const scriptClose = '<' + '/script>';
+
+  if (props.trustLevel === 'strict') {
+    __guardedNonce = null;
+    return '';
+  }
+  if (props.trustLevel === 'guarded') {
+    __guardedNonce = crypto.randomUUID
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2) + Date.now().toString(36);
+    const nonceScript =
+      scriptOpen + `window.__stSandboxNonce=${JSON.stringify(__guardedNonce)};` + scriptClose;
+    const clientScript = scriptOpen + clientJsSrc + scriptClose;
+    const guardedBridge = scriptOpen + generateGuardedBridgeScript() + scriptClose;
+    return nonceScript + clientScript + guardedBridge;
+  }
+  __guardedNonce = null;
+  // trusted: full bridge via window.parent
+  return scriptOpen + generateSandboxBridgeScript() + scriptClose;
+}
 
 const computedSrcdoc = computed(() => {
   const base = props.baseUrl ? `<base href="${props.baseUrl}">` : '';
-  const csp = props.csp ? `<meta http-equiv="Content-Security-Policy" content="${props.csp}">` : '';
+  let csp = '';
+  if (props.csp) {
+    csp = `<meta http-equiv="Content-Security-Policy" content="${props.csp}">`;
+  } else if (props.trustLevel === 'guarded') {
+    csp = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' data:; img-src data: blob:; font-src data:; media-src data: blob:; connect-src 'none'; form-action 'none'; prefetch-src 'none';">`;
+  }
   const injected = props.injectCss ? `<style>${props.injectCss}</style>` : '';
   const normalize = props.autoHeight
     ? `<style>html,body{min-height:100%;margin:0;padding:0;background:transparent}</style>`
     : `<style>html,body{height:100%;margin:0;padding:0;background:transparent}</style>`;
-  // 注入沙盒桥接脚本（优先于用户 HTML，使API立即可用）
-  // 使用字符串拼接避免 Vue SFC 编译器误判闭合标签
-  const scriptOpen = '<' + 'script>';
-  const scriptClose = '<' + '/script>';
-  const bridgeScript = scriptOpen + generateSandboxBridgeScript() + scriptClose;
-  return `<!doctype html><html><head><meta charset="utf-8">${csp}${base}${normalize}${injected}${bridgeScript}</head><body>${props.html}</body></html>`;
+  const bridgeScripts = buildBridgeScripts();
+  return `<!doctype html><html><head><meta charset="utf-8">${csp}${base}${normalize}${injected}${bridgeScripts}</head><body>${props.html}</body></html>`;
 });
+
+function setupSandboxHost() {
+  disposeSandboxHost();
+  if (props.trustLevel !== 'guarded') return;
+  const f = frame.value;
+  if (!f) return;
+  __sandboxHost = createSandboxHost(f, {
+    trustLevel: 'guarded',
+    nonce: __guardedNonce ?? undefined,
+  });
+  registerReadOnlyHandlers(__sandboxHost);
+}
+
+function registerReadOnlyHandlers(host: SandboxHost) {
+  const readFunctions = [
+    'getCharAvatarPath',
+    'getPersonaAvatarPath',
+    'getChar',
+    'getPersona',
+    'getVariable',
+    'getVariables',
+    'getVariableJSON',
+    'getChatSettings',
+    'getChatSettingsField',
+    'getLlmConfig',
+    'getLlmConfigField',
+    'getPreset',
+    'getWorldBooks',
+    'getRegexRules',
+    'showToast',
+  ];
+  for (const name of readFunctions) {
+    const fn = (window as any)[name];
+    if (typeof fn === 'function') {
+      host.registerHandler(name, (...args: any[]) => fn(...args));
+    }
+  }
+}
+
+function disposeSandboxHost() {
+  if (__sandboxHost) {
+    __sandboxHost.dispose();
+    __sandboxHost = null;
+  }
+}
 
 function __measure() {
   if (!props.autoHeight) return;
@@ -86,12 +168,13 @@ function __disposeObservers() {
 function __setupObservers() {
   __disposeObservers();
   if (!props.autoHeight) return;
+  // In guarded mode (no allow-same-origin), contentDocument is not accessible
+  if (props.trustLevel === 'guarded' || props.trustLevel === 'strict') return;
   const f = frame.value;
   const doc = f?.contentDocument;
   const de = doc?.documentElement;
   const body = doc?.body;
   if (!doc || !de || !body) return;
-  // 使用 iframe 内文档的 ResizeObserver 监听 body 尺寸变化
   const RO = (f!.contentWindow as any)?.ResizeObserver || ResizeObserver;
   __ro = new RO(() => __measure());
   if (__ro) {
@@ -100,7 +183,6 @@ function __setupObservers() {
       __ro.observe(de);
     } catch (_) {}
   }
-  // 初始测量
   __measure();
 }
 
@@ -108,17 +190,14 @@ onMounted(() => {
   const f = frame.value;
   if (!f) return;
   __onLoad = () => {
-    // srcdoc 变化会触发 load，重新建立观察
     __setupObservers();
-    // 再次测量，确保首次绘制后校准
+    setupSandboxHost();
     nextTick(() => {
       __measure();
-      // 发出iframe加载完成事件
       emit('iframe-loaded');
     });
   };
   f.addEventListener('load', __onLoad);
-  // 如果 iframe 已经就绪，尝试设置一次
   nextTick(() => __setupObservers());
 });
 
@@ -131,13 +210,20 @@ onBeforeUnmount(() => {
   }
   __onLoad = null;
   __disposeObservers();
+  disposeSandboxHost();
 });
 
-// 当 html 更新，等待 load 回调重建观察；这里清零高度避免短暂旧高度残留
 watch(
   () => props.html,
   () => {
     if (props.autoHeight) heightPx.value = 0;
+  },
+);
+
+watch(
+  () => props.trustLevel,
+  () => {
+    setupSandboxHost();
   },
 );
 </script>

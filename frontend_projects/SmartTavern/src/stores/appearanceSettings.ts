@@ -6,6 +6,7 @@
 
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
+import type { TrustLevel } from '@/features/themes/sandbox/types'
 
 // 日期时间格式选项类型
 export type DateTimeFormatOption =
@@ -26,6 +27,7 @@ interface AppearanceSettings {
   messageSidebarWidth: number
   iframeRenderMode: string
   iframeRenderRange: number
+  sandboxTrustLevel: TrustLevel
 }
 
 export const useAppearanceSettingsStore = defineStore('appearanceSettings', () => {
@@ -42,6 +44,9 @@ export const useAppearanceSettingsStore = defineStore('appearanceSettings', () =
   const iframeRenderMode = ref<string>('all') // 'all' | 'track_latest' | 'track_viewport'
   const iframeRenderRange = ref<number>(10) // 渲染层数范围
 
+  // 沙盒信任级别
+  const sandboxTrustLevel = ref<TrustLevel>('trusted')
+
   /**
    * 从 LocalStorage 加载设置
    */
@@ -55,6 +60,7 @@ export const useAppearanceSettingsStore = defineStore('appearanceSettings', () =
         if (settings.messageSidebarWidth) messageSidebarWidth.value = settings.messageSidebarWidth
         if (settings.iframeRenderMode) iframeRenderMode.value = settings.iframeRenderMode
         if (settings.iframeRenderRange) iframeRenderRange.value = settings.iframeRenderRange
+        if (settings.sandboxTrustLevel) sandboxTrustLevel.value = settings.sandboxTrustLevel
       }
     } catch (e) {
       console.warn('Failed to load appearance settings from localStorage:', e)
@@ -72,6 +78,7 @@ export const useAppearanceSettingsStore = defineStore('appearanceSettings', () =
         messageSidebarWidth: messageSidebarWidth.value,
         iframeRenderMode: iframeRenderMode.value,
         iframeRenderRange: iframeRenderRange.value,
+        sandboxTrustLevel: sandboxTrustLevel.value,
       }
       localStorage.setItem(STORE_KEY, JSON.stringify(settings))
     } catch (e) {
@@ -114,9 +121,20 @@ export const useAppearanceSettingsStore = defineStore('appearanceSettings', () =
     iframeRenderRange.value = range
   }
 
+  function setSandboxTrustLevel(level: TrustLevel) {
+    sandboxTrustLevel.value = level
+  }
+
   // 监听设置变化，自动保存
   watch(
-    [timezone, dateTimeFormat, messageSidebarWidth, iframeRenderMode, iframeRenderRange],
+    [
+      timezone,
+      dateTimeFormat,
+      messageSidebarWidth,
+      iframeRenderMode,
+      iframeRenderRange,
+      sandboxTrustLevel,
+    ],
     () => {
       saveToStorage()
     },
@@ -132,6 +150,7 @@ export const useAppearanceSettingsStore = defineStore('appearanceSettings', () =
     messageSidebarWidth,
     iframeRenderMode,
     iframeRenderRange,
+    sandboxTrustLevel,
 
     // Actions
     setTimezone,
@@ -139,6 +158,7 @@ export const useAppearanceSettingsStore = defineStore('appearanceSettings', () =
     setMessageSidebarWidth,
     setIframeRenderMode,
     setIframeRenderRange,
+    setSandboxTrustLevel,
     loadFromStorage,
     saveToStorage,
   }

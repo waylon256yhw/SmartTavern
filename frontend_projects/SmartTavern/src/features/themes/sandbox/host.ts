@@ -1,39 +1,18 @@
-// SmartTavern Theme Runtime - Sandbox Host (v1)
-// Status: Skeleton only. Script execution is DISABLED by default in ThemeManager.
-// Purpose:
-// - Reserve a postMessage bridge for future safe, permissioned theme scripts.
-// - Host runs in main app; client runs inside a sandboxed iframe (see client.js/index.html).
-//
-// Security principles:
-// - No DOM mutation by default. Bridge must enforce an allowlist of methods.
-// - No network by default. Add explicit permission gating if enabled in future.
-// - Untrusted code must run in a separate origin-like context: sandboxed iframe with tight CSP.
-// - This file is not wired by default. Integration is gated via ThemeManager allowScript=false.
+import type { TrustLevel, SandboxCapabilities } from './types'
+import { CAPABILITIES } from './types'
 
 const DEFAULT_TIMEOUT = 4000
 
-// Type definitions
-interface SandboxPermissions {
-  dom?: boolean
-  network?: boolean
-}
-
-interface SandboxOptions {
-  clientOrigin?: string // Expected origin of client messages. Use specific origin in production.
-  timeoutMs?: number // Request timeout for RPC-like calls.
-  permissions?: SandboxPermissions // Reserved permission gates
-}
-
-interface SandboxMessage {
+interface RpcRequest {
   id: number
-  type: string
-  payload?: any
+  method: string
+  args?: any[]
 }
 
-interface SandboxResponse {
-  id?: number
-  type: string
-  payload?: any
+interface RpcResponse {
+  id: number
+  method: string
+  result?: any
   error?: string
 }
 
@@ -43,38 +22,45 @@ interface PendingRequest {
   timer: ReturnType<typeof setTimeout>
 }
 
-interface SandboxHost {
-  post(type: string, payload?: any): Promise<any>
-  ping(): Promise<any>
-  isAllowed(action: string): boolean
-  dispose(): void
-  iframe: HTMLIFrameElement
-  options: Required<SandboxOptions>
+type RpcHandler = (...args: any[]) => any | Promise<any>
+
+export interface SandboxHostOptions {
+  trustLevel?: TrustLevel
+  timeoutMs?: number
+  nonce?: string
 }
 
-/**
- * Create a sandbox host bound to an iframe element.
- */
+export interface SandboxHost {
+  post(method: string, args?: any[]): Promise<any>
+  ping(): Promise<any>
+  registerHandler(method: string, handler: RpcHandler): void
+  unregisterHandler(method: string): void
+  dispose(): void
+  iframe: HTMLIFrameElement
+  trustLevel: TrustLevel
+  capabilities: SandboxCapabilities
+}
+
 export function createSandboxHost(
   iframe: HTMLIFrameElement,
-  options: SandboxOptions = {},
+  options: SandboxHostOptions = {},
 ): SandboxHost {
   if (!iframe || !(iframe instanceof HTMLIFrameElement)) {
     throw new Error('[SandboxHost] iframe element required')
   }
 
-  const {
-    clientOrigin = '*',
-    timeoutMs = DEFAULT_TIMEOUT,
-    permissions = { dom: false, network: false },
-  } = options
+  const trustLevel = options.trustLevel ?? 'trusted'
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT
+  const nonce = options.nonce ?? null
+  const capabilities = CAPABILITIES[trustLevel]
 
   let seq = 0
   const pending = new Map<number, PendingRequest>()
+  const handlers = new Map<string, RpcHandler>()
 
-  function post(type: string, payload: any = {}): Promise<any> {
+  function postToIframe(method: string, args: any[] = []): Promise<any> {
     const id = ++seq
-    const msg: SandboxMessage = { id, type, payload }
+    const msg: RpcRequest = { id, method, args }
     try {
       iframe.contentWindow?.postMessage({ __stSandbox: msg }, '*')
     } catch (e) {
@@ -83,58 +69,84 @@ export function createSandboxHost(
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         pending.delete(id)
-        reject(new Error(`Sandbox request timed out: ${type}`))
+        reject(new Error(`Sandbox request timed out: ${method}`))
       }, timeoutMs)
       pending.set(id, { resolve, reject, timer })
     })
   }
 
+  async function handleIncoming(msg: RpcRequest): Promise<RpcResponse> {
+    const { id, method, args = [] } = msg
+    const handler = handlers.get(method)
+    if (!handler) {
+      return { id, method, error: `No handler for method: ${method}` }
+    }
+    try {
+      const result = await handler(...args)
+      return { id, method, result }
+    } catch (e: any) {
+      return { id, method, error: e?.message || 'handler error' }
+    }
+  }
+
   function onMessage(ev: MessageEvent): void {
-    // Optionally verify origin: if (clientOrigin !== '*' && ev.origin !== clientOrigin) return
+    if (ev.source !== iframe.contentWindow) return
     const data = ev.data
     if (!data || !data.__stSandbox) return
-    const { id, type, payload, error }: SandboxResponse = data.__stSandbox
+    if (nonce && data.__stNonce !== nonce) return
+    const msg = data.__stSandbox
+
+    if (msg.id && msg.method && !('result' in msg) && !('error' in msg)) {
+      handleIncoming(msg as RpcRequest).then((response) => {
+        try {
+          iframe.contentWindow?.postMessage({ __stSandbox: response }, '*')
+        } catch (_) {}
+      })
+      return
+    }
+
+    const { id, error, result } = msg as RpcResponse
     if (!id || !pending.has(id)) return
     const entry = pending.get(id)!
     clearTimeout(entry.timer)
     pending.delete(id)
     if (error) entry.reject(new Error(error))
-    else entry.resolve({ type, payload })
+    else entry.resolve(result)
   }
 
   window.addEventListener('message', onMessage)
 
   function dispose(): void {
     window.removeEventListener('message', onMessage)
-    for (const [_id, entry] of pending) {
+    for (const [, entry] of pending) {
       clearTimeout(entry.timer)
       entry.reject(new Error('Sandbox disposed'))
     }
     pending.clear()
+    handlers.clear()
   }
 
-  // Example reserved API: ping
   async function ping(): Promise<any> {
-    const res = await post('ping', { t: Date.now() })
-    return res.payload
+    return postToIframe('ping', [Date.now()])
   }
 
-  // Reserved: Evaluate limited actions when explicitly allowed (not enabled by default)
-  function isAllowed(action: string): boolean {
-    // Minimal gate. Extend based on ThemePack.script.permissions in future.
-    if (action === 'dom' && permissions.dom) return true
-    if (action === 'network' && permissions.network) return true
-    return false
+  function registerHandler(method: string, handler: RpcHandler): void {
+    handlers.set(method, handler)
+  }
+
+  function unregisterHandler(method: string): void {
+    handlers.delete(method)
   }
 
   return {
-    post,
+    post: postToIframe,
     ping,
-    isAllowed,
+    registerHandler,
+    unregisterHandler,
     dispose,
-    // Expose raw
     iframe,
-    options: { clientOrigin, timeoutMs, permissions },
+    trustLevel,
+    capabilities,
   }
 }
 

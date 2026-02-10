@@ -10,6 +10,7 @@
         <HtmlIframeSandbox
           v-if="shouldRender"
           :html="html"
+          :trust-level="trustLevel"
           :auto-height="isAuto"
           @iframe-loaded="$emit('iframe-loaded')"
         />
@@ -39,6 +40,7 @@ const props = defineProps({
   before: { type: String, default: '' },
   html: { type: String, default: '' },
   after: { type: String, default: '' },
+  trustLevel: { type: String, default: 'trusted' },
   /**
    * 显示模式：
    * - 'auto' 自适应高度（默认）

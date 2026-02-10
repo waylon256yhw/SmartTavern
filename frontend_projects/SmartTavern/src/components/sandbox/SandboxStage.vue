@@ -4,6 +4,7 @@
     <HtmlIframeSandbox
       :html="effectiveHtml"
       :base-url="baseUrl"
+      :trust-level="trustLevel"
       :sandbox="sandbox"
       :allow="allow"
       :inject-css="injectCss"
@@ -16,22 +17,14 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import HtmlIframeSandbox from './HtmlIframeSandbox.vue';
+import type { TrustLevel } from '@/features/themes/sandbox/types';
 
 const props = defineProps({
   html: { type: String, default: '' },
   baseUrl: { type: String, default: '' },
-  // 最大权限（结合 sandbox + allow），可按需覆写
-  sandbox: {
-    type: String,
-    default:
-      'allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-popups-to-escape-sandbox allow-presentation allow-storage-access-by-user-activation',
-  },
-  allow: {
-    type: String,
-    default:
-      // Feature Policy / Permissions Policy，尽可能放宽（宿主仍受浏览器/CSP限制）
-      'fullscreen *; clipboard-read *; clipboard-write *; geolocation *; microphone *; camera *; autoplay *; encrypted-media *; payment *; usb *; serial *; midi *; gyroscope *; magnetometer *; xr-spatial-tracking *; display-capture *; gamepad *; idle-detection *',
-  },
+  trustLevel: { type: String as () => TrustLevel, default: 'trusted' as TrustLevel },
+  sandbox: { type: String, default: '' },
+  allow: { type: String, default: '' },
   injectCss: { type: String, default: '' },
   csp: { type: String, default: '' },
   /**
