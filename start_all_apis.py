@@ -66,10 +66,20 @@ def _bootstrap_gateway(config_file=None):
     """加载所有 API 模块、插件，创建并配置网关实例。
 
     启动顺序：
+    0. validate storage backend config
     1. load_project_modules — 导入 api/ 下所有 .py，触发 @register_api
     2. load_backend_plugin_apis — 按 manifest 导入插件 API 模块
     3. initialize_plugins — 运行时 hook 注册（HookManager）
     """
+    # 0) Storage backend validation
+    from shared.storage import get_storage_backend
+
+    backend = get_storage_backend()
+    if backend not in ("json", "sqlite"):
+        print(f"[FATAL] Unknown STORAGE_BACKEND={backend!r}. Expected 'json' or 'sqlite'.")
+        sys.exit(1)
+    print(f"[INFO] Storage backend: {backend}")
+
     from core.services import service_manager
 
     # 1) API 模块发现与注册
