@@ -5,14 +5,7 @@
 
 // ============ Type Definitions ============
 
-declare global {
-  interface Window {
-    ST_BACKEND_BASE?: string
-  }
-  interface ImportMetaEnv {
-    VITE_API_BASE?: string
-  }
-}
+// ============ Type Definitions ============
 
 interface ErrorWithDetails extends Error {
   cause?: Error

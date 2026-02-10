@@ -31,12 +31,6 @@ interface STPromptRouter {
   call: (action: string, payload: any, callbacks: RouterCallbacks) => Promise<any>
 }
 
-declare global {
-  interface Window {
-    STPromptRouter?: STPromptRouter
-  }
-}
-
 function getRouter(): STPromptRouter | null {
   try {
     return typeof window !== 'undefined' ? window.STPromptRouter || null : null
@@ -46,14 +40,6 @@ function getRouter(): STPromptRouter | null {
 }
 
 // ===== Backend base helpers (match other services) =====
-declare global {
-  interface Window {
-    ST_BACKEND_BASE?: string
-  }
-  interface ImportMetaEnv {
-    VITE_API_BASE?: string
-  }
-}
 
 const DEFAULT_BACKEND: string =
   import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050')

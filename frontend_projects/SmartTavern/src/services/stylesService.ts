@@ -144,16 +144,6 @@ export interface ExportStyleResponse {
   size?: number
 }
 
-// 扩展 ImportMeta 接口
-declare global {
-  interface Window {
-    ST_BACKEND_BASE?: string
-  }
-  interface ImportMetaEnv {
-    VITE_API_BASE?: string
-  }
-}
-
 const DEFAULT_BACKEND =
   import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050')
 

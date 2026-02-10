@@ -121,17 +121,6 @@ type DataType =
   | 'conversation'
   | 'llmconfig'
 
-// 扩展 ImportMeta 接口以支持 env
-declare global {
-  interface ImportMetaEnv {
-    VITE_API_BASE?: string
-    [key: string]: any
-  }
-  interface ImportMeta {
-    env: ImportMetaEnv
-  }
-}
-
 const DEFAULT_BACKEND =
   import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:8050')
 
