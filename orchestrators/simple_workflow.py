@@ -47,7 +47,7 @@ class SimpleWorkflow:
         Returns:
             self: 支持链式调用
         """
-        if func_name not in self.registry.functions:
+        if func_name not in self.registry._path_index:
             raise ValueError(f"函数 {func_name} 未注册")
 
         self.initial_inputs[func_name] = kwargs
@@ -67,9 +67,9 @@ class SimpleWorkflow:
             self: 支持链式调用
         """
         # 验证函数存在
-        if from_func not in self.registry.functions:
+        if from_func not in self.registry._path_index:
             raise ValueError(f"函数 {from_func} 未注册")
-        if to_func not in self.registry.functions:
+        if to_func not in self.registry._path_index:
             raise ValueError(f"函数 {to_func} 未注册")
 
         # 获取函数规范
@@ -288,8 +288,8 @@ class SimpleWorkflow:
 
         # 显示函数
         lines.append("\n已注册函数:")
-        for func_name in self.registry.list_functions():
-            spec = self.registry.get_spec(func_name)
+        for ns, func_name in self.registry.list_functions():
+            spec = self.registry.get_spec(func_name, namespace=ns)
             lines.append(f"  • {spec}")
 
         # 显示连接

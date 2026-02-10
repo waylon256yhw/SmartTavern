@@ -602,6 +602,16 @@ const zhCN = {
         line2: '输入框失焦时会自动保存到内存',
         line3: '点击"保存"按钮将修改写入到后端文件',
       },
+
+      hookStats: {
+        title: 'Hook 统计',
+        hookPoint: 'Hook 点',
+        calls: '调用次数',
+        avgTime: '平均耗时 (ms)',
+        errors: '错误数',
+        noHooks: '此插件未注册任何 hook',
+        loading: '加载中...',
+      },
     },
 
     theme: {

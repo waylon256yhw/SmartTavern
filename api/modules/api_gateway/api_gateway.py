@@ -120,8 +120,8 @@ def api_gateway_list_apis() -> dict[str, Any]:
     # migrated to core facade
     reg = core.get_registry()
     items = []
-    for p in reg.list_functions():
-        spec = reg.get_spec(p)
+    for ns, p in reg.list_functions():
+        spec = reg.get_spec(p, namespace=ns)
         if not spec:
             continue
         items.append(

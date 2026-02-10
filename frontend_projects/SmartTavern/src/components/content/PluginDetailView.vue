@@ -13,6 +13,73 @@ const props = defineProps({
 
 const emit = defineEmits(['saved']);
 
+// --- Hook Stats ---
+const hookStatsOpen = ref(false);
+const hookStatsLoading = ref(false);
+const hookStatsRows = ref([]);
+
+function getPluginId() {
+  if (!props.dir) return '';
+  return props.dir.replace(/\/$/, '').split('/').pop() || '';
+}
+
+function getBackendBase() {
+  const fromLS = localStorage.getItem('st.backend_base');
+  const fromWin = typeof window !== 'undefined' ? window.ST_BACKEND_BASE : null;
+  return (
+    fromWin ||
+    fromLS ||
+    import.meta.env.VITE_API_BASE ||
+    (import.meta.env.PROD ? '' : 'http://localhost:8050')
+  );
+}
+
+async function loadHookStats() {
+  hookStatsLoading.value = true;
+  hookStatsRows.value = [];
+  try {
+    const base = getBackendBase();
+    const res = await fetch(`${base}/api/plugins/smarttavern/hooks/introspection`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const pluginId = getPluginId();
+    const metrics = data.metrics || {};
+    const rows = [];
+    for (const [sid, hooks] of Object.entries(metrics)) {
+      // Match strategy_id that contains or equals the plugin directory name
+      const sidLower = sid.toLowerCase().replace(/-/g, '_');
+      const pidLower = pluginId.toLowerCase().replace(/-/g, '_');
+      if (!sidLower.includes(pidLower) && !pidLower.includes(sidLower)) continue;
+      for (const [hookName, m] of Object.entries(hooks)) {
+        rows.push({ hookName, ...m, strategyId: sid });
+      }
+    }
+    hookStatsRows.value = rows;
+  } catch (err) {
+    console.debug('[PluginDetailView] Hook stats fetch failed:', err);
+  } finally {
+    hookStatsLoading.value = false;
+  }
+}
+
+function toggleHookStats() {
+  hookStatsOpen.value = !hookStatsOpen.value;
+  if (hookStatsOpen.value) {
+    loadHookStats();
+  }
+}
+
+// Reset hook stats when plugin changes
+watch(
+  () => props.dir,
+  () => {
+    hookStatsRows.value = [];
+    if (hookStatsOpen.value) {
+      loadHookStats();
+    }
+  },
+);
+
 // 图标上传相关
 const iconFile = ref(null);
 const iconPreviewUrl = ref('');
@@ -417,6 +484,68 @@ onMounted(() => {
         <p>• {{ t('detail.plugin.notes.line1') }}</p>
         <p>• {{ t('detail.plugin.notes.line2') }}</p>
         <p>• {{ t('detail.plugin.notes.line3') }}</p>
+      </div>
+    </div>
+
+    <!-- Hook Stats (collapsible) -->
+    <div
+      class="bg-white rounded-4 border border-gray-200 transition-all duration-200 ease-soft hover:shadow-elevate"
+    >
+      <button
+        type="button"
+        class="w-full p-5 flex items-center justify-between text-left"
+        @click="toggleHookStats"
+      >
+        <div class="flex items-center gap-2">
+          <i data-lucide="activity" class="w-4 h-4 text-black"></i>
+          <h3 class="text-sm font-semibold text-black">{{ t('detail.plugin.hookStats.title') }}</h3>
+        </div>
+        <span
+          class="text-xs text-black/40 transition-transform"
+          :class="{ 'rotate-180': hookStatsOpen }"
+          >&#9660;</span
+        >
+      </button>
+      <div v-if="hookStatsOpen" class="px-5 pb-5">
+        <div v-if="hookStatsLoading" class="text-xs text-black/50">
+          {{ t('detail.plugin.hookStats.loading') }}
+        </div>
+        <div v-else-if="hookStatsRows.length === 0" class="text-xs text-black/50">
+          {{ t('detail.plugin.hookStats.noHooks') }}
+        </div>
+        <table v-else class="w-full text-xs">
+          <thead>
+            <tr class="border-b border-gray-200 text-left text-black/60">
+              <th class="py-1.5 pr-3 font-medium">{{ t('detail.plugin.hookStats.hookPoint') }}</th>
+              <th class="py-1.5 pr-3 font-medium text-right">
+                {{ t('detail.plugin.hookStats.calls') }}
+              </th>
+              <th class="py-1.5 pr-3 font-medium text-right">
+                {{ t('detail.plugin.hookStats.avgTime') }}
+              </th>
+              <th class="py-1.5 font-medium text-right">
+                {{ t('detail.plugin.hookStats.errors') }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="row in hookStatsRows"
+              :key="`${row.strategyId}:${row.hookName}`"
+              class="border-b border-gray-100"
+            >
+              <td class="py-1.5 pr-3 font-mono text-black/80">{{ row.hookName }}</td>
+              <td class="py-1.5 pr-3 text-right text-black/70">{{ row.call_count }}</td>
+              <td class="py-1.5 pr-3 text-right text-black/70">{{ row.avg_time_ms }}</td>
+              <td
+                class="py-1.5 text-right"
+                :class="row.error_count > 0 ? 'text-red-600 font-semibold' : 'text-black/70'"
+              >
+                {{ row.error_count }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 

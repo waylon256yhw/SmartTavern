@@ -220,9 +220,16 @@ class Middleware:
     @staticmethod
     async def error_handling_middleware(request: Request, call_next):
         """错误处理中间件"""
+        from core.errors import ApiError
+
         try:
             response = await call_next(request)
             return response
+        except ApiError as e:
+            return JSONResponse(
+                status_code=e.status_code,
+                content={"error_code": e.error_code, "message": str(e)},
+            )
         except Exception as e:
             logger.error(f"❌ API错误: {e!s}")
             return JSONResponse(
@@ -478,36 +485,37 @@ class APIGateway:
         try:
             registry = core.get_registry()
             paths = {}
-            for path in registry.list_functions():
-                spec = registry.get_spec(path)
+            for ns, func_path in registry.list_functions():
+                spec = registry.get_spec(func_path, namespace=ns)
                 if not spec:
                     continue
                 full_path = f"{self.config.api_prefix}/{spec.namespace}/{spec.path}"
                 paths.setdefault(full_path, {})
-                # GET 仅用于便捷调用（不携带请求体）
-                paths[full_path]["get"] = {
-                    "summary": f"{spec.description or 'API 调用'}",
-                    "responses": {
-                        "200": {
-                            "description": "OK",
-                            "content": {"application/json": {"schema": spec.output_schema or {"type": "object"}}},
-                        }
-                    },
-                }
-                # POST 使用严格请求体 Schema
-                paths[full_path]["post"] = {
-                    "summary": f"{spec.description or 'API 调用'}",
-                    "requestBody": {
-                        "required": bool(spec.input_schema and spec.input_schema.get("required")),
-                        "content": {"application/json": {"schema": spec.input_schema or {"type": "object"}}},
-                    },
-                    "responses": {
-                        "200": {
-                            "description": "OK",
-                            "content": {"application/json": {"schema": spec.output_schema or {"type": "object"}}},
-                        }
-                    },
-                }
+                summary = spec.description or "API 调用"
+                if "GET" in spec.methods:
+                    paths[full_path]["get"] = {
+                        "summary": summary,
+                        "responses": {
+                            "200": {
+                                "description": "OK",
+                                "content": {"application/json": {"schema": spec.output_schema or {"type": "object"}}},
+                            }
+                        },
+                    }
+                if "POST" in spec.methods:
+                    paths[full_path]["post"] = {
+                        "summary": summary,
+                        "requestBody": {
+                            "required": bool(spec.input_schema and spec.input_schema.get("required")),
+                            "content": {"application/json": {"schema": spec.input_schema or {"type": "object"}}},
+                        },
+                        "responses": {
+                            "200": {
+                                "description": "OK",
+                                "content": {"application/json": {"schema": spec.output_schema or {"type": "object"}}},
+                            }
+                        },
+                    }
             self.app.openapi_schema = {
                 "openapi": "3.0.0",
                 "info": {"title": self.config.title, "version": self.config.version},
@@ -523,10 +531,10 @@ class APIGateway:
             return
 
         registry = core.get_registry()
-        for path in registry.list_functions():
+        for ns, func_path in registry.list_functions():
             try:
-                func = core.get_registered_api(path)
-                spec = registry.get_spec(path)
+                func = core.get_registered_api(func_path, namespace=ns)
+                spec = registry.get_spec(func_path, namespace=ns)
                 if not func or not spec:
                     continue
 
@@ -535,6 +543,8 @@ class APIGateway:
                 # 创建API处理器（基于 JSON Schema 的简单校验）
                 def create_handler(fn=func, _spec=spec):
                     async def handler(request: Request = None):
+                        from core.errors import ApiError
+
                         try:
                             data = {}
                             content_type = ""
@@ -606,6 +616,8 @@ class APIGateway:
                                 loop = asyncio.get_running_loop()
                                 result = await loop.run_in_executor(None, functools.partial(fn, **(data or {})))
                             return result
+                        except ApiError:
+                            raise
                         except Exception as e:
                             return {"error": str(e)}
 
@@ -613,18 +625,17 @@ class APIGateway:
 
                 handler = create_handler()
 
-                # 注册为API端点 (支持GET和POST)
-                self.router.add_endpoint(
-                    api_path, "GET", handler, tags=["functions"], summary=f"{spec.description or 'API 调用'}"
-                )
-                self.router.add_endpoint(
-                    api_path, "POST", handler, tags=["functions"], summary=f"{spec.description or 'API 调用'}"
-                )
+                # 注册为API端点（仅注册声明的 HTTP 方法）
+                summary = spec.description or "API 调用"
+                if "GET" in spec.methods:
+                    self.router.add_endpoint(api_path, "GET", handler, tags=["functions"], summary=summary)
+                if "POST" in spec.methods:
+                    self.router.add_endpoint(api_path, "POST", handler, tags=["functions"], summary=summary)
 
-                logger.info(f"✓ 自动注册函数API: {spec.namespace}:{spec.path} -> {api_path}")
+                logger.info(f"✓ 自动注册函数API: {spec.namespace}:{spec.path} -> {api_path} [{','.join(spec.methods)}]")
 
             except Exception as e:
-                logger.error(f"❌ 注册函数API失败 {path}: {e}")
+                logger.error(f"❌ 注册函数API失败 {ns}:{func_path}: {e}")
 
     def setup_websocket(self):
         """设置WebSocket支持"""

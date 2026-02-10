@@ -66,10 +66,10 @@ def _collect_api_folders() -> tuple[dict[str, dict[str, Any]], dict[str, dict[st
             return item
         return {}
 
-    for api_path in reg.list_functions():
+    for ns, api_path in reg.list_functions():
         try:
-            func = core.get_registered_api(api_path)
-            spec = reg.get_spec(api_path)
+            func = core.get_registered_api(api_path, namespace=ns)
+            spec = reg.get_spec(api_path, namespace=ns)
         except Exception:
             continue
 

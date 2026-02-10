@@ -294,7 +294,7 @@ class ProjectManagerBackend:
         # 检查注册的函数
         registry = core.get_registry()
         functions = registry.list_functions()
-        project_manager_functions = [f for f in functions if f.startswith("project_manager/")]
+        project_manager_functions = [(ns, p) for ns, p in functions if p.startswith("project_manager/")]
         print(f"📝 项目管理函数: {len(project_manager_functions)} 个")
 
         print()

@@ -23,9 +23,13 @@ from __future__ import annotations
 
 import copy
 import logging
+import os
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
+
+from .hook_metrics import MetricsCollector
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +90,7 @@ class HookManager:
         self._registry: dict[str, list[HookStrategy]] = {hook: [] for hook in self.HOOK_POINTS}
         self._seq_counter = 0
         self._strategies_by_id: dict[str, HookStrategy] = {}
+        self.metrics = MetricsCollector()
 
     def register_strategy(self, strategy_id: str, hooks_dict: dict[str, Callable], order: int = 0) -> None:
         """
@@ -153,6 +158,7 @@ class HookManager:
 
         # 从策略字典移除
         del self._strategies_by_id[strategy_id]
+        self.metrics.remove_strategy(strategy_id)
         logger.info(f"注销策略: {strategy_id}")
 
     def _sort_hooks(self, hook_name: str) -> None:
@@ -174,23 +180,6 @@ class HookManager:
         )
 
     async def run_hooks(self, hook_name: str, data: Any, ctx: dict[str, Any] | None = None) -> Any:
-        """
-        执行指定 Hook 点的所有策略
-
-        参数：
-            hook_name: Hook 点名称
-            data: 输入数据
-            ctx: 上下文信息 {"conversationFile": "...", "view": "...", ...}
-
-        返回：
-            处理后的数据
-
-        执行流程：
-        1. 按权重顺序串行执行所有策略
-        2. 每个策略返回的数据作为下一个策略的输入
-        3. 如果策略返回 None，保持当前数据不变
-        4. 单个策略异常不影响其他策略
-        """
         if hook_name not in self.HOOK_POINTS:
             logger.warning(f"未知的 Hook 点: {hook_name}")
             return data
@@ -201,15 +190,21 @@ class HookManager:
 
         ctx = ctx or {}
         current = self._clone_data_for_hook(hook_name, data)
+        dev_validate = os.getenv("ST_DEV_VALIDATE", "0").lower() in ("1", "true")
 
         for strategy in strategies:
             hook_func = strategy.hooks.get(hook_name)
             if not hook_func:
                 continue
 
+            t0 = time.perf_counter()
+            error_occurred = False
             try:
                 # 克隆数据传递给 Hook
                 input_data = self._clone_data_for_hook(hook_name, current)
+
+                if dev_validate:
+                    self._validate_hook_data(hook_name, input_data, "input", strategy.id)
 
                 # 执行 Hook（支持同步和异步）
                 if callable(hook_func):
@@ -220,14 +215,37 @@ class HookManager:
 
                     # 合并结果
                     if result is not None:
+                        if dev_validate:
+                            self._validate_hook_data(hook_name, result, "output", strategy.id)
                         current = self._merge_hook_output(hook_name, current, result)
 
             except Exception as e:
+                error_occurred = True
                 logger.error(f"Hook 执行失败: {hook_name}, strategy={strategy.id}, error={type(e).__name__}: {e}")
                 # 单个策略失败不影响其他策略
                 continue
+            finally:
+                elapsed_ms = (time.perf_counter() - t0) * 1000
+                self.metrics.record(strategy.id, hook_name, elapsed_ms, error=error_occurred)
 
         return current
+
+    def _validate_hook_data(self, hook_name: str, data: Any, direction: str, strategy_id: str):
+        from .hook_contracts import HOOK_DATA_TYPES
+
+        expected = HOOK_DATA_TYPES.get(hook_name)
+        if expected is None:
+            return
+        if expected is list:
+            if not isinstance(data, list):
+                logger.warning(
+                    f"[DEV] Hook {hook_name} ({direction}) from {strategy_id}: expected list, got {type(data).__name__}"
+                )
+        elif not isinstance(data, dict):
+            logger.warning(
+                f"[DEV] Hook {hook_name} ({direction}) from {strategy_id}: "
+                f"expected dict-like, got {type(data).__name__}"
+            )
 
     def _clone_data_for_hook(self, hook_name: str, data: Any) -> Any:
         """
@@ -439,7 +457,21 @@ class HookManager:
         self._registry = {hook: [] for hook in self.HOOK_POINTS}
         self._strategies_by_id.clear()
         self._seq_counter = 0
+        self.metrics.reset()
         logger.info("清空所有 Hook 注册")
+
+    def get_introspection(self) -> dict[str, Any]:
+        """返回 hook 注册与指标的完整快照（供调试面板使用）。"""
+        hooks_info: dict[str, list[dict]] = {}
+        for hook_name in self.HOOK_POINTS:
+            strategies = self._registry.get(hook_name, [])
+            hooks_info[hook_name] = [{"strategy_id": s.id, "order": s.order} for s in strategies]
+        return {
+            "hook_points": list(self.HOOK_POINTS),
+            "registered_strategies": self.get_registered_strategies(),
+            "hooks": hooks_info,
+            "metrics": self.metrics.snapshot(),
+        }
 
 
 # 全局单例

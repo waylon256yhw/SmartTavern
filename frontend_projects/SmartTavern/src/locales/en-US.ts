@@ -612,6 +612,16 @@ const enUS = {
         line2: 'Auto-saves to memory when input loses focus',
         line3: 'Click "Save" button to write changes to backend file',
       },
+
+      hookStats: {
+        title: 'Hook Stats',
+        hookPoint: 'Hook Point',
+        calls: 'Calls',
+        avgTime: 'Avg (ms)',
+        errors: 'Errors',
+        noHooks: 'No hooks registered for this plugin',
+        loading: 'Loading...',
+      },
     },
 
     theme: {

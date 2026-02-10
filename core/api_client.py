@@ -241,7 +241,7 @@ class ApiClient:
 
             reg = get_registry()
             path_key = name.lstrip("/")
-            spec = reg.get_spec(path_key)
+            spec = reg.get_spec(path_key, namespace=namespace)
             if not spec:
                 return _Sentinel
             # 仅允许指定命名空间（默认仅 modules）
@@ -249,7 +249,7 @@ class ApiClient:
             if not self._inproc_ns_allowed(namespace or target_ns):
                 return _Sentinel
 
-            func = reg.functions.get(path_key)
+            func = reg.get_function(path_key, namespace=namespace)
             if not func:
                 return _Sentinel
 

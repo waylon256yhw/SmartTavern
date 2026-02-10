@@ -12,6 +12,7 @@
 from .api_client import ApiClient, call_api, get_client
 from .api_registry import get_registered_api, get_registry, register_api
 from .config.api_config import get_api_config
+from .errors import ApiError
 from .project_config_interface import (
     DefaultProjectConfig,
     ProjectConfigInterface,
@@ -33,6 +34,7 @@ client: ApiClient = get_client()
 
 __all__ = [
     "ApiClient",
+    "ApiError",
     "DefaultProjectConfig",
     "ProjectConfigInterface",
     "call_api",
