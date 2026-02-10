@@ -35,25 +35,51 @@ class SimpleWorkflow:
         self.connections: list[FlowConnection] = []
         self.initial_inputs: dict[str, dict[str, Any]] = {}  # 函数名 -> 初始输入
         self.results: dict[str, Any] = {}  # 存储执行结果
+        self._namespaces: dict[str, str | None] = {}  # 函数名 -> namespace
 
-    def set_input(self, func_name: str, **kwargs) -> "SimpleWorkflow":
+    def _validate_func(self, func_name: str, namespace: str | None = None) -> None:
+        if self.registry.get_function(func_name, namespace) is None:
+            raise ValueError(f"函数 {func_name} 未注册 (namespace={namespace})")
+
+    def _set_ns(self, func_name: str, namespace: str | None) -> None:
+        if namespace is None:
+            return
+        existing = self._namespaces.get(func_name)
+        if existing is not None and existing != namespace:
+            raise ValueError(
+                f"函数 '{func_name}' 已绑定到 namespace='{existing}'，"
+                f"不能再绑定到 namespace='{namespace}'（同一工作流中同名函数只能关联一个 namespace）"
+            )
+        self._namespaces[func_name] = namespace
+
+    def _ns(self, func_name: str) -> str | None:
+        return self._namespaces.get(func_name)
+
+    def set_input(self, func_name: str, namespace: str | None = None, **kwargs) -> "SimpleWorkflow":
         """
         设置函数的初始输入
 
         Args:
             func_name: 函数名
+            namespace: 可选命名空间
             **kwargs: 输入参数
 
         Returns:
             self: 支持链式调用
         """
-        if func_name not in self.registry._path_index:
-            raise ValueError(f"函数 {func_name} 未注册")
-
+        self._validate_func(func_name, namespace)
+        self._set_ns(func_name, namespace)
         self.initial_inputs[func_name] = kwargs
         return self
 
-    def connect(self, from_func: str, to_func: str, mapping: dict[str, str] | None = None) -> "SimpleWorkflow":
+    def connect(
+        self,
+        from_func: str,
+        to_func: str,
+        mapping: dict[str, str] | None = None,
+        from_namespace: str | None = None,
+        to_namespace: str | None = None,
+    ) -> "SimpleWorkflow":
         """
         连接两个函数
 
@@ -62,33 +88,29 @@ class SimpleWorkflow:
             to_func: 目标函数名
             mapping: 输出到输入的映射 {输出字段: 输入参数}
                     如果不提供，尝试自动映射
+            from_namespace: 源函数命名空间
+            to_namespace: 目标函数命名空间
 
         Returns:
             self: 支持链式调用
         """
-        # 验证函数存在
-        if from_func not in self.registry._path_index:
-            raise ValueError(f"函数 {from_func} 未注册")
-        if to_func not in self.registry._path_index:
-            raise ValueError(f"函数 {to_func} 未注册")
+        self._validate_func(from_func, from_namespace)
+        self._validate_func(to_func, to_namespace)
+        self._set_ns(from_func, from_namespace)
+        self._set_ns(to_func, to_namespace)
 
-        # 获取函数规范
-        from_spec = self.registry.get_spec(from_func)
-        to_spec = self.registry.get_spec(to_func)
+        from_spec = self.registry.get_spec(from_func, namespace=self._ns(from_func))
+        to_spec = self.registry.get_spec(to_func, namespace=self._ns(to_func))
 
-        # 如果没有提供映射，尝试自动映射
         if mapping is None:
             mapping = {}
-            # 尝试匹配同名的输出和输入
             for output in from_spec.outputs:
                 if output in to_spec.inputs:
                     mapping[output] = output
 
-            # 如果只有一个输出和一个输入，直接映射
             if not mapping and len(from_spec.outputs) == 1 and len(to_spec.inputs) == 1:
                 mapping[from_spec.outputs[0]] = to_spec.inputs[0]
 
-        # 创建连接
         for from_output, to_input in mapping.items():
             conn = FlowConnection(from_func, from_output, to_func, to_input)
             self.connections.append(conn)
@@ -171,7 +193,7 @@ class SimpleWorkflow:
 
             # 执行函数
             print(f"  执行: {func_name} 输入: {list(inputs.keys())}")
-            result = self.registry.call(func_name, **inputs)
+            result = self.registry.call(func_name, namespace=self._ns(func_name), **inputs)
             self.results[func_name] = result
             print(
                 f"  完成: {func_name} 输出: {list(result.keys()) if isinstance(result, dict) else type(result).__name__}"
@@ -232,8 +254,9 @@ class SimpleWorkflow:
 
         # 在线程池中执行
         loop = asyncio.get_event_loop()
+        ns = self._ns(func_name)
         with ThreadPoolExecutor() as executor:
-            result = await loop.run_in_executor(executor, self.registry.call, func_name, inputs)
+            result = await loop.run_in_executor(executor, lambda: self.registry.call(func_name, namespace=ns, **inputs))
         return result
 
     def parallel(self, *branches: list[str]) -> dict[str, Any]:
@@ -256,10 +279,15 @@ class SimpleWorkflow:
 
                 # 串联分支中的函数
                 for i, func_name in enumerate(branch):
+                    # 复制 namespace 映射
+                    if func_name in self._namespaces:
+                        branch_wf._namespaces[func_name] = self._namespaces[func_name]
                     if i == 0:
                         # 复制初始输入
                         if func_name in self.initial_inputs:
-                            branch_wf.set_input(func_name, **self.initial_inputs[func_name])
+                            branch_wf.set_input(
+                                func_name, namespace=self._ns(func_name), **self.initial_inputs[func_name]
+                            )
                     if i < len(branch) - 1:
                         branch_wf.connect(branch[i], branch[i + 1])
 

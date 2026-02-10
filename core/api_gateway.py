@@ -694,6 +694,7 @@ class APIGateway:
             elif msg_type == "function_call":
                 # 斜杠路径，禁止点式与反斜杠
                 func_path = message.get("function", "") or ""
+                namespace = message.get("namespace")
                 params = message.get("params", {}) or {}
 
                 if "." in func_path or "\\" in func_path:
@@ -706,8 +707,16 @@ class APIGateway:
                     }
 
                 try:
-                    func = core.get_registered_api(func_path)
-                except Exception:
+                    func = core.get_registered_api(func_path, namespace=namespace)
+                except ValueError as e:
+                    return {
+                        "type": "function_result",
+                        "function": func_path,
+                        "success": False,
+                        "error": "AMBIGUOUS_PATH",
+                        "message": str(e),
+                    }
+                except KeyError:
                     func = None
 
                 if func:

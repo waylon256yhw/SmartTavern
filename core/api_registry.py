@@ -200,5 +200,5 @@ def register_api(
 def get_registered_api(path: str, namespace: str | None = None) -> Callable:
     func = _registry.get_function(path, namespace)
     if func is None:
-        raise ValueError(f"API 未注册: ns={namespace}, path={path}")
+        raise KeyError(f"API 未注册: ns={namespace}, path={path}")
     return func
