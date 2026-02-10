@@ -183,7 +183,26 @@ initialize_plugins(auto_load=True)
 
 ## 创建插件
 
-### 步骤1：创建插件目录
+### 快速开始：脚手架命令
+
+```bash
+# 创建后端插件
+python scripts/create_plugin.py my-plugin
+
+# 创建含前端 JS 模板的插件
+python scripts/create_plugin.py my-plugin --frontend
+```
+
+脚手架会在 `backend_projects/SmartTavern/plugins/my-plugin/` 下生成：
+- `manifest.json` — 插件元数据
+- `hooks.py` — 后端 Hook 模板（含 `register_hooks`）
+- `plugin.js` — 前端模板（仅 `--frontend` 时）
+
+并自动将插件名添加到 `plugins_switch.json` 的 `enabled` 列表。
+
+### 手动创建
+
+#### 步骤1：创建插件目录
 
 在 `backend_projects/SmartTavern/plugins/` 下创建你的插件目录：
 

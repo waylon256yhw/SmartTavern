@@ -18,7 +18,6 @@ Notes:
 from __future__ import annotations
 
 import argparse
-import importlib
 import os
 import shutil
 import subprocess
@@ -63,70 +62,21 @@ def _enable_inproc_defaults() -> None:
         pass
 
 
-def _iter_py_modules(base_dir: Path, base_pkg: str):
-    """
-    遍历 base_dir 下所有 .py 模块，生成完整模块名（跳过 __* 与 test*/example*）
-    """
-    for p in base_dir.rglob("*.py"):
-        if p.name.startswith("__"):
-            continue
-        # 过滤测试与示例
-        if "test" in p.parts or "tests" in p.parts or "example" in p.parts or "examples" in p.parts:
-            continue
-        rel = p.relative_to(REPO_ROOT).with_suffix("")
-        parts = list(rel.parts)
-        if parts[: len(base_pkg.split("."))] != base_pkg.split("."):
-            continue
-        mod = ".".join(parts)
-        yield mod
-
-
-def _import_all_under(base_dir: Path, base_pkg: str) -> int:
-    """导入 base_pkg 下所有模块，返回成功数量"""
-    count = 0
-    for mod in _iter_py_modules(base_dir, base_pkg):
-        try:
-            importlib.import_module(mod)
-            count += 1
-        except Exception as e:
-            print(f"[WARN] Failed to import {mod}: {type(e).__name__}: {e}")
-    return count
-
-
-def load_all_api_modules() -> int:
-    """
-    触发 api/modules 与 api/workflow 下所有模块的注册（@register_api）
-    返回导入模块总数
-    """
-    total = 0
-    api_modules_dir = REPO_ROOT / "api" / "modules"
-    api_workflow_dir = REPO_ROOT / "api" / "workflow"
-    api_plugins_dir = REPO_ROOT / "api" / "plugins"
-    if api_modules_dir.exists():
-        try:
-            importlib.import_module("api.modules")
-        except Exception:
-            pass
-        total += _import_all_under(api_modules_dir, "api.modules")
-    if api_workflow_dir.exists():
-        try:
-            importlib.import_module("api.workflow")
-        except Exception:
-            pass
-        total += _import_all_under(api_workflow_dir, "api.workflow")
-    if api_plugins_dir.exists():
-        try:
-            importlib.import_module("api.plugins")
-        except Exception:
-            pass
-        total += _import_all_under(api_plugins_dir, "api.plugins")
-    return total
-
-
 def _bootstrap_gateway(config_file=None):
-    """加载所有 API 模块、插件，创建并配置网关实例。"""
-    imported = load_all_api_modules()
-    print(f"[INFO] Imported {imported} backend modules under 'api.modules' and 'api.workflow'.")
+    """加载所有 API 模块、插件，创建并配置网关实例。
+
+    启动顺序：
+    1. load_project_modules — 导入 api/ 下所有 .py，触发 @register_api
+    2. load_backend_plugin_apis — 按 manifest 导入插件 API 模块
+    3. initialize_plugins — 运行时 hook 注册（HookManager）
+    """
+    from core.services import service_manager
+
+    # 1) API 模块发现与注册
+    imported = service_manager.load_project_modules()
+    print(f"[INFO] Imported {imported} backend modules under 'api/'.")
+
+    # 2) 插件 manifest → API 模块导入
     try:
         from core.plugins_backend_loader import load_backend_plugin_apis
 
@@ -136,6 +86,10 @@ def _bootstrap_gateway(config_file=None):
         )
     except Exception as e:
         print(f"[WARN] Plugin backend loader failed: {type(e).__name__}: {e}")
+
+    # 3) 运行时 hook 初始化
+    plugins_count = service_manager.initialize_plugins()
+    print(f"[INFO] Plugin hooks initialized: {plugins_count} plugin(s) loaded.")
 
     import core
 

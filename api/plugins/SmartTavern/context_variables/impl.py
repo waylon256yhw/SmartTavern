@@ -66,9 +66,9 @@ def _read_json(path: Path) -> Any | None:
 
 def _write_json(path: Path, obj: Any) -> bool:
     try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("w", encoding="utf-8") as f:
-            json.dump(obj if obj is not None else {}, f, ensure_ascii=False, indent=2)
+        from shared.atomic_write import atomic_write_json
+
+        atomic_write_json(path, obj if obj is not None else {})
         return True
     except Exception:
         return False

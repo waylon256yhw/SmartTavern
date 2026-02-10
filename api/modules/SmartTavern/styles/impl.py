@@ -84,17 +84,11 @@ def _is_within(child: Path, parent: Path) -> bool:
 
 
 def _write_json_atomic(target: Path, data: Any) -> str | None:
-    """
-    将 JSON 原子化写入目标路径（UTF-8, ensure_ascii=False, indent=2）。
-    返回 None 表示成功；返回错误字符串表示失败。
-    """
+    """将 JSON 原子化写入目标路径。返回 None 表示成功；返回错误字符串表示失败。"""
     try:
-        target.parent.mkdir(parents=True, exist_ok=True)
-        tmp = target.with_suffix(target.suffix + ".tmp")
-        with tmp.open("w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-            f.write("\n")
-        tmp.replace(target)
+        from shared.atomic_write import atomic_write_json
+
+        atomic_write_json(target, data)
         return None
     except Exception as e:
         return f"{type(e).__name__}: {e}"

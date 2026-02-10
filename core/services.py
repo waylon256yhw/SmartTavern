@@ -8,7 +8,6 @@
 """
 
 import importlib
-import os
 import threading
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -58,50 +57,56 @@ class UnifiedServiceManager:
         self.services = ServiceRegistry()
         self._base_path = Path.cwd()
         self._verbose = False
+        self._plugins_initialized = False
 
     # ========== 动态模块发现与加载 ==========
 
     def discover_modules(self) -> list[str]:
         """
-        在框架根目录下仅扫描 api/*，发现每个子包的“实现文件”并返回可导入路径。
+        扫描 api/ 下所有 .py 模块，返回可导入路径。
 
         规则：
-        - 任意包含 __init__.py 的目录，若其中存在与目录同名的 .py 实现文件，则加入导入列表
-        - 例如：
-            api/modules/web_server/web_server.py         -> api.modules.web_server.web_server
-            api/workflow/image_binding/image_binding.py  -> api.workflow.image_binding.image_binding
+        - 遍历 api/modules、api/workflow、api/plugins 三个目录
+        - 收集所有 .py 文件（跳过 __*.py、test*/example* 目录）
+        - 先确保父包已在 sys.modules 中（导入其 __init__.py）
         """
         module_paths: list[str] = []
+        seen: set[str] = set()
 
-        for root_name in ("api",):
-            root_dir = self._base_path / root_name
-            if not root_dir.exists():
+        api_dirs = [
+            self._base_path / "api" / "modules",
+            self._base_path / "api" / "workflow",
+            self._base_path / "api" / "plugins",
+        ]
+
+        for base_dir in api_dirs:
+            if not base_dir.exists():
                 continue
-
-            # 递归查找：任意包含 __init__.py 的目录，若其中存在同名实现文件，则加入导入列表
-            for init_file in root_dir.rglob("__init__.py"):
-                package_dir = init_file.parent
-                # 尝试定位“实现文件”：与目录同名 .py 文件
-                impl_file = package_dir / f"{package_dir.name}.py"
-                if impl_file.exists():
-                    try:
-                        relative_to_root = package_dir.relative_to(self._base_path)
-                        import_path = str(relative_to_root).replace(os.path.sep, ".")
-                        # 形成最终导入路径：<package path>.<impl filename>（不带后缀）
-                        full_import_path = f"{import_path}.{package_dir.name}"
-                        if full_import_path not in module_paths:
-                            module_paths.append(full_import_path)
-                    except ValueError:
-                        # 不是在当前工程根下，跳过
-                        continue
+            for p in base_dir.rglob("*.py"):
+                if p.name.startswith("__"):
+                    continue
+                if any(part in ("test", "tests", "example", "examples") for part in p.parts):
+                    continue
+                rel = p.relative_to(self._base_path).with_suffix("")
+                mod = ".".join(rel.parts)
+                if mod not in seen:
+                    seen.add(mod)
+                    module_paths.append(mod)
 
         return module_paths
 
     def load_project_modules(self) -> int:
         """
-        加载所有模块（仅根级 modules/* 动态发现）。
+        加载所有模块（扫描 api/modules、api/workflow、api/plugins）。
         通过 import 导入实现文件以触发模块内的函数/工作流注册。
         """
+        # 先确保顶层包可导入
+        for pkg in ("api", "api.modules", "api.workflow", "api.plugins"):
+            try:
+                importlib.import_module(pkg)
+            except Exception:
+                pass
+
         total_loaded_count = 0
         discovered = self.discover_modules()
 
@@ -109,28 +114,30 @@ class UnifiedServiceManager:
             try:
                 module = importlib.import_module(module_path)
                 total_loaded_count += 1
-                # 将模块记录到服务注册表（以 core.<module_name> 为键，保持与历史行为相近）
-                # 模块名取倒数第二段（实现文件前的那个目录名）
                 parts = module_path.split(".")
                 module_name = parts[-2] if len(parts) >= 2 else parts[-1]
                 service_key = f"core.{module_name}"
                 self.services.module_services[service_key] = module
                 if self._verbose:
                     print(f"  ✓ 加载模块: {service_key} ({module_path})")
-            except ImportError as e:
-                print(f"  ✗ 模块加载失败 {module_path}: {e}")
+            except Exception as e:
+                print(f"  ✗ 模块加载失败 {module_path}: {type(e).__name__}: {e}")
 
         return total_loaded_count
 
     def initialize_plugins(self) -> int:
         """
-        初始化后端插件系统
+        初始化后端插件系统（幂等：多次调用只执行一次）
 
         自动加载所有启用的插件及其 Hook
 
         返回：
             成功加载的插件数量
         """
+        if self._plugins_initialized:
+            return 0
+        self._plugins_initialized = True
+
         try:
             from api.plugins.SmartTavern import initialize_plugins
 

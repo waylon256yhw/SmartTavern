@@ -710,17 +710,11 @@ def get_node_detail_impl(file: str, node_id: str) -> dict[str, Any]:
 
 
 def _write_json_atomic(target: Path, data: Any) -> str | None:
-    """
-    将 JSON 原子化写入目标路径（UTF-8, ensure_ascii=False, indent=2）。
-    返回 None 表示成功；返回错误字符串表示失败。
-    """
+    """将 JSON 原子化写入目标路径。返回 None 表示成功；返回错误字符串表示失败。"""
     try:
-        target.parent.mkdir(parents=True, exist_ok=True)
-        tmp = target.with_suffix(target.suffix + ".tmp")
-        with tmp.open("w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-            f.write("\n")
-        tmp.replace(target)
+        from shared.atomic_write import atomic_write_json
+
+        atomic_write_json(target, data)
         return None
     except Exception as e:
         return f"{type(e).__name__}: {e}"
@@ -1216,10 +1210,9 @@ def update_plugins_switch_impl(content: dict[str, Any]) -> dict[str, Any]:
         disabled = [n for n in all_names if n not in eset]
 
     try:
-        folder.mkdir(parents=True, exist_ok=True)
-        with path.open("w", encoding="utf-8") as f:
-            json.dump({"enabled": enabled, "disabled": disabled}, f, ensure_ascii=False, indent=2)
-            f.write("\n")
+        from shared.atomic_write import atomic_write_json
+
+        atomic_write_json(path, {"enabled": enabled, "disabled": disabled})
         return {"file": _path_rel_to_root(path, root), "enabled": enabled, "disabled": disabled}
     except Exception as e:
         return {"error": "WRITE_FAILED", "message": f"{type(e).__name__}: {e}", "file": _path_rel_to_root(path, root)}

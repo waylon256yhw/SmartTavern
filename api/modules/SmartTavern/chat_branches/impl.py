@@ -1252,8 +1252,9 @@ def _is_under_any(target: Path, parents: list[Path]) -> bool:
 
 
 def _safe_write_json(p: Path, obj: dict[str, Any]) -> None:
-    with p.open("w", encoding="utf-8") as f:
-        json.dump(obj, f, ensure_ascii=False, indent=2)
+    from shared.atomic_write import atomic_write_json
+
+    atomic_write_json(p, obj)
 
 
 def _sanitize_filename(name: str) -> str:

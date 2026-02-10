@@ -794,14 +794,8 @@ class APIGateway:
             logger.error("❌ FastAPI未初始化或配置缺失，无法启动服务器")
             return
 
-        # 初始化插件系统（在其他设置之前）
-        logger.info("🔌 初始化后端插件系统...")
-        try:
-            service_manager = core.get_service_manager()
-            plugins_count = service_manager.initialize_plugins()
-            logger.info(f"✓ 后端插件系统初始化完成，加载了 {plugins_count} 个插件")
-        except Exception as e:
-            logger.warning(f"⚠️ 插件系统初始化失败: {e}")
+        # 确保插件已初始化（幂等，若 _bootstrap_gateway 已调用则跳过）
+        core.get_service_manager().initialize_plugins()
 
         # 完成所有设置
         self.discover_and_register_functions()
