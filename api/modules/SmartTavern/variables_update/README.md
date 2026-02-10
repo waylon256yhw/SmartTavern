@@ -180,7 +180,7 @@ POST /api/modules/smarttavern/variables_update/apply
 
 ### 5.5 工作流：对话 variables 文件按策略应用
 
-- 路径：`/api/workflow/smarttavern/variables_update/apply`
+- 路径：`/api/workflow/smarttavern/variables_update/apply_to_conversation`
 - 入参：
   - `file`: 对话主文件路径（仓库根相对），如 `"backend_projects/SmartTavern/data/conversations/branch_demo/conversation.json"`
   - `overrides`: 变量覆盖 JSON（结构任意）
@@ -189,7 +189,7 @@ POST /api/modules/smarttavern/variables_update/apply
 
 请求
 ```json
-POST /api/workflow/smarttavern/variables_update/apply
+POST /api/workflow/smarttavern/variables_update/apply_to_conversation
 {
   "file": "backend_projects/SmartTavern/data/conversations/branch_demo/conversation.json",
   "overrides": { "stat_overrides": { "心": { "好感度": 120 } } },
