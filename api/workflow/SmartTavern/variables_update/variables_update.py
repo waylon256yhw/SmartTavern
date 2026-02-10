@@ -21,7 +21,7 @@ from .impl import apply_to_conversation as _apply_to_conversation
 
 
 @core.register_api(
-    path="smarttavern/variables_update/apply",
+    path="smarttavern/variables_update/apply_to_conversation",
     name="变量覆盖更新（工作流）",
     description=(
         "输入对话主文件路径（conversations/*.json）与变量更新 JSON（overrides），"

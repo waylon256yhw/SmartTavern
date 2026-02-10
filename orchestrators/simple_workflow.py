@@ -13,6 +13,13 @@ from typing import Any
 from core.api_registry import get_registry
 
 
+def _schema_keys(schema: dict) -> list[str]:
+    """从 JSON Schema 中提取顶层属性名列表。"""
+    if isinstance(schema, dict) and schema.get("type") == "object":
+        return list((schema.get("properties") or {}).keys())
+    return []
+
+
 @dataclass
 class FlowConnection:
     """数据流连接"""
@@ -104,12 +111,14 @@ class SimpleWorkflow:
 
         if mapping is None:
             mapping = {}
-            for output in from_spec.outputs:
-                if output in to_spec.inputs:
+            outputs = _schema_keys(from_spec.output_schema)
+            inputs = _schema_keys(to_spec.input_schema)
+            for output in outputs:
+                if output in inputs:
                     mapping[output] = output
 
-            if not mapping and len(from_spec.outputs) == 1 and len(to_spec.inputs) == 1:
-                mapping[from_spec.outputs[0]] = to_spec.inputs[0]
+            if not mapping and len(outputs) == 1 and len(inputs) == 1:
+                mapping[outputs[0]] = inputs[0]
 
         for from_output, to_input in mapping.items():
             conn = FlowConnection(from_func, from_output, to_func, to_input)
