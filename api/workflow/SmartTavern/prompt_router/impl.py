@@ -900,8 +900,9 @@ def route_complete_impl(
             def _generator():
                 nonlocal acc_text, _finish_reason, _usage, _model_used
                 try:
-                    # 先处理第一个chunk（已经获取）
-                    for ch in chunks_list:
+                    import itertools
+
+                    for ch in itertools.chain(chunks_list, chunk_iter):
                         # 检查是否是错误chunk（虽然前面已经检查过，但保险起见）
                         if getattr(ch, "finish_reason", None) == "error":
                             error_msg = getattr(ch, "content", "未知错误")
