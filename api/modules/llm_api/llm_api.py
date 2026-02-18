@@ -16,6 +16,7 @@ from .impl import (
     get_defaults_impl,
     health_impl,
     list_models_impl,
+    preview_urls_impl,
     stream_chat_chunks,
 )
 
@@ -251,3 +252,22 @@ def get_defaults() -> dict[str, Any]:
 )
 def health() -> dict[str, Any]:
     return health_impl()
+
+
+@core.register_api(
+    name="预览请求地址",
+    description="根据 provider 和 base_url 预览归一化后的请求地址",
+    path="llm_api/preview_urls",
+    input_schema={
+        "type": "object",
+        "properties": {
+            "provider": {"type": "string"},
+            "base_url": {"type": "string"},
+            "model": {"type": "string"},
+        },
+        "required": ["provider", "base_url"],
+    },
+    output_schema={"type": "object", "additionalProperties": True},
+)
+def preview_urls(provider: str, base_url: str, model: str = "") -> dict[str, Any]:
+    return preview_urls_impl(provider, base_url, model)

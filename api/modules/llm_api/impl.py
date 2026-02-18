@@ -786,7 +786,7 @@ class LLMAPIManager:
     ) -> dict[str, Any]:
         """获取Anthropic模型列表"""
         base_url = self.config.base_url.rstrip("/")
-        url = f"{base_url}/v1/models"
+        url = f"{base_url}/models"
 
         # 构建查询参数
         params = {}
@@ -1000,6 +1000,52 @@ def _ensure_models(provider: str, models: list[str] | None) -> list[str]:
     return v.DEFAULT_MODELS.get(provider, [])
 
 
+_PROVIDER_VERSION = {
+    "openai": "v1",
+    "openai_compatible": "v1",
+    "anthropic": "v1",
+    "gemini": "v1beta",
+}
+_KNOWN_VERSIONS = {"v1", "v1beta", "v2", "v3"}
+
+
+def normalize_base_url(base_url: str, provider: str) -> tuple[str, bool]:
+    raw = (base_url or "").strip()
+    if raw.endswith("#"):
+        return raw[:-1].rstrip("/"), True
+    raw = raw.rstrip("/")
+    version = _PROVIDER_VERSION.get(provider)
+    if not version:
+        return raw, False
+    parts = raw.rsplit("/", 1)
+    if len(parts) == 2 and parts[1].lower() in _KNOWN_VERSIONS:
+        raw = parts[0]
+    return f"{raw}/{version}", False
+
+
+def preview_urls_impl(provider: str, base_url: str, model: str = "") -> dict:
+    normalized, literal = normalize_base_url(base_url, provider)
+    base = normalized.rstrip("/")
+    if provider == "anthropic":
+        chat_url, models_url, auth = f"{base}/messages", f"{base}/models", "x-api-key"
+    elif provider == "gemini":
+        m = model or "<model>"
+        chat_url = f"{base}/models/{m}:streamGenerateContent?key=<api_key>"
+        models_url = "https://generativelanguage.googleapis.com/v1beta/models?key=<api_key>"
+        auth = "URL query key="
+    else:
+        chat_url, models_url, auth = f"{base}/chat/completions", f"{base}/models", "Authorization: Bearer"
+    return {
+        "normalized_base_url": normalized,
+        "literal_mode": literal,
+        "auth_scheme": auth,
+        "endpoints": {
+            "chat": {"method": "POST", "url": chat_url},
+            "list_models": {"method": "GET", "url": models_url},
+        },
+    }
+
+
 def create_manager(
     provider: str,
     api_key: str,
@@ -1015,7 +1061,7 @@ def create_manager(
     cfg = APIConfiguration(
         provider=provider,
         api_key=api_key or "",
-        base_url=(base_url or "").rstrip("/"),
+        base_url=normalize_base_url(base_url, provider)[0],
         models=_ensure_models(provider, models),
         enabled=True,
         timeout=int(timeout) if timeout is not None else v.DEFAULT_TIMEOUT,
