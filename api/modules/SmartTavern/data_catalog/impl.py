@@ -575,12 +575,24 @@ def get_character_detail_impl(file: str) -> dict[str, Any]:
     name = _ensure_str((doc or {}).get("name"))
     desc = _ensure_str((doc or {}).get("description"))
 
-    return {
+    result = {
         "file": _path_rel_to_root(target, root),
         "name": name,
         "description": desc,
         "content": doc,
     }
+
+    if doc and doc.get("type") == "sandbox":
+        sandbox_zip = target.parent / "sandbox.zip"
+        if sandbox_zip.exists():
+            try:
+                import zipfile
+                with zipfile.ZipFile(sandbox_zip, "r") as zf:
+                    result["sandbox_html"] = zf.read("sandbox/index.html").decode("utf-8")
+            except Exception:
+                pass
+
+    return result
 
 
 # ---------- 实现：读取单个 persona 详情 ----------

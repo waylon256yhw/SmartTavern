@@ -1,6 +1,6 @@
 ---
 created: 2026-02-18
-updated: 2026-02-18
+updated: 2026-02-27
 baseline: 9e4f154
 status: draft
 ---
@@ -328,3 +328,11 @@ export const promptEngine = {
 | `e7b7300` | API 命名空间全修正（7 个 BASE 加 `modules/`/`workflow/` 前缀）；ChatInput 改用 `promptRouter.completeStream`；删除 greeting 重复插入；启动时加载角色 greeting（first_mes + alternate_greetings）和 LLM 配置；凭证持久化（setAsActive → updateLlmConfigFile）；连接测试改 listModels；创建对话传 llm_config_file | `/root/.claude/plans/parallel-launching-unicorn.md` |
 | `c44475b` | 修复 LLM config hydrate 顺序不确定：`Promise.all` + `push` 改为 map+filter 保持后端列表顺序 | — |
 | `cabec0c` | testConnection 改用真实 chat 探测（`max_tokens=16`），成功显示响应时间，失败 toast 弹出原始错误；URL 预览面板（debounced `preview_urls`）；新建连接命名流程；后端 `b8b6bab` 配套 `normalize_base_url` + `preview_urls` 端点 + 修 Anthropic listModels 双 `/v1` | `/root/.claude/plans/magical-percolating-pine.md` |
+| `8468671` | API 配置页打磨：toast 移至顶部居中（移动端友好）；连接测试去重复 toast 只保留内联状态；成功色从 accent（黄）改 emerald-500（绿）；URL 预览从后端 API 改为前端纯计算（`computeUrlPreview`，零延迟）；hydration 合并改用 file 字段匹配去重，保留本地 apiKey/isActive 偏好；编辑配置后自动重置测试状态；清理 `llmApi.previewUrls` 死代码 | — |
+| `9511b0c` | 预设后端对接：双向转换层（`fromBackendPreset`/`toBackendPreset`）；懒加载预设详情（`getPresetDetail`）；hydration 后 eager-load active preset；debounced autosave（1200ms）回写 `updatePresetFile`；`PromptEntry` 增加 identifier/placement/kind 字段；12 个系统插槽不可删除；`SamplingParam` 映射 `api_config` + `enabled_fields`；`_backendRaw` round-trip 保留未知字段 | `/root/.claude/plans/transient-stirring-penguin.md` |
+| `eec242f` | 修复 Codex review 发现：autosave skip-initial 切换预设时重置 snapshot + 版本号防竞态；customParams enabled 写入 enabled_fields；load 失败标记 `_detailLoaded` 防 spinner 死循环；handleSave await 后再清 dirty | — |
+| `90e5b12` | 预设编辑器 UI 全面重构：卡片化边框 + max-w-4xl 居中；role 图标（User/Bot/Cog）替代文字 badge；按钮分区（grip+↑↓ 左/edit+toggle+del 右）；SLOT_METADATA 元数据驱动可编辑性（main/enhanceDefinitions/nsfw/jailbreak 可编辑，角色卡提取 slot 只读+`提取`badge，composite slot 虚线半透明）；thinking_enabled + thinking_depth（select: low/medium/high/max）provider-agnostic 思考参数；ParamRow 去 spinner + 数字居中；token 数估算显示；手动保存 toast + autosave 错误 toast | `/root/.claude/plans/clever-roaming-elephant.md` |
+| `d497e7f` | 修复 Codex review：isSlotEditable 翻转为 === true（未知 slot 默认不可编辑）；SlotId 类型派生自 SYSTEM_SLOT_IDENTIFIERS 防漂移；thinking_depth defaultValue 统一为 medium；autosave 错误 toast 加固定 id 防刷屏 | — |
+| `ac4e95f` | 条目编辑器关闭时保存整体预设 + 成功 toast；`usePresetAutoSave` 暴露 `cancelPending`，手动保存前取消 pending autosave 防重复写入 | — |
+| `97ff5df` | hydrate 时从后端 `type` 字段映射 `cardType`（sandbox/normal），沙盒卡正确标记 | — |
+| `79d3ca0` | 沙盒卡 HTML 加载 + 三级信任权限：后端 `get_character_detail` 从 `sandbox.zip` 提取 `sandbox_html`；前端 hydrate 管线传递 `sandboxHtml` + `sandboxTrustLevel`；移植 Vue 的 `TrustLevel` 类型系统（trusted/guarded/strict）+ `SANDBOX_ATTRS`/`ALLOW_ATTRS` 映射；SandboxStage iframe 动态查表设 sandbox/allow 属性；内置卡默认 trusted | `/root/.claude/plans/effervescent-scribbling-firefly.md` |
